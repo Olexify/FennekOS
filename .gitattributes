@@ -1,0 +1,5 @@
+# Everything goes into a Linux image: always LF, even on a Windows checkout.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.svg text eol=lf

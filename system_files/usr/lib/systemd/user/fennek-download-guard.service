@@ -1,0 +1,11 @@
+[Unit]
+Description=Scan new downloads for viruses
+
+[Service]
+ExecStart=/usr/libexec/fennek-download-guard
+Restart=on-failure
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=default.target

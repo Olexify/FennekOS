@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# First boot: hourly snapshots of /var/home (Btrfs + snapper). Copy-on-write, so nearly free.
+# Keeps 24 hourly, 7 daily, 4 weekly. Only runs if /var/home is its own Btrfs subvolume.
+set -euo pipefail
+[ -f /etc/snapper/configs/home ] && exit 0
+if ! btrfs subvolume show /var/home >/dev/null 2>&1; then
+    echo "/var/home is not a Btrfs subvolume; home snapshots disabled" >&2
+    exit 0
+fi
+snapper -c home create-config /var/home
+snapper -c home set-config TIMELINE_CREATE=yes TIMELINE_CLEANUP=yes \
+    TIMELINE_LIMIT_HOURLY=24 TIMELINE_LIMIT_DAILY=7 TIMELINE_LIMIT_WEEKLY=4 \
+    TIMELINE_LIMIT_MONTHLY=0 TIMELINE_LIMIT_YEARLY=0 \
+    ALLOW_GROUPS=wheel SYNC_ACL=yes

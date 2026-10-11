@@ -1,0 +1,3 @@
+# KDE file indexer off by default (battery). Fennek OS search replaces it.
+[Basic Settings]
+Indexing-Enabled=false

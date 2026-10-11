@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Service
+MimeType=all/allfiles;
+Actions=vtcheck
+X-KDE-Priority=TopLevel
+
+[Desktop Action vtcheck]
+Name=Check with VirusTotal
+Icon=security-medium
+Exec=fennek-vt-check %F

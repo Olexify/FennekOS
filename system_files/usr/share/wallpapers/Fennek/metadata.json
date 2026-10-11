@@ -1,0 +1,8 @@
+{
+    "KPlugin": {
+        "Authors": [{ "Name": "Fennek OS" }],
+        "Id": "Fennek",
+        "Name": "Fennek OS",
+        "License": "CC0-1.0"
+    }
+}

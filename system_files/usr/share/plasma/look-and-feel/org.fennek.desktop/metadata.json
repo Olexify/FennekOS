@@ -1,0 +1,10 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [{ "Name": "Fennek OS" }],
+        "Description": "Fennek OS default look (based on Fedora/Breeze)",
+        "Id": "org.fennek.desktop",
+        "License": "GPLv2+",
+        "Name": "Fennek OS"
+    }
+}

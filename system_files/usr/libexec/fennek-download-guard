@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Scans new files in Downloads with ClamAV; threats are moved to quarantine and you're notified.
+# The virus database is loaded only when a file arrives (no resident 1 GB scanner daemon: battery friendly).
+#   fennek-download-guard            watch Downloads (systemd user service)
+#   fennek-download-guard FILE...    scan these files once
+set -uo pipefail
+dir=$(xdg-user-dir DOWNLOAD 2>/dev/null || echo "$HOME/Downloads")
+quar="${XDG_DATA_HOME:-$HOME/.local/share}/fennek/quarantine"
+db=${FENNEK_CLAM_DB:-/var/lib/clamav}
+mkdir -p "$dir" "$quar" && chmod 700 "$quar"
+
+scan() {
+    local f=$1 name out threat dest
+    [ -f "$f" ] || return 0
+    case "$f" in *.part|*.crdownload|*.download|*.tmp) return 0 ;; esac   # browser still downloading
+    compgen -G "$db/*.c[lv]d" >/dev/null || compgen -G "$db/*.hdb" >/dev/null || return 0   # no definitions yet
+    out=$(clamscan --no-summary --infected -d "$db" -- "$f" 2>/dev/null)
+    [ $? -eq 1 ] || return 0
+    name=$(basename -- "$f")
+    threat=${out##*: }; threat=${threat% FOUND}
+    dest="$quar/$(date +%Y%m%d-%H%M%S)-$name"
+    mv -- "$f" "$dest" && chmod 000 "$dest" || return 0
+    notify-send -u critical -a "Fennek OS Security" "Threat blocked" \
+        "$name contains $threat. It was moved to quarantine." 2>/dev/null || true
+    echo "quarantined: $name ($threat)"
+}
+
+if [ $# -gt 0 ]; then
+    for f; do scan "$f"; done
+    exit 0
+fi
+inotifywait -m -q -e close_write -e moved_to --format '%w%f' "$dir" | while IFS= read -r f; do scan "$f"; done

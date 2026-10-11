@@ -1,0 +1,111 @@
+#!/usr/bin/python3
+"""Check a file against VirusTotal by its SHA-256 hash. The file itself is never uploaded.
+
+Usage: fennek-vt-check FILE...      (also: right-click → "Check with VirusTotal" in Dolphin)
+       fennek-vt-check --selftest
+"""
+import hashlib, json, os, subprocess, sys, urllib.error, urllib.request
+
+KEY_FILE = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "fennek", "virustotal.key")
+GUI = bool(os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY"))
+PRIVACY = ("Only the file's SHA-256 fingerprint is sent to VirusTotal (a Google service), never the file itself.\n"
+           "You need a free VirusTotal API key: virustotal.com → sign up → your profile → API key.\n"
+           "Free keys allow 4 checks per minute, 500 per day, personal use only.")
+
+
+def show(kind, text, title="VirusTotal check"):
+    """kind: msgbox | sorry | error"""
+    if GUI:
+        subprocess.run(["kdialog", "--title", title, f"--{kind}", text])
+    else:
+        print(text)
+
+
+def ask_key():
+    if GUI:
+        if subprocess.run(["kdialog", "--title", "VirusTotal setup", "--yesno", PRIVACY + "\n\nSet up now?"]).returncode:
+            return None
+        r = subprocess.run(["kdialog", "--title", "VirusTotal setup", "--inputbox", "Paste your VirusTotal API key:"],
+                           capture_output=True, text=True)
+        key = r.stdout.strip()
+    else:
+        print(PRIVACY)
+        key = input("Paste your VirusTotal API key: ").strip()
+    if not key:
+        return None
+    os.makedirs(os.path.dirname(KEY_FILE), exist_ok=True)
+    fd = os.open(KEY_FILE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        f.write(key)
+    return key
+
+
+def sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def verdict(stats):
+    """VirusTotal last_analysis_stats → (dialog kind, one-line verdict)."""
+    bad, sus = stats.get("malicious", 0), stats.get("suspicious", 0)
+    total = sum(stats.get(k, 0) for k in ("malicious", "suspicious", "undetected", "harmless"))
+    if bad >= 3:
+        return "error", f"DANGEROUS: {bad} of {total} scanners flag this file as malicious. Don't run it."
+    if bad or sus:
+        return "sorry", f"Suspicious: {bad} malicious and {sus} suspicious of {total} scanners. Be careful."
+    return "msgbox", f"Looks clean: 0 of {total} scanners flag this file."
+
+
+def check(path, key):
+    digest = sha256(path)
+    link = f"https://www.virustotal.com/gui/file/{digest}"
+    req = urllib.request.Request(f"https://www.virustotal.com/api/v3/files/{digest}", headers={"x-apikey": key})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            attrs = json.load(r)["data"]["attributes"]
+    except urllib.error.HTTPError as e:
+        msgs = {404: ("sorry", "VirusTotal has never seen this file. That's common for new or personal files, "
+                      "but treat unknown programs with care."),
+                401: ("error", f"VirusTotal rejected the API key. Delete {KEY_FILE} and try again."),
+                429: ("sorry", "VirusTotal limit reached (4 per minute / 500 per day). Try again later.")}
+        kind, text = msgs.get(e.code, ("error", f"VirusTotal error {e.code}."))
+        return kind, f"{os.path.basename(path)}\n\n{text}\n\nSHA-256: {digest}"
+    except (urllib.error.URLError, TimeoutError):
+        return "error", "Couldn't reach VirusTotal. Check your internet connection."
+    kind, text = verdict(attrs.get("last_analysis_stats", {}))
+    return kind, f"{os.path.basename(path)}\n\n{text}\n\nDetails: {link}"
+
+
+def selftest():
+    assert verdict({"malicious": 5, "undetected": 60})[0] == "error"
+    assert verdict({"malicious": 1, "undetected": 60})[0] == "sorry"
+    assert verdict({"suspicious": 1, "undetected": 60})[0] == "sorry"
+    k, t = verdict({"undetected": 60, "harmless": 10})
+    assert k == "msgbox" and "0 of 70" in t
+    assert verdict({})[0] == "msgbox"
+    print("selftest ok")
+
+
+def main(args):
+    if args == ["--selftest"]:
+        return selftest()
+    if not args:
+        sys.exit(__doc__)
+    try:
+        key = open(KEY_FILE).read().strip()
+    except FileNotFoundError:
+        key = ask_key()
+    if not key:
+        return
+    for path in args:
+        if not os.path.isfile(path):
+            show("sorry", f"Not a file: {path}")
+            continue
+        show(*check(path, key))
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2d2150"/>
+      <stop offset="1" stop-color="#140f24"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bg)"/>
+  <!-- big fennec ears -->
+  <path d="M15 33 L7 5 L29 25 Z" fill="#f2b766"/>
+  <path d="M49 33 L57 5 L35 25 Z" fill="#f2b766"/>
+  <path d="M16.5 28 L11.5 11 L25.5 24.5 Z" fill="#ffe2b8"/>
+  <path d="M47.5 28 L52.5 11 L38.5 24.5 Z" fill="#ffe2b8"/>
+  <!-- head -->
+  <path d="M13 31 Q32 20 51 31 L36.5 54 Q32 59 27.5 54 Z" fill="#f2b766"/>
+  <!-- muzzle -->
+  <path d="M23 41 Q32 37 41 41 L34.5 53 Q32 56 29.5 53 Z" fill="#fff3df"/>
+  <!-- eyes, nose -->
+  <ellipse cx="24.5" cy="36" rx="2.2" ry="2.6" fill="#2b1a10"/>
+  <ellipse cx="39.5" cy="36" rx="2.2" ry="2.6" fill="#2b1a10"/>
+  <circle cx="32" cy="52" r="2.4" fill="#2b1a10"/>
+</svg>

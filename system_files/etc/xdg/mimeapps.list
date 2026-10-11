@@ -1,0 +1,5 @@
+[Default Applications]
+application/x-ms-dos-executable=fennek-run-exe.desktop
+application/x-msdownload=fennek-run-exe.desktop
+application/vnd.microsoft.portable-executable=fennek-run-exe.desktop
+application/x-msi=fennek-run-exe.desktop

@@ -1,0 +1,214 @@
+#!/usr/bin/python3
+"""Run a Windows program (.exe/.msi) with Proton. Unknown programs run in a sandbox (Fennek OS auto-containment).
+
+Usage: fennek-run-exe FILE [ARGS...]            asks once per unknown program
+       fennek-run-exe --sandbox FILE [ARGS...]  always sandboxed, no questions
+       fennek-run-exe --trusted FILE [ARGS...]  normal run, no sandbox
+       fennek-run-exe --selftest
+
+Sandbox: the program gets its own private home (Wine prefix inside), sees only ~/Sandbox/<program>
+as "Shared", its own folder read-only, and Proton through a throwaway overlay. Your real home, other programs and
+D-Bus are invisible. Network stays on (the firewall governs it).
+"""
+import hashlib, os, subprocess, sys, time
+from pathlib import Path
+
+HOME = Path.home()
+CFG = Path(os.environ.get("XDG_CONFIG_HOME") or HOME / ".config") / "fennek"
+DATA = Path(os.environ.get("XDG_DATA_HOME") or HOME / ".local/share")
+TRUSTED = CFG / "trusted-exes"           # one sha256 per line
+BOXES = DATA / "fennek" / "sandboxes"     # private home per sandboxed program
+SHARED = HOME / "Sandbox"                # ~/Sandbox/<program> = the only real folder it can see
+GUI = bool(os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY"))
+UMU = {"GAMEID": "umu-default"}
+
+
+def say(text, kind="msgbox"):
+    if GUI:
+        subprocess.run(["kdialog", "--title", "Windows program", f"--{kind}", text])
+    else:
+        print(text, file=sys.stderr)
+
+
+def sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def is_trusted(digest):
+    return TRUSTED.is_file() and digest in TRUSTED.read_text().split()
+
+
+def trust(digest):
+    CFG.mkdir(parents=True, exist_ok=True)
+    with open(TRUSTED, "a") as f:
+        f.write(digest + "\n")
+
+
+def proton_dir():
+    """Newest Proton that umu downloaded, or None."""
+    found = [p for d in (DATA / "umu/compatibilitytools", DATA / "Steam/compatibilitytools.d")
+             if d.is_dir() for p in d.iterdir() if (p / "proton").is_file()]
+    return max(found, key=lambda p: p.stat().st_mtime, default=None)
+
+
+def umu_env(now=None):
+    """umu settings for a normal (trusted) run. umu checks Valve/GitHub for updates on every launch;
+    we let it do that at most once a day, otherwise it runs offline with the Proton we have."""
+    env, stamp, proton = dict(UMU), DATA / "fennek" / "umu-last-update", proton_dir()
+    now = now or time.time()
+    if proton and stamp.exists() and now - stamp.stat().st_mtime < 86400:
+        env.update(PROTONPATH=str(proton), UMU_RUNTIME_UPDATE="0")
+    else:
+        stamp.parent.mkdir(parents=True, exist_ok=True)
+        stamp.touch()
+    return env
+
+
+def ensure_proton():
+    """First use: let umu (trusted) download its runtime + Proton outside any sandbox."""
+    if proton_dir() and (DATA / "umu").is_dir():
+        return proton_dir()
+    say("Setting up Windows support (one-time download, a few hundred MB)…", "passivepopup")
+    tmp = BOXES / ".bootstrap"
+    subprocess.run(["umu-run", "wineboot", "-u"], env={**os.environ, **UMU, "WINEPREFIX": str(tmp)})
+    subprocess.run(["rm", "-rf", str(tmp)])
+    return proton_dir()
+
+
+def app_mount(exe):
+    """Mount the program's folder read-only, unless that folder is a broad one like Downloads:
+    then only the file itself (so it can't read your other downloads)."""
+    broad = {HOME, HOME / "Downloads", HOME / "Desktop", HOME / "Documents", Path("/"), Path("/tmp")}
+    return exe if exe.parent in broad else exe.parent
+
+
+def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env):
+    src = app_mount(exe)
+    app = HOME / "App" / (exe.name if src == exe else "")
+    a = ["bwrap",
+         "--ro-bind", "/usr", "/usr", "--ro-bind", "/etc", "/etc",
+         "--symlink", "usr/bin", "/bin", "--symlink", "usr/sbin", "/sbin",
+         "--symlink", "usr/lib", "/lib", "--symlink", "usr/lib64", "/lib64",
+         "--proc", "/proc", "--dev", "/dev", "--dev-bind-try", "/dev/dri", "/dev/dri",
+         "--ro-bind-try", "/sys", "/sys",
+         "--tmpfs", "/tmp", "--tmpfs", "/var/tmp",
+         "--bind", str(box_home), str(HOME),
+         "--bind", str(shared), str(HOME / "Shared"),
+         "--ro-bind", str(src), str(app),
+         # Runtime + Proton: writable overlay (pressure-vessel needs lock files), writes vanish
+         # into a tmpfs, so the shared real copies can never be modified from inside.
+         "--overlay-src", str(DATA / "umu"), "--tmp-overlay", str(DATA / "umu"),
+         "--overlay-src", str(proton), "--tmp-overlay", str(proton),
+         "--unshare-pid", "--unshare-uts", "--die-with-parent", "--new-session",
+         "--unsetenv", "DBUS_SESSION_BUS_ADDRESS",
+         "--setenv", "HOME", str(HOME), "--setenv", "WINEPREFIX", str(HOME / "prefix"),
+         "--setenv", "PROTONPATH", str(proton), "--setenv", "UMU_RUNTIME_UPDATE", "0"]
+    if str(HOME).startswith("/var/home/"):
+        a += ["--symlink", "var/home", "/home"]
+    if runtime_dir:
+        a += ["--dir", runtime_dir, "--chmod", "0700", runtime_dir]
+        for sock in ("wayland-0", "pipewire-0", "pulse/native"):
+            a += ["--ro-bind-try", f"{runtime_dir}/{sock}", f"{runtime_dir}/{sock}"]
+    if display_env.get("DISPLAY"):
+        a += ["--ro-bind-try", "/tmp/.X11-unix", "/tmp/.X11-unix"]
+        if display_env.get("XAUTHORITY"):
+            a += ["--ro-bind-try", display_env["XAUTHORITY"], display_env["XAUTHORITY"]]
+    for k, v in UMU.items():
+        a += ["--setenv", k, v]
+    target = app if src == exe else app / exe.name
+    return a + ["--", "umu-run", str(target), *args]
+
+
+def run_sandboxed(exe, digest, args):
+    proton = ensure_proton()
+    if not proton:
+        return say("Couldn't set up Windows support (no internet?).", "error")
+    stem = exe.stem
+    box_home = BOXES / f"{stem}-{digest[:8]}" / "home"
+    shared = SHARED / stem
+    for d in (box_home, shared):
+        d.mkdir(parents=True, exist_ok=True)
+    say(f"{exe.name} runs in a sandbox. It can only see the folder ~/Sandbox/{stem}.", "passivepopup")
+    cmd = bwrap_args(exe, args, box_home, shared, proton, os.environ.get("XDG_RUNTIME_DIR"), os.environ)
+    return subprocess.run(cmd).returncode
+
+
+def run_trusted(exe, args):
+    return subprocess.run(["umu-run", str(exe), *args], env={**os.environ, **umu_env()}).returncode
+
+
+def ask(exe):
+    """Unknown program → sandbox | vt | trust | None (cancel)."""
+    text = (f"{exe.name} isn't trusted yet.\n\nIn the sandbox it can't see your files, "
+            f"only the folder ~/Sandbox/{exe.stem}.")
+    if not GUI:
+        return "sandbox"
+    r = subprocess.run(["kdialog", "--title", "Unknown Windows program", "--menu", text,
+                        "sandbox", "Run in sandbox (recommended)",
+                        "vt", "Check with VirusTotal first",
+                        "trust", "I trust it: run normally"], capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def main(argv):
+    if argv == ["--selftest"]:
+        return selftest()
+    mode = argv.pop(0) if argv and argv[0] in ("--sandbox", "--trusted") else None
+    if not argv:
+        sys.exit(__doc__)
+    exe = Path(argv[0]).resolve()
+    if not exe.is_file():
+        return say(f"Not found: {exe}", "error")
+    digest = sha256(exe)
+    if mode == "--trusted" or (mode is None and is_trusted(digest)):
+        return run_trusted(exe, argv[1:])
+    while mode is None:
+        choice = ask(exe)
+        if choice == "vt":
+            subprocess.run(["fennek-vt-check", str(exe)])
+        elif choice == "trust":
+            trust(digest)
+            return run_trusted(exe, argv[1:])
+        elif choice == "sandbox":
+            mode = "--sandbox"
+        else:
+            return 0
+    return run_sandboxed(exe, digest, argv[1:])
+
+
+def selftest():
+    global HOME
+    HOME = Path("/var/home/u")
+    dl = HOME / "Downloads/setup.exe"
+    assert app_mount(dl) == dl, "file in Downloads: mount only the file"
+    assert app_mount(HOME / "Games/Foo/foo.exe") == HOME / "Games/Foo", "app folder: mount the folder"
+    a = bwrap_args(dl, ["/S"], Path("/b/home"), Path("/s"), Path("/p/UMU-Proton-9"), "/run/user/1000", {})
+    pairs = {(a[i], a[i + 1], a[i + 2]) for i in range(len(a) - 2)}
+    assert ("--bind", "/b/home", "/var/home/u") in pairs, "private home replaces the real one"
+    assert ("--ro-bind", str(dl), "/var/home/u/App/setup.exe") in pairs, "program is read-only"
+    assert ("/p/UMU-Proton-9", "--tmp-overlay", "/p/UMU-Proton-9") in pairs, "Proton writes are throwaway"
+    assert all(src != "/var/home/u" for flag, src, _ in pairs if flag in ("--bind", "--ro-bind")), "real home never mounted"
+    assert "--unshare-pid" in a and "--new-session" in a
+    assert a[-3:] == ["umu-run", "/var/home/u/App/setup.exe", "/S"]
+    b = bwrap_args(HOME / "Games/Foo/foo.exe", [], Path("/b"), Path("/s"), Path("/p"), None, {})
+    assert b[-1] == "/var/home/u/App/foo.exe"
+
+    import tempfile
+    global DATA
+    DATA = Path(tempfile.mkdtemp())
+    (DATA / "umu/compatibilitytools/UMU-Proton-9").mkdir(parents=True)
+    (DATA / "umu/compatibilitytools/UMU-Proton-9/proton").touch()
+    assert "UMU_RUNTIME_UPDATE" not in umu_env(), "first run: allow update check"
+    assert umu_env()["UMU_RUNTIME_UPDATE"] == "0", "same day: offline"
+    assert umu_env()["PROTONPATH"].endswith("UMU-Proton-9")
+    assert "UMU_RUNTIME_UPDATE" not in umu_env(now=time.time() + 2 * 86400), "next day: check again"
+    subprocess.run(["rm", "-rf", str(DATA)])
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]) or 0)

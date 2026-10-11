@@ -1,0 +1,11 @@
+[Unit]
+Description=Set up hourly snapshots of home folders
+ConditionPathExists=!/etc/snapper/configs/home
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/fennek-home-snapshots
+
+[Install]
+WantedBy=multi-user.target

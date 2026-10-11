@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Run Windows program
+Comment=Runs .exe/.msi files with Proton; unknown programs run in a sandbox
+Exec=fennek-run-exe %f
+Icon=wine
+Terminal=false
+NoDisplay=true
+MimeType=application/x-ms-dos-executable;application/x-msdownload;application/vnd.microsoft.portable-executable;application/x-msi;
