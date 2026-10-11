@@ -1,9 +1,11 @@
 # Fennek OS base image: Universal Blue's Kinoite (Fedora KDE atomic + full codecs, hardware video decode)
-# + Fennek OS defaults.
-FROM ghcr.io/ublue-os/kinoite-main:44
+# + Fennek OS defaults. Build with podman/buildah (the base has ~256 layers; Docker's limit is ~127).
+# Builds pass the signature-verified digest (see verify-base.sh); never build FROM the bare tag.
+ARG BASE_IMAGE=ghcr.io/ublue-os/kinoite-main:44
+FROM ${BASE_IMAGE}
 
-COPY system_files/ /
-# Second copy only as a file list, so build.sh can fix permissions (a Windows checkout has none).
-COPY system_files/ /tmp/system_files/
-COPY build.sh /tmp/build.sh
-RUN bash /tmp/build.sh && rm -rf /tmp/build.sh /tmp/system_files && bootc container lint
+# One layer for everything we add: the build context is mounted, not copied.
+RUN --mount=type=bind,source=.,target=/ctx,ro \
+    cp -a /ctx/system_files/. / && \
+    bash /ctx/build.sh /ctx/system_files && \
+    bootc container lint

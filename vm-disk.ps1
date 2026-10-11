@@ -7,7 +7,11 @@ $vm   = 'E:\Fennek-build\vm'
 $log  = 'E:\Fennek-build\tmp'
 function Check($what) { if ($LASTEXITCODE -ne 0) { throw "$what failed (exit $LASTEXITCODE), see $log" } }
 
-docker build -f "$root\Containerfile" -t fennek:dev $root *> "$log\build.log"; Check 'image build'
+# Verify the base image's signature and build FROM that exact digest (helper image has skopeo + cosign).
+"FROM registry.fedoraproject.org/fedora:44`nRUN dnf -y install skopeo cosign && dnf clean all" | docker build -q -t fennek-verify - *> "$log\verify.log"; Check 'verify helper'
+$base = docker run --rm -v "${root}:/src:ro" fennek-verify bash /src/verify-base.sh; Check 'base image signature'
+"Base image (signature verified): $base"
+docker build --build-arg "BASE_IMAGE=$base" -f "$root\Containerfile" -t fennek:dev $root *> "$log\build.log"; Check 'image build'
 docker run --rm -v "$root\test.sh:/t.sh:ro" fennek:dev bash /t.sh; Check 'image tests'
 
 # bootc-image-builder reads podman storage, so copy the image there (dedupes unchanged layers).

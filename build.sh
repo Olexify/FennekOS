@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+files=${1:?usage: build.sh SYSTEM_FILES_DIR}   # the shipped tree, used as the list for permission fixes
 
 # umu-launcher (Proton outside Steam) isn't in Fedora repos; pinned upstream RPM, checksum-verified.
 UMU_VER=1.4.4
@@ -91,7 +92,7 @@ dracut --no-hostonly --kver "$KVER" --reproducible --add ostree -f "/usr/lib/mod
 chmod 0600 "/usr/lib/modules/$KVER/initramfs.img"
 
 # Permissions: everything we ship is 644, except our programs.
-(cd /tmp/system_files && find . -type f) | while read -r f; do chmod 644 "/${f#./}"; done
+(cd "$files" && find . -type f) | while read -r f; do chmod 644 "/${f#./}"; done
 chmod 755 /usr/bin/fennek-* /usr/libexec/fennek-*
 
 # Hourly home snapshots (ransomware undo), set up on first boot.

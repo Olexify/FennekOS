@@ -74,6 +74,11 @@ OpenSnitch daemon + our own friendly UI: per-app allow/block, ask-or-silent mode
 (Home / Public / Offline), DNS tracker blocking, temporary rules, live connection view.
 
 ## Search ("Everything", but comfier)
+**v1 done (fennek-search):** per-user service, home + /run/media drives, live via inotify (no rescans), hidden
+dirs/caches/sandboxes skipped, served to Start menu + KRunner over D-Bus (org.kde.krunner1), filters ext: type:
+path:, opened-files history ranks first, "Open containing folder" action. Python, linear scan (~10 ms/100k
+files). Next: Everything-style window with columns/sort, Explorer search integration, size:/dm: filters,
+whole-disk index (needs a root helper with per-user permission filtering), Rust if homes get huge.
 - Own Rust daemon: fast parallel initial scan, compact in-memory filename index, live updates via fanotify
   filesystem marks (no periodic re-indexing, ~zero idle cost). Results filtered by the asking user's permissions.
 - Filters: `ext:` `size:` `dm:` (date) `path:` `type:audio|video|doc|image|exe` + regex; clickable filter chips.
