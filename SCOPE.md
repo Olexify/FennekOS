@@ -14,6 +14,10 @@ A comfy, Windows-10-like, no-telemetry, very secure Linux OS with best-in-class 
   bubblewrap namespaces + Landlock + seccomp, overlay filesystem (writes are throwaway), own shared folder only,
   network via firewall policy, camera/mic/screen via portal prompts.
 - **Trust levels:** Trusted (Fennek OS repo, verified Flathub, user-approved) / Unknown (contained) / Malicious (blocked).
+- **Sandbox as built (fennek-run-exe):** bwrap inside its own pasta network namespace (internet yes, host-only
+  abstract sockets/X11/D-Bus no); Wayland display via Wine-Wayland when Proton supports it, X11 only as fallback;
+  sound (= microphone) only on explicit choice; file names sanitized (a `...exe` once escaped to the real home).
+  Known limits: X11 fallback can read other Xwayland windows/clipboard; no seccomp filter yet; kernel bugs.
 - **Native apps:** Flatpak by default (already sandboxed).
 - **Ransomware undo:** hourly Btrfs snapshots of home (copy-on-write, near free), one-click restore.
 - **Behavior guard (later):** eBPF watcher for mass renames/encryption, autostart writes, process injection.

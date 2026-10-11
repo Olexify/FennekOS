@@ -10,5 +10,6 @@ fi
 snapper -c home create-config /var/home
 snapper -c home set-config TIMELINE_CREATE=yes TIMELINE_CLEANUP=yes \
     TIMELINE_LIMIT_HOURLY=24 TIMELINE_LIMIT_DAILY=7 TIMELINE_LIMIT_WEEKLY=4 \
-    TIMELINE_LIMIT_MONTHLY=0 TIMELINE_LIMIT_YEARLY=0 \
-    ALLOW_GROUPS=wheel SYNC_ACL=yes
+    TIMELINE_LIMIT_MONTHLY=0 TIMELINE_LIMIT_YEARLY=0
+# No ALLOW_GROUPS: /var/home holds every user's home, so snapper access (incl. restore) stays root-only.
+# A per-user restore UI will go through polkit and only touch the caller's own files.

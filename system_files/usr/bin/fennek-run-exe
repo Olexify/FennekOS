@@ -1,26 +1,34 @@
 #!/usr/bin/python3
 """Run a Windows program (.exe/.msi) with Proton. Unknown programs run in a sandbox (Fennek OS auto-containment).
 
-Usage: fennek-run-exe FILE [ARGS...]            asks once per unknown program
-       fennek-run-exe --sandbox FILE [ARGS...]  always sandboxed, no questions
-       fennek-run-exe --trusted FILE [ARGS...]  normal run, no sandbox
+Usage: fennek-run-exe FILE [ARGS...]                  asks once per unknown program
+       fennek-run-exe --sandbox FILE [ARGS...]        always sandboxed, no sound, no questions
+       fennek-run-exe --sandbox-sound FILE [ARGS...]  sandboxed with sound (and therefore microphone)
+       fennek-run-exe --trusted FILE [ARGS...]        normal run, no sandbox
        fennek-run-exe --selftest
 
-Sandbox: the program gets its own private home (Wine prefix inside), sees only ~/Sandbox/<program>
-as "Shared", its own folder read-only, and Proton through a throwaway overlay. Your real home, other programs and
-D-Bus are invisible. Network stays on (the firewall governs it).
+Sandbox: own private home (Wine prefix inside); sees only ~/Sandbox/<program> as "Shared", its own folder
+read-only, Proton through a throwaway overlay. Own network namespace (pasta): internet works, but host-only
+sockets (X11 abstract socket, D-Bus, local services) are unreachable. Wayland display when Proton supports it,
+so no X11 snooping. No sound/microphone unless asked for. Your real home and other programs are invisible.
 """
-import hashlib, os, subprocess, sys, time
+import hashlib, os, re, shutil, subprocess, sys, time
 from pathlib import Path
 
 HOME = Path.home()
 CFG = Path(os.environ.get("XDG_CONFIG_HOME") or HOME / ".config") / "fennek"
 DATA = Path(os.environ.get("XDG_DATA_HOME") or HOME / ".local/share")
 TRUSTED = CFG / "trusted-exes"           # one sha256 per line
-BOXES = DATA / "fennek" / "sandboxes"     # private home per sandboxed program
+BOXES = DATA / "fennek" / "sandboxes"    # private home per sandboxed program
 SHARED = HOME / "Sandbox"                # ~/Sandbox/<program> = the only real folder it can see
 GUI = bool(os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY"))
 UMU = {"GAMEID": "umu-default"}
+SANDBOX_DNS = "169.254.1.1"             # pasta answers DNS here and forwards to the host's resolver
+PASTA = ["pasta", "--config-net", "--quiet",
+         "--no-map-gw",                                             # gateway must NOT reach host 127.0.0.1 services
+         "-t", "none", "-u", "none", "-T", "none", "-U", "none",    # no port forwarding in either direction
+         "--dns-forward", SANDBOX_DNS]
+XDG_ROOTS = {"Downloads", "Desktop", "Documents", "Music", "Pictures", "Videos", "Public", "Templates", "Sandbox"}
 
 
 def say(text, kind="msgbox"):
@@ -48,11 +56,26 @@ def trust(digest):
         f.write(digest + "\n")
 
 
+def safe_name(exe):
+    """Folder name from the file name. Never '..', '.', hidden or empty: a download called '...exe'
+    must not turn ~/Sandbox/<name> into ~/Sandbox/.. (= your whole home)."""
+    stem = re.sub(r"\.(exe|msi|bat|com)$", "", exe.name, flags=re.I)   # not Path.stem: odd names like '...exe'
+    return re.sub(r"[^\w .+-]", "_", stem).strip(" .") or "program"
+
+
 def proton_dir():
     """Newest Proton that umu downloaded, or None."""
     found = [p for d in (DATA / "umu/compatibilitytools", DATA / "Steam/compatibilitytools.d")
              if d.is_dir() for p in d.iterdir() if (p / "proton").is_file()]
     return max(found, key=lambda p: p.stat().st_mtime, default=None)
+
+
+def wine_wayland(proton):
+    """Does this Proton have Wine's Wayland driver? Then the sandbox needs no X11 at all."""
+    try:
+        return "PROTON_ENABLE_WAYLAND" in (proton / "proton").read_text(errors="ignore")
+    except OSError:
+        return False
 
 
 def umu_env(now=None):
@@ -80,16 +103,24 @@ def ensure_proton():
 
 
 def app_mount(exe):
-    """Mount the program's folder read-only, unless that folder is a broad one like Downloads:
-    then only the file itself (so it can't read your other downloads)."""
-    broad = {HOME, HOME / "Downloads", HOME / "Desktop", HOME / "Documents", Path("/"), Path("/tmp")}
-    return exe if exe.parent in broad else exe.parent
+    """Mount the program's own folder read-only (portable apps need their files), but only the file itself
+    when that folder is a broad one: home or above, Downloads/Documents/..., anything hidden like ~/.config."""
+    d = exe.parent
+    rel = d.relative_to(HOME).parts if d.is_relative_to(HOME) else None
+    broad = (d in (Path("/"), Path("/tmp"), Path("/var/tmp")) or HOME.is_relative_to(d)
+             or (rel is not None and ((len(rel) == 1 and rel[0] in XDG_ROOTS)
+                                      or any(p.startswith(".") for p in rel))))
+    return exe if broad else d
 
 
-def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env):
+def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env, sound=False, wayland=False,
+               resolv=None, uid=1000, gid=1000):
     src = app_mount(exe)
     app = HOME / "App" / (exe.name if src == exe else "")
     a = ["bwrap",
+         # pasta's namespace makes us "root" (mapped to the real user); map back to the user's own id,
+         # umu refuses to run as root and nothing inside should look privileged.
+         "--unshare-user", "--uid", str(uid), "--gid", str(gid),
          "--ro-bind", "/usr", "/usr", "--ro-bind", "/etc", "/etc",
          "--symlink", "usr/bin", "/bin", "--symlink", "usr/sbin", "/sbin",
          "--symlink", "usr/lib", "/lib", "--symlink", "usr/lib64", "/lib64",
@@ -109,11 +140,19 @@ def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env):
          "--setenv", "PROTONPATH", str(proton), "--setenv", "UMU_RUNTIME_UPDATE", "0"]
     if str(HOME).startswith("/var/home/"):
         a += ["--symlink", "var/home", "/home"]
+    if resolv:   # host's resolv.conf points at 127.0.0.53, which is unreachable from the sandbox's network
+        a += ["--ro-bind", str(resolv), "/etc/resolv.conf"]
     if runtime_dir:
         a += ["--dir", runtime_dir, "--chmod", "0700", runtime_dir]
-        for sock in ("wayland-0", "pipewire-0", "pulse/native"):
-            a += ["--ro-bind-try", f"{runtime_dir}/{sock}", f"{runtime_dir}/{sock}"]
-    if display_env.get("DISPLAY"):
+        socks = [display_env.get("WAYLAND_DISPLAY", "wayland-0")]   # Wayland: apps can't spy on each other
+        if sound:
+            socks += ["pipewire-0", "pulse/native"]                  # playback AND recording
+        for s in socks:
+            a += ["--ro-bind-try", f"{runtime_dir}/{s}", f"{runtime_dir}/{s}"]
+    if wayland:
+        a += ["--setenv", "PROTON_ENABLE_WAYLAND", "1", "--unsetenv", "DISPLAY", "--unshare-ipc"]
+    elif display_env.get("DISPLAY"):
+        # Fallback for Protons without Wine-Wayland: X11 lets the program see other X11 (Xwayland) windows.
         a += ["--ro-bind-try", "/tmp/.X11-unix", "/tmp/.X11-unix"]
         if display_env.get("XAUTHORITY"):
             a += ["--ro-bind-try", display_env["XAUTHORITY"], display_env["XAUTHORITY"]]
@@ -123,18 +162,27 @@ def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env):
     return a + ["--", "umu-run", str(target), *args]
 
 
-def run_sandboxed(exe, digest, args):
+def run_sandboxed(exe, digest, args, sound=False):
     proton = ensure_proton()
     if not proton:
         return say("Couldn't set up Windows support (no internet?).", "error")
-    stem = exe.stem
-    box_home = BOXES / f"{stem}-{digest[:8]}" / "home"
-    shared = SHARED / stem
+    if not shutil.which("pasta"):
+        return say("Sandbox networking (pasta) is missing; not running unsandboxed.", "error")
+    name = safe_name(exe)
+    box_home = BOXES / f"{name}-{digest[:8]}" / "home"
+    shared = SHARED / name
     for d in (box_home, shared):
         d.mkdir(parents=True, exist_ok=True)
-    say(f"{exe.name} runs in a sandbox. It can only see the folder ~/Sandbox/{stem}.", "passivepopup")
-    cmd = bwrap_args(exe, args, box_home, shared, proton, os.environ.get("XDG_RUNTIME_DIR"), os.environ)
-    return subprocess.run(cmd).returncode
+    if shared.resolve().parent != SHARED.resolve():   # belt and braces against path tricks
+        return say(f"Refusing odd program name: {exe.name}", "error")
+    wayland = bool(os.environ.get("WAYLAND_DISPLAY")) and wine_wayland(proton)
+    resolv = box_home.parent / "resolv.conf"
+    resolv.write_text(f"nameserver {SANDBOX_DNS}\n")
+    say(f"{exe.name} runs in a sandbox. It can only see the folder ~/Sandbox/{name}.", "passivepopup")
+    cmd = bwrap_args(exe, args, box_home, shared, proton, os.environ.get("XDG_RUNTIME_DIR"), os.environ,
+                     sound=sound, wayland=wayland, resolv=resolv, uid=os.getuid(), gid=os.getgid())
+    # Own network namespace with internet via pasta: host-only sockets and host loopback become unreachable.
+    return subprocess.run([*PASTA, "--", *cmd]).returncode
 
 
 def run_trusted(exe, args):
@@ -142,13 +190,14 @@ def run_trusted(exe, args):
 
 
 def ask(exe):
-    """Unknown program → sandbox | vt | trust | None (cancel)."""
+    """Unknown program → sandbox | sandbox-sound | vt | trust | None (cancel)."""
     text = (f"{exe.name} isn't trusted yet.\n\nIn the sandbox it can't see your files, "
-            f"only the folder ~/Sandbox/{exe.stem}.")
+            f"only the folder ~/Sandbox/{safe_name(exe)}.")
     if not GUI:
         return "sandbox"
     r = subprocess.run(["kdialog", "--title", "Unknown Windows program", "--menu", text,
                         "sandbox", "Run in sandbox (recommended)",
+                        "sandbox-sound", "Run in sandbox with sound (it can also use your microphone)",
                         "vt", "Check with VirusTotal first",
                         "trust", "I trust it: run normally"], capture_output=True, text=True)
     return r.stdout.strip() if r.returncode == 0 else None
@@ -157,7 +206,7 @@ def ask(exe):
 def main(argv):
     if argv == ["--selftest"]:
         return selftest()
-    mode = argv.pop(0) if argv and argv[0] in ("--sandbox", "--trusted") else None
+    mode = argv.pop(0) if argv and argv[0] in ("--sandbox", "--sandbox-sound", "--trusted") else None
     if not argv:
         sys.exit(__doc__)
     exe = Path(argv[0]).resolve()
@@ -173,35 +222,55 @@ def main(argv):
         elif choice == "trust":
             trust(digest)
             return run_trusted(exe, argv[1:])
-        elif choice == "sandbox":
-            mode = "--sandbox"
+        elif choice in ("sandbox", "sandbox-sound"):
+            mode = "--" + choice
         else:
             return 0
-    return run_sandboxed(exe, digest, argv[1:])
+    return run_sandboxed(exe, digest, argv[1:], sound=mode == "--sandbox-sound")
 
 
 def selftest():
-    global HOME
+    global HOME, DATA
     HOME = Path("/var/home/u")
+    for bad in ("...exe", "..exe", " . .exe", "....exe"):
+        assert safe_name(Path(bad)) == "program", f"{bad!r} must not become a path trick"
+    assert safe_name(Path(".evil.exe")) == "evil" and safe_name(Path("My Game.exe")) == "My Game"
+
     dl = HOME / "Downloads/setup.exe"
     assert app_mount(dl) == dl, "file in Downloads: mount only the file"
     assert app_mount(HOME / "Games/Foo/foo.exe") == HOME / "Games/Foo", "app folder: mount the folder"
-    a = bwrap_args(dl, ["/S"], Path("/b/home"), Path("/s"), Path("/p/UMU-Proton-9"), "/run/user/1000", {})
+    for broad in (HOME / "x.exe", HOME / ".config/x.exe", HOME / ".local/share/a/x.exe", Path("/var/home/x.exe"),
+                  HOME / "Sandbox/x.exe", Path("/tmp/x.exe")):
+        assert app_mount(broad) == broad, f"{broad}: only the file"
+
+    a = bwrap_args(dl, ["/S"], Path("/b/home"), Path("/s"), Path("/p/UMU-Proton-9"), "/run/user/1000",
+                   {"DISPLAY": ":0", "WAYLAND_DISPLAY": "wayland-0"})
     pairs = {(a[i], a[i + 1], a[i + 2]) for i in range(len(a) - 2)}
     assert ("--bind", "/b/home", "/var/home/u") in pairs, "private home replaces the real one"
     assert ("--ro-bind", str(dl), "/var/home/u/App/setup.exe") in pairs, "program is read-only"
     assert ("/p/UMU-Proton-9", "--tmp-overlay", "/p/UMU-Proton-9") in pairs, "Proton writes are throwaway"
     assert all(src != "/var/home/u" for flag, src, _ in pairs if flag in ("--bind", "--ro-bind")), "real home never mounted"
     assert "--unshare-pid" in a and "--new-session" in a
+    assert a[a.index("--uid") + 1] == "1000", "never root inside the sandbox"
+    assert not any("pipewire" in x or "pulse" in x for x in a), "no sound/microphone by default"
+    assert "/tmp/.X11-unix" in a, "X11 only as fallback when Proton lacks Wine-Wayland"
     assert a[-3:] == ["umu-run", "/var/home/u/App/setup.exe", "/S"]
-    b = bwrap_args(HOME / "Games/Foo/foo.exe", [], Path("/b"), Path("/s"), Path("/p"), None, {})
+
+    s = bwrap_args(dl, [], Path("/b"), Path("/s"), Path("/p"), "/run/user/1000", {}, sound=True)
+    assert "/run/user/1000/pipewire-0" in s, "sound on request"
+    w = bwrap_args(dl, [], Path("/b"), Path("/s"), Path("/p"), "/run/user/1000", {"DISPLAY": ":0"}, wayland=True)
+    assert "/tmp/.X11-unix" not in w and "PROTON_ENABLE_WAYLAND" in w and "--unshare-ipc" in w, "Wayland: no X11"
+    b = bwrap_args(HOME / "Games/Foo/foo.exe", [], Path("/b"), Path("/s"), Path("/p"), None, {}, resolv=Path("/r"))
     assert b[-1] == "/var/home/u/App/foo.exe"
+    assert b.index("/etc/resolv.conf") > b.index("/etc"), "own resolv.conf mounted over the host /etc"
+    assert "--no-map-gw" in PASTA and all(PASTA[PASTA.index(f) + 1] == "none" for f in ("-t", "-u", "-T", "-U")), \
+        "no route from the sandbox to host loopback services, no port forwarding"
 
     import tempfile
-    global DATA
     DATA = Path(tempfile.mkdtemp())
     (DATA / "umu/compatibilitytools/UMU-Proton-9").mkdir(parents=True)
-    (DATA / "umu/compatibilitytools/UMU-Proton-9/proton").touch()
+    (DATA / "umu/compatibilitytools/UMU-Proton-9/proton").write_text("PROTON_ENABLE_WAYLAND")
+    assert wine_wayland(proton_dir())
     assert "UMU_RUNTIME_UPDATE" not in umu_env(), "first run: allow update check"
     assert umu_env()["UMU_RUNTIME_UPDATE"] == "0", "same day: offline"
     assert umu_env()["PROTONPATH"].endswith("UMU-Proton-9")

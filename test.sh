@@ -43,6 +43,14 @@ HOME=$t XDG_DATA_HOME=$t/share FENNEK_CLAM_DB=$t/db /usr/libexec/fennek-download
 [ ! -e "$t/evil.bin" ] && compgen -G "$t/share/fennek/quarantine/*-evil.bin" >/dev/null || fail "threat not quarantined"
 [ -e "$t/ok.txt" ]                                            || fail "clean file was touched"
 rm -rf "$t"
+# Watch mode: a file landing in Downloads gets scanned, even with a newline in its name.
+t=$(mktemp -d); mkdir -p "$t/db" "$t/Downloads"
+echo "Fennek fake malware sample" > "$t/sample"; sigtool --md5 "$t/sample" > "$t/db/test.hdb"
+HOME=$t XDG_DATA_HOME=$t/share FENNEK_CLAM_DB=$t/db timeout 20 /usr/libexec/fennek-download-guard >/dev/null &
+sleep 2; cp "$t/sample" "$t/Downloads/evil"$'\n'"name.bin"
+for _ in $(seq 30); do compgen -G "$t/share/fennek/quarantine/*evil*" >/dev/null && break; sleep 0.5; done
+compgen -G "$t/share/fennek/quarantine/*evil*" >/dev/null     || fail "watch mode didn't quarantine"
+kill %1 2>/dev/null; wait 2>/dev/null; rm -rf "$t"
 systemctl is-enabled -q clamav-freshclam-once.timer          || fail "freshclam timer"
 [ -L /etc/systemd/user/default.target.wants/fennek-download-guard.service ] || fail "download guard not enabled"
 grep -q "Fennek OS patch: no network" /usr/lib/python3*/site-packages/umu/umu_runtime.py || fail "umu no-telemetry patch"

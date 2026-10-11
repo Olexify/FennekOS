@@ -4,7 +4,9 @@
 #   fennek-download-guard            watch Downloads (systemd user service)
 #   fennek-download-guard FILE...    scan these files once
 set -uo pipefail
-dir=$(xdg-user-dir DOWNLOAD 2>/dev/null || echo "$HOME/Downloads")
+dir=$(xdg-user-dir DOWNLOAD 2>/dev/null)
+# Without a user-dirs config, xdg-user-dir answers $HOME itself: never watch the whole home.
+[ -z "$dir" ] || [ "$dir" = "$HOME" ] && dir="$HOME/Downloads"
 quar="${XDG_DATA_HOME:-$HOME/.local/share}/fennek/quarantine"
 db=${FENNEK_CLAM_DB:-/var/lib/clamav}
 mkdir -p "$dir" "$quar" && chmod 700 "$quar"
@@ -29,4 +31,6 @@ if [ $# -gt 0 ]; then
     for f; do scan "$f"; done
     exit 0
 fi
-inotifywait -m -q -e close_write -e moved_to --format '%w%f' "$dir" | while IFS= read -r f; do scan "$f"; done
+# NUL-separated: a file name containing a newline must not be split into a different path.
+inotifywait -m -q -e close_write -e moved_to --format '%w%f%0' --no-newline "$dir" |
+    while IFS= read -r -d '' f; do scan "$f"; done
