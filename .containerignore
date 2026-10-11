@@ -1,0 +1,4 @@
+# The image build only needs these; everything else (.git, scripts, docs, tests) stays out of the context.
+*
+!build.sh
+!system_files
