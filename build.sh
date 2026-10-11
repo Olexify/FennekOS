@@ -92,7 +92,9 @@ dracut --no-hostonly --kver "$KVER" --reproducible --add ostree -f "/usr/lib/mod
 chmod 0600 "/usr/lib/modules/$KVER/initramfs.img"
 
 # Permissions: everything we ship is 644, except our programs.
-(cd "$files" && find . -type f) | while read -r f; do chmod 644 "/${f#./}"; done
+(cd "$files" && find . -type f) | while read -r f; do chmod 644 "/${f#./}"; chown root:root "/${f#./}"; done
+# Belt and braces: everything we ship belongs to root (a build-context owner would be a local root hole).
+(cd "$files" && find . -mindepth 1 -type d) | while read -r d; do chown root:root "/${d#./}"; done
 chmod 755 /usr/bin/fennek-* /usr/libexec/fennek-*
 
 # Hourly home snapshots (ransomware undo), set up on first boot.

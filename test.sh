@@ -75,4 +75,7 @@ id fsearch >/dev/null 2>&1 || useradd -m fsearch >/dev/null 2>&1
 su fsearch -c "/usr/libexec/fennek-search --selftest" >/dev/null || fail "search selftest"
 [ -L /etc/systemd/user/graphical-session.target.wants/fennek-search.service ] || fail "search service not enabled"
 grep -q '^X-Plasma-DBusRunner-Service=org.fennek.Search' /usr/share/krunner/dbusplugins/fennek-search.desktop || fail "search runner"
+for f in /usr/bin/fennek-* /usr/libexec/fennek-* /usr/lib/systemd/system/fennek-* /usr/share/plasma/plasmoids/com.github.zren.tiledmenu; do
+    [ "$(stat -c %u:%g "$f")" = 0:0 ] || fail "$f not owned by root"
+done
 echo "all checks passed"

@@ -1,29 +1,32 @@
 # Builds the Fennek OS image, tests it, and turns it into a Hyper-V disk: E:\Fennek-build\vm\fennek-next.vhdx
 # (no admin needed). Then run vm.ps1 as admin to swap it in and boot.
+# Image builds run in podman (inside a container): the base has ~256 layers, beyond docker's ~127 limit.
 # No $ErrorActionPreference='Stop': Windows PowerShell 5.1 turns docker's stderr progress into errors.
 # Every step is checked by exit code instead.
 $root = $PSScriptRoot
 $vm   = 'E:\Fennek-build\vm'
 $log  = 'E:\Fennek-build\tmp'
+$tag  = 'ghcr.io/ublue-os/kinoite-main:44'
 function Check($what) { if ($LASTEXITCODE -ne 0) { throw "$what failed (exit $LASTEXITCODE), see $log" } }
+function Podman { docker run --rm --privileged -v fennek-podman:/var/lib/containers -v "${root}:/src:ro" quay.io/podman/stable:latest podman @args }
 
-# Verify the base image's signature and build FROM that exact digest (helper image has skopeo + cosign).
-"FROM registry.fedoraproject.org/fedora:44`nRUN dnf -y install skopeo cosign && dnf clean all" | docker build -q -t fennek-verify - *> "$log\verify.log"; Check 'verify helper'
-$base = docker run --rm -v "${root}:/src:ro" fennek-verify bash /src/verify-base.sh; Check 'base image signature'
+# 1. Base image signature (Universal Blue's pinned key) -> build FROM exactly the signed digest.
+$json = docker run --rm -v "$root\keys:/k:ro" ghcr.io/sigstore/cosign/cosign:v3.1.3 verify --key /k/ublue-cosign.pub $tag 2> "$log\verify.log"
+Check 'base image signature'
+$base = "ghcr.io/ublue-os/kinoite-main@" + ($json | ConvertFrom-Json)[0].critical.image.'docker-manifest-digest'
 "Base image (signature verified): $base"
-docker build --build-arg "BASE_IMAGE=$base" -f "$root\Containerfile" -t fennek:dev $root *> "$log\build.log"; Check 'image build'
-docker run --rm -v "$root\test.sh:/t.sh:ro" fennek:dev bash /t.sh; Check 'image tests'
 
-# bootc-image-builder reads podman storage, so copy the image there (dedupes unchanged layers).
-# Pipe through cmd: Windows PowerShell 5.1 corrupts binary data piped between native programs.
-cmd /c "docker save fennek:dev | docker run --rm -i --privileged -v fennek-podman:/var/lib/containers quay.io/podman/stable:latest podman load > `"$log\load.log`" 2>&1"; Check 'podman load'
-docker run --rm --privileged -v fennek-podman:/var/lib/containers quay.io/podman/stable:latest podman image prune -f *>> "$log\load.log"
+# 2. Build + test.
+Podman build --build-arg "BASE_IMAGE=$base" -f /src/Containerfile -t localhost/fennek:dev /src *> "$log\build.log"; Check 'image build'
+Podman run --rm -v /src/test.sh:/t.sh:ro localhost/fennek:dev bash /t.sh; Check 'image tests'
+Podman image prune -f *> $null
 
+# 3. Disk image straight from podman storage, then VHDX for Hyper-V.
 Remove-Item "$vm\qcow2", "$vm\manifest-qcow2.json" -Recurse -Force -ErrorAction SilentlyContinue
 docker run --rm --privileged --security-opt label=type:unconfined_t `
     --mount type=volume,src=fennek-podman,dst=/var/lib/containers/storage,volume-subpath=storage `
     -v "${vm}:/output" -v "$vm\config.toml:/config.toml:ro" `
-    quay.io/centos-bootc/bootc-image-builder:latest --type qcow2 --rootfs btrfs docker.io/library/fennek:dev *> "$log\bib.log"
+    quay.io/centos-bootc/bootc-image-builder:latest --type qcow2 --rootfs btrfs localhost/fennek:dev *> "$log\bib.log"
 Check 'disk build'
 
 docker run --rm -v "${vm}:/vm" alpine sh -c 'apk add -q qemu-img && qemu-img convert -O vhdx -o subformat=dynamic /vm/qcow2/disk.qcow2 /vm/fennek-next.vhdx && rm -r /vm/qcow2 /vm/manifest-qcow2.json'

@@ -6,6 +6,6 @@ FROM ${BASE_IMAGE}
 
 # One layer for everything we add: the build context is mounted, not copied.
 RUN --mount=type=bind,source=.,target=/ctx,ro \
-    cp -a /ctx/system_files/. / && \
+    cp -a --no-preserve=ownership /ctx/system_files/. / && \
     bash /ctx/build.sh /ctx/system_files && \
     bootc container lint
