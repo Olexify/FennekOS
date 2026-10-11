@@ -68,7 +68,10 @@ python3 - <<'EOF'
 import glob, pathlib
 d = pathlib.Path(glob.glob("/usr/lib*/qt6/qml/org/kde/desktop")[0])
 for name in ("ComboBox.qml", "SpinBox.qml", "DoubleSpinBox.qml"):
-    p = d / name; s = p.read_text()
+    p = d / name
+    if name == "DoubleSpinBox.qml" and not p.exists():   # newer KDE dropped it; the other two are required
+        continue
+    s = p.read_text()
     assert s.count("    wheelEnabled: true\n") == 1, f"{name} changed upstream: revisit the Fennek wheel patch"
     p.write_text(s.replace("    wheelEnabled: true\n", "    wheelEnabled: false  // Fennek OS: wheel scrolls the page\n"))
 p = d / "Slider.qml"; s = p.read_text()
