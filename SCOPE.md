@@ -147,10 +147,13 @@ variant), rebase to new Fedora twice a year. Proposal: build FROM ublue-os kinoi
 ## Build
 Everything stays on E:. Source: `E:\Projects\LexOS`. Docker data: `E:\Docker\WSL` (Docker Desktop disk image location).
 Big outputs: `E:\Fennek-build\` → `iso\`, `vm\`, `tmp\` (never inside the project folder).
+Build with **podman** (the base has ~256 layers; docker's overlay limit is ~127), FROM the signature-verified digest:
 ```bash
-docker build -f Containerfile -t fennek:dev .
-docker run --rm -v ./test.sh:/t.sh fennek:dev bash /t.sh
+base=$(bash verify-base.sh)          # cosign check with keys/ublue-cosign.pub → image@sha256:...
+podman build --build-arg BASE_IMAGE=$base -f Containerfile -t fennek:dev .
+podman run --rm -v ./test.sh:/t.sh:ro fennek:dev bash /t.sh
 ```
+On Windows, `vm-disk.ps1` does all of this with podman inside a Docker container.
 Test VM (Hyper-V). No pre-made user: the first-boot setup wizard creates the account (like a real install).
 - `vm-disk.ps1` (normal PowerShell): build + test image → `E:\Fennek-build\vm\fennek-next.vhdx`
 - `vm.ps1` (admin PowerShell): recreate the VM, swap in the new disk, boot.
@@ -158,7 +161,7 @@ Test VM (Hyper-V). No pre-made user: the first-boot setup wizard creates the acc
 Sandbox integration test (privileged container, downloads Proton once into volume `fennek-umu-test`):
 ```bash
 docker run --rm -v ./tests:/src:ro -v E:/Fennek-build/tmp:/out registry.fedoraproject.org/fedora:44 bash -c "dnf -y -q install mingw64-gcc && x86_64-w64-mingw32-gcc -O2 -static -o /out/probe.exe /src/probe.c"
-docker run --rm --privileged -v fennek-umu-test:/var/home -v E:/Fennek-build/tmp:/fixtures:ro -v ./tests/sandbox-test.sh:/t.sh:ro fennek:dev bash /t.sh
+podman run --rm --privileged -v fennek-umu-test:/var/home -v E:/Fennek-build/tmp:/fixtures:ro -v ./tests/sandbox-test.sh:/t.sh:ro fennek:dev bash /t.sh
 ```
 
 ## Status

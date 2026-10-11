@@ -13,7 +13,9 @@ function Podman { docker run --rm --privileged -v fennek-podman:/var/lib/contain
 # 1. Base image signature (Universal Blue's pinned key) -> build FROM exactly the signed digest.
 $json = docker run --rm -v "$root\keys:/k:ro" ghcr.io/sigstore/cosign/cosign:v3.1.3 verify --key /k/ublue-cosign.pub $tag 2> "$log\verify.log"
 Check 'base image signature'
-$base = "ghcr.io/ublue-os/kinoite-main@" + ($json | ConvertFrom-Json)[0].critical.image.'docker-manifest-digest'
+$digest = (($json -join "`n") | ConvertFrom-Json)[0].critical.image.'docker-manifest-digest'   # 5.1 gets lines
+if ($digest -notmatch '^sha256:[0-9a-f]{64}$') { throw "no signed digest in cosign output, see $log\verify.log" }
+$base = "ghcr.io/ublue-os/kinoite-main@$digest"
 "Base image (signature verified): $base"
 
 # 2. Build + test.

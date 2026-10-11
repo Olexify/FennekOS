@@ -17,9 +17,13 @@ Plans, decisions and status: [SCOPE.md](SCOPE.md).
 
 ## Build
 
+Base: Universal Blue's Kinoite, signature-verified and pinned by digest. Build with podman (the base has
+~256 layers, more than docker supports):
+
 ```bash
-docker build -f Containerfile -t fennek:dev .
-docker run --rm -v ./test.sh:/t.sh fennek:dev bash /t.sh
+base=$(bash verify-base.sh)
+podman build --build-arg BASE_IMAGE=$base -f Containerfile -t fennek:dev .
+podman run --rm -v ./test.sh:/t.sh:ro fennek:dev bash /t.sh
 ```
 
 Test VM on Windows (Hyper-V):
