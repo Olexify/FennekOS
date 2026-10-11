@@ -33,6 +33,13 @@ rm "$UMU_RPM" "$OSN_RPM"
 # when the runtime is already installed (fennek-run-exe allows update checks at most once a day).
 python3 - <<'EOF'
 import glob, os, pathlib
+def replace_file(p, text):
+    """New file + atomic rename, never an in-place write: in-place edits of (hardlinked) base-image files can
+    come out as old bytes padded with zeros on some overlay storage (seen with podman-in-docker)."""
+    tmp = p.with_name(p.name + ".fennek-new")
+    tmp.write_text(text)
+    os.chmod(tmp, p.stat().st_mode & 0o7777)
+    os.replace(tmp, p)
 p = pathlib.Path(glob.glob("/usr/lib/python3*/site-packages/umu/umu_runtime.py")[0])
 old = '    """Install or update the runtime for the current user."""\n'
 new = old + ('    # Fennek OS patch: no network at all when updates are off and the runtime is present.\n'
@@ -40,7 +47,7 @@ new = old + ('    # Fennek OS patch: no network at all when updates are off and 
              '        return\n')
 s = p.read_text()
 assert s.count(old) == 1, "umu changed upstream: revisit the Fennek OS no-telemetry patch"
-p.write_text(s.replace(old, new))
+replace_file(p, s.replace(old, new))
 for pyc in glob.glob(str(p.parent / "__pycache__" / "umu_runtime.*.pyc")):
     os.remove(pyc)
 EOF
@@ -54,7 +61,7 @@ sed -i -e 's/^NAME=.*/NAME="Fennek OS"/' \
 if rpm -q plasma-welcome-fedora >/dev/null; then dnf -y remove plasma-welcome-fedora; fi   # "Fedora loves KDE" pages
 # Wallpaper, generated at build time (no binaries in the repo).
 mkdir -p /usr/share/wallpapers/Fennek/contents/images
-magick -size 3840x2160 -define gradient:angle=135 gradient:'#0b1a33-#1e5bd8' \
+magick -size 3840x2160 -define gradient:angle=135 gradient:'#16122b-#c8743a' \
     /usr/share/wallpapers/Fennek/contents/images/3840x2160.png
 # Look-and-feel: Fedora's as base; our metadata + taskbar layout (from system_files) win.
 lnf=/usr/share/plasma/look-and-feel/org.fennek.desktop
@@ -65,7 +72,14 @@ sed -i 's/^LookAndFeelPackage=.*/LookAndFeelPackage=org.fennek.desktop/' \
 # Comfort: the mouse wheel scrolls the page; it never changes a dropdown, number box or slider you happen to
 # pass over (KDE's default). Values change by click, drag or keyboard only. Patches KDE's control style.
 python3 - <<'EOF'
-import glob, pathlib
+import glob, os, pathlib
+def replace_file(p, text):
+    """New file + atomic rename, never an in-place write: in-place edits of (hardlinked) base-image files can
+    come out as old bytes padded with zeros on some overlay storage (seen with podman-in-docker)."""
+    tmp = p.with_name(p.name + ".fennek-new")
+    tmp.write_text(text)
+    os.chmod(tmp, p.stat().st_mode & 0o7777)
+    os.replace(tmp, p)
 d = pathlib.Path(glob.glob("/usr/lib*/qt6/qml/org/kde/desktop")[0])
 for name in ("ComboBox.qml", "SpinBox.qml", "DoubleSpinBox.qml"):
     p = d / name
@@ -73,11 +87,11 @@ for name in ("ComboBox.qml", "SpinBox.qml", "DoubleSpinBox.qml"):
         continue
     s = p.read_text()
     assert s.count("    wheelEnabled: true\n") == 1, f"{name} changed upstream: revisit the Fennek wheel patch"
-    p.write_text(s.replace("    wheelEnabled: true\n", "    wheelEnabled: false  // Fennek OS: wheel scrolls the page\n"))
+    replace_file(p, s.replace("    wheelEnabled: true\n", "    wheelEnabled: false  // Fennek OS: wheel scrolls the page\n"))
 p = d / "Slider.qml"; s = p.read_text()
 old = "onWheel: wheel => {\n"
 assert s.count(old) == 1, "Slider.qml changed upstream: revisit the Fennek wheel patch"
-p.write_text(s.replace(old, old + "                wheel.accepted = false; return;  // Fennek OS: wheel scrolls the page\n"))
+replace_file(p, s.replace(old, old + "                wheel.accepted = false; return;  // Fennek OS: wheel scrolls the page\n"))
 EOF
 
 # Dolphin shows up as "File Explorer" (English name; translations keep their own).
@@ -115,13 +129,15 @@ systemctl --global enable fennek-search.service
 
 # zsh is the default shell for new users, with suggestions + highlighting + Fennek OS aliases.
 sed -i 's|^SHELL=.*|SHELL=/bin/zsh|' /etc/default/useradd
-cat >> /etc/zshrc <<'EOF'
+# New file + rename, not an in-place append (see replace_file above).
+{ cat /etc/zshrc; cat <<'EOF'
 
 # Fennek OS
 source /etc/profile.d/fennek-aliases.sh
 source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 EOF
+} > /etc/zshrc.fennek-new && chmod 644 /etc/zshrc.fennek-new && mv /etc/zshrc.fennek-new /etc/zshrc
 
 # No telemetry: Fedora's weekly anonymous "countme" install counting (rpm-ostree timer + repo flag).
 systemctl mask rpm-ostree-countme.timer rpm-ostree-countme.service

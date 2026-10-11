@@ -18,6 +18,8 @@ grep -q '^NAME="Fennek OS"' /usr/lib/os-release                 || fail "os-rele
 grep -q '^ID=fedora' /usr/lib/os-release                      || fail "os-release id must stay fedora"
 ! rpm -q plasma-welcome-fedora >/dev/null                     || fail "fedora welcome pages"
 [ -s /usr/share/wallpapers/Fennek/contents/images/3840x2160.png ] || fail "wallpaper"
+[ "$(magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.png -crop 1x1+3839+2159 -format '%[fx:r>b]' info:)" = 1 ] \
+                                                              || fail "wallpaper isn't the warm dusk gradient"
 grep -q '^Image=Fennek' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults || fail "lnf wallpaper"
 grep -q 'panel.floating = false' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "taskbar layout"
 grep -q '^LookAndFeelPackage=org.fennek.desktop' /usr/share/kde-settings/kde-profile/default/xdg/kdeglobals || fail "default lnf"
@@ -71,6 +73,9 @@ grep -q '^ViewMode=1' /etc/skel/.local/share/dolphin/view_properties/global/.dir
 q=$(ls -d /usr/lib*/qt6/qml/org/kde/desktop | head -1)
 grep -q "wheelEnabled: false  // Fennek" "$q/ComboBox.qml" && grep -q "wheelEnabled: false  // Fennek" "$q/SpinBox.qml" \
     && grep -q "wheel.accepted = false; return;  // Fennek" "$q/Slider.qml" || fail "mouse-wheel comfort patch"
+for f in "$q/ComboBox.qml" "$q/SpinBox.qml" "$q/Slider.qml" /usr/lib/python3*/site-packages/umu/umu_runtime.py /etc/zshrc; do
+    [ "$(tr -d '\000' < "$f" | wc -c)" = "$(wc -c < "$f")" ] || fail "$f has zero bytes (broken in-place edit)"
+done
 id fsearch >/dev/null 2>&1 || useradd -m fsearch >/dev/null 2>&1
 su fsearch -c "/usr/libexec/fennek-search --selftest" >/dev/null || fail "search selftest"
 [ -L /etc/systemd/user/graphical-session.target.wants/fennek-search.service ] || fail "search service not enabled"
