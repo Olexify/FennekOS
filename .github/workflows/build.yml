@@ -1,0 +1,23 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # The Kinoite base is ~11 GB; the default runner has too little free disk.
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache && df -h /
+
+      - name: Build image
+        run: docker build -f Containerfile -t fennek:ci .
+
+      - name: Test image
+        run: docker run --rm -v "$PWD/test.sh:/t.sh:ro" fennek:ci bash /t.sh
