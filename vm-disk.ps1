@@ -22,12 +22,25 @@ if ($digest -notmatch '^sha256:[0-9a-f]{64}$') { throw "no signed digest in cosi
 $base = "ghcr.io/ublue-os/kinoite-main@$digest"
 "Base image (signature verified): $base"
 
-# 2. Download the base (12 GB, slow links: podman retries failed layers; a few whole-pull retries on top).
-for ($i = 1; $i -le 5; $i++) { Podman "pull --retry 10 $base" "$log\pull.log"; if ($LASTEXITCODE -eq 0) { break }; "pull attempt $i failed, retrying" }
-Check 'base image download'
+# 2. Download the base (12 GB) resumably: skopeo writes layers into an OCI folder kept in the podman volume,
+#    so a retry or even a PC restart reuses finished layers. By digest, so every layer is checked against it.
+#    Already loaded this exact digest earlier? Then nothing to download.
+$have = cmd /c "docker run --rm -v fennek-podman:/store alpine cat /store/base-digest 2>nul"
+if ($have -ne $digest) {
+    for ($i = 1; $i -le 20; $i++) {
+        cmd /c "docker run --rm -v fennek-podman:/store quay.io/skopeo/stable:latest copy --retry-times 10 docker://$base oci:/store/base-oci:base > `"$log\pull-$i.log`" 2>&1"
+        if ($LASTEXITCODE -eq 0) { break }; "download attempt $i stopped (see pull-$i.log), resuming"
+    }
+    Check 'base image download'
+    Podman "pull oci:/var/lib/containers/base-oci:base" "$log\load.log"; Check 'base image load'
+    Podman "tag $((Get-Content "$log\load.log" | Select-Object -Last 1).Trim()) localhost/fennek-base:verified" "$log\tag.log"; Check 'base image tag'
+    # Loaded: drop the 12 GB download folder, remember which digest we have.
+    cmd /c "docker run --rm -v fennek-podman:/store alpine sh -c `"rm -rf /store/base-oci && echo $digest > /store/base-digest`""
+}
+$base = 'localhost/fennek-base:verified'
 
 # 3. Build + test.
-Podman "build --build-arg BASE_IMAGE=$base -f /src/Containerfile -t localhost/fennek:dev /src" "$log\build.log"; Check 'image build'
+Podman "build --pull=never --build-arg BASE_IMAGE=$base -f /src/Containerfile -t localhost/fennek:dev /src" "$log\build.log"; Check 'image build'
 Podman "run --rm -v /src/test.sh:/t.sh:ro localhost/fennek:dev bash /t.sh" "$log\test.log"
 Get-Content "$log\test.log" -Tail 3; Check 'image tests'
 Podman "image prune -f" "$log\prune.log"
