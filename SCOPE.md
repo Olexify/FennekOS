@@ -127,7 +127,7 @@ Big outputs: `E:\Fennek-build\` → `iso\`, `vm\`, `tmp\` (never inside the proj
 docker build -f Containerfile -t fennek:dev .
 docker run --rm -v ./test.sh:/t.sh fennek:dev bash /t.sh
 ```
-Test VM (Hyper-V). VM login lives in `E:\Fennek-build\vm\config.toml` (test-only).
+Test VM (Hyper-V). No pre-made user: the first-boot setup wizard creates the account (like a real install).
 - `vm-disk.ps1` (normal PowerShell): build + test image → `E:\Fennek-build\vm\fennek-next.vhdx`
 - `vm.ps1` (admin PowerShell): recreate the VM, swap in the new disk, boot.
 
@@ -152,6 +152,11 @@ docker run --rm --privileged -v fennek-umu-test:/var/home -v E:/Fennek-build/tmp
 - To do (no-telemetry promise): PRIVACY.md listing every outbound connection. Known so far: VirusTotal (hash +
   user's key, only on click), umu → repo.steampowered.com + GitHub update checks (fixed: patched umu + fennek-run-exe
   allow it at most once a day for trusted runs, never for sandboxed ones; verified with networking off), GitHub on first Proton download, Fedora update checks, ClamAV definitions (database.clamav.net, daily + after boot).
+
+## Comfort fixes (user feedback)
+- Mouse wheel over sliders/dropdowns/spin boxes must scroll the page, not change the value (KDE default does).
+  Values change only by click/drag/keyboard. Needs a patch in KDE's widget style (qqc2-desktop-style / Breeze).
+- VM-only: 1920x1080 VM screen is bigger than the host window; real hardware uses native resolution + auto scaling.
 
 ## Open questions
 - Hibernation on critical battery vs Secure Boot lockdown.

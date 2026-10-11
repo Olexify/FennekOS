@@ -62,4 +62,6 @@ command -v opensnitchd >/dev/null                            || fail "opensnitch
 ! systemctl is-enabled -q opensnitch.service                  || fail "opensnitch must start only when something is blocked"
 fennek-firewall --selftest >/dev/null                         || fail "firewall selftest"
 grep -q '^Exec=fennek-firewall block %f' /usr/share/kio/servicemenus/fennek-firewall.desktop || fail "firewall menu"
+[ -f /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/metadata.json ] || fail "Win10 start menu (Tiled Menu)"
+grep -q 'com.github.zren.tiledmenu' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "start menu in taskbar"
 echo "all checks passed"

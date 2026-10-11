@@ -4,9 +4,13 @@ panel.location = "bottom"
 panel.floating = false
 panel.height = 2 * Math.ceil(gridUnit * 2.5 / 2)
 
-var start = panel.addWidget("org.kde.plasma.kickoff")
+// Windows 10 Start menu (Tiled Menu): left rail, A-Z list with "Recently added", tile groups.
+var start = panel.addWidget("com.github.zren.tiledmenu")
 start.currentConfigGroup = ["General"]
 start.writeConfig("icon", "fennek")
+start.writeConfig("sidebarShortcuts", ["xdg:DOCUMENTS", "xdg:DOWNLOAD", "xdg:PICTURES", "xdg:VIDEOS", "systemsettings.desktop"])
+start.writeConfig("favoriteApps", ["preferred://browser", "org.kde.dolphin.desktop", "systemsettings.desktop",
+                                   "org.kde.konsole.desktop", "org.kde.discover.desktop"])
 
 panel.addWidget("org.kde.plasma.icontasks")
 panel.addWidget("org.kde.plasma.marginsseparator")

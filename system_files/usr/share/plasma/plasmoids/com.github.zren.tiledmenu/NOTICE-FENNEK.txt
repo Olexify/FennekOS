@@ -1,0 +1,4 @@
+Tiled Menu (Windows 10 style start menu) by Chris Holland (Zren)
+Source:  https://github.com/Zren/plasma-applet-tiledmenu
+Commit:  21c85405 (v46 + Plasma 6 favorites fix, 2025-10-12)
+License: GPL-2.0-or-later (see metadata.json). Bundled unmodified by Fennek OS.
