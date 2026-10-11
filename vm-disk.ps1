@@ -8,7 +8,11 @@ $vm   = 'E:\Fennek-build\vm'
 $log  = 'E:\Fennek-build\tmp'
 $tag  = 'ghcr.io/ublue-os/kinoite-main:44'
 function Check($what) { if ($LASTEXITCODE -ne 0) { throw "$what failed (exit $LASTEXITCODE), see $log" } }
-function Podman { docker run --rm --privileged -v fennek-podman:/var/lib/containers -v "${root}:/src:ro" quay.io/podman/stable:latest podman @args }
+# Through cmd: Windows PowerShell 5.1 mangles long-running native commands whose output is redirected
+# (it once reported success for a build that died mid-download).
+function Podman([string]$podmanArgs, [string]$logFile) {
+    cmd /c "docker run --rm --privileged -v fennek-podman:/var/lib/containers -v `"${root}:/src:ro`" quay.io/podman/stable:latest podman $podmanArgs > `"$logFile`" 2>&1"
+}
 
 # 1. Base image signature (Universal Blue's pinned key) -> build FROM exactly the signed digest.
 $json = docker run --rm -v "$root\keys:/k:ro" ghcr.io/sigstore/cosign/cosign:v3.1.3 verify --key /k/ublue-cosign.pub $tag 2> "$log\verify.log"
@@ -18,12 +22,17 @@ if ($digest -notmatch '^sha256:[0-9a-f]{64}$') { throw "no signed digest in cosi
 $base = "ghcr.io/ublue-os/kinoite-main@$digest"
 "Base image (signature verified): $base"
 
-# 2. Build + test.
-Podman build --build-arg "BASE_IMAGE=$base" -f /src/Containerfile -t localhost/fennek:dev /src *> "$log\build.log"; Check 'image build'
-Podman run --rm -v /src/test.sh:/t.sh:ro localhost/fennek:dev bash /t.sh; Check 'image tests'
-Podman image prune -f *> $null
+# 2. Download the base (12 GB, slow links: podman retries failed layers; a few whole-pull retries on top).
+for ($i = 1; $i -le 5; $i++) { Podman "pull --retry 10 $base" "$log\pull.log"; if ($LASTEXITCODE -eq 0) { break }; "pull attempt $i failed, retrying" }
+Check 'base image download'
 
-# 3. Disk image straight from podman storage, then VHDX for Hyper-V.
+# 3. Build + test.
+Podman "build --build-arg BASE_IMAGE=$base -f /src/Containerfile -t localhost/fennek:dev /src" "$log\build.log"; Check 'image build'
+Podman "run --rm -v /src/test.sh:/t.sh:ro localhost/fennek:dev bash /t.sh" "$log\test.log"
+Get-Content "$log\test.log" -Tail 3; Check 'image tests'
+Podman "image prune -f" "$log\prune.log"
+
+# 4. Disk image straight from podman storage, then VHDX for Hyper-V.
 Remove-Item "$vm\qcow2", "$vm\manifest-qcow2.json" -Recurse -Force -ErrorAction SilentlyContinue
 docker run --rm --privileged --security-opt label=type:unconfined_t `
     --mount type=volume,src=fennek-podman,dst=/var/lib/containers/storage,volume-subpath=storage `
