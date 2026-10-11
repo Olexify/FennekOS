@@ -97,6 +97,10 @@ source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 EOF
 
+# No telemetry: Fedora's weekly anonymous "countme" install counting (rpm-ostree timer + repo flag).
+systemctl mask rpm-ostree-countme.timer rpm-ostree-countme.service
+sed -i 's/^countme=1/countme=0/' /etc/yum.repos.d/*.repo
+
 # Updates download + stage in background, apply on next normal reboot. Never forced.
 systemctl enable rpm-ostreed-automatic.timer
 

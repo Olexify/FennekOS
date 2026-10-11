@@ -64,4 +64,6 @@ fennek-firewall --selftest >/dev/null                         || fail "firewall 
 grep -q '^Exec=fennek-firewall block %f' /usr/share/kio/servicemenus/fennek-firewall.desktop || fail "firewall menu"
 [ -f /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/metadata.json ] || fail "Win10 start menu (Tiled Menu)"
 grep -q 'com.github.zren.tiledmenu' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "start menu in taskbar"
+[ "$(systemctl is-enabled rpm-ostree-countme.timer 2>&1)" = masked ] || fail "countme telemetry timer"
+! grep -q '^countme=1' /etc/yum.repos.d/*.repo                || fail "countme in repos"
 echo "all checks passed"

@@ -81,6 +81,17 @@ OpenSnitch daemon + our own friendly UI: per-app allow/block, ask-or-silent mode
 - UI: Win-key popup (apps, settings, files) + full Everything-style window with sortable columns.
 - File contents search: optional, off by default (battery). KDE Baloo disabled.
 
+## File Explorer (Dolphin, configured to behave like Windows 10)
+- Defaults: opens on a "This PC"-style page (drives + user folders), Details view with Name / Date modified /
+  Type / Size, folders first, status bar, Quick access = pinned Places, breadcrumb that turns editable on click.
+- Explorer shortcuts: Backspace = back, Alt+Up = up, F2 rename, Ctrl+F search, Ctrl+Shift+N new folder,
+  Alt+Enter properties, Win+E opens it.
+- Name in menus: "File Explorer".
+- Buffs (Dolphin already has, keep visible): tabs, split view, terminal panel, batch rename, folder sizes,
+  previews, per-folder view memory, group-by.
+- Sorting: name (natural) / date / type / size / extension, folders first, group by; one-click presets.
+- Fast search: wired to the Everything-style index (see Search), filters as chips.
+
 ## Terminal
 - Linux commands underneath (zsh with autosuggestions + syntax highlighting; bash snippets from the web work).
 - Windows-familiar layer: `dir cls copy move del type where ipconfig tasklist taskkill` work as aliases,
