@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.fennek.Search
+Exec=/usr/libexec/fennek-search
+SystemdService=fennek-search.service

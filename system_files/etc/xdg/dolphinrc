@@ -1,0 +1,7 @@
+# Fennek OS: File Explorer (Dolphin) defaults that feel like Windows 10.
+[General]
+ShowStatusBar=FullWidth
+SortingChoice=NaturalSorting
+RememberOpenedTabs=false
+GlobalViewProps=true
+ShowToolTips=true

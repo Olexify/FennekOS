@@ -1,0 +1,14 @@
+[Unit]
+Description=Instant file search index
+PartOf=graphical-session.target
+
+[Service]
+Type=dbus
+BusName=org.fennek.Search
+ExecStart=/usr/libexec/fennek-search
+Restart=on-failure
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=graphical-session.target

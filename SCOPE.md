@@ -123,12 +123,20 @@ Off until chosen: local (llama.cpp, small model) or cloud (user's own key). Acts
 4. AI assistant
 5. Own Rust shell (only if Plasma limits us)
 
+## Base choice (reviewed 2026-10-11)
+Fedora atomic/bootc beats Ubuntu/Debian on: current kernels (Panther Lake needs ≥6.19), atomic updates + rollback,
+current Plasma, proven stack (Bazzite/Aurora). Proton is identical on any base. Gaps: countme telemetry (masked),
+H.264/HEVC hardware decode disabled in Fedora mesa (battery! → RPM Fusion freeworld drivers), NVIDIA (separate
+variant), rebase to new Fedora twice a year. Proposal: build FROM ublue-os kinoite-main (covers codecs + NVIDIA).
+
 ## Reference laptops (research 2026-10-11, pending decision)
 - **Primary candidate:** Lenovo IdeaPad Pro 5i Gen 11 16", Panther Lake, 99.9 Wh, **no dGPU**. Measured 30h 34m
   (web loop, 150 nits, Windows). Linux status unverified; risks: IPU 7.5 webcam, SoundWire audio.
 - **Secondary / control:** Framework Laptop 13 Pro, Panther Lake, 74 Wh, Ubuntu-certified, from $1,199 DIY.
 - Fallbacks: Dell XPS 14/16 2026 (70 Wh, 1.5 W idle, Linux audio/webcam issues), ThinkPad T16 Gen 4 (86 Wh, Lunar Lake).
 - Snapdragon X / X2: not usable on Linux yet (no power metrics). Revisit mid-2027.
+- ARM plan (when ready): aarch64 build of the same image + FEX (x86→ARM translation, Valve-funded, in Fedora via
+  Asahi) + ARM64 Proton. Same stack Valve uses on the Steam Frame; umu-launcher already ships aarch64 RPMs.
 - Need kernel ≥ 6.19; pin known-good kernels per reference device. Measure s0ix ourselves (turbostat, S0ixSelftestTool).
 
 ## Build
@@ -166,7 +174,8 @@ docker run --rm --privileged -v fennek-umu-test:/var/home -v E:/Fennek-build/tmp
 
 ## Comfort fixes (user feedback)
 - Mouse wheel over sliders/dropdowns/spin boxes must scroll the page, not change the value (KDE default does).
-  Values change only by click/drag/keyboard. Needs a patch in KDE's widget style (qqc2-desktop-style / Breeze).
+  Done for QML apps (System Settings etc.): build-time patch of qqc2-desktop-style (ComboBox/SpinBox/
+  DoubleSpinBox wheelEnabled false, Slider wheel passes through). To do: QtWidgets apps (Breeze, C++).
 - VM-only: 1920x1080 VM screen is bigger than the host window; real hardware uses native resolution + auto scaling.
 
 ## Open questions

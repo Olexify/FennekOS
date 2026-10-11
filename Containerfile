@@ -1,5 +1,6 @@
-# Fennek OS base image: Fedora Kinoite (KDE, atomic) + Fennek OS defaults.
-FROM quay.io/fedora/fedora-kinoite:44
+# Fennek OS base image: Universal Blue's Kinoite (Fedora KDE atomic + full codecs, hardware video decode)
+# + Fennek OS defaults.
+FROM ghcr.io/ublue-os/kinoite-main:44
 
 COPY system_files/ /
 # Second copy only as a file list, so build.sh can fix permissions (a Windows checkout has none).

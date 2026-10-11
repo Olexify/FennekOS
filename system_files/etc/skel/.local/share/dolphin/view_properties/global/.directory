@@ -1,0 +1,7 @@
+[Dolphin]
+Version=4
+ViewMode=1
+SortRole=text
+SortFoldersFirst=true
+VisibleRoles=Details_text,Details_modificationtime,Details_type,Details_size
+PreviewsShown=true

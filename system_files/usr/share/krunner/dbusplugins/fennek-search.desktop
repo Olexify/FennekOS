@@ -1,0 +1,18 @@
+[Desktop Entry]
+Name=Files (instant)
+Comment=Instant file search across your home and drives (Fennek OS)
+X-KDE-ServiceTypes=Plasma/Runner
+Type=Service
+Icon=system-search
+X-KDE-PluginInfo-Author=Fennek OS
+X-KDE-PluginInfo-Name=fennek-search
+X-KDE-PluginInfo-Version=1.0
+X-KDE-PluginInfo-License=GPL
+X-KDE-PluginInfo-EnabledByDefault=true
+X-Plasma-API=DBus
+X-Plasma-DBusRunner-Service=org.fennek.Search
+X-Plasma-DBusRunner-Path=/runner
+X-Plasma-Request-Actions-Once=true
+X-Plasma-Runner-Min-Letter-Count=2
+X-Plasma-Runner-Syntaxes=:q:;:q: ext:pdf;:q: type:image;:q: path:folder
+X-Plasma-Runner-Syntax-Descriptions=Finds files whose name contains all words of :q:;Only files with that extension;Only images (also video, audio, doc, archive, exe, folder);Only inside folders matching the path

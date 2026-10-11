@@ -66,4 +66,13 @@ grep -q '^Exec=fennek-firewall block %f' /usr/share/kio/servicemenus/fennek-fire
 grep -q 'com.github.zren.tiledmenu' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "start menu in taskbar"
 [ "$(systemctl is-enabled rpm-ostree-countme.timer 2>&1)" = masked ] || fail "countme telemetry timer"
 ! grep -q '^countme=1' /etc/yum.repos.d/*.repo                || fail "countme in repos"
+grep -q '^Name=File Explorer$' /usr/share/applications/org.kde.dolphin.desktop || fail "File Explorer name"
+grep -q '^ViewMode=1' /etc/skel/.local/share/dolphin/view_properties/global/.directory || fail "Explorer details view"
+q=$(ls -d /usr/lib*/qt6/qml/org/kde/desktop | head -1)
+grep -q "wheelEnabled: false  // Fennek" "$q/ComboBox.qml" && grep -q "wheelEnabled: false  // Fennek" "$q/SpinBox.qml" \
+    && grep -q "wheel.accepted = false; return;  // Fennek" "$q/Slider.qml" || fail "mouse-wheel comfort patch"
+id fsearch >/dev/null 2>&1 || useradd -m fsearch >/dev/null 2>&1
+su fsearch -c "/usr/libexec/fennek-search --selftest" >/dev/null || fail "search selftest"
+[ -L /etc/systemd/user/graphical-session.target.wants/fennek-search.service ] || fail "search service not enabled"
+grep -q '^X-Plasma-DBusRunner-Service=org.fennek.Search' /usr/share/krunner/dbusplugins/fennek-search.desktop || fail "search runner"
 echo "all checks passed"

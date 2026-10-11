@@ -50,7 +50,7 @@ sed -i -e 's/^NAME=.*/NAME="Fennek OS"/' \
        -e 's/^PRETTY_NAME=.*/PRETTY_NAME="Fennek OS (Fedora 44 base)"/' \
        -e 's/^LOGO=.*/LOGO=fennek/' \
        -e 's/^DEFAULT_HOSTNAME=.*/DEFAULT_HOSTNAME="fennek"/' /usr/lib/os-release
-dnf -y remove plasma-welcome-fedora   # "Fedora loves KDE" pages
+if rpm -q plasma-welcome-fedora >/dev/null; then dnf -y remove plasma-welcome-fedora; fi   # "Fedora loves KDE" pages
 # Wallpaper, generated at build time (no binaries in the repo).
 mkdir -p /usr/share/wallpapers/Fennek/contents/images
 magick -size 3840x2160 -define gradient:angle=135 gradient:'#0b1a33-#1e5bd8' \
@@ -61,6 +61,23 @@ cp -an /usr/share/plasma/look-and-feel/org.fedoraproject.fedora.desktop/contents
 sed -i 's/^Image=.*/Image=Fennek/' "$lnf/contents/defaults"
 sed -i 's/^LookAndFeelPackage=.*/LookAndFeelPackage=org.fennek.desktop/' \
     /usr/share/kde-settings/kde-profile/default/xdg/kdeglobals
+# Comfort: the mouse wheel scrolls the page; it never changes a dropdown, number box or slider you happen to
+# pass over (KDE's default). Values change by click, drag or keyboard only. Patches KDE's control style.
+python3 - <<'EOF'
+import glob, pathlib
+d = pathlib.Path(glob.glob("/usr/lib*/qt6/qml/org/kde/desktop")[0])
+for name in ("ComboBox.qml", "SpinBox.qml", "DoubleSpinBox.qml"):
+    p = d / name; s = p.read_text()
+    assert s.count("    wheelEnabled: true\n") == 1, f"{name} changed upstream: revisit the Fennek wheel patch"
+    p.write_text(s.replace("    wheelEnabled: true\n", "    wheelEnabled: false  // Fennek OS: wheel scrolls the page\n"))
+p = d / "Slider.qml"; s = p.read_text()
+old = "onWheel: wheel => {\n"
+assert s.count(old) == 1, "Slider.qml changed upstream: revisit the Fennek wheel patch"
+p.write_text(s.replace(old, old + "                wheel.accepted = false; return;  // Fennek OS: wheel scrolls the page\n"))
+EOF
+
+# Dolphin shows up as "File Explorer" (English name; translations keep their own).
+sed -i 's/^Name=Dolphin$/Name=File Explorer/' /usr/share/applications/org.kde.dolphin.desktop
 # Login screen wallpaper.
 sed -i 's|/usr/share/wallpapers/Fedora/|/usr/share/wallpapers/Fennek/|g' /usr/lib/plasmalogin/defaults.conf
 # Boot splash watermark (bgrt theme reads spinner's images). rm first: the file is hardlinked.
@@ -86,6 +103,9 @@ sed -i 's/^DefaultZone=.*/DefaultZone=FennekOS/' /etc/firewalld/firewalld.conf
 # Antivirus: daily definitions, every user's Downloads scanned on arrival.
 systemctl enable clamav-freshclam-once.timer
 systemctl --global enable fennek-download-guard.service
+
+# Instant file search (Everything-style), feeds the Start menu / KRunner.
+systemctl --global enable fennek-search.service
 
 # zsh is the default shell for new users, with suggestions + highlighting + Fennek OS aliases.
 sed -i 's|^SHELL=.*|SHELL=/bin/zsh|' /etc/default/useradd
