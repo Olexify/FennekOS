@@ -13,21 +13,36 @@ export XDG_RUNTIME_DIR=/tmp/xdg-tester; mkdir -p -m 700 "$XDG_RUNTIME_DIR"
 win() { echo "Z:$(echo "$1" | tr / '\\')"; }   # Linux path -> Wine path
 echo "top secret" > ~/secret.txt
 mkdir -p ~/Downloads && cp /fixtures/probe.exe ~/Downloads/probe.exe
-rm -f ~/Sandbox/probe/result.txt ~/trusted-result.txt
+rm -rf ~/Sandbox ~/trusted-result.txt ~/.config/fennek/offline-exes
+id8=$(sha256sum ~/Downloads/probe.exe | cut -c1-8)   # each program gets ~/Sandbox/<name>-<id8>
 
-# Sandboxed: its $HOME/Shared is the real ~/Sandbox/probe; the real ~/secret.txt must be invisible.
+# Sandboxed: its $HOME/Shared is the real ~/Sandbox/probe-<id8>; the real ~/secret.txt must be invisible.
 fennek-run-exe --sandbox ~/Downloads/probe.exe "$(win "$HOME/Shared/result.txt")" "$(win "$HOME/secret.txt")" >/tmp/sandboxed.log 2>&1 || true
 fennek-run-exe --trusted ~/Downloads/probe.exe "$(win "$HOME/trusted-result.txt")" "$(win "$HOME/secret.txt")" >/tmp/trusted.log 2>&1 || true
+box=~/Sandbox/probe-$id8
 
-echo "== sandboxed =="; cat ~/Sandbox/probe/result.txt 2>/dev/null || { echo "FAIL: sandboxed run wrote no result"; tail -20 /tmp/sandboxed.log; exit 1; }
-echo "== trusted ==";   cat ~/trusted-result.txt 2>/dev/null     || { echo "FAIL: trusted run wrote no result"; tail -20 /tmp/trusted.log; exit 1; }
-grep -q "^BLOCKED " ~/Sandbox/probe/result.txt || { echo "FAIL: sandboxed program could read the secret"; exit 1; }
-grep -q "^OK " ~/trusted-result.txt           || { echo "FAIL: trusted program couldn't read the secret"; exit 1; }
+echo "== sandboxed =="; cat "$box/result.txt" 2>/dev/null || { echo "FAIL: sandboxed run wrote no result"; tail -20 /tmp/sandboxed.log; exit 1; }
+echo "== trusted ==";   cat ~/trusted-result.txt 2>/dev/null || { echo "FAIL: trusted run wrote no result"; tail -20 /tmp/trusted.log; exit 1; }
+grep -q "^BLOCKED " "$box/result.txt" || { echo "FAIL: sandboxed program could read the secret"; exit 1; }
+grep -q "^OK " ~/trusted-result.txt   || { echo "FAIL: trusted program couldn't read the secret"; exit 1; }
+
+# A program placed inside its own folder runs from there (portable apps that need their files).
+cp ~/Downloads/probe.exe "$box/probe.exe"; rm -f "$box/from-shared.txt"
+fennek-run-exe --sandbox "$box/probe.exe" "$(win "$HOME/Shared/from-shared.txt")" >/tmp/inbox.log 2>&1 || true
+[ -e "$box/from-shared.txt" ] || { echo "FAIL: program in its own folder didn't run"; tail -20 /tmp/inbox.log; exit 1; }
+
+# Firewall-blocked sandboxed program: runs with no network at all (no pasta) and still works.
+mkdir -p ~/.config/fennek && sha256sum ~/Downloads/probe.exe | cut -d' ' -f1 > ~/.config/fennek/offline-exes
+rm -f "$box/offline.txt"
+fennek-run-exe --sandbox ~/Downloads/probe.exe "$(win "$HOME/Shared/offline.txt")" >/tmp/offline.log 2>&1 || true
+[ -e "$box/offline.txt" ] || { echo "FAIL: offline (firewall-blocked) sandbox didn't run"; tail -20 /tmp/offline.log; exit 1; }
+rm ~/.config/fennek/offline-exes
+
 # Regression: a download named '...exe' once made "Shared" = ~/Sandbox/.. = the real home (sandbox escape).
 cp ~/Downloads/probe.exe ~/Downloads/...exe; rm -f ~/escaped.txt
 fennek-run-exe --sandbox ~/Downloads/...exe "$(win "$HOME/Shared/escaped.txt")" >/tmp/dots.log 2>&1 || true
-[ ! -e ~/escaped.txt ]                    || { echo "FAIL: '...exe' wrote into the real home"; exit 1; }
-[ -e ~/Sandbox/program/escaped.txt ]      || { echo "FAIL: '...exe' didn't run in ~/Sandbox/program"; tail -20 /tmp/dots.log; exit 1; }
+[ ! -e ~/escaped.txt ]                       || { echo "FAIL: '...exe' wrote into the real home"; exit 1; }
+[ -e ~/Sandbox/program-$id8/escaped.txt ]    || { echo "FAIL: '...exe' didn't run in ~/Sandbox/program-$id8"; tail -20 /tmp/dots.log; exit 1; }
 # Network, with the launcher's exact pasta flags: internet + DNS work, host-loopback services don't.
 python3 -m http.server 8765 --bind 127.0.0.1 >/dev/null 2>&1 & srv=$!
 sleep 1

@@ -9,12 +9,24 @@ curl -fsSL -o "$UMU_RPM" \
     "https://github.com/Open-Wine-Components/umu-launcher/releases/download/${UMU_VER}/umu-launcher-${UMU_VER}.fc44.x86_64.rpm"
 echo "${UMU_SHA256}  ${UMU_RPM}" | sha256sum -c -
 
+# OpenSnitch (per-app firewall engine) isn't in Fedora repos either: pinned upstream RPM, checksum-verified.
+OSN_VER=1.8.0
+OSN_SHA256=e06e9119daf764e56455b61c319e496274c0274bb53bb94a0ff1ab72967fea7d
+OSN_RPM=/tmp/opensnitch.rpm
+curl -fsSL -o "$OSN_RPM" \
+    "https://github.com/evilsocket/opensnitch/releases/download/v${OSN_VER}/opensnitch-${OSN_VER}-1.x86_64.rpm"
+echo "${OSN_SHA256}  ${OSN_RPM}" | sha256sum -c -
+
 dnf -y install \
+    libnetfilter_queue \
     zsh zsh-autosuggestions zsh-syntax-highlighting \
     snapper \
     clamav clamav-freshclam inotify-tools \
     "$UMU_RPM"
-rm "$UMU_RPM"
+# Its scripts only enable+start the daemon (and fail in a container); we want it off until something is
+# blocked, so install without them. Its one dependency came with the main install above.
+dnf -y install --setopt=tsflags=noscripts "$OSN_RPM"
+rm "$UMU_RPM" "$OSN_RPM"
 
 # No-telemetry: umu contacts Valve on every launch even with UMU_RUNTIME_UPDATE=0. Make "0" fully offline
 # when the runtime is already installed (fennek-run-exe allows update checks at most once a day).
@@ -67,6 +79,9 @@ chmod 755 /usr/bin/fennek-* /usr/libexec/fennek-*
 
 # Hourly home snapshots (ransomware undo), set up on first boot.
 systemctl enable fennek-home-snapshots.service snapper-timeline.timer snapper-cleanup.timer
+
+# Firewall: incoming blocked except what the desktop needs (Fedora's default zone opens ports 1025-65535).
+sed -i 's/^DefaultZone=.*/DefaultZone=FennekOS/' /etc/firewalld/firewalld.conf
 
 # Antivirus: daily definitions, every user's Downloads scanned on arrival.
 systemctl enable clamav-freshclam-once.timer

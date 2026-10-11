@@ -65,6 +65,11 @@ A comfy, Windows-10-like, no-telemetry, very secure Linux OS with best-in-class 
 Not in Fedora repos: upstream RPM v1.8.0 (pin + sha256, like umu): daemon
 `e06e9119daf764e56455b61c319e496274c0274bb53bb94a0ff1ab72967fea7d`, needs only libnetfilter_queue; rules = JSON in
 /etc/opensnitchd/rules. Upstream UI (~50 MB PyQt6 + pip, prompts on every connection) → don't ship; build our own.
+**v1 done:** default zone `FennekOS` (in: dhcpv6, mdns, kdeconnect only; Fedora's default opened 1025-65535) and
+`FennekOS-Public` (in: dhcpv6 only) to pick per Wi-Fi network. `fennek-firewall block|allow|list PROGRAM` +
+Dolphin right-click → Firewall: OpenSnitch reject rule (native by path, Windows by .exe in command line);
+sandboxed .exe → no network namespace at all. opensnitchd runs only while ≥1 program is blocked.
+Verified: blocked curl can't connect, python can. Next: GUI with live connections + Process Explorer.
 OpenSnitch daemon + our own friendly UI: per-app allow/block, ask-or-silent modes, network profiles
 (Home / Public / Offline), DNS tracker blocking, temporary rules, live connection view.
 

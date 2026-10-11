@@ -1,0 +1,131 @@
+#!/usr/bin/python3
+"""Block or allow a program's internet access (Fennek OS firewall, OpenSnitch engine).
+
+Usage: fennek-firewall block PROGRAM    PROGRAM = path, command name (firefox) or a Windows .exe
+       fennek-firewall allow PROGRAM
+       fennek-firewall list
+       fennek-firewall --selftest
+
+Native programs and trusted Windows programs get an OpenSnitch rule (connections are rejected).
+Sandboxed Windows programs simply get no network at all (their traffic would otherwise leave via pasta).
+The engine (opensnitchd) only runs while at least one program is blocked: no cost when unused.
+"""
+import hashlib, json, os, re, shutil, subprocess, sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+RULES = Path("/etc/opensnitchd/rules")
+PREFIX = "fennek-block-"
+OFFLINE = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "fennek" / "offline-exes"
+GUI = bool(os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY"))
+
+
+def tell(text):
+    if GUI and sys.stdout is not None and not sys.stdout.isatty():
+        subprocess.run(["notify-send", "-a", "Fennek Firewall", "Firewall", text], check=False)
+    print(text)
+
+
+def is_exe(prog):
+    return prog.lower().endswith((".exe", ".msi"))
+
+
+def resolve(prog):
+    """Command name or relative path → absolute real path (Windows programs keep their name)."""
+    if is_exe(prog):
+        return os.path.realpath(prog) if os.path.exists(prog) else prog
+    path = prog if "/" in prog else shutil.which(prog)
+    if not path or not os.path.exists(path):
+        sys.exit(f"Program not found: {prog}")
+    return os.path.realpath(path)
+
+
+def slug(label):
+    return re.sub(r"[^a-z0-9._-]+", "-", label.lower()).strip("-.") or "program"
+
+
+def rule(prog, now=None):
+    """OpenSnitch rule rejecting all connections of PROG (absolute path, or a Windows .exe)."""
+    now = now or datetime.now(timezone.utc).isoformat(timespec="seconds")
+    label = Path(prog).name
+    if is_exe(prog):   # Wine processes: match the .exe in the command line, not the wine binary
+        op = {"type": "regexp", "operand": "process.command",
+              "data": r"(?i)(^|[\\/ ])" + re.escape(label) + r"(\s|\"|$)"}
+    else:
+        op = {"type": "simple", "operand": "process.path", "data": prog}
+    return {"created": now, "updated": now, "name": PREFIX + slug(label), "enabled": True, "precedence": True,
+            "action": "reject", "duration": "always", "nolog": False,
+            "description": f"Fennek OS: no internet for {label}",
+            "operator": {**op, "sensitive": False, "list": []}}
+
+
+def ours():
+    return sorted(RULES.glob(PREFIX + "*.json")) if RULES.is_dir() else []
+
+
+def engine(on):
+    action = ["enable", "--now"] if on else ["disable", "--now"]
+    subprocess.run(["systemctl", *action, "--quiet", "opensnitch.service"], check=False)
+
+
+def set_offline(exe, offline):
+    """Per-user list of sandboxed Windows programs that get no network (by content hash)."""
+    if not os.path.isfile(exe):
+        return
+    digest = hashlib.sha256(Path(exe).read_bytes()).hexdigest()
+    lines = set(OFFLINE.read_text().split()) if OFFLINE.is_file() else set()
+    lines = lines | {digest} if offline else lines - {digest}
+    OFFLINE.parent.mkdir(parents=True, exist_ok=True)
+    OFFLINE.write_text("".join(d + "\n" for d in sorted(lines)))
+
+
+def root_part(cmd, prog):
+    """Runs as root: write/remove the OpenSnitch rule, start/stop the engine."""
+    r = rule(prog)
+    path = RULES / f"{r['name']}.json"
+    if cmd == "block":
+        RULES.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(r, indent=2))
+        engine(True)
+    else:
+        path.unlink(missing_ok=True)
+        if not ours():
+            engine(False)
+
+
+def main(argv):
+    if argv == ["--selftest"]:
+        return selftest()
+    if argv == ["list"]:
+        for p in ours():
+            print(json.loads(p.read_text())["description"].removeprefix("Fennek OS: no internet for "))
+        return
+    if argv[:1] == ["--root"] and os.geteuid() == 0:     # second half, after pkexec
+        return root_part(argv[1], argv[2])
+    if len(argv) != 2 or argv[0] not in ("block", "allow"):
+        sys.exit(__doc__)
+    cmd, prog = argv[0], resolve(argv[1])
+    if is_exe(prog):
+        set_offline(prog, cmd == "block")                 # sandboxed runs: no network at all
+    root = [os.path.realpath(sys.argv[0]), "--root", cmd, prog]
+    rc = subprocess.run(root if os.geteuid() == 0 else ["pkexec", *root]).returncode
+    if rc == 0:
+        tell(f"{Path(prog).name}: internet {'blocked' if cmd == 'block' else 'allowed'}.")
+    return rc
+
+
+def selftest():
+    r = rule("/usr/bin/curl", now="t")
+    assert r["name"] == "fennek-block-curl" and r["action"] == "reject" and r["duration"] == "always"
+    assert r["operator"]["operand"] == "process.path" and r["operator"]["data"] == "/usr/bin/curl"
+    w = rule("/var/home/u/Downloads/My Game.exe", now="t")
+    assert w["name"] == "fennek-block-my-game.exe" and w["operator"]["operand"] == "process.command"
+    rx = re.compile(w["operator"]["data"][4:], re.I)   # strip (?i) for Python
+    assert rx.search(r"C:\users\steamuser\My Game.exe") and rx.search(r"Z:\var\home\u\Downloads\my game.EXE -x")
+    assert not rx.search(r"C:\Other Game.exe") and not rx.search(r"C:\NotMy Game.exe")
+    assert slug("../../etc") == "etc", "rule names can't leave the rules folder"
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]) or 0)

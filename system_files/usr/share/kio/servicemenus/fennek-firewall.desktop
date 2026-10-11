@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Service
+MimeType=application/x-executable;application/x-sharedlib;application/x-pie-executable;application/x-ms-dos-executable;application/x-msdownload;application/vnd.microsoft.portable-executable;application/x-msi;
+Actions=block;allow
+X-KDE-Submenu=Firewall
+
+[Desktop Action block]
+Name=Block internet access
+Icon=network-disconnect
+Exec=fennek-firewall block %f
+
+[Desktop Action allow]
+Name=Allow internet access
+Icon=network-connect
+Exec=fennek-firewall allow %f

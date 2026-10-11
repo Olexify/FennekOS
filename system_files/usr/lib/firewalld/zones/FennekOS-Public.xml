@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<zone>
+  <short>Fennek OS (public Wi-Fi)</short>
+  <description>For cafés, airports, hotels: nothing can connect in at all (only IPv6 address setup). Pick it for a network in its Wi-Fi settings.</description>
+  <service name="dhcpv6-client"/>
+</zone>

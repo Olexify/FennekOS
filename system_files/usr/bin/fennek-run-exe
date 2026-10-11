@@ -19,6 +19,7 @@ HOME = Path.home()
 CFG = Path(os.environ.get("XDG_CONFIG_HOME") or HOME / ".config") / "fennek"
 DATA = Path(os.environ.get("XDG_DATA_HOME") or HOME / ".local/share")
 TRUSTED = CFG / "trusted-exes"           # one sha256 per line
+OFFLINE = CFG / "offline-exes"           # sha256s blocked by fennek-firewall: sandbox gets no network at all
 BOXES = DATA / "fennek" / "sandboxes"    # private home per sandboxed program
 SHARED = HOME / "Sandbox"                # ~/Sandbox/<program> = the only real folder it can see
 GUI = bool(os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY"))
@@ -28,7 +29,6 @@ PASTA = ["pasta", "--config-net", "--quiet",
          "--no-map-gw",                                             # gateway must NOT reach host 127.0.0.1 services
          "-t", "none", "-u", "none", "-T", "none", "-U", "none",    # no port forwarding in either direction
          "--dns-forward", SANDBOX_DNS]
-XDG_ROOTS = {"Downloads", "Desktop", "Documents", "Music", "Pictures", "Videos", "Public", "Templates", "Sandbox"}
 
 
 def say(text, kind="msgbox"):
@@ -61,6 +61,11 @@ def safe_name(exe):
     must not turn ~/Sandbox/<name> into ~/Sandbox/.. (= your whole home)."""
     stem = re.sub(r"\.(exe|msi|bat|com)$", "", exe.name, flags=re.I)   # not Path.stem: odd names like '...exe'
     return re.sub(r"[^\w .+-]", "_", stem).strip(" .") or "program"
+
+
+def folder_name(exe, digest):
+    """Per program, not per file name: a malicious setup.exe must not share a folder with a real setup.exe."""
+    return f"{safe_name(exe)}-{digest[:8]}"
 
 
 def proton_dir():
@@ -102,21 +107,19 @@ def ensure_proton():
     return proton_dir()
 
 
-def app_mount(exe):
-    """Mount the program's own folder read-only (portable apps need their files), but only the file itself
-    when that folder is a broad one: home or above, Downloads/Documents/..., anything hidden like ~/.config."""
-    d = exe.parent
-    rel = d.relative_to(HOME).parts if d.is_relative_to(HOME) else None
-    broad = (d in (Path("/"), Path("/tmp"), Path("/var/tmp")) or HOME.is_relative_to(d)
-             or (rel is not None and ((len(rel) == 1 and rel[0] in XDG_ROOTS)
-                                      or any(p.startswith(".") for p in rel))))
-    return exe if broad else d
+def placement(exe, shared):
+    """(file to mount read-only or None, the program's path inside the sandbox).
+    Only the file itself is ever mounted: guessing which folders are "safe" to expose can't be done right
+    (~/Projects/tool.exe would expose all projects). A program that needs its other files goes into its
+    shared folder ~/Sandbox/<name>, which the sandbox sees as ~/Shared: then it runs from there."""
+    if exe.is_relative_to(shared):
+        return None, HOME / "Shared" / exe.relative_to(shared)
+    return exe, HOME / "App" / exe.name
 
 
 def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env, sound=False, wayland=False,
                resolv=None, uid=1000, gid=1000):
-    src = app_mount(exe)
-    app = HOME / "App" / (exe.name if src == exe else "")
+    src, target = placement(exe, shared)
     a = ["bwrap",
          # pasta's namespace makes us "root" (mapped to the real user); map back to the user's own id,
          # umu refuses to run as root and nothing inside should look privileged.
@@ -125,11 +128,12 @@ def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env, so
          "--symlink", "usr/bin", "/bin", "--symlink", "usr/sbin", "/sbin",
          "--symlink", "usr/lib", "/lib", "--symlink", "usr/lib64", "/lib64",
          "--proc", "/proc", "--dev", "/dev", "--dev-bind-try", "/dev/dri", "/dev/dri",
-         "--ro-bind-try", "/sys", "/sys",
+         # Only the sysfs parts GPU drivers need (not all of /sys: less hardware fingerprinting).
+         "--ro-bind-try", "/sys/dev/char", "/sys/dev/char", "--ro-bind-try", "/sys/devices", "/sys/devices",
+         "--ro-bind-try", "/sys/class/drm", "/sys/class/drm", "--ro-bind-try", "/sys/bus/pci", "/sys/bus/pci",
          "--tmpfs", "/tmp", "--tmpfs", "/var/tmp",
          "--bind", str(box_home), str(HOME),
          "--bind", str(shared), str(HOME / "Shared"),
-         "--ro-bind", str(src), str(app),
          # Runtime + Proton: writable overlay (pressure-vessel needs lock files), writes vanish
          # into a tmpfs, so the shared real copies can never be modified from inside.
          "--overlay-src", str(DATA / "umu"), "--tmp-overlay", str(DATA / "umu"),
@@ -138,6 +142,8 @@ def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env, so
          "--unsetenv", "DBUS_SESSION_BUS_ADDRESS",
          "--setenv", "HOME", str(HOME), "--setenv", "WINEPREFIX", str(HOME / "prefix"),
          "--setenv", "PROTONPATH", str(proton), "--setenv", "UMU_RUNTIME_UPDATE", "0"]
+    if src:
+        a += ["--ro-bind", str(src), str(target)]
     if str(HOME).startswith("/var/home/"):
         a += ["--symlink", "var/home", "/home"]
     if resolv:   # host's resolv.conf points at 127.0.0.53, which is unreachable from the sandbox's network
@@ -158,7 +164,6 @@ def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env, so
             a += ["--ro-bind-try", display_env["XAUTHORITY"], display_env["XAUTHORITY"]]
     for k, v in UMU.items():
         a += ["--setenv", k, v]
-    target = app if src == exe else app / exe.name
     return a + ["--", "umu-run", str(target), *args]
 
 
@@ -168,8 +173,8 @@ def run_sandboxed(exe, digest, args, sound=False):
         return say("Couldn't set up Windows support (no internet?).", "error")
     if not shutil.which("pasta"):
         return say("Sandbox networking (pasta) is missing; not running unsandboxed.", "error")
-    name = safe_name(exe)
-    box_home = BOXES / f"{name}-{digest[:8]}" / "home"
+    name = folder_name(exe, digest)
+    box_home = BOXES / name / "home"
     shared = SHARED / name
     for d in (box_home, shared):
         d.mkdir(parents=True, exist_ok=True)
@@ -178,9 +183,12 @@ def run_sandboxed(exe, digest, args, sound=False):
     wayland = bool(os.environ.get("WAYLAND_DISPLAY")) and wine_wayland(proton)
     resolv = box_home.parent / "resolv.conf"
     resolv.write_text(f"nameserver {SANDBOX_DNS}\n")
-    say(f"{exe.name} runs in a sandbox. It can only see the folder ~/Sandbox/{name}.", "passivepopup")
+    say(f"{exe.name} runs in a sandbox and only sees ~/Sandbox/{name}. "
+        "If it needs its other files, move them there and start it from that folder.", "passivepopup")
     cmd = bwrap_args(exe, args, box_home, shared, proton, os.environ.get("XDG_RUNTIME_DIR"), os.environ,
                      sound=sound, wayland=wayland, resolv=resolv, uid=os.getuid(), gid=os.getgid())
+    if OFFLINE.is_file() and digest in OFFLINE.read_text().split():
+        return subprocess.run([cmd[0], "--unshare-net", *cmd[1:]]).returncode   # firewall: no network at all
     # Own network namespace with internet via pasta: host-only sockets and host loopback become unreachable.
     return subprocess.run([*PASTA, "--", *cmd]).returncode
 
@@ -189,10 +197,10 @@ def run_trusted(exe, args):
     return subprocess.run(["umu-run", str(exe), *args], env={**os.environ, **umu_env()}).returncode
 
 
-def ask(exe):
+def ask(exe, digest):
     """Unknown program → sandbox | sandbox-sound | vt | trust | None (cancel)."""
     text = (f"{exe.name} isn't trusted yet.\n\nIn the sandbox it can't see your files, "
-            f"only the folder ~/Sandbox/{safe_name(exe)}.")
+            f"only the folder ~/Sandbox/{folder_name(exe, digest)}.")
     if not GUI:
         return "sandbox"
     r = subprocess.run(["kdialog", "--title", "Unknown Windows program", "--menu", text,
@@ -216,7 +224,7 @@ def main(argv):
     if mode == "--trusted" or (mode is None and is_trusted(digest)):
         return run_trusted(exe, argv[1:])
     while mode is None:
-        choice = ask(exe)
+        choice = ask(exe, digest)
         if choice == "vt":
             subprocess.run(["fennek-vt-check", str(exe)])
         elif choice == "trust":
@@ -236,12 +244,12 @@ def selftest():
         assert safe_name(Path(bad)) == "program", f"{bad!r} must not become a path trick"
     assert safe_name(Path(".evil.exe")) == "evil" and safe_name(Path("My Game.exe")) == "My Game"
 
+    assert folder_name(Path("setup.exe"), "1a2b3c4d99") == "setup-1a2b3c4d", "same name, other program: other folder"
     dl = HOME / "Downloads/setup.exe"
-    assert app_mount(dl) == dl, "file in Downloads: mount only the file"
-    assert app_mount(HOME / "Games/Foo/foo.exe") == HOME / "Games/Foo", "app folder: mount the folder"
-    for broad in (HOME / "x.exe", HOME / ".config/x.exe", HOME / ".local/share/a/x.exe", Path("/var/home/x.exe"),
-                  HOME / "Sandbox/x.exe", Path("/tmp/x.exe")):
-        assert app_mount(broad) == broad, f"{broad}: only the file"
+    sh = HOME / "Sandbox/setup-1a2b3c4d"
+    for f in (dl, HOME / "Projects/tool.exe", HOME / ".config/x.exe"):
+        assert placement(f, sh) == (f, HOME / "App" / f.name), f"{f}: only the file is mounted, never its folder"
+    assert placement(sh / "bin/setup.exe", sh) == (None, HOME / "Shared/bin/setup.exe"), "inside its folder: run from Shared"
 
     a = bwrap_args(dl, ["/S"], Path("/b/home"), Path("/s"), Path("/p/UMU-Proton-9"), "/run/user/1000",
                    {"DISPLAY": ":0", "WAYLAND_DISPLAY": "wayland-0"})
@@ -251,6 +259,8 @@ def selftest():
     assert ("/p/UMU-Proton-9", "--tmp-overlay", "/p/UMU-Proton-9") in pairs, "Proton writes are throwaway"
     assert all(src != "/var/home/u" for flag, src, _ in pairs if flag in ("--bind", "--ro-bind")), "real home never mounted"
     assert "--unshare-pid" in a and "--new-session" in a
+    assert "/sys" not in a, "never all of /sys"
+    assert a.index("/var/home/u/App/setup.exe") > a.index("/var/home/u"), "program mounted over the private home"
     assert a[a.index("--uid") + 1] == "1000", "never root inside the sandbox"
     assert not any("pipewire" in x or "pulse" in x for x in a), "no sound/microphone by default"
     assert "/tmp/.X11-unix" in a, "X11 only as fallback when Proton lacks Wine-Wayland"
@@ -261,7 +271,7 @@ def selftest():
     w = bwrap_args(dl, [], Path("/b"), Path("/s"), Path("/p"), "/run/user/1000", {"DISPLAY": ":0"}, wayland=True)
     assert "/tmp/.X11-unix" not in w and "PROTON_ENABLE_WAYLAND" in w and "--unshare-ipc" in w, "Wayland: no X11"
     b = bwrap_args(HOME / "Games/Foo/foo.exe", [], Path("/b"), Path("/s"), Path("/p"), None, {}, resolv=Path("/r"))
-    assert b[-1] == "/var/home/u/App/foo.exe"
+    assert b[-1] == "/var/home/u/App/foo.exe" and str(HOME / "Games/Foo") not in b, "folder never mounted"
     assert b.index("/etc/resolv.conf") > b.index("/etc"), "own resolv.conf mounted over the host /etc"
     assert "--no-map-gw" in PASTA and all(PASTA[PASTA.index(f) + 1] == "none" for f in ("-t", "-u", "-T", "-U")), \
         "no route from the sandbox to host loopback services, no port forwarding"
