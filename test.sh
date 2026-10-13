@@ -83,4 +83,9 @@ grep -q '^X-Plasma-DBusRunner-Service=org.fennek.Search' /usr/share/krunner/dbus
 for f in /usr/bin/fennek-* /usr/libexec/fennek-* /usr/lib/systemd/system/fennek-* /usr/share/plasma/plasmoids/com.github.zren.tiledmenu; do
     [ "$(stat -c %u:%g "$f")" = 0:0 ] || fail "$f not owned by root"
 done
+python3 -c "
+import json; d = json.load(open('/etc/containers/policy.json'))['transports']['docker']['ghcr.io/olexify/fennekos'][0]
+assert d['type'] == 'sigstoreSigned' and d['keyPath'] == '/etc/pki/containers/fennek-cosign.pub'
+" 2>/dev/null                                                 || fail "updates must require Fennek's signature"
+grep -q 'BEGIN PUBLIC KEY' /etc/pki/containers/fennek-cosign.pub || fail "Fennek public key"
 echo "all checks passed"

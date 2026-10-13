@@ -1,0 +1,40 @@
+name: Bug report
+description: Something in Fennek OS doesn't work as it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Click ...
+        3. See ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Fennek OS version
+      description: Output of `rpm-ostree status` (the line starting with ●), or "VM test build".
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Computer
+      description: Laptop/PC model, or "virtual machine (Hyper-V / VirtualBox / ...)".
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or logs
+      description: Optional. For a crashed app, `journalctl --user -b | tail -50` often helps.

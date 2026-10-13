@@ -139,6 +139,22 @@ source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 EOF
 } > /etc/zshrc.fennek-new && chmod 644 /etc/zshrc.fennek-new && mv /etc/zshrc.fennek-new /etc/zshrc
 
+# Updates: only accept Fennek images signed with our key (public key: /etc/pki/containers/fennek-cosign.pub).
+python3 - <<'EOF'
+import json, os, pathlib
+p = pathlib.Path("/etc/containers/policy.json")
+policy = json.loads(p.read_text())
+policy.setdefault("transports", {}).setdefault("docker", {})["ghcr.io/olexify/fennekos"] = [{
+    "type": "sigstoreSigned",
+    "keyPath": "/etc/pki/containers/fennek-cosign.pub",
+    "signedIdentity": {"type": "matchRepository"},
+}]
+tmp = p.with_name(p.name + ".fennek-new")      # new file + rename, never in place
+tmp.write_text(json.dumps(policy, indent=2) + "\n")
+os.chmod(tmp, 0o644)
+os.replace(tmp, p)
+EOF
+
 # No telemetry: Fedora's weekly anonymous "countme" install counting (rpm-ostree timer + repo flag).
 systemctl mask rpm-ostree-countme.timer rpm-ostree-countme.service
 sed -i 's/^countme=1/countme=0/' /etc/yum.repos.d/*.repo

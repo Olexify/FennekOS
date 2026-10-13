@@ -1,6 +1,7 @@
 # Fennek OS
 
-A comfy, Windows-10-like, no-telemetry Linux desktop with strong built-in security and long battery life.
+A Linux desktop for **people leaving Windows 10**. It feels familiar, has no telemetry, comes with strong
+built-in security, and aims for long battery life.
 Built as a [bootc](https://containers.github.io/bootc/) image on Fedora Kinoite (KDE Plasma).
 
 What's in it so far:
@@ -30,3 +31,9 @@ Test VM on Windows (Hyper-V):
 
 1. `vm-disk.ps1` builds and tests the image, then writes `E:\Fennek-build\vm\fennek-next.vhdx`.
 2. `vm.ps1`, run as admin, creates the VM and boots it.
+
+## Contributing, security, license
+
+- Want to help? See [CONTRIBUTING.md](CONTRIBUTING.md).
+- Found a security problem? Report it privately; see [SECURITY.md](SECURITY.md).
+- Fennek OS's own code is licensed under [GPL-3.0](LICENSE). Bundled components keep their own licenses.

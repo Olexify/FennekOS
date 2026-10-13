@@ -1,0 +1,4 @@
+# Fennek OS updates: cosign signatures are stored next to the image in the registry.
+docker:
+  ghcr.io/olexify/fennekos:
+    use-sigstore-attachments: true

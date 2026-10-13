@@ -128,6 +128,21 @@ Off until chosen: local (llama.cpp, small model) or cloud (user's own key). Acts
 4. AI assistant
 5. Own Rust shell (only if Plasma limits us)
 
+## Audience (decided 2026-10-13)
+**People leaving Windows 10.** Not developers (that's Omarchy's niche: Arch + tiling). Every feature is judged
+by: familiar, safe and private, long battery life, Windows programs work.
+
+## Open source + updates (decided 2026-10-13)
+- GPL-3.0; CONTRIBUTING, SECURITY (private reporting), issue + PR templates. Maintainer merges; CI must pass.
+- CI builds daily (05:30 UTC) + on every push to main: verifies the signed Universal Blue base, builds, tests,
+  publishes `ghcr.io/olexify/fennekos:latest` + `:YYYYMMDD`, signs with Fennek's cosign key (secrets
+  COSIGN_PRIVATE_KEY / COSIGN_PASSWORD; backup in E:\Fennek-build\keys, never in the repo).
+- Installed systems only accept updates signed with that key (/etc/containers/policy.json).
+- To do after the repo is public: make the ghcr package public, enable private vulnerability reporting,
+  branch protection; VM/installs track `ghcr.io/olexify/fennekos:latest` (bib `--target-imgref`).
+- Ceiling: our single build layer is re-downloaded on every update (~hundreds of MB). Rechunking (like
+  Universal Blue) would cut daily updates to the changed parts.
+
 ## Base choice (reviewed 2026-10-11)
 Fedora atomic/bootc beats Ubuntu/Debian on: current kernels (Panther Lake needs ≥6.19), atomic updates + rollback,
 current Plasma, proven stack (Bazzite/Aurora). Proton is identical on any base. Gaps: countme telemetry (masked),

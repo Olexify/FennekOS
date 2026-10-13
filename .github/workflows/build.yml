@@ -4,14 +4,27 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Daily: picks up Fedora / Universal Blue security fixes even when nothing changed here.
+  schedule:
+    - cron: "30 5 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   image:
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: write   # publish to ghcr.io (only used outside pull requests)
+    env:
+      IMAGE: ghcr.io/olexify/fennekos
     steps:
       # Actions pinned to commits (tags can be moved).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -31,3 +44,22 @@ jobs:
 
       - name: Test image
         run: sudo podman run --rm -v "$PWD/test.sh:/t.sh:ro,z" fennek:ci bash /t.sh
+
+      # Publishing + signing never runs for pull requests (a stranger's PR must not publish or sign).
+      - name: Publish and sign
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GH_TOKEN" | sudo podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+          echo "$GH_TOKEN" | cosign login ghcr.io -u "${{ github.actor }}" --password-stdin
+          day=$(date -u +%Y%m%d)
+          for tag in latest "$day"; do
+            sudo podman push --digestfile "/tmp/digest-$tag" fennek:ci "$IMAGE:$tag"
+            cosign sign --yes --key env://COSIGN_PRIVATE_KEY "$IMAGE@$(cat "/tmp/digest-$tag")"
+          done
+          # Prove what users will check: the published image verifies with the public key in the repo.
+          cosign verify --key keys/fennek-cosign.pub "$IMAGE:latest" > /dev/null
+          echo "Published $IMAGE:latest and :$day ($(cat /tmp/digest-latest)), signed and verified."

@@ -1,0 +1,17 @@
+name: Feature request
+description: An idea that would make Fennek OS better for people leaving Windows 10
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The task or annoyance, not the solution. How does Windows handle it, if that's relevant?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+    validations:
+      required: false
