@@ -27,6 +27,10 @@ $base = "ghcr.io/ublue-os/kinoite-main@$digest"
 #    Already loaded this exact digest earlier? Then nothing to download.
 $have = cmd /c "docker run --rm -v fennek-podman:/store alpine cat /store/base-digest 2>nul"
 if ($have -ne $digest) {
+    # New base (Universal Blue rebuilds daily): drop the old base and our image built on it first,
+    # so two 12 GB bases never sit side by side (that once filled E:).
+    Podman "rmi -f localhost/fennek:dev localhost/fennek-base:verified docker.io/library/base:latest" "$log\rmi.log"
+    Podman "image prune -f" "$log\prune.log"
     for ($i = 1; $i -le 20; $i++) {
         cmd /c "docker run --rm -v fennek-podman:/store quay.io/skopeo/stable:latest copy --retry-times 10 docker://$base oci:/store/base-oci:base > `"$log\pull-$i.log`" 2>&1"
         if ($LASTEXITCODE -eq 0) { break }; "download attempt $i stopped (see pull-$i.log), resuming"
