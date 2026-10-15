@@ -5,4 +5,7 @@ if ! /usr/libexec/fennek-reboot-windows-helper --check 2>/dev/null; then
     { [ -n "${WAYLAND_DISPLAY:-}${DISPLAY:-}" ] && kdialog --title "Restart to Windows" --sorry "$msg"; } || echo "$msg" >&2
     exit 1
 fi
-exec pkexec /usr/libexec/fennek-reboot-windows-helper
+# Root only for "boot Windows next" (BootNext); the restart itself runs as you, through logind,
+# so it asks/waits like the normal Restart when others are logged in or an update is being written.
+pkexec /usr/libexec/fennek-reboot-windows-helper || exit 1
+exec systemctl reboot

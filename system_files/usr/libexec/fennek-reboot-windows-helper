@@ -1,7 +1,8 @@
 #!/usr/bin/python3
-"""Root helper: restart into Windows once (UEFI BootNext), then normal boot order again.
-Run through pkexec by fennek-reboot-windows. Does exactly this and nothing else.
-  fennek-reboot-windows-helper           set BootNext to Windows Boot Manager and reboot
+"""Root helper: make the NEXT boot (once) go to Windows via UEFI BootNext. It does not reboot: the caller
+restarts as the user, through logind, so other users' sessions and restart blockers (e.g. an update being
+written) are respected exactly like the normal Restart button.
+  fennek-reboot-windows-helper           set BootNext to Windows Boot Manager
   fennek-reboot-windows-helper --check   exit 0 if a Windows boot entry exists
   fennek-reboot-windows-helper --selftest
 """
@@ -37,4 +38,3 @@ if __name__ == "__main__":
     if not entry:
         sys.exit("No Windows boot entry found.")
     subprocess.run(["efibootmgr", "--bootnext", entry], check=True, capture_output=True)
-    subprocess.run(["systemctl", "reboot"], check=True)
