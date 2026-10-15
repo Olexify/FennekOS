@@ -37,3 +37,4 @@ Test VM on Windows (Hyper-V):
 - Want to help? See [CONTRIBUTING.md](CONTRIBUTING.md).
 - Found a security problem? Report it privately; see [SECURITY.md](SECURITY.md).
 - Fennek OS's own code is licensed under [GPL-3.0](LICENSE). Bundled components keep their own licenses.
+- The name "Fennek OS" and the fox logo are not covered by the GPL; forks must rename. See [TRADEMARKS.md](TRADEMARKS.md).
