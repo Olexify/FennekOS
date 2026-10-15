@@ -140,10 +140,11 @@ by: familiar, safe and private, long battery life, Windows programs work.
 - Installed systems only accept updates signed with that key (/etc/containers/policy.json).
 - 2026-10-15 repo public. Done: private vulnerability reporting, secret scanning + push protection, Dependabot
   alerts + weekly action-pin updates, ruleset "Protect main" (no force-push/deletion, PRs + `image` check
-  required; repo admins bypass), image labels link the package to the repo, VM drives update from
-  `ghcr.io/olexify/fennekos:latest`. Package visibility must be set to public by hand (no API).
-- To do: enforce signature checks on installed systems' origin (`bootc switch --enforce-container-sigpolicy`
-  or a signed transport in the installer), so policy.json is applied to updates.
+  required; repo admins bypass), image labels link the package to the repo. Package visibility must be set
+  to public by hand (no API).
+- Signed updates need a signature-enforcing origin. Never use bib `--target-imgref` (= unverified registry).
+  Test VMs: `sudo bootc switch --enforce-container-sigpolicy ghcr.io/olexify/fennekos:latest` once.
+  Installer (to do): Anaconda `ostreecontainer` verifies by default; never pass --no-signature-verification.
 - Ceiling: our single build layer is re-downloaded on every update (~hundreds of MB). Rechunking (like
   Universal Blue) would cut daily updates to the changed parts.
 
