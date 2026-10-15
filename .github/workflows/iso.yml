@@ -38,6 +38,9 @@ jobs:
           sudo podman build --cap-add sys_admin --security-opt label=disable --squash \
             --build-arg "FENNEK_IMAGE=$FENNEK_IMAGE" -t localhost/fennek-iso:latest iso/
 
+      - name: Output folder (Titanoboa's final move needs it to exist)
+        run: mkdir -p output
+
       - name: Build ISO
         id: iso
         uses: ublue-os/titanoboa@5c457c3d0518bd17e754be0fd98a60d29d26abb4  # main, 2026-05-19
