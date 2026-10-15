@@ -1,0 +1,7 @@
+# Fennek OS live/installer ISO: the published Fennek image + a live session + the Anaconda installer.
+# Built by .github/workflows/iso.yml (FROM the signature-verified digest), turned into an ISO by Titanoboa.
+ARG FENNEK_IMAGE=ghcr.io/olexify/fennekos:latest
+FROM ${FENNEK_IMAGE}
+ARG FENNEK_IMAGE
+RUN --mount=type=bind,source=src,target=/src,ro \
+    FENNEK_IMAGE="${FENNEK_IMAGE}" bash /src/build.sh

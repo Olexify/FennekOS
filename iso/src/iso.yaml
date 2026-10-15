@@ -1,0 +1,11 @@
+label: FENNEK-OS
+grub2:
+  default: 0
+  timeout: 10
+  entries:
+    - name: "Try or install Fennek OS"
+      linux: "/images/pxeboot/vmlinuz quiet rhgb root=live:CDLABEL=FENNEK-OS enforcing=0 rd.live.image"
+      initrd: "/images/pxeboot/initrd.img"
+    - name: "Try or install Fennek OS (basic graphics)"
+      linux: "/images/pxeboot/vmlinuz quiet rhgb root=live:CDLABEL=FENNEK-OS enforcing=0 rd.live.image nomodeset"
+      initrd: "/images/pxeboot/initrd.img"
