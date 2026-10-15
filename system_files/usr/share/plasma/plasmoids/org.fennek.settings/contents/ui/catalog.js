@@ -24,7 +24,7 @@ var categories = [
    {"name": "Wi-Fi & networks", "kcm": "kcm_networkmanagement", "icon": "network-wireless", "desc": "Connections, VPN, hotspot"},
    {"name": "Proxy", "kcm": "kcm_proxy", "icon": "preferences-system-network-proxy", "desc": "Proxy server"}
   ]},
- {"name": "Personalization", "icon": "preferences-desktop-theme-global", "sub": "Background, colors, themes, fonts",
+ {"name": "Appearance", "icon": "preferences-desktop-theme-global", "sub": "Background, colors, themes, fonts",
   "items": [
    {"name": "Background", "kcm": "kcm_wallpaper", "icon": "preferences-desktop-wallpaper", "desc": "Desktop picture"},
    {"name": "Themes", "kcm": "kcm_lookandfeel", "icon": "preferences-desktop-theme-global", "desc": "Whole look of Fennek OS"},
@@ -47,9 +47,9 @@ var categories = [
    {"name": "Date & time", "kcm": "kcm_clock", "icon": "preferences-system-time", "desc": "Time zone, clock"},
    {"name": "Region & language", "kcm": "kcm_regionandlang", "icon": "preferences-desktop-locale", "desc": "Language, formats"}
   ]},
- {"name": "Ease of Access", "icon": "preferences-desktop-accessibility", "sub": "Accessibility, keyboard shortcuts",
+ {"name": "Accessibility", "icon": "preferences-desktop-accessibility", "sub": "Assistive features, keyboard shortcuts",
   "items": [
-   {"name": "Accessibility", "kcm": "kcm_access", "icon": "preferences-desktop-accessibility", "desc": "Sticky keys, visual bell"},
+   {"name": "Assistive features", "kcm": "kcm_access", "icon": "preferences-desktop-accessibility", "desc": "Sticky keys, visual bell"},
    {"name": "Keyboard shortcuts", "kcm": "kcm_keys", "icon": "preferences-desktop-keyboard-shortcut", "desc": "Change shortcuts"}
   ]},
  {"name": "Privacy & Security", "icon": "security-high", "sub": "Quarantine, file history, permissions",

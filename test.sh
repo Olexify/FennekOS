@@ -39,9 +39,9 @@ for b in minimize maximize restore close; do grep -q 'id="hover-center"' "$a/$b.
 grep -q 'id="decoration-top"' "$a/decoration.svg" && grep -q 'id="decoration-inactive-top"' "$a/decoration.svg" || fail "frame svg"
 grep -q '^BorderlessMaximizedWindows=false' /etc/xdg/kwinrc       || fail "title bar on maximized windows"
 r=/usr/share/kxmlgui5/dolphin/dolphinui.rc
-grep -q 'name="go_up"' "$r" && grep -q 'version="10[0-9][0-9]"' "$r" && grep -q '<Menu' "$r" || fail "Explorer toolbar (Back/Forward/Up)"
-python3 -c "import sys, xml.dom.minidom as x; x.parse(sys.argv[1])" "$r"   || fail "Explorer toolbar file is not valid XML"
-grep -q '^MenuBar=Enabled' /etc/xdg/dolphinrc                     || fail "Explorer menu bar"
+grep -q 'name="go_up"' "$r" && grep -q 'version="10[0-9][0-9]"' "$r" && grep -q '<Menu' "$r" || fail "Files toolbar (Back/Forward/Up)"
+python3 -c "import sys, xml.dom.minidom as x; x.parse(sys.argv[1])" "$r"   || fail "Files toolbar file is not valid XML"
+grep -q '^MenuBar=Enabled' /etc/xdg/dolphinrc                     || fail "Files menu bar"
 grep -q 'panel.floating = false' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "taskbar layout"
 grep -q '^LookAndFeelPackage=org.fennek.desktop' /usr/share/kde-settings/kde-profile/default/xdg/kdeglobals || fail "default lnf"
 # What a fresh user actually gets: every kdeglobals in the system lookup must agree on Fennek's look.
@@ -101,11 +101,11 @@ grep -q 'com.github.zren.tiledmenu' /usr/share/plasma/look-and-feel/org.fennek.d
 ! systemctl is-enabled -q dnf-makecache.timer 2>/dev/null      || fail "dnf-makecache timer (needless daily download)"
 ! systemctl is-enabled -q unbound-anchor.timer 2>/dev/null     || fail "unbound-anchor timer"
 rpm -q firefox >/dev/null && grep -q '"DisableTelemetry": true' /etc/firefox/policies/policies.json || fail "Firefox + privacy policy"
-grep -q '^Name=File Explorer$' /usr/share/applications/org.kde.dolphin.desktop || fail "File Explorer name"
+grep -q '^Name=Files$' /usr/share/applications/org.kde.dolphin.desktop || fail "Files name"
 grep -q '^Name=Task Manager$' /usr/share/applications/org.kde.plasma-systemmonitor.desktop || fail "Task Manager name"
 grep -q '^X-KDE-Shortcuts=.*Ctrl+Shift+Esc' /usr/share/applications/org.kde.plasma-systemmonitor.desktop || fail "Ctrl+Shift+Esc"
 grep -qs '^X-KDE-Shortcuts=.*Meta+R' /usr/share/kglobalaccel/org.kde.krunner.desktop /usr/share/applications/org.kde.krunner.desktop || fail "Win+R"
-grep -q '^ViewMode=1' /etc/skel/.local/share/dolphin/view_properties/global/.directory || fail "Explorer details view"
+grep -q '^ViewMode=1' /etc/skel/.local/share/dolphin/view_properties/global/.directory || fail "Files details view"
 q=$(ls -d /usr/lib*/qt6/qml/org/kde/desktop | head -1)
 grep -q "wheelEnabled: false  // Fennek" "$q/ComboBox.qml" && grep -q "wheelEnabled: false  // Fennek" "$q/SpinBox.qml" \
     && grep -q "wheel.accepted = false; return;  // Fennek" "$q/Slider.qml" || fail "mouse-wheel comfort patch"

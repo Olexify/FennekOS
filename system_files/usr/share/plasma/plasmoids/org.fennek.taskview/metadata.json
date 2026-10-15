@@ -3,11 +3,11 @@
     "KPlugin": {
         "Authors": [{ "Name": "Fennek OS" }],
         "Category": "Windows and Tasks",
-        "Description": "Task View button: shows all open windows",
+        "Description": "Window overview button: shows all open windows",
         "Icon": "view-app-grid-symbolic",
         "Id": "org.fennek.taskview",
         "License": "GPL-3.0-only",
-        "Name": "Task View"
+        "Name": "Window overview"
     },
     "X-Plasma-API-Minimum-Version": "6.0"
 }

@@ -1,4 +1,4 @@
-// Task View button: opens KDE's window overview (also Win+W).
+// Window overview button: opens KDE's window overview (also Super+W).
 import QtQuick
 import QtQuick.Layouts
 import org.kde.plasma.plasmoid
@@ -10,7 +10,7 @@ PlasmoidItem {
     id: root
     preferredRepresentation: fullRepresentation
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
-    toolTipMainText: "Task View"
+    toolTipMainText: "Window overview"
     toolTipSubText: "See all open windows (Super+W)"
 
     P5Support.DataSource {
