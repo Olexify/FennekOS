@@ -55,7 +55,7 @@ var categories = [
  {"name": "Privacy & Security", "icon": "security-high", "sub": "Quarantine, file history, permissions",
   "items": [
    {"name": "Quarantine", "cmd": "fennek-quarantine", "icon": "security-medium", "desc": "Downloads the antivirus blocked"},
-   {"name": "App permissions", "kcm": "kcm_flatpak", "icon": "preferences-system-privacy", "desc": "What store apps may access"},
+   {"name": "App permissions", "kcm": "kcm_app-permissions", "icon": "preferences-system-privacy", "desc": "What store apps may access"},
    {"name": "Privacy policy", "cmd": "xdg-open https://github.com/Olexify/FennekOS/blob/main/PRIVACY.md", "icon": "help-about", "desc": "Every connection Fennek OS makes"}
   ]},
  {"name": "Update & Recovery", "icon": "system-software-update", "sub": "Updates, previous versions",
