@@ -1,0 +1,7 @@
+# Keeps the commit-pinned GitHub Actions current: weekly update proposals as pull requests (CI must pass).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

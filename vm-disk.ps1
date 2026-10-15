@@ -54,7 +54,9 @@ Remove-Item "$vm\qcow2", "$vm\manifest-qcow2.json" -Recurse -Force -ErrorAction 
 docker run --rm --privileged --security-opt label=type:unconfined_t `
     --mount type=volume,src=fennek-podman,dst=/var/lib/containers/storage,volume-subpath=storage `
     -v "${vm}:/output" -v "$vm\config.toml:/config.toml:ro" `
-    quay.io/centos-bootc/bootc-image-builder:latest --type qcow2 --rootfs btrfs localhost/fennek:dev *> "$log\bib.log"
+    quay.io/centos-bootc/bootc-image-builder:latest --type qcow2 --rootfs btrfs `
+    --target-imgref ghcr.io/olexify/fennekos:latest localhost/fennek:dev *> "$log\bib.log"
+# ^ installed from the local build, but updates come from the published, signed image (like a real install).
 Check 'disk build'
 
 docker run --rm -v "${vm}:/vm" alpine sh -c 'apk add -q qemu-img && qemu-img convert -O vhdx -o subformat=dynamic /vm/qcow2/disk.qcow2 /vm/fennek-next.vhdx && rm -r /vm/qcow2 /vm/manifest-qcow2.json'
