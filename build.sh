@@ -136,9 +136,9 @@ for name in ("systemsettings.desktop",):
             replace_file(p, t)
 EOF
 
-# Dolphin shows up as "File Explorer" (English name; translations keep their own).
-sed -i 's/^Name=Dolphin$/Name=File Explorer/' /usr/share/applications/org.kde.dolphin.desktop
-# File Explorer toolbar: Back, Forward, Up, address bar, search. Dolphin compiles its menu/toolbar layout
+# Dolphin shows up as "Files" (English name; translations keep their own).
+sed -i 's/^Name=Dolphin$/Name=Files/' /usr/share/applications/org.kde.dolphin.desktop
+# Files toolbar: Back, Forward, Up, address bar, search. Dolphin compiles its menu/toolbar layout
 # into the binary; take that copy, change only the main toolbar and install it with a higher version
 # (KXMLGUI loads the newest version), so the menus always stay the ones this Dolphin ships.
 python3 - <<'PYEOF'

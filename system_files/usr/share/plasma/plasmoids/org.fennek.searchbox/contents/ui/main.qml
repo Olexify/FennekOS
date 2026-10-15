@@ -1,4 +1,4 @@
-// Classic "Type here to search" box. Clicking it opens KDE's search (KRunner), which also
+// Classic taskbar search box. Clicking it opens KDE's search (KRunner), which also
 // queries Fennek's instant file search.
 import QtQuick
 import QtQuick.Layouts
@@ -44,7 +44,7 @@ PlasmoidItem {
                 Layout.preferredHeight: Kirigami.Units.iconSizes.small
             }
             PlasmaComponents.Label {
-                text: "Type here to search"
+                text: "Search apps and files"
                 opacity: 0.75
                 elide: Text.ElideRight
                 Layout.fillWidth: true

@@ -33,7 +33,7 @@ A comfy, classic, no-telemetry, very secure Linux OS with best-in-class laptop b
   shown on next boot as "why it crashed" (AI can explain). Nothing sent anywhere.
 - **Encryption:** LUKS2 full-disk, TPM2 unlock, recovery key shown at install. Secure Boot signed images.
 - **Backups (snapshots ≠ backups):** one-click encrypted backup to USB drive / NAS / cloud (restic).
-- **Reset this PC:** factory reset keeping files (trivial on an image-based system). Safe-mode boot entry + recovery USB.
+- **Factory reset:** reset keeping files (trivial on an image-based system). Safe-mode boot entry + recovery USB.
 - **Critical battery:** save session and hibernate. Open problem: hibernation vs Secure Boot lockdown.
 
 ## Dual boot with Windows (no conflicts)
@@ -69,7 +69,7 @@ Not in Fedora repos: upstream RPM v1.8.0 (pin + sha256, like umu): daemon
 `FennekOS-Public` (in: dhcpv6 only) to pick per Wi-Fi network. `fennek-firewall block|allow|list PROGRAM` +
 Dolphin right-click → Firewall: OpenSnitch reject rule (native by path, Windows by .exe in command line);
 sandboxed .exe → no network namespace at all. opensnitchd runs only while ≥1 program is blocked.
-Verified: blocked curl can't connect, python can. Next: GUI with live connections + Process Explorer.
+Verified: blocked curl can't connect, python can. Next: GUI with live connections + Process viewer.
 OpenSnitch daemon + our own friendly UI: per-app allow/block, ask-or-silent modes, network profiles
 (Home / Public / Offline), DNS tracker blocking, temporary rules, live connection view.
 
@@ -77,7 +77,7 @@ OpenSnitch daemon + our own friendly UI: per-app allow/block, ask-or-silent mode
 **v1 done (fennek-search):** per-user service, home + /run/media drives, live via inotify (no rescans), hidden
 dirs/caches/sandboxes skipped, served to Start menu + KRunner over D-Bus (org.kde.krunner1), filters ext: type:
 path:, opened-files history ranks first, "Open containing folder" action. Python, linear scan (~10 ms/100k
-files). Next: Everything-style window with columns/sort, Explorer search integration, size:/dm: filters,
+files). Next: Everything-style window with columns/sort, Files search integration, size:/dm: filters,
 whole-disk index (needs a root helper with per-user permission filtering), Rust if homes get huge.
 - Own Rust daemon: fast parallel initial scan, compact in-memory filename index, live updates via fanotify
   filesystem marks (no periodic re-indexing, ~zero idle cost). Results filtered by the asking user's permissions.
@@ -86,12 +86,12 @@ whole-disk index (needs a root helper with per-user permission filtering), Rust 
 - UI: Win-key popup (apps, settings, files) + full Everything-style window with sortable columns.
 - File contents search: optional, off by default (battery). KDE Baloo disabled.
 
-## File Explorer (Dolphin, configured to behave like the classic desktop)
-- Defaults: opens on a "This PC"-style page (drives + user folders), Details view with Name / Date modified /
-  Type / Size, folders first, status bar, Quick access = pinned Places, breadcrumb that turns editable on click.
-- Explorer shortcuts: Backspace = back, Alt+Up = up, F2 rename, Ctrl+F search, Ctrl+Shift+N new folder,
+## Files (Dolphin, configured to behave like the classic desktop)
+- Defaults: opens on a "Computer" page (drives + user folders), Details view with Name / Date modified /
+  Type / Size, folders first, status bar, pinned folders in Places, breadcrumb that turns editable on click.
+- Familiar shortcuts: Backspace = back, Alt+Up = up, F2 rename, Ctrl+F search, Ctrl+Shift+N new folder,
   Alt+Enter properties, Super+E opens it.
-- Name in menus: "File Explorer".
+- Name in menus: "Files".
 - Buffs (Dolphin already has, keep visible): tabs, split view, terminal panel, batch rename, folder sizes,
   previews, per-folder view memory, group-by.
 - Sorting: name (natural) / date / type / size / extension, folders first, group by; one-click presets.
@@ -104,7 +104,7 @@ whole-disk index (needs a root helper with per-user permission filtering), Rust 
 - Tabbed terminal with profiles: Fennek OS shell, PowerShell (`pwsh`, optional), CMD (via Wine).
 - AI: `?? <what you want>` → suggested command shown, runs only on confirm; "explain this command".
 
-## Process Explorer ("what runs what")
+## Process viewer ("what runs what")
 - **Grouped by app, not a flat list:** systemd already puts each app/service in its own cgroup → one row per app,
   expand for its process tree.
 - **"Who started this?"** chain for every process: you clicked it / autostart / system service / timer / another app,
@@ -124,7 +124,7 @@ Off until chosen: local (llama.cpp, small model) or cloud (user's own key). Acts
 ## Build order
 1. Base image: Proton integration, power tuning, classic desktop (KDE Plasma)
 2. Auto-containment + VirusTotal check + snapshots
-3. Firewall UI + Process Explorer (share per-app network/energy data)
+3. Firewall UI + Process viewer (share per-app network/energy data)
 4. AI assistant
 5. Own Rust shell (only if Plasma limits us)
 
@@ -203,12 +203,12 @@ podman run --rm --privileged -v fennek-umu-test:/var/home -v E:/Fennek-build/tmp
   allow it at most once a day for trusted runs, never for sandboxed ones; verified with networking off), GitHub on first Proton download, Fedora update checks, ClamAV definitions (database.clamav.net, daily + after boot).
 
 ## Comfort fixes (user feedback)
-- Taskbar right-click menu like the classic desktop: Search / Show Task View button / Cascade, stacked, side by side /
+- Taskbar right-click menu like the classic desktop: Search / Show window overview button / Cascade, stacked, side by side /
   Show the desktop / Task Manager / Lock the taskbar / Taskbar settings (Plasma's panel menu is edit-mode
   oriented). Needs a patch or own containment action plugin.
 - Start tile right-click like the classic desktop: Unpin from Start / Resize / More → Pin to taskbar, Run as
   administrator, Open file location / Uninstall (check Tiled Menu's configurable menu first).
-- "Type here to search" box + Task View button on the taskbar.
+- "Search apps and files" box + window overview button on the taskbar.
 - Mouse wheel over sliders/dropdowns/spin boxes must scroll the page, not change the value (KDE default does).
   Done for QML apps (System Settings etc.): build-time patch of qqc2-desktop-style (ComboBox/SpinBox/
   DoubleSpinBox wheelEnabled false, Slider wheel passes through). To do: QtWidgets apps (Breeze, C++).
