@@ -1,4 +1,6 @@
-Tiled Menu (Windows 10 style start menu) by Chris Holland (Zren)
+Tiled Menu (classic tile start menu) by Chris Holland (Zren)
 Source:  https://github.com/Zren/plasma-applet-tiledmenu
 Commit:  21c85405 (v46 + Plasma 6 favorites fix, 2025-10-12)
-License: GPL-2.0-or-later (see metadata.json). Bundled unmodified by Fennek OS.
+License: GPL-2.0-or-later (see metadata.json).
+Modified by Fennek OS (2026-10): menu wording "Pin to Start" / "Unpin from Start" (AppContextMenu.qml);
+quick tile resize Small/Medium/Wide/Large in the tile menu (TileItem.qml).

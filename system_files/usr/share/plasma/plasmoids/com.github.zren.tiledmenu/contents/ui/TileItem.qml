@@ -149,6 +149,29 @@ Item {
 				menu.addPinToMenuAction(modelData.url)
 			}
 
+			// Fennek OS: quick resize, like the classic Start menu (Small / Medium / Wide / Large).
+			if (!plasmoid.configuration.tilesLocked && modelData.tileType != "group") {
+				var resizeTitle = menu.newMenuItem()
+				resizeTitle.text = i18n("Resize")
+				resizeTitle.section = true
+				menu.addMenuItem(resizeTitle)
+				var sizes = [[i18n("Small"), 1, 1], [i18n("Medium"), 2, 2], [i18n("Wide"), 4, 2], [i18n("Large"), 4, 4]]
+				sizes.forEach(function(size) {
+					var sizeItem = menu.newMenuItem()
+					sizeItem.text = size[0]
+					sizeItem.checkable = true
+					sizeItem.checked = modelData.w == size[1] && modelData.h == size[2]
+					sizeItem.clicked.connect(function() {
+						var tile = tileGrid.tileModel[index]
+						tile.w = size[1]
+						tile.h = size[2]
+						tileGrid.tileModelChanged()
+					})
+					menu.addMenuItem(sizeItem)
+				})
+				menu.addMenuItem(menu.newSeperator())
+			}
+
 			appObj.addActionList(menu)
 
 			if (!plasmoid.configuration.tilesLocked) {

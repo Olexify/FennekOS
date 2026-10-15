@@ -66,7 +66,7 @@ Item {
 			function addPinToMenuAction(favoriteId) {
 				var menuItem = menu.newMenuItem()
 				if (tileGrid.hasAppTile(favoriteId)) {
-					menuItem.text = i18n("Unpin from Menu")
+					menuItem.text = i18n("Unpin from Start")
 					menuItem.icon = "list-remove"
 					menuItem.clicked.connect(function() {
 						if (root.tileIndex >= 0) {
@@ -76,7 +76,7 @@ Item {
 						}
 					})
 				} else {
-					menuItem.text = i18n("Pin to Menu")
+					menuItem.text = i18n("Pin to Start")
 					menuItem.icon = "bookmark-new"
 					menuItem.clicked.connect(function() {
 						tileGrid.addApp(favoriteId)
