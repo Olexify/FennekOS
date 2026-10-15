@@ -33,7 +33,11 @@ jobs:
 
       # The base is ~11 GB; the default runner has too little free disk.
       - name: Free disk space
-        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache && df -h /
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
+          # Build + regrouping need ~40 GB: container storage on the runner's big /mnt disk.
+          sudo mkdir -p /mnt/containers && sudo rm -rf /var/lib/containers && sudo ln -s /mnt/containers /var/lib/containers
+          df -h / /mnt
 
       - name: Verify base image signature and pin its digest
         run: echo "BASE_IMAGE=$(bash verify-base.sh)" >> "$GITHUB_ENV"
@@ -44,6 +48,28 @@ jobs:
 
       - name: Test image
         run: sudo podman run --rm -v "$PWD/test.sh:/t.sh:ro,z" fennek:ci bash /t.sh
+
+      # Content-based layers: daily updates only download what changed (see chunk/Containerfile).
+      - name: Regroup layers (chunkah, signature-verified)
+        run: |
+          out=$(cosign verify quay.io/coreos/chunkah:v0.7.1 \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity 'https://github.com/coreos/chunkah/.github/workflows/ci.yml@refs/tags/v0.7.1')
+          # ^ exactly their release workflow for this tag (not any branch/workflow of the repo)
+          chunkah="quay.io/coreos/chunkah@$(jq -r '.[0].critical.image."docker-manifest-digest"' <<<"$out")"
+          [[ $chunkah == *@sha256:* ]]
+          sudo podman build --skip-unused-stages=false --from fennek:ci \
+            --build-arg "CHUNKAH=$chunkah" \
+            --build-arg "CHUNKAH_CONFIG_STR=$(sudo podman inspect fennek:ci)" \
+            --build-arg "CHUNKAH_ARGS=--prune /sysroot/ --max-layers 128 --label ostree.commit- --label ostree.final-diffid-" \
+            -f chunk/Containerfile -t fennek:chunked chunk/
+          sudo podman image inspect fennek:chunked --format '{{len .RootFS.Layers}} layers, bootc={{index .Labels "containers.bootc"}}'
+
+      - name: Test regrouped image
+        run: |
+          sudo podman run --rm fennek:chunked bootc container lint
+          sudo podman run --rm -v "$PWD/test.sh:/t.sh:ro,z" fennek:chunked bash /t.sh
+          sudo podman tag fennek:chunked fennek:publish
 
       # Publishing + signing never runs for pull requests (a stranger's PR must not publish or sign).
       - name: Publish and sign
@@ -57,7 +83,7 @@ jobs:
           echo "$GH_TOKEN" | cosign login ghcr.io -u "${{ github.actor }}" --password-stdin
           day=$(date -u +%Y%m%d)
           for tag in latest "$day"; do
-            sudo podman push --digestfile "/tmp/digest-$tag" fennek:ci "$IMAGE:$tag"
+            sudo podman push --digestfile "/tmp/digest-$tag" fennek:publish "$IMAGE:$tag"
             # Classic signature format: what installed systems (containers/image sigstore attachments) can read.
             # cosign v3 defaults to the new bundle format, which they reject ("no signature exists").
             cosign sign --yes --key env://COSIGN_PRIVATE_KEY --new-bundle-format=false --use-signing-config=false \

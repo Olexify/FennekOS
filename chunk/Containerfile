@@ -1,0 +1,18 @@
+# Regroups the finished Fennek image into content-based layers (chunkah, from CoreOS), so unchanged
+# packages produce identical layers every day and installed systems download only what changed.
+# Copy of chunkah v0.7.1's Containerfile.splitter, plus SOURCE_DATE_EPOCH for reproducible layers.
+# Used by .github/workflows/build.yml with --from <image> and a signature-verified CHUNKAH digest.
+ARG CHUNKAH=quay.io/coreos/chunkah:v0.7.1
+ARG CHUNKAH_ARGS=""
+ARG CHUNKAH_CONFIG_STR
+
+FROM overridden AS target
+FROM ${CHUNKAH} AS chunkah
+ARG CHUNKAH_CONFIG_STR
+ARG CHUNKAH_ARGS
+ARG SOURCE_DATE_EPOCH=1700000000
+RUN --mount=type=bind,target=/run/src,rw \
+    --mount=from=target,target=/chunkah,ro \
+      SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH} chunkah build ${CHUNKAH_ARGS} --output oci:/run/src/out
+
+FROM oci:out
