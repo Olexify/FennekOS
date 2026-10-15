@@ -1,0 +1,3 @@
+# Graphical boot splash (the fox) instead of scrolling boot messages, on every install and update.
+# Press Esc during boot to see the messages anyway.
+kargs = ["rhgb", "quiet"]

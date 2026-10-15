@@ -88,4 +88,5 @@ import json; d = json.load(open('/etc/containers/policy.json'))['transports']['d
 assert d['type'] == 'sigstoreSigned' and d['keyPath'] == '/etc/pki/containers/fennek-cosign.pub'
 " 2>/dev/null                                                 || fail "updates must require Fennek's signature"
 grep -q 'BEGIN PUBLIC KEY' /etc/pki/containers/fennek-cosign.pub || fail "Fennek public key"
+grep -q '"rhgb", "quiet"' /usr/lib/bootc/kargs.d/10-fennek-splash.toml || fail "boot splash kernel args"
 echo "all checks passed"
