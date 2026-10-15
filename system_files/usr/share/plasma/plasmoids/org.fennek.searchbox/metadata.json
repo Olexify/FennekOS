@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [{ "Name": "Fennek OS" }],
+        "Category": "Application Launchers",
+        "Description": "A Windows 10-style \"Type here to search\" box for the taskbar",
+        "Icon": "search",
+        "Id": "org.fennek.searchbox",
+        "License": "GPL-3.0-only",
+        "Name": "Search box"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

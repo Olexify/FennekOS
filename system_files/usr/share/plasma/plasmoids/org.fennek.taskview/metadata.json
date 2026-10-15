@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [{ "Name": "Fennek OS" }],
+        "Category": "Windows and Tasks",
+        "Description": "Windows 10-style Task View button: shows all open windows",
+        "Icon": "view-app-grid-symbolic",
+        "Id": "org.fennek.taskview",
+        "License": "GPL-3.0-only",
+        "Name": "Task View"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
