@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Fennek first login
+Exec=/usr/libexec/fennek-first-login
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=2
