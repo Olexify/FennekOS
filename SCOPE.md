@@ -121,6 +121,12 @@ whole-disk index (needs a root helper with per-user permission filtering), Rust 
 Off until chosen: local (llama.cpp, small model) or cloud (user's own key). Acts through OS tools
 (firewall, power, settings, VirusTotal, sandbox) with a confirm button on every action.
 
+## Installer (from first fresh-install test, 2026-10-16)
+- Live session: own welcome window and logo (now the base's Welcome Center with its logo); install icon = Fennek.
+- "Install next to the existing system" as the first, default choice when another OS is found; "Use whole disk"
+  clearly says what gets erased.
+- Disk encryption: offer a recovery key to save/print, and TPM unlock so most people need no extra password.
+
 ## Build order
 1. Base image: Proton integration, power tuning, classic desktop (KDE Plasma)
 2. Auto-containment + VirusTotal check + snapshots
