@@ -1,0 +1,9 @@
+# Fennek OS: windows behave like Windows 10.
+[org.kde.kdecoration2]
+# Window menu (app icon) on the left; minimize, maximize, close on the right. No extra KDE buttons.
+ButtonsOnLeft=M
+ButtonsOnRight=IAX
+
+[TabBox]
+# Alt+Tab shows a grid of window previews.
+LayoutName=thumbnail_grid

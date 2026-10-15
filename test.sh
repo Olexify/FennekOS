@@ -21,6 +21,9 @@ grep -q '^ID=fedora' /usr/lib/os-release                      || fail "os-releas
 [ "$(magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.png -crop 1x1+3839+2159 -format '%[fx:r>b]' info:)" = 1 ] \
                                                               || fail "wallpaper isn't the warm dusk gradient"
 grep -q '^Image=Fennek' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults || fail "lnf wallpaper"
+grep -q 'panel.height = 40' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "40 px taskbar"
+grep -q '^ButtonsOnRight=IAX' /etc/xdg/kwinrc && grep -q '^LayoutName=thumbnail_grid' /etc/xdg/kwinrc || fail "Windows window buttons / Alt+Tab"
+grep -q '^TitleAlignment=AlignLeft' /etc/xdg/breezerc                || fail "titles on the left"
 grep -q 'panel.floating = false' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "taskbar layout"
 grep -q '^LookAndFeelPackage=org.fennek.desktop' /usr/share/kde-settings/kde-profile/default/xdg/kdeglobals || fail "default lnf"
 [ -x /usr/bin/fennek-vt-check ]                               || fail "vt-check executable"

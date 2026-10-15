@@ -1,0 +1,3 @@
+# Fennek OS: window titles on the left, like Windows 10.
+[Windeco]
+TitleAlignment=AlignLeft
