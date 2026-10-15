@@ -73,6 +73,9 @@ grep -q 'com.github.zren.tiledmenu' /usr/share/plasma/look-and-feel/org.fennek.d
 ! systemctl is-enabled -q dnf-makecache.timer 2>/dev/null      || fail "dnf-makecache timer (needless daily download)"
 ! systemctl is-enabled -q unbound-anchor.timer 2>/dev/null     || fail "unbound-anchor timer"
 grep -q '^Name=File Explorer$' /usr/share/applications/org.kde.dolphin.desktop || fail "File Explorer name"
+grep -q '^Name=Task Manager$' /usr/share/applications/org.kde.plasma-systemmonitor.desktop || fail "Task Manager name"
+grep -q '^X-KDE-Shortcuts=.*Ctrl+Shift+Esc' /usr/share/applications/org.kde.plasma-systemmonitor.desktop || fail "Ctrl+Shift+Esc"
+grep -q '^X-KDE-Shortcuts=.*Meta+R' /usr/share/applications/org.kde.krunner.desktop || fail "Win+R"
 grep -q '^ViewMode=1' /etc/skel/.local/share/dolphin/view_properties/global/.directory || fail "Explorer details view"
 q=$(ls -d /usr/lib*/qt6/qml/org/kde/desktop | head -1)
 grep -q "wheelEnabled: false  // Fennek" "$q/ComboBox.qml" && grep -q "wheelEnabled: false  // Fennek" "$q/SpinBox.qml" \

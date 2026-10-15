@@ -94,6 +94,29 @@ assert s.count(old) == 1, "Slider.qml changed upstream: revisit the Fennek wheel
 replace_file(p, s.replace(old, old + "                wheel.accepted = false; return;  // Fennek OS: wheel scrolls the page\n"))
 EOF
 
+# Windows shortcuts, added to KDE's own: Ctrl+Shift+Esc = Task Manager (System Monitor, renamed), Win+R = Run.
+python3 - <<'EOF'
+import os, pathlib, re
+def replace_file(p, text):
+    tmp = p.with_name(p.name + ".fennek-new"); tmp.write_text(text); os.chmod(tmp, 0o644); os.replace(tmp, p)
+def add_shortcut(path, shortcut, rename=None):
+    p = pathlib.Path(path)
+    assert p.exists(), f"{p} missing: revisit the Fennek Windows-shortcuts patch"
+    head, sep, rest = p.read_text().partition("\n[Desktop Action")   # only touch the main [Desktop Entry] group
+    m = re.search(r"^X-KDE-Shortcuts=(.*)$", head, re.M)
+    if m:
+        keys = [k for k in m.group(1).split(",") if k]
+        if shortcut not in keys:
+            head = head[:m.start()] + "X-KDE-Shortcuts=" + ",".join([shortcut] + keys) + head[m.end():]
+    else:
+        head = head.replace("[Desktop Entry]\n", f"[Desktop Entry]\nX-KDE-Shortcuts={shortcut}\n", 1)
+    if rename:
+        head = re.sub(r"^Name=.*$", f"Name={rename}", head, count=1, flags=re.M)
+    replace_file(p, head + sep + rest)
+add_shortcut("/usr/share/applications/org.kde.plasma-systemmonitor.desktop", "Ctrl+Shift+Esc", rename="Task Manager")
+add_shortcut("/usr/share/applications/org.kde.krunner.desktop", "Meta+R")
+EOF
+
 # Dolphin shows up as "File Explorer" (English name; translations keep their own).
 sed -i 's/^Name=Dolphin$/Name=File Explorer/' /usr/share/applications/org.kde.dolphin.desktop
 # Login screen wallpaper.
