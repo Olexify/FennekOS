@@ -162,6 +162,20 @@ sed -i 's/^DefaultZone=.*/DefaultZone=FennekOS/' /etc/firewalld/firewalld.conf
 systemctl enable clamav-freshclam-once.timer
 systemctl --global enable fennek-download-guard.service
 
+# Battery: switch to the power-saver profile when unplugged (back to balanced on AC), dim and turn the screen
+# off sooner on battery. System-wide PowerDevil defaults, merged (kwriteconfig6), users can still change them.
+pd() { kwriteconfig6 --file /etc/xdg/powerdevilrc --group "$1" --group "$2" --key "$3" "$4"; }
+for p in Battery LowBattery; do
+    pd "$p" Performance PowerProfile power-saver
+    pd "$p" Display DimDisplayWhenIdle true
+    pd "$p" Display DimDisplayIdleTimeoutSec 120
+    pd "$p" Display TurnOffDisplayWhenIdle true
+    pd "$p" Display TurnOffDisplayIdleTimeoutSec 300
+done
+pd AC Performance PowerProfile balanced
+pd AC Display TurnOffDisplayWhenIdle true
+pd AC Display TurnOffDisplayIdleTimeoutSec 600
+
 # Sign-in screen like the classic desktop. Plasma Login Manager's screens are compiled into the program; SDDM (KDE's
 # long-standing login manager) takes QML themes: /usr/share/sddm/themes/fennek. Wayland greeter via KWin.
 dnf -y install sddm sddm-wayland-plasma

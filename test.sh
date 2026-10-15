@@ -158,6 +158,11 @@ PY
 grep -q '^X-KDE-Shortcuts=Meta+I' /usr/share/applications/fennek-settings.desktop || fail "Super+I for Settings"
 ! grep -hs '^X-KDE-Shortcuts=.*Meta+I' /usr/share/kglobalaccel/systemsettings.desktop /usr/share/applications/systemsettings.desktop \
                                                               || fail "Super+I still on KDE System Settings too"
+# Battery defaults: power-saver on battery, balanced on AC (needs a power-profiles provider, e.g. tuned-ppd).
+[ "$(kreadconfig6 --file /etc/xdg/powerdevilrc --group Battery --group Performance --key PowerProfile)" = power-saver ] \
+                                                              || fail "power-saver profile on battery"
+[ "$(kreadconfig6 --file /etc/xdg/powerdevilrc --group AC --group Performance --key PowerProfile)" = balanced ] || fail "balanced on AC"
+{ command -v powerprofilesctl >/dev/null || rpm -q tuned-ppd power-profiles-daemon >/dev/null 2>&1; } || fail "no power-profiles provider"
 echo "--- privacy audit ---"
 echo "enabled timers: $(systemctl list-unit-files --type=timer --state=enabled --no-legend 2>/dev/null | awk '{print $1}' | tr '\n' ' ')"
 echo "user timers:    $(ls /etc/systemd/user/timers.target.wants/ 2>/dev/null | tr '\n' ' ')"
