@@ -205,6 +205,8 @@ systemctl --global enable fennek-download-guard.service
 
 # Battery: switch to the power-saver profile when unplugged (back to balanced on AC), dim and turn the screen
 # off sooner on battery. System-wide PowerDevil defaults, merged (kwriteconfig6), users can still change them.
+# Power profiles need a provider (Fedora's default is tuned-ppd); add it if the base has none.
+rpm -q tuned-ppd >/dev/null || rpm -q power-profiles-daemon >/dev/null || dnf -y install tuned-ppd
 pd() { kwriteconfig6 --file /etc/xdg/powerdevilrc --group "$1" --group "$2" --key "$3" "$4"; }
 for p in Battery LowBattery; do
     pd "$p" Performance PowerProfile power-saver
