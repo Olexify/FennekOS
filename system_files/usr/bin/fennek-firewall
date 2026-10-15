@@ -3,7 +3,7 @@
 
 Usage: fennek-firewall block PROGRAM    PROGRAM = path, command name (firefox) or a Windows .exe
        fennek-firewall allow PROGRAM
-       fennek-firewall list
+       fennek-firewall list [--json]
        fennek-firewall --selftest
 
 Native programs and trusted Windows programs get an OpenSnitch rule (connections are rejected).
@@ -79,6 +79,12 @@ def set_offline(exe, offline):
     OFFLINE.write_text("".join(d + "\n" for d in sorted(lines)))
 
 
+def blocked_entry(r):
+    """Rule → {"name": shown name, "program": what to pass to `allow`} (path, or the .exe name)."""
+    name = r["description"].removeprefix("Fennek OS: no internet for ")
+    return {"name": name, "program": r["operator"]["data"] if r["operator"]["operand"] == "process.path" else name}
+
+
 def root_part(cmd, prog):
     """Runs as root: write/remove the OpenSnitch rule, start/stop the engine."""
     r = rule(prog)
@@ -96,9 +102,9 @@ def root_part(cmd, prog):
 def main(argv):
     if argv == ["--selftest"]:
         return selftest()
-    if argv == ["list"]:
-        for p in ours():
-            print(json.loads(p.read_text())["description"].removeprefix("Fennek OS: no internet for "))
+    if argv[:1] == ["list"]:
+        blocked = [blocked_entry(json.loads(p.read_text())) for p in ours()]
+        print(json.dumps(blocked) if argv[1:] == ["--json"] else "\n".join(b["name"] for b in blocked if b["name"]))
         return
     if argv[:1] == ["--root"] and os.geteuid() == 0:     # second half, after pkexec
         return root_part(argv[1], argv[2])
@@ -124,6 +130,8 @@ def selftest():
     assert rx.search(r"C:\users\steamuser\My Game.exe") and rx.search(r"Z:\var\home\u\Downloads\my game.EXE -x")
     assert not rx.search(r"C:\Other Game.exe") and not rx.search(r"C:\NotMy Game.exe")
     assert slug("../../etc") == "etc", "rule names can't leave the rules folder"
+    assert blocked_entry(r) == {"name": "curl", "program": "/usr/bin/curl"}
+    assert blocked_entry(w) == {"name": "My Game.exe", "program": "My Game.exe"}
     print("selftest ok")
 
 

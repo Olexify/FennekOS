@@ -52,8 +52,9 @@ var categories = [
    {"name": "Assistive features", "kcm": "kcm_access", "icon": "preferences-desktop-accessibility", "desc": "Sticky keys, visual bell"},
    {"name": "Keyboard shortcuts", "kcm": "kcm_keys", "icon": "preferences-desktop-keyboard-shortcut", "desc": "Change shortcuts"}
   ]},
- {"name": "Privacy & Security", "icon": "security-high", "sub": "Quarantine, file history, permissions",
+ {"name": "Privacy & Security", "icon": "security-high", "sub": "Firewall, quarantine, permissions",
   "items": [
+   {"name": "Firewall", "cmd": "plasmawindowed org.fennek.firewall", "icon": "security-high", "desc": "Choose which apps may use the internet"},
    {"name": "Quarantine", "cmd": "fennek-quarantine", "icon": "security-medium", "desc": "Downloads the antivirus blocked"},
    {"name": "App permissions", "kcm": "kcm_app-permissions", "icon": "preferences-system-privacy", "desc": "What store apps may access"},
    {"name": "Privacy policy", "cmd": "xdg-open https://github.com/Olexify/FennekOS/blob/main/PRIVACY.md", "icon": "help-about", "desc": "Every connection Fennek OS makes"}

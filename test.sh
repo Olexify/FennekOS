@@ -41,6 +41,8 @@ grep -q '^BorderlessMaximizedWindows=false' /etc/xdg/kwinrc       || fail "title
 r=/usr/share/kxmlgui5/dolphin/dolphinui.rc
 grep -q 'name="go_up"' "$r" && grep -q 'version="10[0-9][0-9]"' "$r" && grep -q '<Menu' "$r" || fail "Files toolbar (Back/Forward/Up)"
 python3 -c "import sys, xml.dom.minidom as x; x.parse(sys.argv[1])" "$r"   || fail "Files toolbar file is not valid XML"
+grep -q '"Id": "org.fennek.firewall"' /usr/share/plasma/plasmoids/org.fennek.firewall/metadata.json && grep -q '^Exec=plasmawindowed org.fennek.firewall' /usr/share/applications/fennek-firewall.desktop || fail "Firewall window"
+fennek-firewall list --json | python3 -c 'import json,sys; assert json.load(sys.stdin) == []' || fail "firewall list --json"
 grep -q '^MenuBar=Enabled' /etc/xdg/dolphinrc                     || fail "Files menu bar"
 grep -q 'panel.floating = false' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "taskbar layout"
 grep -q '^LookAndFeelPackage=org.fennek.desktop' /usr/share/kde-settings/kde-profile/default/xdg/kdeglobals || fail "default lnf"
