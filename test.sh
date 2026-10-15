@@ -26,6 +26,13 @@ grep -q '^ButtonsOnRight=IAX' /etc/xdg/kwinrc && grep -q '^LayoutName=thumbnail_
 grep -q '^TitleAlignment=AlignLeft' /etc/xdg/breezerc                || fail "titles on the left"
 grep -q 'panel.floating = false' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "taskbar layout"
 grep -q '^LookAndFeelPackage=org.fennek.desktop' /usr/share/kde-settings/kde-profile/default/xdg/kdeglobals || fail "default lnf"
+# What a fresh user actually gets: every kdeglobals in the system lookup must agree on Fennek's look.
+for f in /etc/xdg/kdeglobals /usr/share/kde-settings/kde-profile/default/xdg/kdeglobals; do
+    v=$(grep -h '^LookAndFeelPackage=' "$f" 2>/dev/null | tail -1)
+    [ -z "$v" ] || [ "$v" = "LookAndFeelPackage=org.fennek.desktop" ] || fail "$f overrides the look: $v"
+done
+[ "$(XDG_CONFIG_DIRS=/etc/xdg:/usr/share/kde-settings/kde-profile/default/xdg HOME=$(mktemp -d) kreadconfig6 --group KDE --key LookAndFeelPackage)" = org.fennek.desktop ] \
+                                                              || fail "a new user wouldn't get the Fennek look"
 [ -x /usr/bin/fennek-vt-check ]                               || fail "vt-check executable"
 fennek-vt-check --selftest >/dev/null                          || fail "vt-check selftest"
 grep -q '^Exec=fennek-vt-check %F' /usr/share/kio/servicemenus/fennek-virustotal.desktop || fail "vt service menu"

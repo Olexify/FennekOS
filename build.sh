@@ -69,6 +69,9 @@ cp -an /usr/share/plasma/look-and-feel/org.fedoraproject.fedora.desktop/contents
 sed -i 's/^Image=.*/Image=Fennek/' "$lnf/contents/defaults"
 sed -i 's/^LookAndFeelPackage=.*/LookAndFeelPackage=org.fennek.desktop/' \
     /usr/share/kde-settings/kde-profile/default/xdg/kdeglobals
+# /etc/xdg comes first in the lookup: Universal Blue's own default there silently won before (the VM showed
+# KDE's stock panel, Kickoff and wallpaper). Merge our value into it (kwriteconfig6 writes new file + rename).
+kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key LookAndFeelPackage org.fennek.desktop
 # Comfort: the mouse wheel scrolls the page; it never changes a dropdown, number box or slider you happen to
 # pass over (KDE's default). Values change by click, drag or keyboard only. Patches KDE's control style.
 python3 - <<'EOF'
