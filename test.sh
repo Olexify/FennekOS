@@ -97,6 +97,11 @@ python3 -c "import json; p=json.load(open('/etc/firefox/policies/policies.json')
 # Privacy audit (informational, printed in CI logs): everything that could connect out. Keep PRIVACY.md in sync.
 id fquar >/dev/null 2>&1 || useradd -m fquar >/dev/null 2>&1
 su fquar -c "fennek-quarantine --selftest" >/dev/null           || fail "quarantine selftest"
+command -v efibootmgr >/dev/null                             || fail "efibootmgr (Restart to Windows)"
+/usr/libexec/fennek-reboot-windows-helper --selftest >/dev/null || fail "reboot-windows selftest"
+systemctl is-enabled -q fennek-detect-windows.service         || fail "windows detection not enabled"
+grep -q 'exec.path">/usr/libexec/fennek-reboot-windows-helper' /usr/share/polkit-1/actions/org.fennek.reboot-windows.policy \
+                                                              || fail "reboot-windows polkit action"
 echo "--- privacy audit ---"
 echo "enabled timers: $(systemctl list-unit-files --type=timer --state=enabled --no-legend 2>/dev/null | awk '{print $1}' | tr '\n' ' ')"
 echo "user timers:    $(ls /etc/systemd/user/timers.target.wants/ 2>/dev/null | tr '\n' ' ')"

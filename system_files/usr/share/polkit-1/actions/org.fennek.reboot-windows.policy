@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Fennek OS</vendor>
+  <action id="org.fennek.reboot-windows">
+    <description>Restart into Windows once</description>
+    <message>Restarting into Windows requires authentication</message>
+    <icon_name>system-reboot</icon_name>
+    <!-- Like the normal Restart button: the person at the computer may do it without a password. -->
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/fennek-reboot-windows-helper</annotate>
+  </action>
+</policyconfig>

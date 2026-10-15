@@ -1,0 +1,40 @@
+#!/usr/bin/python3
+"""Root helper: restart into Windows once (UEFI BootNext), then normal boot order again.
+Run through pkexec by fennek-reboot-windows. Does exactly this and nothing else.
+  fennek-reboot-windows-helper           set BootNext to Windows Boot Manager and reboot
+  fennek-reboot-windows-helper --check   exit 0 if a Windows boot entry exists
+  fennek-reboot-windows-helper --selftest
+"""
+import re, subprocess, sys
+
+
+def windows_entry(efibootmgr_output):
+    """'Boot0003* Windows Boot Manager ...' -> '0003' (first match), else None."""
+    for line in efibootmgr_output.splitlines():
+        m = re.match(r"Boot([0-9A-Fa-f]{4})\*?\s+Windows Boot Manager\b", line)
+        if m:
+            return m.group(1)
+    return None
+
+
+def selftest():
+    sample = ("BootCurrent: 0001\nTimeout: 1 seconds\nBootOrder: 0001,0003,0000\n"
+              "Boot0000* UEFI: Built-in EFI Shell\nBoot0001* Fedora\tHD(1,GPT,...)/File(\\EFI\\fedora\\shimx64.efi)\n"
+              "Boot0003* Windows Boot Manager\tHD(1,GPT,...)/File(\\EFI\\Microsoft\\Boot\\bootmgfw.efi)\n")
+    assert windows_entry(sample) == "0003"
+    assert windows_entry("Boot0001* Fedora\nBoot0002 Windows Something Else\n") is None
+    assert windows_entry("Boot000A  Windows Boot Manager\n") == "000A", "inactive entry still bootable once"
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["--selftest"]:
+        sys.exit(selftest())
+    out = subprocess.run(["efibootmgr"], capture_output=True, text=True).stdout
+    entry = windows_entry(out)
+    if sys.argv[1:] == ["--check"]:
+        sys.exit(0 if entry else 1)
+    if not entry:
+        sys.exit("No Windows boot entry found.")
+    subprocess.run(["efibootmgr", "--bootnext", entry], check=True, capture_output=True)
+    subprocess.run(["systemctl", "reboot"], check=True)

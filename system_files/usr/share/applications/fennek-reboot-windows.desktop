@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Restart to Windows
+Comment=Restart into Windows once; the next restart comes back to Fennek OS
+Exec=fennek-reboot-windows
+Icon=system-reboot
+Categories=System;
+Keywords=windows;dual boot;reboot;restart;
+# Shown only on dual-boot computers: fennek-detect-windows.service creates this at boot if Windows exists.
+TryExec=/run/fennek/has-windows

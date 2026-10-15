@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Restart into Windows once (dual boot). Next restart comes back to Fennek OS as usual.
+if ! /usr/libexec/fennek-reboot-windows-helper --check 2>/dev/null; then
+    msg="Windows wasn't found on this computer."
+    { [ -n "${WAYLAND_DISPLAY:-}${DISPLAY:-}" ] && kdialog --title "Restart to Windows" --sorry "$msg"; } || echo "$msg" >&2
+    exit 1
+fi
+exec pkexec /usr/libexec/fennek-reboot-windows-helper

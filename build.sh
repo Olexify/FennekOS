@@ -124,6 +124,9 @@ sed -i 's/^DefaultZone=.*/DefaultZone=FennekOS/' /etc/firewalld/firewalld.conf
 systemctl enable clamav-freshclam-once.timer
 systemctl --global enable fennek-download-guard.service
 
+# Dual boot: "Restart to Windows" appears when a Windows boot entry exists.
+systemctl enable fennek-detect-windows.service
+
 # Instant file search (Everything-style), feeds the Start menu / KRunner.
 systemctl --global enable fennek-search.service
 

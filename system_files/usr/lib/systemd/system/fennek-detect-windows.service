@@ -1,0 +1,10 @@
+[Unit]
+Description=Show "Restart to Windows" on dual-boot computers
+ConditionPathExists=/sys/firmware/efi
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'mkdir -p /run/fennek && if /usr/libexec/fennek-reboot-windows-helper --check; then ln -sf /usr/bin/true /run/fennek/has-windows; else rm -f /run/fennek/has-windows; fi'
+
+[Install]
+WantedBy=multi-user.target
