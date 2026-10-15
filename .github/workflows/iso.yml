@@ -48,8 +48,14 @@ jobs:
           image-ref: localhost/fennek-iso:latest
           iso-dest: ${{ github.workspace }}/output/fennek-os.iso
 
-      - name: Checksum
-        run: cd output && sha256sum fennek-os.iso | tee fennek-os.iso.sha256 && ls -lh
+      # Titanoboa resolves iso-dest inside its own action folder; take the file from where it reports it.
+      - name: Collect ISO + checksum
+        env:
+          BUILT: ${{ steps.iso.outputs.iso-dest }}
+        run: |
+          [ "$BUILT" -ef output/fennek-os.iso ] || mv "$BUILT" output/fennek-os.iso
+          cd output && sha256sum fennek-os.iso | tee fennek-os.iso.sha256 && ls -lh
+          [ "$(stat -c %s fennek-os.iso)" -gt 1000000000 ]   # a real ISO is GBs, never a stub
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
