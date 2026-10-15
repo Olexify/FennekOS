@@ -101,7 +101,8 @@ assert s.count(old) == 1, "Slider.qml changed upstream: revisit the Fennek wheel
 replace_file(p, s.replace(old, old + "                wheel.accepted = false; return;  // Fennek OS: wheel scrolls the page\n"))
 EOF
 
-# familiar shortcuts, added to KDE's own: Ctrl+Shift+Esc = Task Manager (System Monitor, renamed), Super+R = Run.
+# familiar shortcuts, added to KDE's own: Ctrl+Shift+Esc = Task Manager (System Monitor, renamed), Super+R = Run,
+# Super+E = File Explorer.
 python3 - <<'EOF'
 import os, pathlib, re
 def replace_file(p, text):
@@ -126,6 +127,7 @@ def _add(p, shortcut, rename):
     replace_file(p, head + sep + rest)
 add_shortcut("org.kde.plasma-systemmonitor.desktop", "Ctrl+Shift+Esc", rename="Task Manager")
 add_shortcut("org.kde.krunner.desktop", "Meta+R")
+add_shortcut("org.kde.dolphin.desktop", "Meta+E")
 # Super+I opens Fennek Settings (fennek-settings.desktop) instead of KDE's System Settings.
 for name in ("systemsettings.desktop",):
     for d in ("/usr/share/kglobalaccel", "/usr/share/applications"):

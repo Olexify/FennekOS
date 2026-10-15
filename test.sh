@@ -105,6 +105,7 @@ grep -q '^Name=Files$' /usr/share/applications/org.kde.dolphin.desktop || fail "
 grep -q '^Name=Task Manager$' /usr/share/applications/org.kde.plasma-systemmonitor.desktop || fail "Task Manager name"
 grep -q '^X-KDE-Shortcuts=.*Ctrl+Shift+Esc' /usr/share/applications/org.kde.plasma-systemmonitor.desktop || fail "Ctrl+Shift+Esc"
 grep -qs '^X-KDE-Shortcuts=.*Meta+R' /usr/share/kglobalaccel/org.kde.krunner.desktop /usr/share/applications/org.kde.krunner.desktop || fail "Win+R"
+grep -q '^X-KDE-Shortcuts=.*Meta+E' /usr/share/kglobalaccel/org.kde.dolphin.desktop || fail "Super+E opens File Explorer"
 grep -q '^ViewMode=1' /etc/skel/.local/share/dolphin/view_properties/global/.directory || fail "Files details view"
 q=$(ls -d /usr/lib*/qt6/qml/org/kde/desktop | head -1)
 grep -q "wheelEnabled: false  // Fennek" "$q/ComboBox.qml" && grep -q "wheelEnabled: false  // Fennek" "$q/SpinBox.qml" \
