@@ -6,12 +6,14 @@ ActiveTextColor=0,0,0,255
 InactiveTextColor=153,153,153,255
 LeftButtons=M
 RightButtons=IAX
-Shadow=false
+Shadow=true
 
 [Layout]
-BorderLeft=1
-BorderRight=1
-BorderBottom=1
+# No side borders (kwinrc BorderSize=None): the 1 px edge is drawn in the shadow; resizing uses the
+# invisible grab area just outside the window.
+BorderLeft=0
+BorderRight=0
+BorderBottom=0
 TitleEdgeTop=0
 TitleEdgeBottom=0
 TitleEdgeLeft=8
@@ -23,3 +25,8 @@ ButtonWidth=46
 ButtonHeight=31
 ButtonSpacing=0
 ButtonMarginTop=0
+# Shadow size; must match the shadow drawn in decoration.svg.
+PaddingLeft=14
+PaddingRight=14
+PaddingTop=10
+PaddingBottom=20

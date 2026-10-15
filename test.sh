@@ -32,6 +32,9 @@ grep -q '^ButtonsOnRight=IAX' /etc/xdg/kwinrc && grep -q '^LayoutName=thumbnail_
 grep -q '^TitleAlignment=AlignLeft' /etc/xdg/breezerc                || fail "titles on the left"
 a=/usr/share/aurorae/themes/FennekClassic
 grep -q '^theme=__aurorae__svg__FennekClassic' /etc/xdg/kwinrc && [ -f "$a/FennekClassicrc" ] || fail "Fennek Classic window frame"
+lib=$(sed -n 's/^library=//p' /etc/xdg/kwinrc)
+[ -f "/usr/lib64/qt6/plugins/org.kde.kdecoration3/$lib.so" ]      || fail "window frame engine $lib not installed"
+grep -q '^Shadow=true' "$a/FennekClassicrc" && grep -q 'id="decoration-bottomright"' "$a/decoration.svg" || fail "window shadow"
 for b in minimize maximize restore close; do grep -q 'id="hover-center"' "$a/$b.svg" || fail "frame button $b"; done
 grep -q 'id="decoration-top"' "$a/decoration.svg" && grep -q 'id="decoration-inactive-top"' "$a/decoration.svg" || fail "frame svg"
 grep -q '^BorderlessMaximizedWindows=false' /etc/xdg/kwinrc       || fail "title bar on maximized windows"
@@ -97,6 +100,7 @@ grep -q 'com.github.zren.tiledmenu' /usr/share/plasma/look-and-feel/org.fennek.d
 ! grep -q '^countme=1' /etc/yum.repos.d/*.repo                || fail "countme in repos"
 ! systemctl is-enabled -q dnf-makecache.timer 2>/dev/null      || fail "dnf-makecache timer (needless daily download)"
 ! systemctl is-enabled -q unbound-anchor.timer 2>/dev/null     || fail "unbound-anchor timer"
+rpm -q firefox >/dev/null && grep -q '"DisableTelemetry": true' /etc/firefox/policies/policies.json || fail "Firefox + privacy policy"
 grep -q '^Name=File Explorer$' /usr/share/applications/org.kde.dolphin.desktop || fail "File Explorer name"
 grep -q '^Name=Task Manager$' /usr/share/applications/org.kde.plasma-systemmonitor.desktop || fail "Task Manager name"
 grep -q '^X-KDE-Shortcuts=.*Ctrl+Shift+Esc' /usr/share/applications/org.kde.plasma-systemmonitor.desktop || fail "Ctrl+Shift+Esc"

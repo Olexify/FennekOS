@@ -18,8 +18,11 @@ curl -fsSL -o "$OSN_RPM" \
     "https://github.com/evilsocket/opensnitch/releases/download/v${OSN_VER}/opensnitch-${OSN_VER}-1.x86_64.rpm"
 echo "${OSN_SHA256}  ${OSN_RPM}" | sha256sum -c -
 
+# Firefox as a regular app: the base leaves the browser out, but a fresh install needs one from the first
+# minute, and the system privacy policy in /etc/firefox applies to it.
 dnf -y install \
     libnetfilter_queue \
+    firefox \
     zsh zsh-autosuggestions zsh-syntax-highlighting \
     snapper \
     clamav clamav-freshclam inotify-tools \
