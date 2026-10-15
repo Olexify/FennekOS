@@ -134,6 +134,43 @@ EOF
 
 # Dolphin shows up as "File Explorer" (English name; translations keep their own).
 sed -i 's/^Name=Dolphin$/Name=File Explorer/' /usr/share/applications/org.kde.dolphin.desktop
+# File Explorer toolbar: Back, Forward, Up, address bar, search. Dolphin compiles its menu/toolbar layout
+# into the binary; take that copy, change only the main toolbar and install it with a higher version
+# (KXMLGUI loads the newest version), so the menus always stay the ones this Dolphin ships.
+python3 - <<'PYEOF'
+import pathlib, re, zlib
+raw = pathlib.Path("/usr/bin/dolphin").read_bytes()
+data = memoryview(raw)  # slices without copying
+want = b'<gui name="dolphin"'
+def candidates():
+    try:
+        from compression import zstd
+        for m in re.finditer(rb"\x28\xb5\x2f\xfd", data):
+            try: yield zstd.ZstdDecompressor().decompress(data[m.start():m.start() + 4_000_000])
+            except Exception: pass
+    except ImportError:
+        pass
+    for m in re.finditer(rb"\x78[\x01\x5e\x9c\xda]", data):
+        try: yield zlib.decompressobj().decompress(data[m.start():m.start() + 4_000_000])
+        except zlib.error: pass
+    i = raw.find(want)
+    if i > 0: yield raw[raw.rfind(b"<?xml", 0, i):raw.find(b"</gui>", i) + 6]
+# Dolphin also embeds a phone layout (low version, toolbar at the bottom): the desktop one has the highest version.
+ver = lambda c: int(re.search(rb'<gui name="dolphin" version="(\d+)"', c).group(1))
+found = [c for c in candidates() if re.search(rb'<gui name="dolphin" version="\d+"', c) and b"</gui>" in c]
+assert found, "Dolphin layout (dolphinui.rc) not found in /usr/bin/dolphin"
+rc = max(found, key=ver)
+s = rc[:rc.find(b"</gui>") + 6].decode()
+m = re.search(r'(<ToolBar[^>]*name="mainToolBar"[^>]*>\s*<text[^<]*</text>)(.*?)(\s*</ToolBar>)', s, re.S)
+assert m and 'name="go_back"' in m.group(2), "Dolphin main toolbar changed upstream"
+acts = "".join(f'\n        <Action name="{a}" />' for a in ("go_back", "go_forward", "go_up", "url_navigators", "toggle_search", "hamburger_menu"))
+s = s[:m.start(2)] + acts + s[m.end(2):]
+s, n = re.subn(r'(<gui name="dolphin" version=")(\d+)"', lambda v: f'{v.group(1)}{int(v.group(2)) + 1000}"', s, count=1)
+assert n == 1, "Dolphin layout version not found"
+out = pathlib.Path("/usr/share/kxmlgui5/dolphin/dolphinui.rc")
+out.parent.mkdir(parents=True, exist_ok=True)
+out.write_text(s)
+PYEOF
 # Login screen wallpaper.
 sed -i 's|/usr/share/wallpapers/Fedora/|/usr/share/wallpapers/Fennek/|g' /usr/lib/plasmalogin/defaults.conf
 # Boot splash watermark (bgrt theme reads spinner's images). rm first: the file is hardlinked.

@@ -30,6 +30,15 @@ grep -q 'panel.hiding = "none"' /usr/share/plasma/look-and-feel/org.fennek.deskt
 grep -q 'panel.height = 40' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "40 px taskbar"
 grep -q '^ButtonsOnRight=IAX' /etc/xdg/kwinrc && grep -q '^LayoutName=thumbnail_grid' /etc/xdg/kwinrc || fail "classic window buttons / Alt+Tab"
 grep -q '^TitleAlignment=AlignLeft' /etc/xdg/breezerc                || fail "titles on the left"
+a=/usr/share/aurorae/themes/FennekClassic
+grep -q '^theme=__aurorae__svg__FennekClassic' /etc/xdg/kwinrc && [ -f "$a/FennekClassicrc" ] || fail "Fennek Classic window frame"
+for b in minimize maximize restore close; do grep -q 'id="hover-center"' "$a/$b.svg" || fail "frame button $b"; done
+grep -q 'id="decoration-top"' "$a/decoration.svg" && grep -q 'id="decoration-inactive-top"' "$a/decoration.svg" || fail "frame svg"
+grep -q '^BorderlessMaximizedWindows=false' /etc/xdg/kwinrc       || fail "title bar on maximized windows"
+r=/usr/share/kxmlgui5/dolphin/dolphinui.rc
+grep -q 'name="go_up"' "$r" && grep -q 'version="10[0-9][0-9]"' "$r" && grep -q '<Menu' "$r" || fail "Explorer toolbar (Back/Forward/Up)"
+python3 -c "import sys, xml.dom.minidom as x; x.parse(sys.argv[1])" "$r"   || fail "Explorer toolbar file is not valid XML"
+grep -q '^MenuBar=Enabled' /etc/xdg/dolphinrc                     || fail "Explorer menu bar"
 grep -q 'panel.floating = false' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "taskbar layout"
 grep -q '^LookAndFeelPackage=org.fennek.desktop' /usr/share/kde-settings/kde-profile/default/xdg/kdeglobals || fail "default lnf"
 # What a fresh user actually gets: every kdeglobals in the system lookup must agree on Fennek's look.

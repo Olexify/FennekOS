@@ -1,8 +1,15 @@
 # Fennek OS: windows behave like the classic desktop.
 [org.kde.kdecoration2]
+# Fennek Classic frame (/usr/share/aurorae/themes/FennekClassic): white title bar, wide buttons, red close on hover.
+library=org.kde.kwin.aurorae
+theme=__aurorae__svg__FennekClassic
 # Window menu (app icon) on the left; minimize, maximize, close on the right. No extra KDE buttons.
 ButtonsOnLeft=M
 ButtonsOnRight=IAX
+
+[Windows]
+# Maximized windows keep their title bar: drag it down to restore, double-click to un-maximize.
+BorderlessMaximizedWindows=false
 
 [TabBox]
 # Alt+Tab shows a grid of window previews.
