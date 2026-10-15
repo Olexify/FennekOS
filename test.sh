@@ -140,6 +140,23 @@ missing = [t["url"] for t in tiles if "url" in t and not os.path.exists("/usr/sh
 assert not missing, missing
 assert sum(1 for t in tiles if t.get("tileType") == "group") >= 2
 PY
+# Fennek Settings: every page it links to exists (no dead buttons); Super+I belongs to it alone.
+command -v plasmawindowed >/dev/null                          || fail "plasmawindowed (runs Fennek Settings)"
+python3 - <<'PY' || fail "Fennek Settings links to something that isn't installed"
+import glob, json, os, re, shutil
+src = open("/usr/share/plasma/plasmoids/org.fennek.settings/contents/ui/catalog.js").read()
+cats = json.loads(src[src.index("["):])
+kcms = {os.path.basename(p)[:-3] for p in glob.glob("/usr/lib64/qt6/plugins/plasma/kcms/**/*.so", recursive=True)}
+bad = []
+for c in cats:
+    for i in c["items"]:
+        if "kcm" in i and i["kcm"] not in kcms: bad.append(i["kcm"])
+        if "cmd" in i and not shutil.which(i["cmd"].split()[0]): bad.append(i["cmd"])
+assert not bad, bad
+PY
+grep -q '^X-KDE-Shortcuts=Meta+I' /usr/share/applications/fennek-settings.desktop || fail "Super+I for Settings"
+! grep -hs '^X-KDE-Shortcuts=.*Meta+I' /usr/share/kglobalaccel/systemsettings.desktop /usr/share/applications/systemsettings.desktop \
+                                                              || fail "Super+I still on KDE System Settings too"
 echo "--- privacy audit ---"
 echo "enabled timers: $(systemctl list-unit-files --type=timer --state=enabled --no-legend 2>/dev/null | awk '{print $1}' | tr '\n' ' ')"
 echo "user timers:    $(ls /etc/systemd/user/timers.target.wants/ 2>/dev/null | tr '\n' ' ')"

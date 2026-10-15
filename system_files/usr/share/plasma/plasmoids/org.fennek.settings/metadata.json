@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [{ "Name": "Fennek OS" }],
+        "Category": "System Information",
+        "Description": "Settings home: find a setting, or browse by category",
+        "Icon": "preferences-system",
+        "Id": "org.fennek.settings",
+        "License": "GPL-3.0-only",
+        "Name": "Settings"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

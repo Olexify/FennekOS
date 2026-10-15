@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Settings
+GenericName=Settings
+Comment=Find a setting, or browse System, Devices, Network, Personalization and more
+Exec=plasmawindowed org.fennek.settings
+Icon=preferences-system
+Categories=Settings;
+Keywords=settings;preferences;control panel;configure;
+X-KDE-Shortcuts=Meta+I

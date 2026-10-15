@@ -122,6 +122,14 @@ def _add(p, shortcut, rename):
     replace_file(p, head + sep + rest)
 add_shortcut("org.kde.plasma-systemmonitor.desktop", "Ctrl+Shift+Esc", rename="Task Manager")
 add_shortcut("org.kde.krunner.desktop", "Meta+R")
+# Super+I opens Fennek Settings (fennek-settings.desktop) instead of KDE's System Settings.
+for name in ("systemsettings.desktop",):
+    for d in ("/usr/share/kglobalaccel", "/usr/share/applications"):
+        p = pathlib.Path(d, name)
+        if p.exists():
+            t = p.read_text()
+            t = re.sub(r"^(X-KDE-Shortcuts=.*)$", lambda m: m.group(1).replace("Meta+I", "").replace(",,", ",").rstrip(",").replace("=,", "="), t, flags=re.M)
+            replace_file(p, t)
 EOF
 
 # Dolphin shows up as "File Explorer" (English name; translations keep their own).
