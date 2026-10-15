@@ -76,6 +76,13 @@ sed -i 's/^LookAndFeelPackage=.*/LookAndFeelPackage=org.fennek.desktop/' \
 # /etc/xdg comes first in the lookup: Universal Blue's own default there silently won before (the VM showed
 # KDE's stock panel, Kickoff and wallpaper). Merge our value into it (kwriteconfig6 writes new file + rename).
 kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key LookAndFeelPackage org.fennek.desktop
+# Fennek OS Dark: same taskbar/Start layout, dark colors. Fedora's global themes go: picking one replaces the
+# Fennek taskbar and Start menu with Fedora's layout (looks like the desktop got "erased").
+dark=/usr/share/plasma/look-and-feel/org.fennek.dark.desktop
+cp -a "$lnf/contents/." "$dark/contents/"
+{ sed '/^ColorScheme=/d' "$lnf/contents/defaults"; printf '\n[kdeglobals][General]\nColorScheme=BreezeDark\n'; } \
+    > "$dark/contents/defaults"
+rm -rf /usr/share/plasma/look-and-feel/org.fedoraproject.*
 # Comfort: the mouse wheel scrolls the page; it never changes a dropdown, number box or slider you happen to
 # pass over (KDE's default). Values change by click, drag or keyboard only. Patches KDE's control style.
 python3 - <<'EOF'

@@ -1,0 +1,10 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [{ "Name": "Fennek OS" }],
+        "Description": "Fennek OS look with dark colors (same taskbar and Start menu)",
+        "Id": "org.fennek.dark.desktop",
+        "License": "GPLv2+",
+        "Name": "Fennek OS Dark"
+    }
+}

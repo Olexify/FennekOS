@@ -5,7 +5,7 @@ set -u
 stamp="${XDG_CONFIG_HOME:-$HOME/.config}/fennek/first-login-done"
 [ -e "$stamp" ] && exit 0
 lnf=$(kreadconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage)
-if [ "$lnf" != org.fennek.desktop ]; then
+if [ "${lnf#org.fennek.}" = "$lnf" ]; then   # not a Fennek look (light or dark)
     sleep 3   # let the desktop finish starting, so the layout reset reaches the running taskbar
     plasma-apply-lookandfeel --apply org.fennek.desktop --resetLayout || exit 1   # retried next login
 fi
