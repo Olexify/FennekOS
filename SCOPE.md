@@ -142,6 +142,8 @@ by: familiar, safe and private, long battery life, Windows programs work.
   alerts + weekly action-pin updates, ruleset "Protect main" (no force-push/deletion, PRs + `image` check
   required; repo admins bypass), image labels link the package to the repo. Package visibility must be set
   to public by hand (no API).
+- Live ISO session runs SELinux permissive (enforcing=0, unlabeled live rootfs); installed systems enforce.
+  To do: label the live rootfs and drop enforcing=0.
 - Signed updates need a signature-enforcing origin. Never use bib `--target-imgref` (= unverified registry).
   Test VMs: `sudo bootc switch --enforce-container-sigpolicy ghcr.io/olexify/fennekos:latest` once.
   Installer (to do): Anaconda `ostreecontainer` verifies by default; never pass --no-signature-verification.

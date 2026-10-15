@@ -1,3 +1,6 @@
+# enforcing=0 = SELinux permissive in the LIVE/INSTALLER session only: its root filesystem comes from a
+# container image without SELinux labels and would not boot enforcing (same as Universal Blue's Titanoboa
+# example). The INSTALLED system boots enforcing. To do: label the live rootfs, then drop enforcing=0.
 label: FENNEK-OS
 grub2:
   default: 0
