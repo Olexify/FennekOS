@@ -89,4 +89,14 @@ assert d['type'] == 'sigstoreSigned' and d['keyPath'] == '/etc/pki/containers/fe
 " 2>/dev/null                                                 || fail "updates must require Fennek's signature"
 grep -q 'BEGIN PUBLIC KEY' /etc/pki/containers/fennek-cosign.pub || fail "Fennek public key"
 grep -q '"rhgb", "quiet"' /usr/lib/bootc/kargs.d/10-fennek-splash.toml || fail "boot splash kernel args"
+python3 -c "import json; p=json.load(open('/etc/firefox/policies/policies.json'))['policies']; assert p['DisableTelemetry'] and p['DisableFirefoxStudies']" \
+                                                              || fail "Firefox telemetry policy"
+
+# Privacy audit (informational, printed in CI logs): everything that could connect out. Keep PRIVACY.md in sync.
+echo "--- privacy audit ---"
+echo "enabled timers: $(systemctl list-unit-files --type=timer --state=enabled --no-legend 2>/dev/null | awk '{print $1}' | tr '\n' ' ')"
+echo "user timers:    $(ls /etc/systemd/user/timers.target.wants/ 2>/dev/null | tr '\n' ' ')"
+echo "NM connectivity: $(grep -rh '^uri=' /usr/lib/NetworkManager/conf.d/ /etc/NetworkManager/conf.d/ 2>/dev/null | tr '\n' ' ')"
+echo "firefox: $(rpm -q firefox 2>/dev/null || echo 'not installed (rpm)')"
+echo "--- end audit ---"
 echo "all checks passed"

@@ -36,5 +36,6 @@ Test VM on Windows (Hyper-V):
 
 - Want to help? See [CONTRIBUTING.md](CONTRIBUTING.md).
 - Found a security problem? Report it privately; see [SECURITY.md](SECURITY.md).
+- What Fennek OS connects to, and how to turn it off: [PRIVACY.md](PRIVACY.md).
 - Fennek OS's own code is licensed under [GPL-3.0](LICENSE). Bundled components keep their own licenses.
 - The name "Fennek OS" and the fox logo are not covered by the GPL; forks must rename. See [TRADEMARKS.md](TRADEMARKS.md).
