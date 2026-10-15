@@ -138,8 +138,12 @@ by: familiar, safe and private, long battery life, Windows programs work.
   publishes `ghcr.io/olexify/fennekos:latest` + `:YYYYMMDD`, signs with Fennek's cosign key (secrets
   COSIGN_PRIVATE_KEY / COSIGN_PASSWORD; backup in E:\Fennek-build\keys, never in the repo).
 - Installed systems only accept updates signed with that key (/etc/containers/policy.json).
-- To do after the repo is public: make the ghcr package public, enable private vulnerability reporting,
-  branch protection; VM/installs track `ghcr.io/olexify/fennekos:latest` (bib `--target-imgref`).
+- 2026-10-15 repo public. Done: private vulnerability reporting, secret scanning + push protection, Dependabot
+  alerts + weekly action-pin updates, ruleset "Protect main" (no force-push/deletion, PRs + `image` check
+  required; repo admins bypass), image labels link the package to the repo, VM drives update from
+  `ghcr.io/olexify/fennekos:latest`. Package visibility must be set to public by hand (no API).
+- To do: enforce signature checks on installed systems' origin (`bootc switch --enforce-container-sigpolicy`
+  or a signed transport in the installer), so policy.json is applied to updates.
 - Ceiling: our single build layer is re-downloaded on every update (~hundreds of MB). Rechunking (like
   Universal Blue) would cut daily updates to the changed parts.
 
