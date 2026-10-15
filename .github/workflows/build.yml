@@ -58,13 +58,15 @@ jobs:
           # ^ exactly their release workflow for this tag (not any branch/workflow of the repo)
           chunkah="quay.io/coreos/chunkah@$(jq -r '.[0].critical.image."docker-manifest-digest"' <<<"$out")"
           [[ $chunkah == *@sha256:* ]]
-          # Ubuntu's podman bundles buildah < 1.44: chunkah's output dir must be mounted explicitly.
+          # Ubuntu's podman bundles buildah < 1.44: chunkah's output dir must be mounted explicitly, and
+          # "FROM oci:out" resolves against the working directory, so build from inside chunk/.
+          cd chunk
           sudo podman build --skip-unused-stages=false --from fennek:ci \
-            -v "$PWD/chunk:/run/src" --security-opt=label=disable \
+            -v "$PWD:/run/src" --security-opt=label=disable \
             --build-arg "CHUNKAH=$chunkah" \
             --build-arg "CHUNKAH_CONFIG_STR=$(sudo podman inspect fennek:ci)" \
             --build-arg "CHUNKAH_ARGS=--prune /sysroot/ --max-layers 128 --label ostree.commit- --label ostree.final-diffid-" \
-            -f chunk/Containerfile -t fennek:chunked chunk/
+            -f Containerfile -t fennek:chunked .
           sudo podman image inspect fennek:chunked --format '{{len .RootFS.Layers}} layers, bootc={{index .Labels "containers.bootc"}}'
 
       - name: Test regrouped image
