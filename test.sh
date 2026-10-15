@@ -44,6 +44,8 @@ sigtool --md5 "$t/evil.bin" > "$t/db/test.hdb"
 HOME=$t XDG_DATA_HOME=$t/share FENNEK_CLAM_DB=$t/db /usr/libexec/fennek-download-guard "$t/evil.bin" "$t/ok.txt" >/dev/null
 [ ! -e "$t/evil.bin" ] && compgen -G "$t/share/fennek/quarantine/*-evil.bin" >/dev/null || fail "threat not quarantined"
 [ -e "$t/ok.txt" ]                                            || fail "clean file was touched"
+tr '\0' '\n' < "$(compgen -G "$t/share/fennek/quarantine/*-evil.bin.fennek-info")" | grep -q "$t/evil.bin" \
+                                                              || fail "quarantine doesn't record where the file came from"
 rm -rf "$t"
 # Watch mode: a file landing in Downloads gets scanned, even with a newline in its name.
 t=$(mktemp -d); mkdir -p "$t/db" "$t/Downloads"
@@ -93,6 +95,8 @@ python3 -c "import json; p=json.load(open('/etc/firefox/policies/policies.json')
                                                               || fail "Firefox telemetry policy"
 
 # Privacy audit (informational, printed in CI logs): everything that could connect out. Keep PRIVACY.md in sync.
+id fquar >/dev/null 2>&1 || useradd -m fquar >/dev/null 2>&1
+su fquar -c "fennek-quarantine --selftest" >/dev/null           || fail "quarantine selftest"
 echo "--- privacy audit ---"
 echo "enabled timers: $(systemctl list-unit-files --type=timer --state=enabled --no-legend 2>/dev/null | awk '{print $1}' | tr '\n' ' ')"
 echo "user timers:    $(ls /etc/systemd/user/timers.target.wants/ 2>/dev/null | tr '\n' ' ')"

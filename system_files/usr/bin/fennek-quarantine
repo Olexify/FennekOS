@@ -1,0 +1,123 @@
+#!/usr/bin/python3
+"""Fennek OS quarantine: files the download guard blocked. Restore a false alarm or delete for good.
+
+Usage: fennek-quarantine              window (Start menu: "Quarantine")
+       fennek-quarantine --list       list in a terminal
+       fennek-quarantine --selftest
+"""
+import os, shutil, subprocess, sys
+from pathlib import Path
+
+QUAR = Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local/share") / "fennek" / "quarantine"
+INFO = ".fennek-info"
+GUI = bool(os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY"))
+
+
+def items():
+    """[(quarantined file, threat, original path)], newest first."""
+    out = []
+    for p in sorted(QUAR.glob("*"), reverse=True) if QUAR.is_dir() else []:
+        if p.name.endswith(INFO) or not p.is_file():
+            continue
+        try:
+            threat, origin = (Path(str(p) + INFO).read_bytes().split(b"\0") + [b"", b""])[:2]
+            threat, origin = threat.decode(errors="replace"), origin.decode(errors="surrogateescape")
+        except OSError:
+            threat, origin = "unknown", ""
+        out.append((p, threat or "unknown", origin))
+    return out
+
+
+def display_name(p):
+    return p.name[16:] if len(p.name) > 16 and p.name[8] == "-" and p.name[15] == "-" else p.name
+
+
+def restore(p, origin):
+    """Back to where it came from (or Downloads if that's gone or taken), readable again."""
+    dest = Path(origin) if origin else None
+    if not dest or not dest.parent.is_dir() or dest.exists():
+        dest = Path.home() / "Downloads" / display_name(p)
+        n = 1
+        while dest.exists():
+            dest = dest.with_name(f"{dest.stem} ({n}){dest.suffix}"); n += 1
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    os.chmod(p, 0o600)
+    shutil.move(str(p), dest)
+    Path(str(p) + INFO).unlink(missing_ok=True)
+    return dest
+
+
+def delete(p):
+    os.chmod(p, 0o600)
+    p.unlink()
+    Path(str(p) + INFO).unlink(missing_ok=True)
+
+
+def kdialog(*args):
+    r = subprocess.run(["kdialog", "--title", "Quarantine", *args], capture_output=True, text=True)
+    return r.returncode, r.stdout.strip()
+
+
+def window():
+    found = items()
+    if not found:
+        return kdialog("--msgbox", "Quarantine is empty. No downloads were blocked.")
+    rows = []
+    for i, (p, threat, origin) in enumerate(found):
+        rows += [str(i), f"{display_name(p)}  ({threat})", "off"]
+    rc, picked = kdialog("--separate-output", "--checklist",
+                         "Files the download guard blocked. Select files, then choose what to do.", *rows)
+    if rc or not picked:
+        return
+    chosen = [found[int(i)] for i in picked.split()]
+    rc, action = kdialog("--menu", f"{len(chosen)} file(s) selected.",
+                         "delete", "Delete permanently (recommended)",
+                         "restore", "Restore: I'm sure it's a false alarm")
+    if rc:
+        return
+    if action == "delete":
+        for p, _, _ in chosen:
+            delete(p)
+        kdialog("--passivepopup", f"Deleted {len(chosen)} file(s).", "4")
+    elif action == "restore":
+        names = "\n".join(f"• {display_name(p)}: {t}" for p, t, _ in chosen)
+        if kdialog("--warningyesno", f"These were flagged as malware:\n{names}\n\n"
+                   "Restore only if you're sure. Opening a real virus can damage your files.\n\nRestore anyway?")[0]:
+            return
+        places = [str(restore(p, o)) for p, _, o in chosen]
+        kdialog("--msgbox", "Restored to:\n" + "\n".join(places))
+
+
+def selftest():
+    import tempfile
+    global QUAR
+    root = Path(tempfile.mkdtemp())
+    QUAR = root / "q"; QUAR.mkdir()
+    os.environ["HOME"] = str(root)
+    (root / "Downloads").mkdir()
+    a = QUAR / "20261015-101010-evil.exe"; a.write_text("x"); os.chmod(a, 0)
+    Path(str(a) + INFO).write_bytes(b"Win.Test.EICAR\0" + str(root / "Downloads/evil.exe").encode() + b"\0")
+    b = QUAR / "20261015-101011-gone.bin"; b.write_text("y"); os.chmod(b, 0)
+    Path(str(b) + INFO).write_bytes(b"Some.Threat\0/no/such/dir/gone.bin\0")
+    listed = items()
+    assert [display_name(p) for p, _, _ in listed] == ["gone.bin", "evil.exe"], "newest first, info files hidden"
+    assert listed[1][1] == "Win.Test.EICAR"
+    assert restore(a, listed[1][2]) == root / "Downloads/evil.exe", "back to where it came from"
+    assert (root / "Downloads/evil.exe").read_text() == "x" and not Path(str(a) + INFO).exists()
+    (root / "Downloads/gone.bin").write_text("taken")
+    assert restore(b, "/no/such/dir/gone.bin") == root / "Downloads/gone (1).bin", "origin gone + name taken"
+    c = QUAR / "20261015-101012-bad.pdf"; c.write_text("z"); os.chmod(c, 0)
+    delete(c)
+    assert not c.exists() and items() == []
+    shutil.rmtree(root)
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["--selftest"]:
+        selftest()
+    elif sys.argv[1:] == ["--list"] or not GUI:
+        for p, threat, origin in items():
+            print(f"{display_name(p)}\t{threat}\tfrom {origin or '?'}")
+    else:
+        window()

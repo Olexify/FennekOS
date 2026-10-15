@@ -22,6 +22,8 @@ scan() {
     threat=${out##*: }; threat=${threat% FOUND}
     dest="$quar/$(date +%Y%m%d-%H%M%S)-$name"
     mv -- "$f" "$dest" && chmod 000 "$dest" || return 0
+    # Why and from where, for fennek-quarantine (NUL-separated: paths may contain newlines).
+    printf '%s\0%s\0' "$threat" "$f" > "$dest.fennek-info"
     notify-send -u critical -a "Fennek OS Security" "Threat blocked" \
         "$name contains $threat. It was moved to quarantine." 2>/dev/null || true
     echo "quarantined: $name ($threat)"
