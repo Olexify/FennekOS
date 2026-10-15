@@ -99,9 +99,13 @@ python3 - <<'EOF'
 import os, pathlib, re
 def replace_file(p, text):
     tmp = p.with_name(p.name + ".fennek-new"); tmp.write_text(text); os.chmod(tmp, 0o644); os.replace(tmp, p)
-def add_shortcut(path, shortcut, rename=None):
-    p = pathlib.Path(path)
-    assert p.exists(), f"{p} missing: revisit the Fennek Windows-shortcuts patch"
+def add_shortcut(name, shortcut, rename=None):
+    # Plasma 6 keeps global-shortcut owners in kglobalaccel/, launchable apps in applications/.
+    found = [p for d in ("/usr/share/kglobalaccel", "/usr/share/applications") if (p := pathlib.Path(d, name)).exists()]
+    assert found, f"{name} missing: revisit the Fennek Windows-shortcuts patch"
+    for p in found:
+        _add(p, shortcut, rename)
+def _add(p, shortcut, rename):
     head, sep, rest = p.read_text().partition("\n[Desktop Action")   # only touch the main [Desktop Entry] group
     m = re.search(r"^X-KDE-Shortcuts=(.*)$", head, re.M)
     if m:
@@ -113,8 +117,8 @@ def add_shortcut(path, shortcut, rename=None):
     if rename:
         head = re.sub(r"^Name=.*$", f"Name={rename}", head, count=1, flags=re.M)
     replace_file(p, head + sep + rest)
-add_shortcut("/usr/share/applications/org.kde.plasma-systemmonitor.desktop", "Ctrl+Shift+Esc", rename="Task Manager")
-add_shortcut("/usr/share/applications/org.kde.krunner.desktop", "Meta+R")
+add_shortcut("org.kde.plasma-systemmonitor.desktop", "Ctrl+Shift+Esc", rename="Task Manager")
+add_shortcut("org.kde.krunner.desktop", "Meta+R")
 EOF
 
 # Dolphin shows up as "File Explorer" (English name; translations keep their own).
