@@ -128,7 +128,8 @@ grep -q 'exec.path">/usr/libexec/fennek-reboot-windows-helper' /usr/share/polkit
 [ "$(readlink -f /etc/systemd/system/display-manager.service)" = /usr/lib/systemd/system/sddm.service ] || fail "display manager isn't SDDM"
 grep -q '^Current=fennek' /etc/sddm.conf.d/10-fennek.conf                || fail "SDDM theme not selected"
 greeter=$(command -v sddm-greeter-qt6 || command -v sddm-greeter)
-out=$(QT_QPA_PLATFORM=offscreen timeout 15 "$greeter" --test-mode --theme /usr/share/sddm/themes/fennek 2>&1)
+# The test-mode greeter runs until stopped: timeout (exit 124) is expected; only QML errors count.
+out=$(QT_QPA_PLATFORM=offscreen timeout 15 "$greeter" --test-mode --theme /usr/share/sddm/themes/fennek 2>&1 || true)
 ! grep -iE "qml.*(error|is not a type|not installed|unavailable|ReferenceError|TypeError)|file:///usr/share/sddm/themes/fennek/.*:[0-9]+" <<<"$out" \
                                                               || { echo "$out" | grep -iE "qml|fennek" | head; fail "SDDM theme has QML errors"; }
 # Start menu default tiles: every tile must point to an installed app (no blank tiles).
