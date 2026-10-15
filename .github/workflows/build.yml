@@ -100,7 +100,8 @@ jobs:
           printf 'docker:\n  ghcr.io/olexify/fennekos:\n    use-sigstore-attachments: true\n' > /tmp/client/registries.d/fennek.yaml
           printf '{"default":[{"type":"reject"}],"transports":{"docker":{"ghcr.io/olexify/fennekos":[{"type":"sigstoreSigned","keyPath":"%s","signedIdentity":{"type":"matchRepository"}}]}}}' \
             "$PWD/keys/fennek-cosign.pub" > /tmp/client/policy.json
-          sudo skopeo copy --policy /tmp/client/policy.json --registries.d /tmp/client/registries.d \
+          # Verification happens while reading the source; the local oci: copy just can't store signatures.
+          sudo skopeo copy --remove-signatures --policy /tmp/client/policy.json --registries.d /tmp/client/registries.d \
             "docker://$IMAGE@$(cat /tmp/digest-latest)" "oci:/mnt/client-check:latest" > /dev/null
           sudo rm -rf /mnt/client-check
           echo "Published $IMAGE:latest and :$day ($(cat /tmp/digest-latest)), signed and verified."
