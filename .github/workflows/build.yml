@@ -58,8 +58,19 @@ jobs:
           day=$(date -u +%Y%m%d)
           for tag in latest "$day"; do
             sudo podman push --digestfile "/tmp/digest-$tag" fennek:ci "$IMAGE:$tag"
-            cosign sign --yes --key env://COSIGN_PRIVATE_KEY "$IMAGE@$(cat "/tmp/digest-$tag")"
+            # Classic signature format: what installed systems (containers/image sigstore attachments) can read.
+            # cosign v3 defaults to the new bundle format, which they reject ("no signature exists").
+            cosign sign --yes --key env://COSIGN_PRIVATE_KEY --new-bundle-format=false --use-signing-config=false \
+              "$IMAGE@$(cat "/tmp/digest-$tag")"
           done
-          # Prove what users will check: the published image verifies with the public key in the repo.
+          # Prove what users will check: the published image verifies with the public key in the repo,
+          # and the way installed systems verify it (containers policy + sigstore attachments) accepts it.
           cosign verify --key keys/fennek-cosign.pub "$IMAGE:latest" > /dev/null
+          mkdir -p /tmp/client/registries.d
+          printf 'docker:\n  ghcr.io/olexify/fennekos:\n    use-sigstore-attachments: true\n' > /tmp/client/registries.d/fennek.yaml
+          printf '{"default":[{"type":"reject"}],"transports":{"docker":{"ghcr.io/olexify/fennekos":[{"type":"sigstoreSigned","keyPath":"%s","signedIdentity":{"type":"matchRepository"}}]}}}' \
+            "$PWD/keys/fennek-cosign.pub" > /tmp/client/policy.json
+          sudo skopeo copy --policy /tmp/client/policy.json --registries.d /tmp/client/registries.d \
+            "docker://$IMAGE@$(cat /tmp/digest-latest)" "oci:/mnt/client-check:latest" > /dev/null
+          sudo rm -rf /mnt/client-check
           echo "Published $IMAGE:latest and :$day ($(cat /tmp/digest-latest)), signed and verified."

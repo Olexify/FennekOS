@@ -26,10 +26,19 @@ we treat it as a bug.
 | **Windows programs**: later | the same | An update check **at most once a day**, and only for programs you trusted. **Never** for sandboxed ones. |
 | **Sandboxed Windows programs** | whatever the program contacts | The program's own traffic. Block it with right-click → **Firewall → Block internet access**. |
 
+## Programs that come with Fennek OS
+
+| Program | Notes |
+|---|---|
+| **Firefox** | Telemetry, "studies", Pocket and sponsored content are **switched off** system-wide (`/etc/firefox/policies/policies.json`). Firefox still makes its own browsing-related connections, for example Safe Browsing lists and extension updates, under [Mozilla's privacy notice](https://www.mozilla.org/privacy/firefox/). |
+
 ## What Fennek OS turned off
 
 - **Fedora's "countme"**: the weekly anonymous install counting is disabled (`rpm-ostree-countme.timer`
   masked, `countme=0` in the update sources).
+- **Daily package-list download** (`dnf-makecache.timer`): off. Fennek updates as whole images, so the lists were
+  never used.
+- **DNSSEC root-anchor refresh** (`unbound-anchor.timer`): off. Fennek's DNS doesn't use it.
 - **KDE file indexing (Baloo)**: off. Fennek's own search indexes file **names** only, stays on your computer,
   and never sends anything.
 - **Search history**: files you open from search are remembered **locally** to rank them first
