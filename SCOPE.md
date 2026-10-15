@@ -203,6 +203,12 @@ podman run --rm --privileged -v fennek-umu-test:/var/home -v E:/Fennek-build/tmp
   allow it at most once a day for trusted runs, never for sandboxed ones; verified with networking off), GitHub on first Proton download, Fedora update checks, ClamAV definitions (database.clamav.net, daily + after boot).
 
 ## Comfort fixes (user feedback)
+- Taskbar right-click menu like Windows 10: Search / Show Task View button / Cascade, stacked, side by side /
+  Show the desktop / Task Manager / Lock the taskbar / Taskbar settings (Plasma's panel menu is edit-mode
+  oriented). Needs a patch or own containment action plugin.
+- Start tile right-click like Windows 10: Unpin from Start / Resize / More → Pin to taskbar, Run as
+  administrator, Open file location / Uninstall (check Tiled Menu's configurable menu first).
+- "Type here to search" box + Task View button on the taskbar.
 - Mouse wheel over sliders/dropdowns/spin boxes must scroll the page, not change the value (KDE default does).
   Done for QML apps (System Settings etc.): build-time patch of qqc2-desktop-style (ComboBox/SpinBox/
   DoubleSpinBox wheelEnabled false, Slider wheel passes through). To do: QtWidgets apps (Breeze, C++).
