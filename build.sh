@@ -97,7 +97,7 @@ assert s.count(old) == 1, "Slider.qml changed upstream: revisit the Fennek wheel
 replace_file(p, s.replace(old, old + "                wheel.accepted = false; return;  // Fennek OS: wheel scrolls the page\n"))
 EOF
 
-# Windows shortcuts, added to KDE's own: Ctrl+Shift+Esc = Task Manager (System Monitor, renamed), Win+R = Run.
+# familiar shortcuts, added to KDE's own: Ctrl+Shift+Esc = Task Manager (System Monitor, renamed), Super+R = Run.
 python3 - <<'EOF'
 import os, pathlib, re
 def replace_file(p, text):
@@ -105,7 +105,7 @@ def replace_file(p, text):
 def add_shortcut(name, shortcut, rename=None):
     # Plasma 6 keeps global-shortcut owners in kglobalaccel/, launchable apps in applications/.
     found = [p for d in ("/usr/share/kglobalaccel", "/usr/share/applications") if (p := pathlib.Path(d, name)).exists()]
-    assert found, f"{name} missing: revisit the Fennek Windows-shortcuts patch"
+    assert found, f"{name} missing: revisit the Fennek shortcuts patch"
     for p in found:
         _add(p, shortcut, rename)
 def _add(p, shortcut, rename):
@@ -154,7 +154,7 @@ sed -i 's/^DefaultZone=.*/DefaultZone=FennekOS/' /etc/firewalld/firewalld.conf
 systemctl enable clamav-freshclam-once.timer
 systemctl --global enable fennek-download-guard.service
 
-# Sign-in screen like Windows 10. Plasma Login Manager's screens are compiled into the program; SDDM (KDE's
+# Sign-in screen like the classic desktop. Plasma Login Manager's screens are compiled into the program; SDDM (KDE's
 # long-standing login manager) takes QML themes: /usr/share/sddm/themes/fennek. Wayland greeter via KWin.
 dnf -y install sddm sddm-wayland-plasma
 systemctl disable plasmalogin.service 2>/dev/null || true

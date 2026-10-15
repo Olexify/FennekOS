@@ -1,6 +1,6 @@
 # Fennek OS
 
-A Linux desktop for **people leaving Windows 10**. It feels familiar, has no telemetry, comes with strong
+A Linux desktop for **people who want a familiar, classic desktop**. It feels familiar, has no telemetry, comes with strong
 built-in security, and aims for long battery life.
 Built as a [bootc](https://containers.github.io/bootc/) image on Fedora Kinoite (KDE Plasma).
 
@@ -12,7 +12,7 @@ What's in it so far:
 - **Download guard:** ClamAV scans new files in Downloads, and threats go to quarantine. No always-on scanner daemon.
 - **Hourly home snapshots:** Btrfs and snapper, as an undo for ransomware.
 - **Atomic updates:** updates are staged in the background and applied on the next reboot. They are never forced.
-- **Windows-familiar:** Windows 10-style taskbar, and `dir`, `cls`, `ipconfig` work in the terminal.
+- **Familiar:** classic taskbar, and `dir`, `cls`, `ipconfig` work in the terminal.
 
 Plans, decisions and status: [SCOPE.md](SCOPE.md).
 

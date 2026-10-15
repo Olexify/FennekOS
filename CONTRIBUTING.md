@@ -1,14 +1,14 @@
 # Contributing to Fennek OS
 
-Thanks for helping. Fennek OS is a Linux desktop for **people leaving Windows 10**: it should feel familiar,
+Thanks for helping. Fennek OS is a Linux desktop for **people who want a familiar, classic desktop**: it should be easy to use,
 stay safe and private, and last long on battery. Changes are judged by that goal.
 
 ## Ways to help
 
 - **Report a bug.** Open an issue and pick "Bug report". Include your Fennek version
   (`rpm-ostree status`), your hardware, and the steps that show the problem.
-- **Suggest a feature.** Open an issue and pick "Feature request". Say what you were trying to do and how Windows
-  handles it, if that's relevant.
+- **Suggest a feature.** Open an issue and pick "Feature request". Say what you were trying to do and how you're
+  used to doing it, if that's relevant.
 - **Fix something.** Open a pull request. For anything bigger than a small fix, open an issue first so we can
   agree on the approach before you spend time on it.
 - **Security problems:** don't open a public issue. See [SECURITY.md](SECURITY.md).

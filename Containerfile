@@ -5,7 +5,7 @@ ARG BASE_IMAGE=ghcr.io/ublue-os/kinoite-main:44
 FROM ${BASE_IMAGE}
 
 LABEL org.opencontainers.image.title="Fennek OS" \
-      org.opencontainers.image.description="Linux desktop for people leaving Windows 10: familiar, private, secure." \
+      org.opencontainers.image.description="Linux desktop for people who want a familiar, classic desktop: familiar, private, secure." \
       org.opencontainers.image.source="https://github.com/Olexify/FennekOS" \
       org.opencontainers.image.licenses="GPL-3.0-only"
 

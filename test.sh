@@ -28,7 +28,7 @@ for p in org.fennek.searchbox org.fennek.taskview; do
 done
 grep -q 'panel.hiding = "none"' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "taskbar always visible"
 grep -q 'panel.height = 40' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "40 px taskbar"
-grep -q '^ButtonsOnRight=IAX' /etc/xdg/kwinrc && grep -q '^LayoutName=thumbnail_grid' /etc/xdg/kwinrc || fail "Windows window buttons / Alt+Tab"
+grep -q '^ButtonsOnRight=IAX' /etc/xdg/kwinrc && grep -q '^LayoutName=thumbnail_grid' /etc/xdg/kwinrc || fail "classic window buttons / Alt+Tab"
 grep -q '^TitleAlignment=AlignLeft' /etc/xdg/breezerc                || fail "titles on the left"
 grep -q 'panel.floating = false' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "taskbar layout"
 grep -q '^LookAndFeelPackage=org.fennek.desktop' /usr/share/kde-settings/kde-profile/default/xdg/kdeglobals || fail "default lnf"
@@ -82,7 +82,7 @@ command -v opensnitchd >/dev/null                            || fail "opensnitch
 ! systemctl is-enabled -q opensnitch.service                  || fail "opensnitch must start only when something is blocked"
 fennek-firewall --selftest >/dev/null                         || fail "firewall selftest"
 grep -q '^Exec=fennek-firewall block %f' /usr/share/kio/servicemenus/fennek-firewall.desktop || fail "firewall menu"
-[ -f /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/metadata.json ] || fail "Win10 start menu (Tiled Menu)"
+[ -f /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/metadata.json ] || fail "classic start menu (Tiled Menu)"
 grep -q 'com.github.zren.tiledmenu' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "start menu in taskbar"
 [ "$(systemctl is-enabled rpm-ostree-countme.timer 2>&1)" = masked ] || fail "countme telemetry timer"
 ! grep -q '^countme=1' /etc/yum.repos.d/*.repo                || fail "countme in repos"

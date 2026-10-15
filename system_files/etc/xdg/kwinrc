@@ -1,4 +1,4 @@
-# Fennek OS: windows behave like Windows 10.
+# Fennek OS: windows behave like the classic desktop.
 [org.kde.kdecoration2]
 # Window menu (app icon) on the left; minimize, maximize, close on the right. No extra KDE buttons.
 ButtonsOnLeft=M

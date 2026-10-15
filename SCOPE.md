@@ -1,6 +1,6 @@
 # Fennek OS — Scope
 
-A comfy, Windows-10-like, no-telemetry, very secure Linux OS with best-in-class laptop battery life.
+A comfy, classic, no-telemetry, very secure Linux OS with best-in-class laptop battery life.
 
 ## Decisions
 - **Base:** Linux kernel, immutable image (Fedora Atomic), Wayland only (X11 can't be sandboxed).
@@ -9,7 +9,7 @@ A comfy, Windows-10-like, no-telemetry, very secure Linux OS with best-in-class 
 - **No telemetry.** Anything that leaves the device is opt-in.
 
 ## Security (Comodo-style, kernel-native, ~zero idle cost)
-- **Mark of origin:** files arriving from browsers/USB/chat get a `user.fennek.trust=unknown` xattr (like Windows Mark of the Web).
+- **Mark of origin:** files arriving from browsers/USB/chat get a `user.fennek.trust=unknown` xattr (a mark-of-the-web flag).
 - **Auto-containment:** unknown executables (`.exe`, AppImage, scripts) run automatically in a sandbox:
   bubblewrap namespaces + Landlock + seccomp, overlay filesystem (writes are throwaway), own shared folder only,
   network via firewall policy, camera/mic/screen via portal prompts.
@@ -59,7 +59,7 @@ A comfy, Windows-10-like, no-telemetry, very secure Linux OS with best-in-class 
   backup offered first. BitLocker volumes: Fennek OS frees the space right next to C:, then Windows' own "Extend Volume"
   finishes the job. Recovery partition moves need careful testing (WinRE registration).
 - **Clean removal:** "Remove Fennek OS" guide/tool that restores Windows boot and frees the partitions.
-- **Test matrix:** Windows 10 + Fennek OS and Windows 11 (BitLocker on) + Fennek OS, in VMs and on reference laptops.
+- **Test matrix:** an older and the current Windows version (BitLocker on), each next to Fennek OS, in VMs and on reference laptops.
 
 ## Firewall
 Not in Fedora repos: upstream RPM v1.8.0 (pin + sha256, like umu): daemon
@@ -86,11 +86,11 @@ whole-disk index (needs a root helper with per-user permission filtering), Rust 
 - UI: Win-key popup (apps, settings, files) + full Everything-style window with sortable columns.
 - File contents search: optional, off by default (battery). KDE Baloo disabled.
 
-## File Explorer (Dolphin, configured to behave like Windows 10)
+## File Explorer (Dolphin, configured to behave like the classic desktop)
 - Defaults: opens on a "This PC"-style page (drives + user folders), Details view with Name / Date modified /
   Type / Size, folders first, status bar, Quick access = pinned Places, breadcrumb that turns editable on click.
 - Explorer shortcuts: Backspace = back, Alt+Up = up, F2 rename, Ctrl+F search, Ctrl+Shift+N new folder,
-  Alt+Enter properties, Win+E opens it.
+  Alt+Enter properties, Super+E opens it.
 - Name in menus: "File Explorer".
 - Buffs (Dolphin already has, keep visible): tabs, split view, terminal panel, batch rename, folder sizes,
   previews, per-folder view memory, group-by.
@@ -99,7 +99,7 @@ whole-disk index (needs a root helper with per-user permission filtering), Rust 
 
 ## Terminal
 - Linux commands underneath (zsh with autosuggestions + syntax highlighting; bash snippets from the web work).
-- Windows-familiar layer: `dir cls copy move del type where ipconfig tasklist taskkill` work as aliases,
+- familiar layer: `dir cls copy move del type where ipconfig tasklist taskkill` work as aliases,
   and unknown commands get "In Fennek OS this is `x` — run it?" (command-not-found handler).
 - Tabbed terminal with profiles: Fennek OS shell, PowerShell (`pwsh`, optional), CMD (via Wine).
 - AI: `?? <what you want>` → suggested command shown, runs only on confirm; "explain this command".
@@ -122,14 +122,14 @@ Off until chosen: local (llama.cpp, small model) or cloud (user's own key). Acts
 (firewall, power, settings, VirusTotal, sandbox) with a confirm button on every action.
 
 ## Build order
-1. Base image: Proton integration, power tuning, Win10-style desktop (KDE Plasma)
+1. Base image: Proton integration, power tuning, classic desktop (KDE Plasma)
 2. Auto-containment + VirusTotal check + snapshots
 3. Firewall UI + Process Explorer (share per-app network/energy data)
 4. AI assistant
 5. Own Rust shell (only if Plasma limits us)
 
 ## Audience (decided 2026-10-13)
-**People leaving Windows 10.** Not developers (that's Omarchy's niche: Arch + tiling). Every feature is judged
+**People who want a familiar, classic desktop.** Not developers (that's Omarchy's niche: Arch + tiling). Every feature is judged
 by: familiar, safe and private, long battery life, Windows programs work.
 
 ## Open source + updates (decided 2026-10-13)
@@ -158,7 +158,7 @@ variant), rebase to new Fedora twice a year. Proposal: build FROM ublue-os kinoi
 
 ## Reference laptops (research 2026-10-11, pending decision)
 - **Primary candidate:** Lenovo IdeaPad Pro 5i Gen 11 16", Panther Lake, 99.9 Wh, **no dGPU**. Measured 30h 34m
-  (web loop, 150 nits, Windows). Linux status unverified; risks: IPU 7.5 webcam, SoundWire audio.
+  (web loop, 150 nits, vendor OS). Linux status unverified; risks: IPU 7.5 webcam, SoundWire audio.
 - **Secondary / control:** Framework Laptop 13 Pro, Panther Lake, 74 Wh, Ubuntu-certified, from $1,199 DIY.
 - Fallbacks: Dell XPS 14/16 2026 (70 Wh, 1.5 W idle, Linux audio/webcam issues), ThinkPad T16 Gen 4 (86 Wh, Lunar Lake).
 - Snapdragon X / X2: not usable on Linux yet (no power metrics). Revisit mid-2027.
@@ -189,7 +189,7 @@ podman run --rm --privileged -v fennek-umu-test:/var/home -v E:/Fennek-build/tmp
 ## Status
 - 2026-10-11: first boot in a Hyper-V VM works (VM only, no dual boot), Secure Boot on with Hyper-V's MS UEFI CA
   template. Plasma first-run wizard runs. Real-laptop firmware, Windows coexistence and BitLocker still untested.
-- Done: Fennek OS name/logo/wallpaper, Win10-style taskbar, Windows terminal aliases, staged updates, Baloo off,
+- Done: Fennek OS name/logo/wallpaper, classic taskbar, familiar terminal aliases, staged updates, Baloo off,
   VirusTotal right-click (hash only), hourly home snapshots (snapper, if /var/home is a subvolume),
   **auto-containment for .exe** (bwrap around Proton: private home, ~/Sandbox/<app> shared, Proton/runtime via
   throwaway overlay; verified: sandboxed probe can't read ~/secret.txt, trusted one can).
@@ -203,10 +203,10 @@ podman run --rm --privileged -v fennek-umu-test:/var/home -v E:/Fennek-build/tmp
   allow it at most once a day for trusted runs, never for sandboxed ones; verified with networking off), GitHub on first Proton download, Fedora update checks, ClamAV definitions (database.clamav.net, daily + after boot).
 
 ## Comfort fixes (user feedback)
-- Taskbar right-click menu like Windows 10: Search / Show Task View button / Cascade, stacked, side by side /
+- Taskbar right-click menu like the classic desktop: Search / Show Task View button / Cascade, stacked, side by side /
   Show the desktop / Task Manager / Lock the taskbar / Taskbar settings (Plasma's panel menu is edit-mode
   oriented). Needs a patch or own containment action plugin.
-- Start tile right-click like Windows 10: Unpin from Start / Resize / More → Pin to taskbar, Run as
+- Start tile right-click like the classic desktop: Unpin from Start / Resize / More → Pin to taskbar, Run as
   administrator, Open file location / Uninstall (check Tiled Menu's configurable menu first).
 - "Type here to search" box + Task View button on the taskbar.
 - Mouse wheel over sliders/dropdowns/spin boxes must scroll the page, not change the value (KDE default does).

@@ -3,7 +3,7 @@
     "KPlugin": {
         "Authors": [{ "Name": "Fennek OS" }],
         "Category": "Application Launchers",
-        "Description": "A Windows 10-style \"Type here to search\" box for the taskbar",
+        "Description": "A classic \"Type here to search\" box for the taskbar",
         "Icon": "search",
         "Id": "org.fennek.searchbox",
         "License": "GPL-3.0-only",

@@ -1,4 +1,4 @@
-# Windows-familiar commands (interactive shells only). Real Linux commands underneath.
+# familiar commands (interactive shells only). Real Linux commands underneath.
 alias dir='ls -lah'
 alias cls='clear'
 alias copy='cp -i'

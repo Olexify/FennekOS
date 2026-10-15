@@ -1,4 +1,4 @@
-// Fennek OS sign-in, modeled on Windows 10: first a lock screen (wallpaper + big clock bottom-left);
+// Fennek OS sign-in, classic layout: first a lock screen (wallpaper + big clock bottom-left);
 // any key or click reveals the sign-in (blurred wallpaper, round picture, name, password with inline arrow,
 // power icons bottom-right). SDDM theme API: sddm, userModel, sessionModel, config.
 import QtQuick
@@ -55,7 +55,7 @@ Rectangle {
         Behavior on blur { NumberAnimation { duration: 250 } }
     }
 
-    // ---- Lock stage: big clock bottom-left, like Windows 10 ----
+    // ---- Lock stage: big clock bottom-left, like the classic desktop ----
     Column {
         visible: !root.signIn
         anchors.left: parent.left
@@ -123,7 +123,7 @@ Rectangle {
             color: "white"
             font.pixelSize: 36
         }
-        Row {   // password box with the arrow inside, like Windows 10
+        Row {   // password box with the arrow inside, like the classic desktop
             anchors.horizontalCenter: parent.horizontalCenter
             TextField {
                 id: password

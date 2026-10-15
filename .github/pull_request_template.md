@@ -1,6 +1,6 @@
 ## What and why
 
-<!-- What does this change, and which problem does it solve for someone leaving Windows 10? -->
+<!-- What does this change, and which problem does it solve for someone who wants a familiar, classic desktop? -->
 
 ## Checklist
 

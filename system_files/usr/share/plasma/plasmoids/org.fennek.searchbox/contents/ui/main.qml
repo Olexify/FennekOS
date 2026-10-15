@@ -1,4 +1,4 @@
-// Windows 10-style "Type here to search" box. Clicking it opens KDE's search (KRunner), which also
+// Classic "Type here to search" box. Clicking it opens KDE's search (KRunner), which also
 // queries Fennek's instant file search.
 import QtQuick
 import QtQuick.Layouts
