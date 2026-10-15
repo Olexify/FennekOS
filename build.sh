@@ -154,6 +154,17 @@ sed -i 's/^DefaultZone=.*/DefaultZone=FennekOS/' /etc/firewalld/firewalld.conf
 systemctl enable clamav-freshclam-once.timer
 systemctl --global enable fennek-download-guard.service
 
+# Sign-in screen like Windows 10. Plasma Login Manager's screens are compiled into the program; SDDM (KDE's
+# long-standing login manager) takes QML themes: /usr/share/sddm/themes/fennek. Wayland greeter via KWin.
+dnf -y install sddm sddm-wayland-plasma
+systemctl disable plasmalogin.service 2>/dev/null || true
+systemctl enable -f sddm.service
+mkdir -p /etc/sddm.conf.d
+cat >/etc/sddm.conf.d/10-fennek.conf <<'EOF'
+[Theme]
+Current=fennek
+EOF
+
 # Dual boot: "Restart to Windows" appears when a Windows boot entry exists.
 systemctl enable fennek-detect-windows.service
 

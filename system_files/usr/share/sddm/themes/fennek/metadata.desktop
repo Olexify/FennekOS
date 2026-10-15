@@ -1,0 +1,10 @@
+[SddmGreeterTheme]
+Name=Fennek OS
+Description=Windows 10-style sign-in: lock screen with clock, then a centered sign-in over a blurred background
+Author=Fennek OS
+License=GPL-3.0-only
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+QtVersion=6

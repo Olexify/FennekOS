@@ -123,6 +123,23 @@ command -v efibootmgr >/dev/null                             || fail "efibootmgr
 systemctl is-enabled -q fennek-detect-windows.service         || fail "windows detection not enabled"
 grep -q 'exec.path">/usr/libexec/fennek-reboot-windows-helper' /usr/share/polkit-1/actions/org.fennek.reboot-windows.policy \
                                                               || fail "reboot-windows polkit action"
+# Sign-in screen: SDDM is THE display manager, uses the Fennek theme, and the theme loads without QML errors
+# (a broken greeter means nobody can log in).
+[ "$(readlink -f /etc/systemd/system/display-manager.service)" = /usr/lib/systemd/system/sddm.service ] || fail "display manager isn't SDDM"
+grep -q '^Current=fennek' /etc/sddm.conf.d/10-fennek.conf                || fail "SDDM theme not selected"
+greeter=$(command -v sddm-greeter-qt6 || command -v sddm-greeter)
+out=$(QT_QPA_PLATFORM=offscreen timeout 15 "$greeter" --test-mode --theme /usr/share/sddm/themes/fennek 2>&1)
+! grep -iE "qml.*(error|is not a type|not installed|unavailable|ReferenceError|TypeError)|file:///usr/share/sddm/themes/fennek/.*:[0-9]+" <<<"$out" \
+                                                              || { echo "$out" | grep -iE "qml|fennek" | head; fail "SDDM theme has QML errors"; }
+# Start menu default tiles: every tile must point to an installed app (no blank tiles).
+python3 - <<'PY' || fail "Start menu tile points to a missing app"
+import base64, json, os, re
+js = open("/usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js").read()
+tiles = json.loads(base64.b64decode(re.search(r'writeConfig\("tileModel", "([^"]+)"\)', js).group(1)))
+missing = [t["url"] for t in tiles if "url" in t and not os.path.exists("/usr/share/applications/" + t["url"])]
+assert not missing, missing
+assert sum(1 for t in tiles if t.get("tileType") == "group") >= 2
+PY
 echo "--- privacy audit ---"
 echo "enabled timers: $(systemctl list-unit-files --type=timer --state=enabled --no-legend 2>/dev/null | awk '{print $1}' | tr '\n' ' ')"
 echo "user timers:    $(ls /etc/systemd/user/timers.target.wants/ 2>/dev/null | tr '\n' ' ')"

@@ -10,6 +10,9 @@ var start = panel.addWidget("com.github.zren.tiledmenu")
 start.currentConfigGroup = ["General"]
 start.writeConfig("icon", "fennek")
 start.writeConfig("sidebarShortcuts", ["xdg:DOCUMENTS", "xdg:DOWNLOAD", "xdg:PICTURES", "xdg:VIDEOS", "systemsettings.desktop"])
+// Default tiles, Windows 10 style: named groups, big and small tiles (base64 JSON, Tiled Menu's format;
+// test.sh checks every tile points to an installed app). Groups: Fennek, Safety.
+start.writeConfig("tileModel", "W3sieCI6MCwieSI6MCwidyI6NiwiaCI6MSwidGlsZVR5cGUiOiJncm91cCIsImxhYmVsIjoiRmVubmVrIn0seyJ4IjowLCJ5IjoxLCJ3IjoyLCJoIjoyLCJ1cmwiOiJmaXJlZm94LmRlc2t0b3AiLCJsYWJlbCI6IkZpcmVmb3gifSx7IngiOjIsInkiOjEsInciOjIsImgiOjIsInVybCI6Im9yZy5rZGUuZG9scGhpbi5kZXNrdG9wIiwibGFiZWwiOiJGaWxlIEV4cGxvcmVyIn0seyJ4Ijo0LCJ5IjoxLCJ3IjoxLCJoIjoxLCJ1cmwiOiJzeXN0ZW1zZXR0aW5ncy5kZXNrdG9wIiwibGFiZWwiOiJTZXR0aW5ncyJ9LHsieCI6NSwieSI6MSwidyI6MSwiaCI6MSwidXJsIjoib3JnLmtkZS5kaXNjb3Zlci5kZXNrdG9wIiwibGFiZWwiOiJTdG9yZSJ9LHsieCI6NCwieSI6MiwidyI6MSwiaCI6MSwidXJsIjoib3JnLmtkZS5rb25zb2xlLmRlc2t0b3AiLCJsYWJlbCI6IlRlcm1pbmFsIn0seyJ4Ijo1LCJ5IjoyLCJ3IjoxLCJoIjoxLCJ1cmwiOiJvcmcua2RlLmt3cml0ZS5kZXNrdG9wIiwibGFiZWwiOiJOb3RlcGFkIn0seyJ4IjowLCJ5IjozLCJ3Ijo2LCJoIjoxLCJ0aWxlVHlwZSI6Imdyb3VwIiwibGFiZWwiOiJTYWZldHkifSx7IngiOjAsInkiOjQsInciOjIsImgiOjIsInVybCI6Im9yZy5rZGUucGxhc21hLXN5c3RlbW1vbml0b3IuZGVza3RvcCIsImxhYmVsIjoiVGFzayBNYW5hZ2VyIn0seyJ4IjoyLCJ5Ijo0LCJ3IjoyLCJoIjoyLCJ1cmwiOiJmZW5uZWstcXVhcmFudGluZS5kZXNrdG9wIiwibGFiZWwiOiJRdWFyYW50aW5lIn1d")
 start.writeConfig("favoriteApps", ["preferred://browser", "org.kde.dolphin.desktop", "systemsettings.desktop",
                                    "org.kde.konsole.desktop", "org.kde.discover.desktop"])
 
