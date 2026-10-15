@@ -18,7 +18,9 @@ if (Test-Path "$dir\fennek-next.vhdx") {
     Move-Item "$dir\fennek-next.vhdx" $vhd -Force
 }
 
-New-VM -Name $name -Generation 2 -MemoryStartupBytes 4GB -VHDPath $vhd -Path $dir -SwitchName 'Default Switch' | Out-Null
+# Network: the 'Fennek-External' switch (straight to your router) if you made one, else Hyper-V's Default Switch.
+$switch = if (Get-VMSwitch 'Fennek-External' -ErrorAction SilentlyContinue) { 'Fennek-External' } else { 'Default Switch' }
+New-VM -Name $name -Generation 2 -MemoryStartupBytes 4GB -VHDPath $vhd -Path $dir -SwitchName $switch | Out-Null
 Set-VMProcessor $name -Count 4
 Set-VM $name -AutomaticCheckpointsEnabled $false   # no snapshot on every start (saves space on E:)
 Set-VMVideo $name -HorizontalResolution 1920 -VerticalResolution 1080 -ResolutionType Single   # fill the window, not 1024x768
