@@ -23,6 +23,7 @@ echo "${OSN_SHA256}  ${OSN_RPM}" | sha256sum -c -
 dnf -y install \
     libnetfilter_queue \
     firefox \
+    flatpak-kcm \
     zsh zsh-autosuggestions zsh-syntax-highlighting \
     snapper \
     clamav clamav-freshclam inotify-tools \
