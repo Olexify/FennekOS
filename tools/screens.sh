@@ -30,13 +30,15 @@ sleep 2
 sleep 6
 export QT_QPA_PLATFORM=wayland WAYLAND_DISPLAY=wayland-fennek
 { echo "runtime dir:"; ls -la "$XDG_RUNTIME_DIR"; echo "processes:"; ps -eo pid,user,args | grep -E "kwin|dbus" | grep -v grep; } >/out/diag.log 2>&1
-/usr/libexec/fennek-first-login-places >/dev/null 2>&1
+xdg-user-dirs-update >/dev/null 2>&1
+/usr/libexec/fennek-first-login >/out/first-login.log 2>&1   # what a new user's first sign-in does
 # Normally started by systemd (not in a container): activities (plasmashell refuses to start without), kded.
 /usr/libexec/kactivitymanagerd >/out/kactivitymanagerd.log 2>&1 &
 kded6 >/out/kded.log 2>&1 &
 sleep 2
 plasmashell >/out/plasma.log 2>&1 &
-shot 01-desktop 30
+sleep 6; pkill -f 'fennek-app welcome'   # first login opens Welcome; it gets its own shot below
+shot 01-desktop 24
 call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; shot 02-start
 call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; sleep 1
 click 60 880; shot 03-search; click 60 880; sleep 1

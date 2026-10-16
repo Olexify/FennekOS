@@ -21,6 +21,12 @@ if [ -n "$desk" ] && [ "$desk" != "$HOME" ] && mkdir -p "$desk"; then
     printf '[Desktop Entry]\nType=Link\nName=%s\nIcon=computer\nURL=thispc:/\n' "$pc" > "$desk/this-pc.desktop"
     printf '[Desktop Entry]\nType=Link\nName=%s\nIcon=user-trash-full\nEmptyIcon=user-trash\nURL=trash:/\n' "$bin" > "$desk/recycle-bin.desktop"
 fi
+# Files: classic menu bar (File, Edit, View…). KDE keeps this in the per-user state file, which system defaults
+# don't reach.
+state="${XDG_STATE_HOME:-$HOME/.local/state}/dolphinstaterc"
+[ -e "$state" ] || { mkdir -p "${state%/*}" && printf '[MainWindow]
+MenuBar=Enabled
+' > "$state"; }
 mkdir -p "${stamp%/*}" && touch "$stamp"
 # First login only: say hello (pick a look, what keeps you safe, tips).
 (sleep 2; fennek-app welcome) >/dev/null 2>&1 &
