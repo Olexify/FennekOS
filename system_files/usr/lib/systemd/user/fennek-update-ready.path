@@ -1,0 +1,8 @@
+[Unit]
+Description=Watch for downloaded system updates
+
+[Path]
+PathChanged=/run/ostree/staged-deployment
+
+[Install]
+WantedBy=graphical-session.target

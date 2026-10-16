@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# One quiet notification per downloaded system update: "Update ready, restart when it suits you".
+# Started at sign-in and whenever an update finishes downloading (fennek-update-ready.path).
+staged=${FENNEK_STAGED:-/run/ostree/staged-deployment}
+[ -e "$staged" ] || exit 0
+id=$(sha256sum "$staged" | cut -c1-16)
+seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/update-notified
+[ "$(cat "$seen" 2>/dev/null)" = "$id" ] && exit 0
+mkdir -p "${seen%/*}" && echo "$id" >"$seen"
+[ -n "${FENNEK_DRY_RUN:-}" ] && { echo "would notify"; exit 0; }
+answer=$(notify-send -a "Fennek OS" -i system-software-update --action=restart="Restart now" --action=later="Later" \
+    "Update ready" "It's installed on the next restart. Restart whenever it suits you.")
+[ "$answer" = restart ] && exec systemctl reboot
+exit 0

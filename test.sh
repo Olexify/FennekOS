@@ -54,6 +54,13 @@ gb=$(mktemp -d) && printf '#!/bin/sh\necho "$GB_JSON"\n' >"$gb/rpm-ostree" && pr
   && [[ $(GB_JSON='{"deployments":[{"staged":true},{"booted":true},{"timestamp":1760000000}]}' PATH="$gb:$PATH" fennek-go-back --yes) == *"pkexec bootc rollback"* ]] \
   && ! GB_JSON='{"deployments":[{"booted":true},{"timestamp":1}]}' PATH="$gb:$PATH" fennek-go-back >/dev/null 2>&1 || fail "go back (rollback) logic"
 rm -rf "$gb"
+# "Update ready" note: once per downloaded update, enabled for every user.
+ur=$(mktemp -d) && echo one >"$ur/staged" && export FENNEK_STAGED="$ur/staged" XDG_STATE_HOME="$ur" FENNEK_DRY_RUN=1 \
+  && [ "$(/usr/libexec/fennek-update-ready)" = "would notify" ] && [ -z "$(/usr/libexec/fennek-update-ready)" ] \
+  && echo two >"$ur/staged" && [ "$(/usr/libexec/fennek-update-ready)" = "would notify" ] \
+  && [ -L /etc/systemd/user/graphical-session.target.wants/fennek-update-ready.path ] \
+  && [ -L /etc/systemd/user/graphical-session.target.wants/fennek-update-ready.service ] || fail "update ready notification"
+unset FENNEK_STAGED XDG_STATE_HOME FENNEK_DRY_RUN; rm -rf "$ur"
 command -v ss >/dev/null && fennek-firewall active --json | python3 -c 'import json,sys; assert isinstance(json.load(sys.stdin), list)' || fail "firewall active --json"
 grep -qF "fennek-firewall profile [home|public]" /usr/bin/fennek-firewall || fail "firewall network profile command"
 [ -x /usr/libexec/fennek-first-login ] && grep -q '^Exec=/usr/libexec/fennek-first-login' /etc/xdg/autostart/fennek-first-login.desktop || fail "first-login Fennek look"

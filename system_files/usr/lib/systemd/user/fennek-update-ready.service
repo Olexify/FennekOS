@@ -1,0 +1,9 @@
+[Unit]
+Description=Tell once when a downloaded system update is ready
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/libexec/fennek-update-ready
+
+[Install]
+WantedBy=graphical-session.target
