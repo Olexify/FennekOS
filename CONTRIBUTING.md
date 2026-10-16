@@ -36,13 +36,13 @@ podman build --build-arg BASE_IMAGE=$base -f Containerfile -t fennek:dev .
 podman run --rm -v ./test.sh:/t.sh:ro fennek:dev bash /t.sh
 ```
 
-To check the Windows-program sandbox, run `tests/sandbox-test.sh` (see SCOPE.md, "Build").
+To check the program sandbox, run `tests/sandbox-test.sh`.
 
 ## Rules for changes
 
 1. **CI must pass.** Every pull request builds the image and runs `test.sh`.
 2. **Add a test.** Any new behavior gets a check in `test.sh`, or a `--selftest` in the tool itself.
-3. **No telemetry.** Nothing may contact a server unless the user started it or it's documented in SCOPE.md
+3. **No telemetry.** Nothing may contact a server unless the user started it or it's documented in PRIVACY.md
    ("PRIVACY" list).
 4. **Patching other projects' files:** only by replacing the whole file, never by editing it in place, and with
    an `assert` so the build fails if upstream changes the code (see `build.sh`).

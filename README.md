@@ -14,7 +14,6 @@ What's in it so far:
 - **Atomic updates:** updates are staged in the background and applied on the next reboot. They are never forced.
 - **Familiar:** classic taskbar, and `dir`, `cls`, `ipconfig` work in the terminal.
 
-Plans, decisions and status: [SCOPE.md](SCOPE.md).
 
 ## Build
 

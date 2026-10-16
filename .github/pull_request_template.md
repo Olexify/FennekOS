@@ -6,5 +6,5 @@
 
 - [ ] CI passes (image builds, `test.sh` green)
 - [ ] New behavior has a test (`test.sh` or a `--selftest`)
-- [ ] Nothing new contacts a server, or it's documented in SCOPE.md
+- [ ] Nothing new contacts a server, or it's documented in PRIVACY.md
 - [ ] Downloads in the build are pinned and checksum-verified
