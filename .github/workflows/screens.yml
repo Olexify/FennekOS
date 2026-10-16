@@ -1,0 +1,37 @@
+name: screens
+
+# Design review: screenshots of the published image's desktop (taskbar, Start, search, panels, apps) on a
+# virtual screen. Manual only; nothing is published.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag to look at"
+        default: latest
+
+permissions:
+  contents: read
+
+jobs:
+  screens:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
+          sudo mkdir -p /mnt/containers && sudo rm -rf /var/lib/containers && sudo ln -s /mnt/containers /var/lib/containers
+
+      - name: Screenshots
+        run: |
+          mkdir -p out
+          sudo podman run --rm -v "$PWD/out:/out:z" -v "$PWD/tools:/t:ro,z" \
+            "ghcr.io/olexify/fennekos:${{ inputs.tag }}" bash /t/screens.sh
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: screens
+          path: out/
+          retention-days: 7
