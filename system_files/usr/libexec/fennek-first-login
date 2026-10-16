@@ -24,9 +24,7 @@ fi
 # Files: classic menu bar (File, Edit, View…). KDE keeps this in the per-user state file, which system defaults
 # don't reach.
 state="${XDG_STATE_HOME:-$HOME/.local/state}/dolphinstaterc"
-[ -e "$state" ] || { mkdir -p "${state%/*}" && printf '[MainWindow]
-MenuBar=Enabled
-' > "$state"; }
+[ -e "$state" ] || { mkdir -p "${state%/*}" && printf '[MainWindow]\nMenuBar=Enabled\n' > "$state"; }
 mkdir -p "${stamp%/*}" && touch "$stamp"
 # First login only: say hello (pick a look, what keeps you safe, tips).
 (sleep 2; fennek-app welcome) >/dev/null 2>&1 &
