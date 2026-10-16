@@ -107,6 +107,13 @@ fn quarantine(file: &Path, threat: &str, quar: &Path, now: u64) -> std::io::Resu
     Ok(dest)
 }
 
+/// No permissions at all on the file where it is; true only if that really is the state now.
+fn lock_in_place(file: &Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    let _ = fs::set_permissions(file, fs::Permissions::from_mode(0o000));
+    fs::symlink_metadata(file).map(|m| m.permissions().mode() & 0o777 == 0).unwrap_or(false)
+}
+
 fn scan(file: &Path) {
     use std::os::unix::ffi::OsStrExt;
     let Some(raw) = file.file_name() else { return };
@@ -123,7 +130,9 @@ fn scan(file: &Path) {
     let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
     let text = match quarantine(file, &threat, &quarantine_dir(), now) {
         Ok(_) => format!("{name} contains {threat}. It was moved to quarantine."),
-        Err(_) => format!("{name} contains {threat}. It couldn't be moved to quarantine, so it was locked where it is. Delete it."),
+        // Say only what really happened: locked in place, or not contained at all.
+        Err(_) if lock_in_place(file) => format!("{name} contains {threat}. It couldn't be moved to quarantine, so it was locked where it is. Delete it."),
+        Err(_) => format!("{name} contains {threat}. It could NOT be contained: delete it now and don't open it."),
     };
     let _ = Command::new("notify-send").args(["-u", "critical", "-a", "Fennek OS Security", "Threat blocked"]).arg(&text).status();
     println!("{text}");
