@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Go back to the previous version of Fennek OS (undo the last update). Files, apps and settings are kept.
+# Usage: fennek-go-back [--yes]     (--yes: no questions, for the terminal)
+set -u
+gui() { [ -n "${WAYLAND_DISPLAY:-}${DISPLAY:-}" ] && [ "${1:-}" != --yes ]; }
+yes=${1:-}
+
+# The previous version = the deployment that is neither running nor a downloaded update waiting for restart.
+if ! when=$(rpm-ostree status --json 2>/dev/null | python3 -c '
+import json, sys, time
+old = [d for d in json.load(sys.stdin)["deployments"] if not d.get("booted") and not d.get("staged")]
+old or sys.exit(1)
+print(time.strftime("from %d %B %Y", time.localtime(old[0]["timestamp"])) if "timestamp" in old[0] else "")' 2>/dev/null)
+then
+    msg="There is no previous version to go back to yet."
+    if gui "$yes"; then kdialog --title "Go back" --sorry "$msg"; else echo "$msg" >&2; fi
+    exit 1
+fi
+
+if gui "$yes"; then
+    kdialog --title "Go back" --continue-label "Go back" --warningcontinuecancel \
+        "Go back to the previous version of Fennek OS${when:+ ($when)}?"$'\n\n'"Your files, apps and settings stay as they are. The newer version comes back with the next update." \
+        || exit 0
+elif [ "$yes" != --yes ]; then
+    echo "Previous version${when:+ ($when)} available. Run: fennek-go-back --yes" >&2
+    exit 2
+fi
+
+pkexec bootc rollback || exit 1
+if gui "$yes"; then
+    kdialog --title "Go back" --yes-label "Restart now" --no-label "Later" \
+        --yesno "Done. Restart to start the previous version." && exec systemctl reboot
+else
+    echo "Done. Restart to start the previous version."
+fi

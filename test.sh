@@ -48,6 +48,12 @@ grep -q 'name="go_up"' "$r" && grep -q 'version="10[0-9][0-9]"' "$r" && grep -q 
 python3 -c "import sys, xml.dom.minidom as x; x.parse(sys.argv[1])" "$r"   || fail "Files toolbar file is not valid XML"
 grep -q '"Id": "org.fennek.firewall"' /usr/share/plasma/plasmoids/org.fennek.firewall/metadata.json && grep -q '^Exec=plasmawindowed org.fennek.firewall' /usr/share/applications/fennek-firewall.desktop || fail "Firewall window"
 fennek-firewall list --json | python3 -c 'import json,sys; assert json.load(sys.stdin) == []' || fail "firewall list --json"
+# Go back (undo last update): stand-in rpm-ostree/pkexec, so only the decision logic runs.
+gb=$(mktemp -d) && printf '#!/bin/sh\necho "$GB_JSON"\n' >"$gb/rpm-ostree" && printf '#!/bin/sh\necho "pkexec $*"\n' >"$gb/pkexec" && chmod +x "$gb"/* \
+  && GB_JSON='{"deployments":[{"booted":true,"timestamp":1760000000}]}' PATH="$gb:$PATH" fennek-go-back --yes 2>&1 | grep -q "no previous version" \
+  && GB_JSON='{"deployments":[{"staged":true},{"booted":true},{"timestamp":1760000000}]}' PATH="$gb:$PATH" fennek-go-back --yes | grep -q "pkexec bootc rollback" \
+  && ! GB_JSON='{"deployments":[{"booted":true},{"timestamp":1}]}' PATH="$gb:$PATH" fennek-go-back >/dev/null 2>&1 || fail "go back (rollback) logic"
+rm -rf "$gb"
 command -v ss >/dev/null && fennek-firewall active --json | python3 -c 'import json,sys; assert isinstance(json.load(sys.stdin), list)' || fail "firewall active --json"
 grep -qF "fennek-firewall profile [home|public]" /usr/bin/fennek-firewall || fail "firewall network profile command"
 [ -x /usr/libexec/fennek-first-login ] && grep -q '^Exec=/usr/libexec/fennek-first-login' /etc/xdg/autostart/fennek-first-login.desktop || fail "first-login Fennek look"

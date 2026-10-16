@@ -62,6 +62,7 @@ var categories = [
   ]},
  {"name": "Update & Recovery", "icon": "fennek-settings-update", "sub": "Updates, previous versions",
   "items": [
-   {"name": "Updates", "cmd": "plasma-discover --mode update", "icon": "system-software-update", "desc": "Fennek OS and app updates"}
+   {"name": "Updates", "cmd": "plasma-discover --mode update", "icon": "system-software-update", "desc": "Fennek OS and app updates"},
+   {"name": "Go back", "cmd": "fennek-go-back", "icon": "edit-undo", "desc": "Undo the last update, keep your files"}
   ]}
 ]
