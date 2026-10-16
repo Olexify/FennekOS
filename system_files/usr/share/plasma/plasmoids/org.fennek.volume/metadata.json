@@ -1,0 +1,20 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Fennek OS"
+            }
+        ],
+        "Category": "Multimedia",
+        "Description": "Volume: the current output device, one slider",
+        "Icon": "audio-volume-high",
+        "Id": "org.fennek.volume",
+        "License": "GPL-3.0-only",
+        "Name": "Volume",
+        "EnabledByDefault": true
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-NotificationArea": "true",
+    "X-Plasma-NotificationAreaCategory": "Hardware"
+}
