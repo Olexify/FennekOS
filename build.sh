@@ -417,7 +417,7 @@ done
 rm -rf /tmp/cargo-home
 # Syntax check of every Fennek QML file while Qt's tools are here: a typo fails the build, not the desktop.
 qmlformat=$(command -v qmlformat || echo /usr/lib64/qt6/bin/qmlformat)
-for f in /usr/share/plasma/plasmoids/org.fennek.*/contents/ui/*.qml /usr/share/sddm/themes/fennek/*.qml; do
+for f in /usr/share/plasma/plasmoids/org.fennek.*/contents/ui/*.qml /usr/share/sddm/themes/fennek/*.qml \n         /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/splash/Splash.qml; do
     "$qmlformat" "$f" >/dev/null || { echo "QML syntax error in $f"; exit 1; }
 done
 [ ${#missing[@]} -eq 0 ] || dnf -y remove "${missing[@]}"
