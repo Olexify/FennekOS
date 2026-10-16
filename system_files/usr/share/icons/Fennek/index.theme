@@ -2,7 +2,7 @@
 Name=Fennek
 Comment=Fennek OS icons: classic yellow folders and Fennek's own apps; everything else from Breeze
 Inherits=breeze,hicolor
-Directories=scalable/places,scalable/apps
+Directories=scalable/places,scalable/apps,scalable/devices
 
 [scalable/places]
 Size=64
@@ -16,4 +16,11 @@ Size=64
 MinSize=16
 MaxSize=512
 Context=Applications
+Type=Scalable
+
+[scalable/devices]
+Size=64
+MinSize=16
+MaxSize=512
+Context=Devices
 Type=Scalable
