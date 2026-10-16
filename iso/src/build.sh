@@ -73,8 +73,10 @@ grep -q 'ostree-image-signed:docker://$UPDATES_FROM' /ostree/deploy/default/depl
 %end
 EOF
 
-# Installer branding: our name instead of Fedora's.
+# Installer branding: our name and fox icon instead of Fedora's (the live Welcome window shows this launcher).
 echo "Fennek OS (installer)" >/etc/system-release
+sed -i -e 's/^Icon=.*/Icon=fennek/' -e 's/^Name=.*/Name=Install Fennek OS/' /usr/share/applications/liveinst.desktop
+grep -q '^Icon=fennek' /usr/share/applications/liveinst.desktop
 
 # 4. Boot files the ISO needs.
 dnf install -y grub2-efi-x64-cdboot xorriso isomd5sum
