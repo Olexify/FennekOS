@@ -1,0 +1,3 @@
+# Fennek OS: Shut down / Restart / Sign out from the power menu act at once (choosing it is the confirmation).
+[General]
+confirmLogout=false

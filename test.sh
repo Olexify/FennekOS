@@ -74,6 +74,7 @@ python3 -c "import json; d=json.load(open('/usr/share/kwin-wayland/scripts/fenne
 sh=$(mktemp -d) && printf '[kwin]\nOverview=Meta+W,Meta+W,Toggle Overview\nWindow Close=Alt+F4,Alt+F4,Close Window\n' >"$sh/kglobalshortcutsrc" \
   &&XDG_CONFIG_HOME=$sh XDG_STATE_HOME=$sh /usr/libexec/fennek-shortcuts-update   && [ "$(kreadconfig6 --file "$sh/kglobalshortcutsrc" --group kwin --key 'Window Close')" = "none,Alt+F4,Close Window" ]   && [ "$(kreadconfig6 --file "$sh/kglobalshortcutsrc" --group kwin --key Overview | cut -f1)" = Meta+Tab ]   && [ -L /etc/systemd/user/plasma-workspace.target.wants/fennek-shortcuts-update.service ] || fail "shortcut update for existing users"
 rm -rf "$sh"
+[ "$(kreadconfig6 --file /etc/xdg/ksmserverrc --group General --key confirmLogout)" = false ] || fail "power menu acts without a second confirmation"
 # "Update ready" note: once per downloaded update, enabled for every user.
 ur=$(mktemp -d) && echo one >"$ur/staged" && export FENNEK_STAGED="$ur/staged" XDG_STATE_HOME="$ur" FENNEK_DRY_RUN=1 \
   && [ "$(/usr/libexec/fennek-update-ready)" = "would notify" ] && [ -z "$(/usr/libexec/fennek-update-ready)" ] \
