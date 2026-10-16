@@ -17,7 +17,7 @@ widget() {   # open a taskbar widget's popup by plugin id
     local id; id=$(script "panels().forEach(p => p.widgets('$1').forEach(w => print(w.id)))" | grep -o '[0-9]\+' | head -1)
     [ -n "$id" ] && call org.kde.kglobalaccel /component/plasmashell org.kde.kglobalaccel.Component.invokeShortcut "activate widget $id"
 }
-close() { call org.kde.kglobalaccel /component/kwin org.kde.kglobalaccel.Component.invokeShortcut "Window Close"; sleep 1; }
+close() { kill $! 2>/dev/null; sleep 1; }   # the app just started in the background
 
 kwin_wayland --virtual --width 1600 --height 900 --no-lockscreen --socket wayland-fennek >/tmp/kwin.log 2>&1 &
 sleep 6
