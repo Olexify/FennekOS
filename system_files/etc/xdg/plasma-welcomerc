@@ -1,0 +1,5 @@
+# Fennek OS has its own welcome (org.fennek.welcome, first login). KDE's Welcome Center stays for the live
+# installer session only (there it always opens, to offer the install).
+[General]
+LastSeenVersion=99.0
+ShowUpdatePage=false
