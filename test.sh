@@ -26,6 +26,18 @@ grep -q '^ID=fedora' /usr/lib/os-release                      || fail "os-releas
                                                               || fail "wallpaper isn't the desert dusk (warm horizon)"
 grep -q '^Image=Fennek' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults || fail "lnf wallpaper"
 [ "$(kreadconfig6 --file /usr/share/plasma/desktoptheme/fennek-dark/colors --group Colors:Selection --key BackgroundNormal)" = 109,69,184 ] && ! grep -q "29,153,243" /usr/share/plasma/desktoptheme/fennek-dark/colors || fail "panel accent is Fennek violet"
+# Desktop update scripts run once and silently: at least check they are well-formed (brackets, quotes).
+python3 - <<'PY' || fail "a desktop update script is malformed"
+import glob, re
+for f in glob.glob("/usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/fennek-*.js"):
+    code = re.sub(r"//[^\n]*", "", open(f).read())
+    code = re.sub(r'"(\\.|[^"\\])*"', '""', code)
+    stack, pairs = [], {")": "(", "]": "[", "}": "{"}
+    for ch in code:
+        if ch in "([{": stack.append(ch)
+        elif ch in ")]}": assert stack and stack.pop() == pairs[ch], f
+    assert not stack and code.count("'") % 2 == 0, f
+PY
 # Existing desktops follow layout changes by themselves (Plasma update scripts, once per user): no reset needed.
 u=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/fennek-2026-10-16-taskbar.js
 [ -f "$u" ] && grep -q 'org.fennek.taskview' "$u" && grep -q 'hideSearchField' "$u"   && [ "$(kreadconfig6 --file /etc/xdg/plasmarc --group Theme --key name)" = fennek-dark ]   && grep -q '^name=fennek-dark' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults   && [ -f /usr/share/plasma/desktoptheme/fennek-dark/widgets/tasks.svg ] && python3 -c "import json; assert json.load(open('/usr/share/plasma/desktoptheme/fennek-dark/metadata.json'))['KPlugin']['Id'] == 'fennek-dark'"  || fail "taskbar update for existing desktops / dark panels"
