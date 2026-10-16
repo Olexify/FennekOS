@@ -15,7 +15,7 @@ we treat it as a bug.
 | **App updates** (Flatpak) | `flathub.org` and the app's servers | Daily | The list of installed apps, to find updates | `sudo systemctl disable --now flatpak-system-update.timer`, plus `systemctl --user disable --now flatpak-user-update.timer` |
 | **Virus definitions** (ClamAV) | `database.clamav.net` (Cisco) | Daily, and 15 minutes after start-up | Download request only | `sudo systemctl disable --now clamav-freshclam-once.timer` (new downloads are then no longer scanned against fresh definitions) |
 | **Clock** | Fedora's time servers (NTP) | Regularly | The time request | System Settings → Date & Time |
-| **Wi-Fi "is there internet?" check** | `fedoraproject.org` | When connecting to a network | A plain web request | `sudo rm /usr/lib/NetworkManager/conf.d/20-connectivity-fedora.conf` (if present) |
+| **Wi-Fi "is there internet?" check** | `fedoraproject.org` | When connecting to a network | A plain web request | `printf '[connectivity]\nenabled=false\n' \| sudo tee /etc/NetworkManager/conf.d/99-no-check.conf` (then restart; Wi-Fi sign-in pages are no longer detected) |
 
 ## Connections only when you use a feature
 
