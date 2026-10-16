@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Brings an existing user's shortcuts up to Fennek's current defaults, once per version, before the window
+# manager starts (KDE copies every shortcut into the user's own file, so new defaults never reach them).
+# New users get the same from /etc/xdg/kglobalshortcutsrc.
+set -u
+version=2026-10-16
+seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/shortcuts-version
+[ "$(cat "$seen" 2>/dev/null)" = "$version" ] && exit 0
+f=${XDG_CONFIG_HOME:-$HOME/.config}/kglobalshortcutsrc
+if [ -f "$f" ]; then
+    kw() { kwriteconfig6 --file "$f" --group "$1" --key "$2" "$3"; }
+    kw kwin Overview $'Meta+Tab\tMeta+W,Meta+W,Toggle Overview'                 # Super+Tab: task view
+    kw plasmashell "next activity" "none,Meta+Tab,Walk through activities"
+    kw kwin "Window Close" "none,Alt+F4,Close Window"                            # Alt+F4: see fennekaltf4
+    kw kwin "Fennek Close or Shut Down" "Alt+F4,Alt+F4,Close the window, or shut down from the desktop"
+fi
+mkdir -p "${seen%/*}" && echo "$version" >"$seen"

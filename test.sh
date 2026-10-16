@@ -66,6 +66,11 @@ ea=$(/usr/libexec/fennek-essential-apps --list) && echo "everyday apps to fetch:
   && [ -L /etc/systemd/system/multi-user.target.wants/fennek-essential-apps.service ] \
   && grep -q '^ConditionKernelCommandLine=!rd.live.image' /usr/lib/systemd/system/fennek-essential-apps.service \
   && [ -z "$(grep -vx 'org\.kde\.[a-z]*' <<<"$ea")" ] || fail "everyday apps installer"
+# Alt+F4 script (desktop: Shut down) + shortcut update for existing users (runs before the window manager).
+python3 -c "import json; d=json.load(open('/usr/share/kwin/scripts/fennekaltf4/metadata.json')); assert d['KPlugin']['Id']=='fennekaltf4'"   && grep -q 'registerShortcut("Fennek Close or Shut Down"' /usr/share/kwin/scripts/fennekaltf4/contents/code/main.js   && [ "$(kreadconfig6 --file /etc/xdg/kwinrc --group Plugins --key fennekaltf4Enabled)" = true ]   && [ "$(kreadconfig6 --file /etc/xdg/kglobalshortcutsrc --group kwin --key 'Window Close')" = "none,Alt+F4,Close Window" ] || fail "Alt+F4 on the desktop"
+sh=$(mktemp -d) && printf '[kwin]\nOverview=Meta+W,Meta+W,Toggle Overview\nWindow Close=Alt+F4,Alt+F4,Close Window\n' >"$sh/kglobalshortcutsrc" \
+  &&XDG_CONFIG_HOME=$sh XDG_STATE_HOME=$sh /usr/libexec/fennek-shortcuts-update   && [ "$(kreadconfig6 --file "$sh/kglobalshortcutsrc" --group kwin --key 'Window Close')" = "none,Alt+F4,Close Window" ]   && [ "$(kreadconfig6 --file "$sh/kglobalshortcutsrc" --group kwin --key Overview | cut -f1)" = Meta+Tab ]   && [ -L /etc/systemd/user/plasma-workspace.target.wants/fennek-shortcuts-update.service ] || fail "shortcut update for existing users"
+rm -rf "$sh"
 # "Update ready" note: once per downloaded update, enabled for every user.
 ur=$(mktemp -d) && echo one >"$ur/staged" && export FENNEK_STAGED="$ur/staged" XDG_STATE_HOME="$ur" FENNEK_DRY_RUN=1 \
   && [ "$(/usr/libexec/fennek-update-ready)" = "would notify" ] && [ -z "$(/usr/libexec/fennek-update-ready)" ] \

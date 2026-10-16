@@ -1,0 +1,12 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Id": "fennekaltf4",
+        "Name": "Alt+F4 on the desktop: shut down",
+        "Description": "Alt+F4 closes the active window; on the desktop it opens the Shut down dialog.",
+        "License": "GPL-3.0-only",
+        "EnabledByDefault": true
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}

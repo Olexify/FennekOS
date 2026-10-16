@@ -1,0 +1,10 @@
+[Unit]
+Description=Apply Fennek's updated keyboard shortcuts (before the window manager starts)
+Before=plasma-kwin_wayland.service plasma-kwin_x11.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/fennek-shortcuts-update
+
+[Install]
+WantedBy=plasma-workspace.target

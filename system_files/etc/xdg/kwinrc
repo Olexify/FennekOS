@@ -17,3 +17,7 @@ BorderlessMaximizedWindows=false
 [TabBox]
 # Alt+Tab shows a grid of window previews.
 LayoutName=thumbnail_grid
+
+[Plugins]
+# Alt+F4 on the desktop opens Shut down (/usr/share/kwin/scripts/fennekaltf4).
+fennekaltf4Enabled=true
