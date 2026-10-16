@@ -44,7 +44,7 @@ if (tray) {
 }
 // Clock: time with the date underneath; click for the calendar panel.
 panel.addWidget("org.fennek.clock")
-panel.addWidget("org.fennek.actioncenter")   // notifications + quick tiles
+panel.addWidget("org.fennek.actioncenter").globalShortcut = "Meta+A"   // notifications + quick tiles; Super+A
 panel.addWidget("org.fennek.showdesktop")   // thin strip at the very end, no icon
 
 var desktopsArray = desktopsForActivity(currentActivity());

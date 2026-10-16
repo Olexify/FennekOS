@@ -1,0 +1,8 @@
+# Fennek OS: familiar global shortcuts (defaults; each user can change them in Settings → Keyboard shortcuts).
+# Format: active shortcuts (tab-separated), default, description.
+[kwin]
+Overview=Meta+Tab	Meta+W,Meta+W,Toggle Overview
+
+[plasmashell]
+# Super+Tab belongs to the task view above, not to switching activities.
+next activity=none,Meta+Tab,Walk through activities

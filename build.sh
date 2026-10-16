@@ -230,6 +230,13 @@ def _add(p, shortcut, rename):
 add_shortcut("org.kde.plasma-systemmonitor.desktop", "Ctrl+Shift+Esc", rename="Task Manager")
 add_shortcut("org.kde.krunner.desktop", "Meta+R")
 add_shortcut("org.kde.dolphin.desktop", "Meta+E")
+# Super+Shift+S = snip a screen region (Spectacle's region action; its own Meta+Shift+Print stays).
+p = pathlib.Path("/usr/share/applications/org.kde.spectacle.desktop")
+t, n = re.subn(r"(^\[Desktop Action RectangularRegionScreenShot\]\n(?:(?!\[Desktop ).*\n)*?X-KDE-Shortcuts=)(.*)$",
+               lambda m: m.group(1) + ",".join(["Meta+Shift+S"] + [k for k in m.group(2).split(",") if k and k != "Meta+Shift+S"]),
+               p.read_text(), count=1, flags=re.M)
+assert n == 1, "Spectacle region action changed: revisit Super+Shift+S"
+replace_file(p, t)
 # Super+I opens Fennek Settings (fennek-settings.desktop) instead of KDE's System Settings.
 for name in ("systemsettings.desktop",):
     for d in ("/usr/share/kglobalaccel", "/usr/share/applications"):

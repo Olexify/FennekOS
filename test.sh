@@ -153,6 +153,9 @@ grep -q '^Name=Task Manager$' /usr/share/applications/org.kde.plasma-systemmonit
 grep -q '^X-KDE-Shortcuts=.*Ctrl+Shift+Esc' /usr/share/applications/org.kde.plasma-systemmonitor.desktop || fail "Ctrl+Shift+Esc"
 grep -qs '^X-KDE-Shortcuts=.*Meta+R' /usr/share/kglobalaccel/org.kde.krunner.desktop /usr/share/applications/org.kde.krunner.desktop || fail "Win+R"
 grep -q '^X-KDE-Shortcuts=.*Meta+E' /usr/share/kglobalaccel/org.kde.dolphin.desktop || fail "Super+E opens File Explorer"
+grep -q '^X-KDE-Shortcuts=Meta+Shift+S,' /usr/share/applications/org.kde.spectacle.desktop || fail "Super+Shift+S snips a region"
+[ "$(kreadconfig6 --file /etc/xdg/kglobalshortcutsrc --group kwin --key Overview | cut -f1)" = Meta+Tab ] || fail "Super+Tab task view"
+grep -q 'actioncenter").globalShortcut = "Meta+A"' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "Super+A action center"
 grep -q '^ViewMode=1' /etc/skel/.local/share/dolphin/view_properties/global/.directory || fail "Files details view"
 q=$(ls -d /usr/lib*/qt6/qml/org/kde/desktop | head -1)
 grep -q "wheelEnabled: false  // Fennek" "$q/ComboBox.qml" && grep -q "wheelEnabled: false  // Fennek" "$q/SpinBox.qml" \
