@@ -87,3 +87,22 @@ for k, ns in fn.items():
     for n in ns:
         open(f"{base}/places/{n}.svg", "w", newline="\n").write(svg(BACK + FRONT + f"<g {G}>{sym[k]}</g>"))
 print("ok")
+
+# Settings home categories (own names, so system-wide icons like the tray's Wi-Fi stay untouched).
+settings = {
+    "system": ("#5aa9f8", "#1f6fd6", '<rect x="17" y="20" width="30" height="19" rx="3"/><path d="M27 45h10M32 39v6"/>'),
+    "devices": ("#9aa3b0", "#5d6674", '<rect x="18" y="20" width="16" height="24" rx="3"/><path d="M38 26h8v18h-8z"/>'),
+    "network": ("#4fc3f7", "#1e88e5", '<path d="M19 29a19 19 0 0 1 26 0M23.5 34a12.5 12.5 0 0 1 17 0M28 39a6 6 0 0 1 8 0"/><circle cx="32" cy="43.5" r="1.6" fill="#fff" stroke="none"/>'),
+    "appearance": ("#ff8fb1", "#e04883", '<path d="M32 18a14 14 0 1 0 0 28c2 0 3-1.5 3-3s-1-2.2-1-3.6c0-1.6 1.3-2.4 3-2.4h3a6 6 0 0 0 6-6c0-7.4-6.3-13-14-13z"/><circle cx="25" cy="30" r="1.6" fill="#fff" stroke="none"/><circle cx="31" cy="25" r="1.6" fill="#fff" stroke="none"/><circle cx="38" cy="27" r="1.6" fill="#fff" stroke="none"/>'),
+    "apps": ("#b38af7", "#7543d6", '<rect x="19" y="19" width="10" height="10" rx="2.5"/><rect x="35" y="19" width="10" height="10" rx="2.5"/><rect x="19" y="35" width="10" height="10" rx="2.5"/><rect x="35" y="35" width="10" height="10" rx="2.5"/>'),
+    "accounts": ("#ffb84d", "#f08a16", '<circle cx="32" cy="27" r="6"/><path d="M21 45c1.5-6 6-9 11-9s9.5 3 11 9"/>'),
+    "time": ("#4ad07f", "#15985a", '<circle cx="32" cy="32" r="13"/><path d="M32 24v8l5 4"/>'),
+    "accessibility": ("#5aa9f8", "#1f6fd6", '<circle cx="32" cy="20" r="2.5" fill="#fff" stroke="none"/><path d="M21 26l11 2 11-2M32 28v8l-5 9M32 36l5 9"/>'),
+    "privacy": ("#a77bf3", "#6a35c9", '<path d="M32 17l12 4.5v9c0 8-5.2 13.6-12 16.5-6.8-2.9-12-8.5-12-16.5v-9z"/><path d="M27 32l4 4 7-8"/>'),
+    "update": ("#4fc3f7", "#1e88e5", '<path d="M44 30a12 12 0 0 0-22-5M20 34a12 12 0 0 0 22 5"/><path d="M22 19v6h6M42 45v-6h-6"/>'),
+}
+for k, g in settings.items():
+    s = app(*g)
+    for d in (f"{base}/apps", hicolor):
+        open(f"{d}/fennek-settings-{k}.svg", "w", newline="\n").write(s)
+print("settings icons ok")
