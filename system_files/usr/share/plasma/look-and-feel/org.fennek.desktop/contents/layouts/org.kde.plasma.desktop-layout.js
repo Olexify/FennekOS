@@ -10,10 +10,11 @@ var start = panel.addWidget("com.github.zren.tiledmenu")
 start.currentConfigGroup = ["General"]
 start.writeConfig("icon", "fennek")
 // Clean, theme-matched Start: icons in the left strip and the search box follow the system colours (so Power
-// and the user picture are always visible), tiles in the Fennek accent violet, app names without descriptions.
+// and the user picture are always visible), soft violet tiles, app names without descriptions.
 start.writeConfig("sidebarFollowsTheme", true)
 start.writeConfig("searchFieldFollowsTheme", true)
-start.writeConfig("defaultTileColor", "#6d45b8")
+start.writeConfig("defaultTileColor", "#406d45b8")   // translucent accent violet (AARRGGBB), light and dark
+start.writeConfig("showRecentApps", false)           // clean A-Z list, no "Most used" block
 start.writeConfig("appDescription", "hidden")
 start.writeConfig("sidebarShortcuts", ["xdg:DOCUMENTS", "xdg:DOWNLOAD", "xdg:PICTURES", "xdg:VIDEOS", "fennek-settings.desktop"])
 // Default tiles, classic: named groups, big and small tiles (base64 JSON, Tiled Menu's format;

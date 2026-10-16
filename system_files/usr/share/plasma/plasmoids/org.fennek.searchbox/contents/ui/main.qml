@@ -55,37 +55,30 @@ PlasmoidItem {
         root.expanded = false
     }
 
-    // The box on the taskbar.
+    // On the taskbar: one bright search icon, the size of an app icon. Click opens the search panel.
     compactRepresentation: MouseArea {
-        Layout.preferredWidth: Kirigami.Units.gridUnit * 17
+        Layout.preferredWidth: height
         Layout.fillHeight: true
         hoverEnabled: true
         onClicked: root.expanded = !root.expanded
+        PlasmaComponents.ToolTip.text: "Search"
+        PlasmaComponents.ToolTip.visible: containsMouse && !root.expanded
 
         Rectangle {
             anchors.fill: parent
-            anchors.topMargin: 3
-            anchors.bottomMargin: 3
-            color: parent.containsMouse || root.expanded ? Qt.lighter(Kirigami.Theme.backgroundColor, 1.6)
-                                                         : Qt.lighter(Kirigami.Theme.backgroundColor, 1.35)
-            border.color: Qt.rgba(1, 1, 1, 0.12)
-            radius: 2
+            anchors.margins: 2
+            radius: 6
+            color: Kirigami.Theme.textColor
+            opacity: parent.containsMouse || root.expanded ? 0.12 : 0
+            Behavior on opacity { NumberAnimation { duration: 120 } }
         }
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: Kirigami.Units.largeSpacing
-            spacing: Kirigami.Units.largeSpacing
-            Kirigami.Icon {
-                source: "search"
-                Layout.preferredWidth: Kirigami.Units.iconSizes.small
-                Layout.preferredHeight: Kirigami.Units.iconSizes.small
-            }
-            PlasmaComponents.Label {
-                text: "Type here to search"
-                opacity: 0.75
-                elide: Text.ElideRight
-                Layout.fillWidth: true
-            }
+        Kirigami.Icon {
+            anchors.centerIn: parent
+            width: Kirigami.Units.iconSizes.smallMedium
+            height: width
+            source: "search"
+            color: "white"
+            isMask: true
         }
     }
 

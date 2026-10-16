@@ -5,6 +5,8 @@ import org.kde.kirigami as Kirigami
 Rectangle {
 	id: tileItemView
 	color: appObj.backgroundColor
+	radius: 10   // Fennek OS: soft rounded tiles
+	clip: true
 	property color gradientBottomColor: Qt.darker(appObj.backgroundColor, 2.0)
 
 	Component {
