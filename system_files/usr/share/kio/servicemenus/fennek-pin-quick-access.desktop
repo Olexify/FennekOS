@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Service
+MimeType=inode/directory;
+Actions=pin
+X-KDE-Priority=TopLevel
+
+[Desktop Action pin]
+Name=Pin to Quick access
+Icon=pin
+Exec=/usr/libexec/fennek-pin-quick-access %F
