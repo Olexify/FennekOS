@@ -478,6 +478,55 @@ open(p + ".fennek-new", "w").write(s.replace(old, "[Panel][ContainmentActions]\n
 os.chmod(p + ".fennek-new", 0o644); os.replace(p + ".fennek-new", p)
 EOF
 
+# Taskbar look: no line over an open button (Start, tray); app buttons get a small line at the bottom while the
+# app runs (longer, accent colour, for the focused one) and a soft background only for the focused app.
+python3 - <<'EOF'
+import os
+def patch(p, pairs):
+    s = open(p).read()
+    for old, new in pairs:
+        assert s.count(old) == 1, f"{p}: '{old[:50]}' changed: revisit the Fennek taskbar look"
+        s = s.replace(old, new)
+    open(p + ".fennek-new", "w").write(s); os.chmod(p + ".fennek-new", 0o644); os.replace(p + ".fennek-new", p)
+
+patch("/usr/share/plasma/shells/org.kde.plasma.desktop/contents/applet/CompactApplet.qml", [
+    ("opacity: root.plasmoidItem.expanded ? 1 : 0", "opacity: 0   // Fennek OS: no line over an open button"),
+])
+patch("/usr/share/plasma/plasmoids/org.kde.plasma.taskmanager/contents/ui/Task.qml", [
+    ('        imagePath: "widgets/tasks"\n',
+     '        imagePath: "widgets/tasks"\n'
+     '        opacity: task.inPopup ? 1 : 0   // Fennek OS: own indicators on the taskbar (below)\n'),
+    ("\n    Loader {\n        id: taskProgressOverlayLoader\n", """
+    // Fennek OS: focused app = soft background; hover = fainter; others just the icon.
+    Rectangle {
+        visible: !task.inPopup
+        anchors.fill: frame
+        anchors.margins: 2
+        radius: 6
+        color: Kirigami.Theme.textColor
+        opacity: task.model.IsActive ? 0.13 : (task.highlighted ? 0.07 : 0)
+        Behavior on opacity { NumberAnimation { duration: 120 } }
+    }
+    // Fennek OS: running apps = small line at the bottom; focused = longer, accent; needs attention = amber.
+    Rectangle {
+        visible: !task.inPopup && !task.model.IsLauncher
+        anchors.horizontalCenter: frame.horizontalCenter
+        anchors.bottom: frame.bottom
+        anchors.bottomMargin: 2
+        height: 3
+        radius: 1.5
+        width: task.model.IsActive ? Kirigami.Units.gridUnit * 1.1 : Kirigami.Units.gridUnit * 0.55
+        color: task.model.IsDemandingAttention ? "#f0a030" : (task.model.IsActive ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor)
+        opacity: task.model.IsActive || task.model.IsDemandingAttention ? 1 : 0.5
+        Behavior on width { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+    }
+
+    Loader {
+        id: taskProgressOverlayLoader
+"""),
+])
+EOF
+
 # Leave no dnf state behind (bootc lint), and the download settings as the base had them.
 dnf clean all
 cp /tmp/dnf.conf.orig /etc/dnf/dnf.conf && rm /tmp/dnf.conf.orig
