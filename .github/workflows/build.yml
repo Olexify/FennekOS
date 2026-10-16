@@ -1,10 +1,9 @@
 name: build
 
+# Not on every push: small changes are batched. Builds run nightly (base security fixes + the day's work)
+# and on demand (Actions > build > Run workflow). Pull requests are built and tested, never published.
 on:
-  push:
-    branches: [main]
   pull_request:
-  # Daily: picks up Fedora / Universal Blue security fixes even when nothing changed here.
   schedule:
     - cron: "30 5 * * *"
   workflow_dispatch:
