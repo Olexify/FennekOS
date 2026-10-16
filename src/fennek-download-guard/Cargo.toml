@@ -1,0 +1,17 @@
+[package]
+name = "fennek-download-guard"
+version = "2.0.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Fennek OS: scans new downloads with ClamAV, quarantines threats"
+
+# Built in the image from Fedora's packaged crates (offline, see build.sh); no crates.io downloads.
+[target.'cfg(target_os = "linux")'.dependencies]
+inotify = "0.11"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

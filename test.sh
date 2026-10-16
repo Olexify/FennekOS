@@ -86,6 +86,7 @@ grep -q 'wallpapers/Fennek/' /usr/lib/plasmalogin/defaults.conf || fail "login w
 wm=usr/share/plymouth/themes/spinner/watermark.png; img=$(ls /usr/lib/modules/*/initramfs.img)
 [ "$(lsinitrd -f "$wm" "$img" | md5sum)" = "$(md5sum < "/$wm")" ] || fail "initramfs has Fennek OS splash"
 { rpm -V fedora-logos 2>/dev/null || true; } | grep -q "/$wm$" || fail "watermark still Fedora's"
+/usr/libexec/fennek-download-guard --selftest >/dev/null    || fail "download guard selftest"
 # Download guard: a sample matching a custom signature goes to quarantine, a clean file stays.
 t=$(mktemp -d); mkdir -p "$t/db"
 echo "Fennek OS fake malware sample" > "$t/evil.bin"; echo "harmless" > "$t/ok.txt"

@@ -132,7 +132,7 @@ Off until chosen: local (llama.cpp, small model) or cloud (user's own key). Acts
 Battery and safety: programs that stay running (or guard security) are Rust; windows stay KDE/Qt so they look
 and behave like the rest of the desktop. Built in the image from Fedora's packaged crates (offline, signed RPMs).
 1. Instant file search daemon: done (fennek-search 2.0, replaces the Python version).
-2. Download virus guard (inotify watcher around ClamAV).
+2. Download virus guard: done (fennek-download-guard 2.0, one small process instead of bash + inotifywait).
 3. Sandbox launcher (fennek-run-exe) and the firewall helper.
 4. Later: Task Manager data collector, own firewall engine instead of OpenSnitch (Go).
 

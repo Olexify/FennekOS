@@ -368,7 +368,7 @@ directory = "/usr/share/cargo/registry"
 [net]
 offline = true
 EOF
-for prog in fennek-search; do
+for prog in fennek-search fennek-download-guard; do
     cp -r "$files/../src/$prog" "/tmp/$prog"        # the source mount is read-only; cargo writes Cargo.lock
     rm -f "/tmp/$prog/Cargo.lock"                     # resolve against Fedora's crate versions
     CARGO_HOME=/tmp/cargo-home cargo build --release --manifest-path "/tmp/$prog/Cargo.toml" --target-dir "/tmp/$prog/target"
