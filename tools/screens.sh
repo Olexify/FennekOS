@@ -52,6 +52,15 @@ fennek-app firewall >/dev/null 2>&1 & shot 10-firewall 6; close
 konsole >/dev/null 2>&1 & shot 11-terminal 5; close
 plasma-systemmonitor >/dev/null 2>&1 & shot 12-task-manager 8; close
 fennek-app welcome >/dev/null 2>&1 & shot 13-welcome 6; close
+# Start with a search typed in (results, not the list).
+call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; sleep 2
+DISPLAY=:99 xdotool type --delay 80 "fire"; shot 14-start-search 3
+DISPLAY=:99 xdotool key Escape; sleep 1
+# A notification popup and the volume on-screen display.
+notify-send -a "Fennek OS" -i system-software-update "Update ready" "It's installed on the next restart." ; shot 15-notification 2
+call org.kde.plasmashell /org/kde/osdService org.kde.osdService.volumeChanged 60 100; shot 16-volume-osd 1
+# File Explorer from the sidebar's This PC, with the classic menu bar.
+dolphin >/dev/null 2>&1 & shot 17-file-explorer-home 6; close
 ps -eo pid,user,args >>/out/diag.log 2>&1
 kill $(jobs -p) 2>/dev/null; exit 0
 EOF
