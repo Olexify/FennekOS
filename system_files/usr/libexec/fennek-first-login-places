@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """Write a new user's Files sidebar in the classic order (only when they have none yet):
-pinned folders, This PC, Network, Recycle Bin. Removable drives (USB sticks) appear on their own; KDE's
+This PC, pinned folders, Network, Recycle Bin. Removable drives (USB sticks) appear on their own; KDE's
 "Devices" group (internal and system partitions) stays hidden: drives are on the This PC page.
 
 Written with KDE's current places format version (4), so KDE doesn't add its own defaults on top.
@@ -24,8 +24,9 @@ def xdg(kind):
 
 def places(folders):
     """folders: [(label, path, icon)] -> xbel text."""
-    items = [(label, "file://" + quote(path), icon) for label, path, icon in folders]
-    items += [("This PC", "thispc:/", "computer"), ("Network", "remote:/", "folder-network"), ("Recycle Bin", "trash:/", "user-trash")]
+    items = [("This PC", "thispc:/", "computer")]   # on top: Files opens here
+    items += [(label, "file://" + quote(path), icon) for label, path, icon in folders]
+    items += [("Network", "remote:/", "folder-network"), ("Recycle Bin", "trash:/", "user-trash")]
     out = ['<?xml version="1.0" encoding="UTF-8"?>', "<!DOCTYPE xbel>",
            '<xbel xmlns:bookmark="http://www.freedesktop.org/standards/desktop-bookmarks" '
            'xmlns:mime="http://www.freedesktop.org/standards/shared-mime-info" xmlns:kdepriv="http://www.kde.org/kdepriv">',
@@ -80,9 +81,10 @@ def selftest():
     x = places([("Документи", "/var/home/u/Документи", "folder-documents"), ("A & B", "/var/home/u/A & B", "folder")])
     doc = xml.dom.minidom.parseString(x)
     hrefs = [b.getAttribute("href") for b in doc.getElementsByTagName("bookmark")]
-    assert hrefs[0] == "file:///var/home/u/%D0%94%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82%D0%B8", hrefs[0]
-    assert hrefs[1] == "file:///var/home/u/A%20%26%20B" and hrefs[2:] == ["thispc:/", "remote:/", "trash:/"]
-    assert doc.getElementsByTagName("title")[1].firstChild.data == "A & B"
+    assert hrefs[0] == "thispc:/" and hrefs[3:] == ["remote:/", "trash:/"]
+    assert hrefs[1] == "file:///var/home/u/%D0%94%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82%D0%B8", hrefs[1]
+    assert hrefs[2] == "file:///var/home/u/A%20%26%20B"
+    assert doc.getElementsByTagName("title")[2].firstChild.data == "A & B"
     assert doc.getElementsByTagName("kde_places_version")[0].firstChild.data == "4"
     old = '<xbel>\n <info/>\n <bookmark href="file:///home/u">\n  <title>Home</title>\n </bookmark>\n</xbel>\n'
     new = ensure_thispc(old)

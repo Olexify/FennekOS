@@ -14,13 +14,7 @@ if [ "${lnf#org.fennek.}" = "$lnf" ]; then   # not a Fennek look (light or dark)
     sleep 3   # let the desktop finish starting, so the layout reset reaches the running taskbar
     plasma-apply-lookandfeel --apply org.fennek.desktop --resetLayout || exit 1   # retried next login
 fi
-# Desktop icons for This PC and the Recycle Bin (in the user's language).
-desk=$(xdg-user-dir DESKTOP 2>/dev/null)
-if [ -n "$desk" ] && [ "$desk" != "$HOME" ] && mkdir -p "$desk"; then
-    case "${LANG:-}" in uk*) pc="Цей ПК"; bin="Кошик" ;; *) pc="This PC"; bin="Recycle Bin" ;; esac
-    printf '[Desktop Entry]\nType=Link\nName=%s\nIcon=computer\nURL=thispc:/\n' "$pc" > "$desk/this-pc.desktop"
-    printf '[Desktop Entry]\nType=Link\nName=%s\nIcon=user-trash-full\nEmptyIcon=user-trash\nURL=trash:/\n' "$bin" > "$desk/recycle-bin.desktop"
-fi
+/usr/libexec/fennek-desktop-icons   # This PC and Recycle Bin on the desktop
 # Files: classic menu bar (File, Edit, View…). KDE keeps this in the per-user state file, which system defaults
 # don't reach.
 state="${XDG_STATE_HOME:-$HOME/.local/state}/dolphinstaterc"

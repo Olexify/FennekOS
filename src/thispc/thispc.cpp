@@ -1,10 +1,15 @@
-// Fennek OS: "This PC" for Files (thispc:/). Your main folders, then your drives with free space, like the
-// classic This PC page. Entries are links: opening one goes to the real folder or drive.
-// Grouping ("Folders" / "Storage drives") comes from the two MIME types in fennek-thispc.xml and the
-// view settings Files keeps for non-local places (see build.sh).
+// Fennek OS: "This PC" for Files (thispc:/), the page Files opens on. Your main folders and the ones you pinned
+// to the sidebar, the folders you use most, then your drives with free space, like the classic This PC page.
+// Entries are links: opening one goes to the real folder or drive.
+// Grouping ("Folders" / "Frequent folders" / "Storage drives") comes from the MIME types in fennek-thispc.xml.
 #include <KIO/WorkerBase>
 #include <QCoreApplication>
 #include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QHash>
+#include <QXmlStreamReader>
+#include <algorithm>
 #include <QLocale>
 #include <QStandardPaths>
 #include <QStorageInfo>
@@ -17,6 +22,33 @@ namespace
 struct Item {
     QString key, label, icon, mime, target;
 };
+
+// Local folders behind the file:// entries of an XBEL file (sidebar places, recently used files).
+// For recently used files: the folder of each file, weighted by how often it was opened.
+QHash<QString, int> xbelFolders(const QString &file, bool parentsOfFiles)
+{
+    QHash<QString, int> out;
+    QFile f(file);
+    if (!f.open(QIODevice::ReadOnly))
+        return out;
+    QXmlStreamReader x(&f);
+    QString current;
+    while (!x.atEnd()) {
+        if (x.readNext() != QXmlStreamReader::StartElement)
+            continue;
+        if (x.name() == QLatin1String("bookmark")) {
+            const QUrl u(x.attributes().value(QLatin1String("href")).toString());
+            current = u.isLocalFile() ? u.toLocalFile() : QString();
+            if (parentsOfFiles && !current.isEmpty())
+                current = QFileInfo(current).absolutePath();
+            if (!current.isEmpty())
+                out[current] += 1;
+        } else if (parentsOfFiles && x.name() == QLatin1String("application") && !current.isEmpty()) {
+            out[current] += qMax(0, x.attributes().value(QLatin1String("count")).toInt() - 1);   // opened N times
+        }
+    }
+    return out;
+}
 
 QList<Item> items()
 {
@@ -35,6 +67,42 @@ QList<Item> items()
         const QString name = QDir(path).dirName(); // already in the user's language (xdg-user-dirs)
         out.append({name, name, QString::fromLatin1(f.icon), QStringLiteral("inode/x-fennek-folder"), path});
     }
+    QStringList shown{home};
+    for (const Item &i : std::as_const(out))
+        shown << i.target;
+
+    // Folders you pinned to the sidebar join them.
+    const QString data = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
+    int n = 0;
+    // Stable order (alphabetical): an entry's key must name the same folder each time the page is read.
+    QStringList pinned = xbelFolders(data + QStringLiteral("/user-places.xbel"), false).keys();
+    pinned.sort();
+    for (const QString &p : std::as_const(pinned)) {
+        if (shown.contains(p) || !QFileInfo(p).isDir())
+            continue;
+        out.append({QStringLiteral("pin-%1").arg(++n), QDir(p).dirName(), QStringLiteral("folder"), QStringLiteral("inode/x-fennek-folder"), p});
+        shown << p;
+    }
+
+    // Frequent folders: where the files you open live (recently used files, weighted by use). Up to six.
+    const auto used = xbelFolders(data + QStringLiteral("/recently-used.xbel"), true);
+    QList<QPair<int, QString>> ranked;
+    for (auto it = used.cbegin(); it != used.cend(); ++it) {
+        const QString &p = it.key();
+        if (shown.contains(p) || p.contains(QLatin1String("/.")) || !p.startsWith(home + QLatin1Char('/')) || !QFileInfo(p).isDir())
+            continue;
+        ranked.append({it.value(), p});
+    }
+    std::sort(ranked.begin(), ranked.end(), [](const auto &a, const auto &b) {   // most used first; ties by path (stable)
+        return a.first != b.first ? a.first > b.first : a.second < b.second;
+    });
+    n = 0;
+    for (const auto &r : std::as_const(ranked)) {
+        if (n == 6)
+            break;
+        out.append({QStringLiteral("frequent-%1").arg(++n), QDir(r.second).dirName(), QStringLiteral("folder"),
+                    QStringLiteral("inode/x-fennek-frequent"), r.second});
+    }
 
     const QLocale locale;
     const auto describe = [&](const QString &label, const QStorageInfo &s) {
@@ -46,7 +114,7 @@ QList<Item> items()
     const QStorageInfo mine(home);
     out.append({QStringLiteral("local-disk"), describe(QStringLiteral("Local Disk"), mine), QStringLiteral("drive-harddisk"),
                 QStringLiteral("inode/x-fennek-drive"), home});
-    int n = 0;
+    n = 0;
     const auto volumes = QStorageInfo::mountedVolumes();
     for (const QStorageInfo &s : volumes) {
         const QString root = s.rootPath();
