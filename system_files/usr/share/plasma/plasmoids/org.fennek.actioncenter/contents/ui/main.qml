@@ -49,6 +49,8 @@ PlasmoidItem {
         onNewData: (source, data) => {
             if (source === root.profileCmd)
                 root.batterySaver = data.stdout.indexOf("power-saver") >= 0
+            else if (source === root.nightCmd)
+                root.nightLight = data.stdout.trim() === "true"
             disconnectSource(source)
         }
     }
@@ -56,7 +58,15 @@ PlasmoidItem {
     readonly property string profileCmd: "busctl --system get-property org.freedesktop.UPower.PowerProfiles "
                                          + "/org/freedesktop/UPower/PowerProfiles org.freedesktop.UPower.PowerProfiles ActiveProfile"
     property bool batterySaver: false
-    onExpandedChanged: if (expanded) run.connectSource(profileCmd)
+    // Night light = KWin's night colour (warmer screen in the evening), on/off like the settings page.
+    readonly property string nightCmd: "kreadconfig6 --file kwinrc --group NightColor --key Active --default false"
+    property bool nightLight: false
+    function setNightLight(on) {
+        run.connectSource("kwriteconfig6 --file kwinrc --group NightColor --key Active " + (on ? "true" : "false")
+                          + " && dbus-send --session --dest=org.kde.KWin --type=method_call /KWin org.kde.KWin.reconfigure")
+        nightLight = on
+    }
+    onExpandedChanged: if (expanded) { run.connectSource(profileCmd); run.connectSource(nightCmd) }
     function setProfile(name) {
         run.connectSource("busctl --system set-property org.freedesktop.UPower.PowerProfiles /org/freedesktop/UPower/PowerProfiles "
                           + "org.freedesktop.UPower.PowerProfiles ActiveProfile s " + name)
@@ -166,8 +176,8 @@ PlasmoidItem {
                       on: () => root.dndOn, act: () => root.setDnd(!root.dndOn) },
                     { label: "Battery saver", icon: "battery-profile-powersave", show: true, checkable: true,
                       on: () => root.batterySaver, act: () => root.setProfile(root.batterySaver ? "balanced" : "power-saver") },
-                    { label: "Night light", icon: "redshift-status-on", show: true, checkable: false,
-                      on: () => false, act: () => KCMUtils.KCMLauncher.openSystemSettings("kcm_nightlight") },
+                    { label: "Night light", icon: "redshift-status-on", show: true, checkable: true,
+                      on: () => root.nightLight, act: () => root.setNightLight(!root.nightLight) },
                     { label: "Screenshot", icon: "spectacle", show: true, checkable: false,
                       on: () => false, act: () => { root.expanded = false; run.connectSource("spectacle --region") } },
                     { label: "All settings", icon: "fennek-settings", show: true, checkable: false,
