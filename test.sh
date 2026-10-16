@@ -219,6 +219,14 @@ for c in cats:
         if "cmd" in i and not shutil.which(i["cmd"].split()[0]): bad.append(i["cmd"])
 assert not bad, bad
 PY
+python3 - <<'PY' || fail "Start right-click menu runs something that isn't installed"
+import glob, os, re, shutil
+src = open("/usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/main.qml").read()
+cmds = re.findall(r'run\("([^"]+)"\)', src)
+kcms = {os.path.basename(p)[:-3] for p in glob.glob("/usr/lib64/qt6/plugins/plasma/kcms/**/*.so", recursive=True)}
+bad = [c for c in cmds if not shutil.which(c.split()[0]) or (c.startswith("systemsettings ") and c.split()[1] not in kcms)]
+assert len(cmds) >= 10 and not bad, (len(cmds), bad)
+PY
 grep -q '^X-KDE-Shortcuts=Meta+I' /usr/share/applications/fennek-settings.desktop || fail "Super+I for Settings"
 ! grep -hs '^X-KDE-Shortcuts=.*Meta+I' /usr/share/kglobalaccel/systemsettings.desktop /usr/share/applications/systemsettings.desktop \
                                                               || fail "Super+I still on KDE System Settings too"

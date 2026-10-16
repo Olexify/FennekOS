@@ -5,4 +5,4 @@ License: GPL-2.0-or-later (see metadata.json).
 Modified by Fennek OS (2026-10): menu wording "Pin to Start" / "Unpin from Start" (AppContextMenu.qml);
 quick tile resize Small/Medium/Wide/Large in the tile menu (TileItem.qml); menu size remembered and tile
 columns follow its width when resized by its edge (main.qml, Popup.qml); "Personalize this list" on the
-left strip (SidebarView.qml); rounded tiles (TileItemView.qml).
+left strip (SidebarView.qml); rounded tiles (TileItemView.qml); right-click quick links (main.qml).

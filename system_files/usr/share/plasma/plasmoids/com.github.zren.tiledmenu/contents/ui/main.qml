@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import org.kde.plasma.core as PlasmaCore
+import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
 
 import org.kde.plasma.plasmoid
@@ -217,43 +218,29 @@ PlasmoidItem {
 		}
 	}
 
+	// Fennek: right-click on Start = quick links (test.sh checks every command below exists).
+	P5Support.DataSource {
+		id: quickRun
+		engine: "executable"
+		onNewData: (source) => disconnectSource(source)
+	}
+	function run(cmd) { quickRun.connectSource(cmd) }
+
 	Plasmoid.contextualActions: [
-		PlasmaCore.Action {
-			text: i18n("System Info")
-			icon.name: "hwinfo"
-			onTriggered: appsModel.launch('org.kde.kinfocenter')
-		},
-		PlasmaCore.Action {
-			text: i18n("Terminal")
-			icon.name: "utilities-terminal"
-			onTriggered: appsModel.launch(plasmoid.configuration.terminalApp) // TODO: Read SystemSettings
-		},
-		PlasmaCore.Action {
-			isSeparator: true
-		},
-		PlasmaCore.Action {
-			text: i18n("Task Manager")
-			icon.name: "utilities-system-monitor"
-			onTriggered: appsModel.launch(plasmoid.configuration.taskManagerApp)
-		},
-		PlasmaCore.Action {
-			text: i18n("System Settings")
-			icon.name: "systemsettings"
-			onTriggered: appsModel.launch('systemsettings')
-		},
-		PlasmaCore.Action {
-			text: i18n("File Manager")
-			icon.name: "folder"
-			onTriggered: appsModel.launch(plasmoid.configuration.fileManagerApp) // TODO: Read SystemSettings
-		},
-		PlasmaCore.Action {
-			isSeparator: true
-		},
-		PlasmaCore.Action {
-			text: i18n("Edit Applications...")
-			icon.name: "kmenuedit"
-			onTriggered: processRunner.runMenuEditor()
-		}
+		PlasmaCore.Action { text: i18n("Install or remove apps"); icon.name: "plasmadiscover"; onTriggered: widget.run("plasma-discover") },
+		PlasmaCore.Action { text: i18n("Power options"); icon.name: "preferences-system-power-management"; onTriggered: widget.run("systemsettings kcm_powerdevilprofilesconfig") },
+		PlasmaCore.Action { text: i18n("System"); icon.name: "hwinfo"; onTriggered: widget.run("kinfocenter") },
+		PlasmaCore.Action { text: i18n("Network connections"); icon.name: "network-wired"; onTriggered: widget.run("systemsettings kcm_networkmanagement") },
+		PlasmaCore.Action { text: i18n("Storage"); icon.name: "drive-harddisk"; onTriggered: widget.run("filelight") },
+		PlasmaCore.Action { isSeparator: true },
+		PlasmaCore.Action { text: i18n("Terminal"); icon.name: "utilities-terminal"; onTriggered: widget.run("konsole") },
+		PlasmaCore.Action { text: i18n("Task Manager"); icon.name: "utilities-system-monitor"; onTriggered: widget.run("plasma-systemmonitor") },
+		PlasmaCore.Action { text: i18n("Settings"); icon.name: "fennek-settings"; onTriggered: widget.run("plasmawindowed org.fennek.settings") },
+		PlasmaCore.Action { text: i18n("File Explorer"); icon.name: "system-file-manager"; onTriggered: widget.run("dolphin") },
+		PlasmaCore.Action { text: i18n("Run"); icon.name: "system-run"; onTriggered: widget.run("krunner") },
+		PlasmaCore.Action { isSeparator: true },
+		PlasmaCore.Action { text: i18n("Shut down or sign out"); icon.name: "system-shutdown"; onTriggered: widget.run("dbus-send --session --dest=org.kde.LogoutPrompt --type=method_call /LogoutPrompt org.kde.LogoutPrompt.promptAll") },
+		PlasmaCore.Action { text: i18n("Desktop"); icon.name: "user-desktop"; onTriggered: widget.run("dbus-send --session --dest=org.kde.kglobalaccel --type=method_call /component/kwin org.kde.kglobalaccel.Component.invokeShortcut string:'Show Desktop'") }
 	]
 
 	Component.onCompleted: {
