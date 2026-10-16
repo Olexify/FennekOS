@@ -1,0 +1,12 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Id": "fenneksnapassist",
+        "Name": "Snap assist",
+        "Description": "After snapping a window to one half of the screen, pick another window to fill the other half.",
+        "License": "GPL-3.0-only",
+        "EnabledByDefault": true
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}
