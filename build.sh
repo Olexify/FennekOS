@@ -17,7 +17,8 @@ if [ "$arch" = x86_64 ]; then
     UMU_VER=1.4.4
     UMU_SHA256=f38dfe05c109a0ebeaecacad2ebe2e60fddc1fb2e50f7755023553ad256f8b32
     UMU_RPM=/tmp/umu-launcher.rpm
-    curl -fsSL -o "$UMU_RPM"         "https://github.com/Open-Wine-Components/umu-launcher/releases/download/${UMU_VER}/umu-launcher-${UMU_VER}.fc44.x86_64.rpm"
+    curl -fsSL -o "$UMU_RPM" \
+        "https://github.com/Open-Wine-Components/umu-launcher/releases/download/${UMU_VER}/umu-launcher-${UMU_VER}.fc44.x86_64.rpm"
     echo "${UMU_SHA256}  ${UMU_RPM}" | sha256sum -c -
     extra+=("$UMU_RPM")
 else
