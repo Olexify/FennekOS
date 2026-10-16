@@ -253,9 +253,21 @@ EOF
 # Dolphin shows up as "Files" (English name; translations keep their own).
 sed -i 's/^Name=Dolphin$/Name=Files/' /usr/share/applications/org.kde.dolphin.desktop
 # Start list without admin clutter: these still open from Settings and Start's right-click menu.
-for app in org.kde.kmenuedit systemsettings org.kde.khelpcenter org.kde.kinfocenter; do
+# (Admin and developer tools, duplicates of Fennek's own Settings/Firewall/Welcome/search, the emoji window
+# that Super+. opens anyway.)
+for app in org.kde.kmenuedit systemsettings kdesystemsettings org.kde.khelpcenter org.kde.kinfocenter firewall-config \
+           org.kde.drkonqi.coredump.gui org.kde.kdebugsettings org.kde.kjournaldbrowser org.kde.kwalletmanager \
+           org.kde.partitionmanager org.kde.plasma-welcome org.kde.plasma.emojier org.kde.kcharselect org.kde.kfind \
+           org.kde.kdeconnect.nonplasma org.kde.kdeconnect.sms; do
     f=/usr/share/applications/$app.desktop
     [ -f "$f" ] && sed -i -e '/^NoDisplay=/d' -e '0,/^\[Desktop Entry\]$/s//[Desktop Entry]\nNoDisplay=true/' "$f"
+done
+# Plain names in the Start list (English; translations keep their own).
+for pair in org.kde.spectacle:Spectacle:Screenshot org.kde.filelight:Filelight:Storage org.kde.discover:Discover:Store \
+            org.kde.konsole:Konsole:Terminal org.kde.kwrite:KWrite:"Text Editor" org.kde.ark:Ark:Archives \
+            "org.kde.kdeconnect.app:KDE Connect:Phone" "org.kde.krfb:Krfb:Desktop Sharing"; do
+    IFS=: read -r app old new <<<"$pair"
+    sed -i "s/^Name=$old\$/Name=$new/" "/usr/share/applications/$app.desktop" 2>/dev/null || true
 done
 # Toolbar layouts. KDE apps compile their menu/toolbar layout (KXMLGUI .rc) into the program; take that copy,
 # change only a toolbar and install it with a higher version (KXMLGUI loads the newest), so the menus always

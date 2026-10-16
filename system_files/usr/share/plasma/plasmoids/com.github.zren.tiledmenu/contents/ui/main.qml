@@ -233,6 +233,7 @@ PlasmoidItem {
 		PlasmaCore.Action { text: i18n("System"); icon.name: "hwinfo"; onTriggered: widget.run("kinfocenter") },
 		PlasmaCore.Action { text: i18n("Network connections"); icon.name: "network-wired"; onTriggered: widget.run("systemsettings kcm_networkmanagement") },
 		PlasmaCore.Action { text: i18n("Storage"); icon.name: "drive-harddisk"; onTriggered: widget.run("filelight") },
+		PlasmaCore.Action { text: i18n("Disk management"); icon.name: "partitionmanager"; onTriggered: widget.run("partitionmanager") },
 		PlasmaCore.Action { isSeparator: true },
 		PlasmaCore.Action { text: i18n("Terminal"); icon.name: "utilities-terminal"; onTriggered: widget.run("konsole") },
 		PlasmaCore.Action { text: i18n("Task Manager"); icon.name: "utilities-system-monitor"; onTriggered: widget.run("plasma-systemmonitor") },

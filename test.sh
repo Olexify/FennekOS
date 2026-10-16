@@ -28,9 +28,10 @@ grep -q '^Image=Fennek' /usr/share/plasma/look-and-feel/org.fennek.desktop/conte
 # Existing desktops follow layout changes by themselves (Plasma update scripts, once per user): no reset needed.
 u=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/fennek-2026-10-16-taskbar.js
 [ -f "$u" ] && grep -q 'org.fennek.taskview' "$u" && grep -q 'hideSearchField' "$u"   && [ "$(kreadconfig6 --file /etc/xdg/plasmarc --group Theme --key name)" = breeze-dark ]   && grep -q '^name=breeze-dark' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults   && [ -d /usr/share/plasma/desktoptheme/breeze-dark ] || fail "taskbar update for existing desktops / dark panels"
-for app in org.kde.kmenuedit systemsettings org.kde.khelpcenter org.kde.kinfocenter; do
+for app in org.kde.kmenuedit systemsettings kdesystemsettings org.kde.khelpcenter org.kde.kinfocenter firewall-config org.kde.kjournaldbrowser org.kde.plasma-welcome; do
     f=/usr/share/applications/$app.desktop; [ ! -f "$f" ] || { [ "$(grep -c '^NoDisplay=' "$f")" = 1 ] && grep -q '^NoDisplay=true' "$f"; } || fail "Start list still shows $app"
 done
+grep -q '^Name=Terminal$' /usr/share/applications/org.kde.konsole.desktop && grep -q '^Name=Store$' /usr/share/applications/org.kde.discover.desktop || fail "plain app names in Start"
 grep -q "SystrayContainmentId" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "tray shown/hidden icons"
 for p in org.fennek.searchbox org.fennek.showdesktop org.fennek.volume org.fennek.clock org.fennek.network org.fennek.actioncenter; do
     python3 -c "import json; json.load(open('/usr/share/plasma/plasmoids/$p/metadata.json'))" && [ -s /usr/share/plasma/plasmoids/$p/contents/ui/main.qml ] \
