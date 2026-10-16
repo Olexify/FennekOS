@@ -23,6 +23,7 @@ echo "${OSN_SHA256}  ${OSN_RPM}" | sha256sum -c -
 dnf -y install \
     libnetfilter_queue \
     firefox \
+    rsms-inter-fonts cascadia-mono-fonts \
     flatpak-kcm \
     zsh zsh-autosuggestions zsh-syntax-highlighting \
     snapper \
@@ -91,6 +92,13 @@ sed -i 's/^LookAndFeelPackage=.*/LookAndFeelPackage=org.fennek.desktop/' \
 kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key LookAndFeelPackage org.fennek.desktop
 # Fennek icons (classic folders, own app icons; the rest inherits Breeze), also set by both Fennek themes.
 kwriteconfig6 --file /etc/xdg/kdeglobals --group Icons --key Theme Fennek
+# Fonts: Inter for the interface (crisp, modern), Cascadia Mono for the Terminal and code. Both OFL.
+for key in font menuFont toolBarFont; do
+    kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key "$key" "Inter,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+done
+kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key smallestReadableFont "Inter,8,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key fixed "Cascadia Mono,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+kwriteconfig6 --file /etc/xdg/kdeglobals --group WM --key activeFont "Inter,10,-1,5,500,0,0,0,0,0,0,0,0,0,0,1"
 # Fennek accent colour (highlights, selection, Start tiles): deep violet, from the wallpaper and the logo.
 kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key AccentColor 109,69,184
 printf '\n[kdeglobals][General]\nAccentColor=109,69,184\n' >> "$lnf/contents/defaults"
