@@ -40,11 +40,8 @@ if (tray) {
                                      "org.kde.plasma.cameraindicator", "org.kde.plasma.manage-inputmethod",
                                      "org.kde.plasma.keyboardindicator", "org.kde.plasma.weather"])
 }
-// Clock like the classic desktop: time with the date underneath.
-var clock = panel.addWidget("org.kde.plasma.digitalclock")
-clock.currentConfigGroup = ["Appearance"]
-clock.writeConfig("showDate", true)
-clock.writeConfig("dateDisplayFormat", 2)   // BelowTime
+// Clock: time with the date underneath; click for the calendar panel.
+panel.addWidget("org.fennek.clock")
 panel.addWidget("org.fennek.showdesktop")   // thin strip at the very end, no icon
 
 var desktopsArray = desktopsForActivity(currentActivity());

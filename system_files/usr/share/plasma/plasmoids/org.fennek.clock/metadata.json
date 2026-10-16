@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [{ "Name": "Fennek OS" }],
+        "Category": "Date and Time",
+        "Description": "Clock with the date; click for a calendar",
+        "Icon": "preferences-system-time",
+        "Id": "org.fennek.clock",
+        "License": "GPL-3.0-only",
+        "Name": "Clock"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

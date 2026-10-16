@@ -24,7 +24,7 @@ grep -q '^ID=fedora' /usr/lib/os-release                      || fail "os-releas
                                                               || fail "wallpaper isn't the warm dusk gradient"
 grep -q '^Image=Fennek' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults || fail "lnf wallpaper"
 grep -q "SystrayContainmentId" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "tray shown/hidden icons"
-for p in org.fennek.searchbox org.fennek.taskview org.fennek.showdesktop org.fennek.volume; do
+for p in org.fennek.searchbox org.fennek.taskview org.fennek.showdesktop org.fennek.volume org.fennek.clock; do
     python3 -c "import json; json.load(open('/usr/share/plasma/plasmoids/$p/metadata.json'))" && [ -s /usr/share/plasma/plasmoids/$p/contents/ui/main.qml ] \
         && grep -q "\"$p\"" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js \
         || fail "taskbar widget $p"
