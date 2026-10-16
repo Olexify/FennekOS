@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import org.kde.plasma.core as PlasmaCore
+import org.kde.plasma.plasmoid
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.config as KConfig
 import org.kde.draganddrop as DragAndDrop
@@ -34,6 +35,23 @@ Item {
 		anchors.left: parent.left
 		anchors.top: parent.top
 		anchors.bottom: parent.bottom
+
+		// Fennek OS: right-click the strip -> "Personalize this list" (choose its folders / shortcuts).
+		MouseArea {
+			anchors.fill: parent
+			z: -1
+			acceptedButtons: Qt.RightButton
+			onClicked: (mouse) => personalizeMenu.open(mouse.x, mouse.y)
+			PlasmaExtras.Menu {
+				id: personalizeMenu
+				visualParent: parent
+				PlasmaExtras.MenuItem {
+					icon: "configure"
+					text: i18n("Personalize this list")
+					onClicked: Plasmoid.internalAction("configure").trigger()
+				}
+			}
+		}
 
 
 		ColumnLayout {

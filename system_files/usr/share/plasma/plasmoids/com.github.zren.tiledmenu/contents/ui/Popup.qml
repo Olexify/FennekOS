@@ -65,7 +65,7 @@ MouseArea {
 			anchors.fill: parent
 			icon: "help-hint"
 			mainText: i18n("Resize?")
-			subText: i18n("Meta + Right Click to resize the menu.")
+			subText: i18n("Drag the top or right edge of Start to make it bigger.")
 		}
 	}
 
@@ -81,7 +81,7 @@ MouseArea {
 			anchors.fill: parent
 			icon: "help-hint"
 			mainText: i18n("Resize?")
-			subText: i18n("Meta + Right Click to resize the menu.")
+			subText: i18n("Drag the top or right edge of Start to make it bigger.")
 		}
 	}
 

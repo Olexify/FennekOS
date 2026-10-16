@@ -145,11 +145,11 @@ PlasmoidItem {
 
 		onWidthChanged: {
 			// console.log('popup.size', width, height, 'width')
-			// resizeToFit.run()
+			resizeToFit.run()  // Fennek OS: wider menu = more tile columns
 		}
 		onHeightChanged: {
 			// console.log('popup.size', width, height, 'height')
-			// resizeHeight.restart()
+			resizeHeight.restart()  // Fennek OS: remember the height
 		}
 
 		// Make popup resizeable like default Kickoff widget.
