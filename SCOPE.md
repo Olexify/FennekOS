@@ -210,7 +210,7 @@ podman run --rm --privileged -v fennek-umu-test:/var/home -v E:/Fennek-build/tmp
   Home/Public network), Task Manager opens on apps, Restore previous versions (right-click, from hourly
   home snapshots, copy next to the file), installer launcher branding.
 - To do: check /var/home subvolume layout in VM; sandbox UX in a real desktop session (dialogs, sound, GPU);
-  quarantine restore UI.
+  (quarantine restore: done, Start menu → Quarantine).
 - To do (no-telemetry promise): PRIVACY.md listing every outbound connection. Known so far: VirusTotal (hash +
   user's key, only on click), umu → repo.steampowered.com + GitHub update checks (fixed: patched umu + fennek-run-exe
   allow it at most once a day for trusted runs, never for sandboxed ones; verified with networking off), GitHub on first Proton download, Fedora update checks, ClamAV definitions (database.clamav.net, daily + after boot).
@@ -219,9 +219,9 @@ podman run --rm --privileged -v fennek-umu-test:/var/home -v E:/Fennek-build/tmp
 - Taskbar right-click menu like the classic desktop: Search / Show window overview button / Cascade, stacked, side by side /
   Show the desktop / Task Manager / Lock the taskbar / Taskbar settings (Plasma's panel menu is edit-mode
   oriented). Needs a patch or own containment action plugin.
-- Start tile right-click like the classic desktop: Unpin from Start / Resize / More → Pin to taskbar, Run as
-  administrator, Open file location / Uninstall (check Tiled Menu's configurable menu first).
-- "Search apps and files" box + window overview button on the taskbar.
+- Start tile right-click: done (Pin/Unpin from Start, quick Resize, Pin to Taskbar, plus KDE's own Uninstall /
+  Edit entries). Still missing: "Open file location".
+- "Search apps and files" box + window overview button on the taskbar: done.
 - Mouse wheel over sliders/dropdowns/spin boxes must scroll the page, not change the value (KDE default does).
   Done for QML apps (System Settings etc.): build-time patch of qqc2-desktop-style (ComboBox/SpinBox/
   DoubleSpinBox wheelEnabled false, Slider wheel passes through). To do: QtWidgets apps (Breeze, C++).
