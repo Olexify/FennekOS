@@ -105,6 +105,36 @@ printf '\n[kdeglobals][General]\nAccentColor=109,69,184\n' >> "$lnf/contents/def
 printf '\n[kdeglobals][Icons]\nTheme=Fennek\n' >> "$lnf/contents/defaults"
 printf '\n[kcminputrc][Mouse]\ncursorTheme=Bibata-Modern-Ice\n' >> "$lnf/contents/defaults"
 gtk-update-icon-cache -f -t /usr/share/icons/Fennek 2>/dev/null || true
+# Lock screen: the installed one (password, fingerprint, user switching stay KDE's own) with a personal
+# greeting under the clock, on the Fennek wallpaper.
+cp -a /usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen "$lnf/contents/"
+python3 - "$lnf/contents/lockscreen/LockScreenUi.qml" <<'EOF'
+import os, re, sys
+p = sys.argv[1]; s = open(p).read()
+m = re.search(r"\n        Clock \{\n            id: clock\n.*?\n        \}\n", s, re.S)
+assert m, "lock screen clock block changed upstream: revisit the greeting"
+greeting = '''
+        // Fennek OS: a personal greeting under the clock (time of day, in English or Ukrainian).
+        PlasmaComponents3.Label {
+            readonly property int hour: new Date().getHours()
+            readonly property bool uk: Qt.locale().name.startsWith("uk")
+            readonly property string who: kscreenlocker_userName.charAt(0).toUpperCase() + kscreenlocker_userName.slice(1)
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: clock.bottom
+            anchors.topMargin: Kirigami.Units.largeSpacing
+            visible: clock.visible
+            color: "white"
+            font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.8
+            font.weight: Font.Light
+            text: (hour < 5 ? (uk ? "Доброї ночі" : "Good night") : hour < 12 ? (uk ? "Доброго ранку" : "Good morning")
+                   : hour < 18 ? (uk ? "Добрий день" : "Good afternoon") : (uk ? "Добрий вечір" : "Good evening")) + ", " + who
+        }
+'''
+s = s[:m.end()] + greeting + s[m.end():]
+open(p + ".fennek-new", "w").write(s); os.replace(p + ".fennek-new", p)
+EOF
+kwriteconfig6 --file /etc/xdg/kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General \
+    --key Image "file:///usr/share/wallpapers/Fennek/"
 # Fennek OS Dark: same taskbar/Start layout, dark colors. Fedora's global themes go: picking one replaces the
 # Fennek taskbar and Start menu with Fedora's layout (looks like the desktop got "erased").
 dark=/usr/share/plasma/look-and-feel/org.fennek.dark.desktop
