@@ -2,37 +2,46 @@
 set -euo pipefail
 files=${1:?usage: build.sh SYSTEM_FILES_DIR}   # the shipped tree, used as the list for permission fixes
 
-# umu-launcher (Proton outside Steam) isn't in Fedora repos; pinned upstream RPM, checksum-verified.
-UMU_VER=1.4.4
-UMU_SHA256=f38dfe05c109a0ebeaecacad2ebe2e60fddc1fb2e50f7755023553ad256f8b32
-UMU_RPM=/tmp/umu-launcher.rpm
-curl -fsSL -o "$UMU_RPM" \
-    "https://github.com/Open-Wine-Components/umu-launcher/releases/download/${UMU_VER}/umu-launcher-${UMU_VER}.fc44.x86_64.rpm"
-echo "${UMU_SHA256}  ${UMU_RPM}" | sha256sum -c -
-
-# OpenSnitch (per-app firewall engine) isn't in Fedora repos either: pinned upstream RPM, checksum-verified.
-OSN_VER=1.8.0
-OSN_SHA256=e06e9119daf764e56455b61c319e496274c0274bb53bb94a0ff1ab72967fea7d
-OSN_RPM=/tmp/opensnitch.rpm
-curl -fsSL -o "$OSN_RPM" \
-    "https://github.com/evilsocket/opensnitch/releases/download/v${OSN_VER}/opensnitch-${OSN_VER}-1.x86_64.rpm"
-echo "${OSN_SHA256}  ${OSN_RPM}" | sha256sum -c -
+arch=$(uname -m)   # x86_64 (PCs) or aarch64 (ARM laptops, Macs via a VM; native Macs later)
+extra=()
+if [ "$arch" = x86_64 ]; then
+    # umu-launcher (Proton outside Steam) isn't in Fedora repos; pinned upstream RPM, checksum-verified.
+    UMU_VER=1.4.4
+    UMU_SHA256=f38dfe05c109a0ebeaecacad2ebe2e60fddc1fb2e50f7755023553ad256f8b32
+    UMU_RPM=/tmp/umu-launcher.rpm
+    curl -fsSL -o "$UMU_RPM" \
+        "https://github.com/Open-Wine-Components/umu-launcher/releases/download/${UMU_VER}/umu-launcher-${UMU_VER}.fc44.x86_64.rpm"
+    echo "${UMU_SHA256}  ${UMU_RPM}" | sha256sum -c -
+    # OpenSnitch (per-app firewall engine) isn't in Fedora repos either: pinned upstream RPM, checksum-verified.
+    OSN_VER=1.8.0
+    OSN_SHA256=e06e9119daf764e56455b61c319e496274c0274bb53bb94a0ff1ab72967fea7d
+    OSN_RPM=/tmp/opensnitch.rpm
+    curl -fsSL -o "$OSN_RPM" \
+        "https://github.com/evilsocket/opensnitch/releases/download/v${OSN_VER}/opensnitch-${OSN_VER}-1.x86_64.rpm"
+    echo "${OSN_SHA256}  ${OSN_RPM}" | sha256sum -c -
+    extra=(libnetfilter_queue "$UMU_RPM")
+else
+    # ARM64: x86-64 programs run through FEX (an x86-64 emulator for ARM Linux); muvm runs them in a small VM
+    # where the host's memory page size differs (Apple Silicon). .exe support on ARM comes with Proton on FEX.
+    extra=(fex-emu muvm)
+fi
 
 # Firefox as a regular app: the base leaves the browser out, but a fresh install needs one from the first
 # minute, and the system privacy policy in /etc/firefox applies to it.
 dnf -y install \
-    libnetfilter_queue \
     firefox \
     rsms-inter-fonts cascadia-mono-fonts \
     flatpak-kcm \
     zsh zsh-autosuggestions zsh-syntax-highlighting \
     snapper \
     clamav clamav-freshclam inotify-tools \
-    "$UMU_RPM"
-# Its scripts only enable+start the daemon (and fail in a container); we want it off until something is
-# blocked, so install without them. Its one dependency came with the main install above.
-dnf -y install --setopt=tsflags=noscripts "$OSN_RPM"
-rm "$UMU_RPM" "$OSN_RPM"
+    "${extra[@]}"
+if [ "$arch" = x86_64 ]; then
+    # Its scripts only enable+start the daemon (and fail in a container); we want it off until something is
+    # blocked, so install without them. Its one dependency came with the main install above.
+    dnf -y install --setopt=tsflags=noscripts "$OSN_RPM"
+    rm "$UMU_RPM" "$OSN_RPM"
+fi
 
 # Mouse pointer: Bibata Modern Ice (white, rounded, minimal; GPL-3.0). Not in Fedora: pinned upstream release.
 BIBATA_VER=v2.0.7
@@ -49,7 +58,7 @@ printf '[Icon Theme]\nInherits=Bibata-Modern-Ice\n' > /usr/share/icons/default/i
 
 # No-telemetry: umu contacts Valve on every launch even with UMU_RUNTIME_UPDATE=0. Make "0" fully offline
 # when the runtime is already installed (fennek-run-exe allows update checks at most once a day).
-python3 - <<'EOF'
+[ "$arch" = x86_64 ] && python3 - <<'EOF'
 import glob, os, pathlib
 def replace_file(p, text):
     """New file + atomic rename, never an in-place write: in-place edits of (hardlinked) base-image files can

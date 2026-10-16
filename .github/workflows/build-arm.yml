@@ -1,0 +1,35 @@
+name: build-arm
+
+# ARM64 build (ARM laptops; Macs in a VM, native Macs later). Same Containerfile and build.sh as x86-64, on
+# Fedora's official Kinoite for arm64. Build + tests only for now: nothing is published from here yet.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Tools and disk space
+        run: |
+          command -v podman >/dev/null || { sudo apt-get update -q && sudo apt-get install -y -q podman skopeo jq; }
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
+          df -h /
+
+      - name: Pin the base image digest
+        run: |
+          base=quay.io/fedora-ostree-desktops/kinoite:44
+          digest=$(skopeo inspect --override-arch arm64 "docker://$base" | jq -r .Digest)
+          [[ $digest == sha256:* ]]
+          echo "BASE_IMAGE=quay.io/fedora-ostree-desktops/kinoite@$digest" >> "$GITHUB_ENV"
+
+      - name: Build image
+        run: sudo podman build --build-arg "BASE_IMAGE=$BASE_IMAGE" -f Containerfile -t fennek:arm .
+
+      - name: Test image
+        run: sudo podman run --rm -v "$PWD/test.sh:/t.sh:ro,z" fennek:arm bash /t.sh

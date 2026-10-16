@@ -2,6 +2,7 @@
 # Smoke test, run inside the built image: docker run --rm -v ./test.sh:/t.sh fennek:dev bash /t.sh
 set -euo pipefail
 fail() { echo "FAIL: $*"; exit 1; }
+x86() { [ "$(uname -m)" = x86_64 ]; }   # .exe runner (umu) and per-app firewall engine: x86-64 only so far
 
 grep -q '^SHELL=/bin/zsh' /etc/default/useradd             || fail "default shell"
 [ "$(zsh -ic 'alias dir' 2>/dev/null)" = "dir='ls -lah'" ]  || fail "zsh aliases"
@@ -9,7 +10,7 @@ grep -q '^SHELL=/bin/zsh' /etc/default/useradd             || fail "default shel
 [ "$(zsh -ic 'a=$SAVEHIST; history-off >/dev/null; b=$SAVEHIST; history-on >/dev/null; print "$a $b $SAVEHIST"' 2>/dev/null)" = "10000 0 10000" ] \
                                                              || fail "terminal history on/off"
 zsh -ic 'typeset -f _zsh_autosuggest_start' >/dev/null 2>&1 || fail "zsh autosuggestions"
-command -v umu-run >/dev/null                                || fail "umu-run"
+if x86; then command -v umu-run >/dev/null || fail "umu-run"; else command -v FEXInterpreter >/dev/null && command -v muvm >/dev/null || fail "FEX (x86-64 programs on ARM)"; fi
 grep -q '^Exec=fennek-run-exe %f' /usr/share/applications/fennek-run-exe.desktop || fail "exe launcher"
 fennek-run-exe --selftest >/dev/null                           || fail "run-exe selftest"
 grep -q '^application/x-ms-dos-executable=fennek-run-exe.desktop' /etc/xdg/mimeapps.list || fail "exe default"
@@ -116,13 +117,17 @@ compgen -G "$t/share/fennek/quarantine/*evil*" >/dev/null     || fail "watch mod
 kill %1 2>/dev/null; wait 2>/dev/null; rm -rf "$t"
 systemctl is-enabled -q clamav-freshclam-once.timer          || fail "freshclam timer"
 [ -L /etc/systemd/user/default.target.wants/fennek-download-guard.service ] || fail "download guard not enabled"
-grep -q "Fennek OS patch: no network" /usr/lib/python3*/site-packages/umu/umu_runtime.py || fail "umu no-telemetry patch"
-python3 -c "import umu.umu_runtime" 2>/dev/null                || fail "patched umu imports"
+if x86; then
+    grep -q "Fennek OS patch: no network" /usr/lib/python3*/site-packages/umu/umu_runtime.py || fail "umu no-telemetry patch"
+    python3 -c "import umu.umu_runtime" 2>/dev/null || fail "patched umu imports"
+fi
 [ "$(firewall-offline-cmd --get-default-zone 2>/dev/null)" = FennekOS ] || fail "default firewall zone"
 [ -z "$(firewall-offline-cmd --zone=FennekOS --list-ports 2>/dev/null)" ] || fail "FennekOS zone opens ports"
 [ "$(firewall-offline-cmd --zone=FennekOS-Public --list-services 2>/dev/null)" = dhcpv6-client ] || fail "public zone"
-command -v opensnitchd >/dev/null                            || fail "opensnitchd"
-! systemctl is-enabled -q opensnitch.service                  || fail "opensnitch must start only when something is blocked"
+if x86; then
+    command -v opensnitchd >/dev/null || fail "opensnitchd"
+    ! systemctl is-enabled -q opensnitch.service || fail "opensnitch must start only when something is blocked"
+fi
 fennek-firewall --selftest >/dev/null                         || fail "firewall selftest"
 /usr/libexec/fennek-first-login-places --selftest >/dev/null || fail "classic Files sidebar"
 /usr/libexec/fennek-first-login-keyboard --selftest >/dev/null || fail "language switcher labels"
@@ -145,7 +150,7 @@ grep -q '^ViewMode=1' /etc/skel/.local/share/dolphin/view_properties/global/.dir
 q=$(ls -d /usr/lib*/qt6/qml/org/kde/desktop | head -1)
 grep -q "wheelEnabled: false  // Fennek" "$q/ComboBox.qml" && grep -q "wheelEnabled: false  // Fennek" "$q/SpinBox.qml" \
     && grep -q "wheel.accepted = false; return;  // Fennek" "$q/Slider.qml" || fail "mouse-wheel comfort patch"
-for f in "$q/ComboBox.qml" "$q/SpinBox.qml" "$q/Slider.qml" /usr/lib/python3*/site-packages/umu/umu_runtime.py /etc/zshrc; do
+for f in "$q/ComboBox.qml" "$q/SpinBox.qml" "$q/Slider.qml" /etc/zshrc $(x86 && ls /usr/lib/python3*/site-packages/umu/umu_runtime.py); do
     [ "$(tr -d '\000' < "$f" | wc -c)" = "$(wc -c < "$f")" ] || fail "$f has zero bytes (broken in-place edit)"
 done
 id fsearch >/dev/null 2>&1 || useradd -m fsearch >/dev/null 2>&1
