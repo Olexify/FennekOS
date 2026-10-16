@@ -1,0 +1,20 @@
+#!/usr/bin/bash
+# "Restore previous versions" for one file: pick an hourly snapshot, get that version saved next to the file
+# (the current file is never touched). Root part: /usr/libexec/fennek-previous-versions-helper via pkexec.
+set -u
+file=${1:?usage: fennek-previous-versions FILE}
+helper=/usr/libexec/fennek-previous-versions-helper
+name=$(basename -- "$file")
+items=()
+while IFS=$'\t' read -r n date bytes; do
+    items+=("$n" "$date  ($(numfmt --to=iec --suffix=B "$bytes"))" off)
+done < <(pkexec "$helper" list "$file")
+if [ ${#items[@]} -eq 0 ]; then
+    kdialog --title "Previous versions" --sorry "No earlier versions of \"$name\" yet. Fennek OS keeps hourly versions of files in your home folder for 24 hours, then daily for a week and weekly for a month."
+    exit 0
+fi
+n=$(kdialog --title "Previous versions of $name" \
+    --radiolist "Pick a version. It is saved as a copy next to the file; your current file stays as it is." \
+    "${items[@]}") || exit 0
+out=$(pkexec "$helper" restore "$n" "$file") || { kdialog --error "Couldn't restore that version."; exit 1; }
+kdialog --title "Previous versions" --msgbox "Saved as \"$(basename -- "$out")\"."

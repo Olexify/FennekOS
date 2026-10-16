@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Fennek OS</vendor>
+  <action id="org.fennek.previous-versions">
+    <description>See and restore earlier versions of your own files</description>
+    <message>Restoring an earlier version of a file requires authentication</message>
+    <icon_name>document-revert</icon_name>
+    <!-- The helper only ever touches the caller's own files in their own home, and only adds copies. -->
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/fennek-previous-versions-helper</annotate>
+  </action>
+</policyconfig>

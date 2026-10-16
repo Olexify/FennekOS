@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Service
+MimeType=all/allfiles;
+Actions=previous
+X-KDE-Priority=TopLevel
+
+[Desktop Action previous]
+Name=Restore previous versions
+Icon=document-revert
+Exec=fennek-previous-versions %f

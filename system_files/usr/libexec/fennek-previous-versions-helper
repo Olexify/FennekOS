@@ -1,0 +1,111 @@
+#!/usr/bin/python3 -I
+"""Root half of "Restore previous versions" (run through pkexec, polkit action org.fennek.previous-versions).
+
+  list    FILE     one line per hourly snapshot holding a version of FILE: "<number>\t<date>\t<bytes>"
+  restore N FILE   copy that version next to FILE as "name (date).ext"; never overwrites anything
+
+Only the calling user's own regular files inside their own home. Snapshots are read-only, so checks made on
+them can't change under us; the copy is written with the user's identity, so it can't land anywhere they
+couldn't write themselves.
+"""
+import os, pwd, re, stat, sys
+from pathlib import Path
+
+SNAPSHOTS = Path("/var/home/.snapshots")
+
+
+def caller():
+    uid = int(os.environ.get("PKEXEC_UID", "-1"))
+    if uid <= 0:
+        sys.exit("run through pkexec as a normal user")
+    pw = pwd.getpwuid(uid)
+    return pw, os.path.realpath(pw.pw_dir)
+
+
+def relative(path, home):
+    """FILE (may be deleted by now) → its path relative to /var/home, only if inside the caller's home."""
+    p = os.path.normpath(os.path.join(os.path.realpath(os.path.dirname(os.path.abspath(path))),
+                                      os.path.basename(path)))
+    if not p.startswith(home + "/") or not p.startswith("/var/home/"):
+        sys.exit("only files in your own home folder")
+    return p[len("/var/home/"):]
+
+
+def snapshot_file(number, rel, uid):
+    """Path of REL inside snapshot NUMBER, or None. No symlinks anywhere on the way, regular file, owned by uid."""
+    if not re.fullmatch(r"[0-9]+", str(number)):
+        return None
+    p = SNAPSHOTS / str(number) / "snapshot"
+    for part in rel.split("/"):
+        p = p / part
+        try:
+            st = os.lstat(p)
+        except OSError:
+            return None
+        if stat.S_ISLNK(st.st_mode):
+            return None
+    return p if stat.S_ISREG(st.st_mode) and st.st_uid == uid else None
+
+
+def date_of(number):
+    try:
+        m = re.search(r"<date>([^<]+)</date>", (SNAPSHOTS / str(number) / "info.xml").read_text())
+        return m.group(1) + " UTC" if m else "?"
+    except OSError:
+        return "?"
+
+
+def restored_name(path, date):
+    stem, dot, ext = os.path.basename(path).rpartition(".")
+    if not stem:                                   # no extension (or a dotfile)
+        stem, dot, ext = os.path.basename(path), "", ""
+    label = date.replace(":", ".").removesuffix(" UTC")
+    return os.path.join(os.path.dirname(os.path.abspath(path)), f"{stem} ({label}){dot}{ext}")
+
+
+def main(argv):
+    if argv == ["--selftest"]:
+        return selftest()
+    pw, home = caller()
+    if len(argv) == 2 and argv[0] == "list":
+        rel = relative(argv[1], home)
+        numbers = sorted((int(d.name) for d in SNAPSHOTS.iterdir() if d.name.isdigit()), reverse=True) \
+            if SNAPSHOTS.is_dir() else []
+        for n in numbers:
+            f = snapshot_file(n, rel, pw.pw_uid)
+            if f:
+                print(f"{n}\t{date_of(n)}\t{os.lstat(f).st_size}")
+        return 0
+    if len(argv) == 3 and argv[0] == "restore":
+        rel = relative(argv[2], home)
+        src = snapshot_file(argv[1], rel, pw.pw_uid)
+        if not src:
+            sys.exit("that version doesn't exist")
+        fd_in = os.open(src, os.O_RDONLY | os.O_NOFOLLOW)
+        dest = restored_name(argv[2], date_of(argv[1]))
+        os.setgroups([]); os.setegid(pw.pw_gid); os.seteuid(pw.pw_uid)   # write as the user
+        fd_out = os.open(dest, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        while chunk := os.read(fd_in, 1 << 20):
+            os.write(fd_out, chunk)
+        os.close(fd_out); os.close(fd_in)
+        print(dest)
+        return 0
+    sys.exit(__doc__)
+
+
+def selftest():
+    assert restored_name("/var/home/u/a/Report.final.docx", "2026-10-16 09:00:01 UTC") \
+        == "/var/home/u/a/Report.final (2026-10-16 09.00.01).docx"
+    assert restored_name("/var/home/u/.bashrc", "2026-10-16 09:00:01 UTC") == "/var/home/u/.bashrc (2026-10-16 09.00.01)"
+    assert snapshot_file("../1", "u/x", 1000) is None and snapshot_file("1/../2", "u/x", 1000) is None
+    for bad in ("/etc/shadow", "/var/home/other/x", "/var/home/u/../other/x", "/var/home/uu/x"):
+        try:
+            relative(bad, "/var/home/u")
+            raise AssertionError(bad)
+        except SystemExit:
+            pass
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
