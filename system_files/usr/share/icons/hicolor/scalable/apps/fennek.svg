@@ -1,22 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2d2150"/>
-      <stop offset="1" stop-color="#140f24"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a2a7a"/><stop offset="1" stop-color="#1c1236"/>
+    </linearGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6c77d"/><stop offset="1" stop-color="#e09a45"/>
+    </linearGradient>
+    <linearGradient id="ear" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff1d6"/><stop offset="1" stop-color="#f3c48a"/>
     </linearGradient>
   </defs>
   <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bg)"/>
-  <!-- big fennec ears -->
-  <path d="M15 33 L7 5 L29 25 Z" fill="#f2b766"/>
-  <path d="M49 33 L57 5 L35 25 Z" fill="#f2b766"/>
-  <path d="M16.5 28 L11.5 11 L25.5 24.5 Z" fill="#ffe2b8"/>
-  <path d="M47.5 28 L52.5 11 L38.5 24.5 Z" fill="#ffe2b8"/>
+  <g transform="translate(32 33) scale(0.88) translate(-32 -31)">
+  <!-- ears: wide, the fennec mark -->
+  <path d="M14 34C8 26 4.5 15 6 4.5C16 7.5 25.5 15 30 25.5Z" fill="url(#fur)"/>
+  <path d="M50 34C56 26 59.5 15 58 4.5C48 7.5 38.5 15 34 25.5Z" fill="url(#fur)"/>
+  <path d="M16.5 29.5C12 23.5 9.5 16 10 9.5C17 12 23.5 17.5 27 24.5Z" fill="url(#ear)"/>
+  <path d="M47.5 29.5C52 23.5 54.5 16 54 9.5C47 12 40.5 17.5 37 24.5Z" fill="url(#ear)"/>
   <!-- head -->
-  <path d="M13 31 Q32 20 51 31 L36.5 54 Q32 59 27.5 54 Z" fill="#f2b766"/>
-  <!-- muzzle -->
-  <path d="M23 41 Q32 37 41 41 L34.5 53 Q32 56 29.5 53 Z" fill="#fff3df"/>
-  <!-- eyes, nose -->
-  <ellipse cx="24.5" cy="36" rx="2.2" ry="2.6" fill="#2b1a10"/>
-  <ellipse cx="39.5" cy="36" rx="2.2" ry="2.6" fill="#2b1a10"/>
-  <circle cx="32" cy="52" r="2.4" fill="#2b1a10"/>
+  <path d="M12.5 31C19 25 25.5 23.5 32 23.5S45 25 51.5 31L49 34L50.5 36C46 43 40 48.5 34.2 52.6C32.9 53.5 31.1 53.5 29.8 52.6C24 48.5 18 43 13.5 36L15 34Z" fill="url(#fur)"/>
+  <!-- cream mask -->
+  <path d="M19.5 32.5C23 31 27 32.5 32 36C37 32.5 41 31 44.5 32.5C42 39.5 37.5 45.5 33.6 50C32.7 50.9 31.3 50.9 30.4 50C26.5 45.5 22 39.5 19.5 32.5Z" fill="#fff4e2"/>
+  <!-- almond eyes -->
+  <path d="M21.5 34.5C23.5 33.6 26.5 34.1 28 36.2C25.6 37.3 23 36.8 21.5 34.5Z" fill="#2a1a33"/>
+  <path d="M42.5 34.5C40.5 33.6 37.5 34.1 36 36.2C38.4 37.3 41 36.8 42.5 34.5Z" fill="#2a1a33"/>
+  <!-- nose -->
+  <path d="M29.6 47.2C30.8 46.6 33.2 46.6 34.4 47.2C33.9 48.6 32.9 49.4 32 49.4S30.1 48.6 29.6 47.2Z" fill="#2a1a33"/>
+  </g>
 </svg>
