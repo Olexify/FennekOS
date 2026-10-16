@@ -271,6 +271,7 @@ echo "NM connectivity: $(grep -rh '^uri=' /usr/lib/NetworkManager/conf.d/ /etc/N
 echo "services:       $(systemctl list-unit-files --type=service --state=enabled --no-legend 2>/dev/null | awk '{print $1}' | tr '\n' ' ')"
 echo "user services:  $(systemctl --global list-unit-files --type=service --state=enabled --no-legend 2>/dev/null | awk '{print $1}' | tr '\n' ' ')"
 echo "start menu apps: $(grep -L -E '^(NoDisplay|Hidden)=true' /usr/share/applications/*.desktop | xargs -n1 basename | tr '\n' ' ')"
+echo "time zone map assets: $(rpm -ql plasma-workspace kf6-kitemmodels plasma-desktop 2>/dev/null | grep -iE 'zone|world|map' | grep -viE 'locale|\.mo$|keymap' | head -20 | tr '\n' ' ')"
 echo "firefox: $(rpm -q firefox 2>/dev/null || echo 'not installed (rpm)')"
 echo "--- end audit ---"
 echo "all checks passed"
