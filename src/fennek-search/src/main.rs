@@ -6,6 +6,7 @@
 //!
 //! Query: words must all appear in the file name (any order, case-insensitive). Filters:
 //!   ext:pdf;docx   type:image|video|audio|doc|archive|exe|folder   path:projects
+//!   size:>10mb  size:<500kb   dm:today|week|month|year (changed in the last 24 h / 7 / 30 / 365 days)
 //! History: files you open from search rank higher (~/.local/share/fennek/search-history, delete to clear).
 //!
 //!   fennek-search             run the service
@@ -133,11 +134,43 @@ struct Query {
     exts: Option<Vec<String>>,
     folders: bool,
     paths: Vec<String>,
+    size: Option<(bool, u64)>, // (larger than?, bytes)
+    age: Option<u64>,          // changed within this many seconds
+}
+
+/// ">10mb" / "<500kb" / "2g" -> (larger than?, bytes).
+fn parse_size(v: &str) -> Option<(bool, u64)> {
+    let (larger, rest) = match v.as_bytes().first()? {
+        b'<' => (false, &v[1..]),
+        b'>' => (true, &v[1..]),
+        _ => (true, v),
+    };
+    let i = rest.find(|c: char| !c.is_ascii_digit() && c != '.').unwrap_or(rest.len());
+    let n: f64 = rest[..i].parse().ok()?;
+    let unit: u64 = match &rest[i..] {
+        "" | "b" => 1,
+        "k" | "kb" => 1 << 10,
+        "m" | "mb" => 1 << 20,
+        "g" | "gb" => 1 << 30,
+        _ => return None,
+    };
+    Some((larger, (n * unit as f64) as u64))
+}
+
+// ponytail: rolling windows (today = last 24 h), not calendar days; calendar days need local-time rules.
+fn parse_age(v: &str) -> Option<u64> {
+    Some(86_400 * match v {
+        "today" => 1,
+        "week" => 7,
+        "month" => 30,
+        "year" => 365,
+        _ => return None,
+    })
 }
 
 /// "report ext:pdf;docx type:doc path:work" -> words, extensions, folders only, path words.
 fn parse(query: &str) -> Query {
-    let mut q = Query { words: vec![], exts: None, folders: false, paths: vec![] };
+    let mut q = Query { words: vec![], exts: None, folders: false, paths: vec![], size: None, age: None };
     for tok in query.to_lowercase().split_whitespace() {
         let (key, val) = tok.split_once(':').unwrap_or((tok, ""));
         match (key, val) {
@@ -147,6 +180,8 @@ fn parse(query: &str) -> Query {
             ("type", "folder") => q.folders = true,
             ("type", v) if types(v).is_some() => q.exts.get_or_insert_with(Vec::new).extend(types(v).unwrap().iter().map(|s| s.to_string())),
             ("path", v) if !v.is_empty() => q.paths.push(v.to_string()),
+            ("size", v) if parse_size(v).is_some() => q.size = parse_size(v),
+            ("dm", v) if parse_age(v).is_some() => q.age = parse_age(v),
             _ => q.words.push(tok.to_string()),
         }
     }
@@ -155,7 +190,7 @@ fn parse(query: &str) -> Query {
 
 pub fn search<'a>(paths: impl Iterator<Item = &'a String>, query: &str, history: &[String], limit: usize) -> Vec<String> {
     let q = parse(query);
-    if q.words.is_empty() && q.exts.is_none() && !q.folders && q.paths.is_empty() {
+    if q.words.is_empty() && q.exts.is_none() && !q.folders && q.paths.is_empty() && q.size.is_none() && q.age.is_none() {
         return vec![];
     }
     let recent: HashMap<&str, usize> = history.iter().rev().enumerate().map(|(i, p)| (p.as_str(), i)).collect();
@@ -180,6 +215,20 @@ pub fn search<'a>(paths: impl Iterator<Item = &'a String>, query: &str, history:
         }
         if q.folders && !Path::new(p).is_dir() {
             continue;
+        }
+        if q.size.is_some() || q.age.is_some() {
+            // Only files that passed the name filters get a stat() call.
+            let Ok(md) = fs::metadata(p) else { continue };
+            if let Some((larger, n)) = q.size {
+                if md.is_dir() || (larger && md.len() <= n) || (!larger && md.len() >= n) {
+                    continue;
+                }
+            }
+            if let Some(max) = q.age {
+                if !md.modified().ok().and_then(|m| m.elapsed().ok()).is_some_and(|e| e.as_secs() <= max) {
+                    continue;
+                }
+            }
         }
         let stem = name.rsplit_once('.').map(|(s, _)| s).unwrap_or(&name);
         let closeness = if stem == joined { 0 } else if name.starts_with(&joined) { 1 } else { 2 };
@@ -426,6 +475,19 @@ fn selftest() {
     assert!(names(&ix, "secret", &[]).is_empty() && names(&ix, "hidden", &[]).is_empty(), "skipped/hidden never indexed");
     assert_eq!(names(&ix, "report", &[format!("{t}/Work/report-draft.docx")])[0], "Work/report-draft.docx", "history first");
     assert!(names(&ix, "", &[]).is_empty() && names(&ix, "zzz", &[]).is_empty());
+    fs::write(format!("{t}/Work/big.bin"), vec![0u8; 2 << 20]).unwrap();
+    mk("Work/old notes.txt");
+    let month_ago = std::time::SystemTime::now() - std::time::Duration::from_secs(40 * 86_400);
+    fs::File::options().write(true).open(format!("{t}/Work/old notes.txt")).unwrap().set_modified(month_ago).unwrap();
+    ix.rebuild(&roots);
+    assert_eq!(names(&ix, "size:>1mb", &[]), ["Work/big.bin"]);
+    assert_eq!(names(&ix, "report size:<1kb ext:pdf", &[]), ["Work/Report 2026.pdf"]);
+    assert!(names(&ix, "notes dm:week", &[]).is_empty() && names(&ix, "notes dm:year", &[]) == ["Work/old notes.txt"]);
+    assert!(names(&ix, "dm:week", &[]).contains(&"Work/big.bin".to_string()) && parse_size("1.5kb") == Some((true, 1536)));
+    assert!(parse_size("<2g") == Some((false, 2 << 30)) && parse_size("lots").is_none() && parse_age("someday").is_none());
+    fs::remove_file(format!("{t}/Work/big.bin")).unwrap();
+    fs::remove_file(format!("{t}/Work/old notes.txt")).unwrap();
+    ix.rebuild(&roots);
     #[cfg(target_os = "linux")]
     {
         let mut buf = vec![0u8; 64 * 1024];

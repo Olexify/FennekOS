@@ -1,5 +1,5 @@
 // Classic taskbar search: a "Type here to search" box. Clicking it opens a search panel above the taskbar with
-// filter tabs (All / Apps / Documents / Settings / More), recent items before you type, results grouped by
+// filter tabs (All / Apps / Documents / Settings / More) and file filters (changed when, large files), recent items before you type, results grouped by
 // kind, and the search field at the bottom. Results come from KDE's search runners (same as KRunner),
 // including Fennek's instant file search (runner "fennek-search").
 import QtQuick
@@ -32,15 +32,24 @@ PlasmoidItem {
     ]
     property var tab: tabs[0]
     property string query: ""
+    // File filters (Documents / Folders tabs): changed when, large files only. Understood by fennek-search.
+    readonly property var whenChips: [
+        { name: "Any time", filter: "" }, { name: "Today", filter: "dm:today " },
+        { name: "This week", filter: "dm:week " }, { name: "This month", filter: "dm:month " }
+    ]
+    property string when: ""
+    property bool large: false
+    readonly property bool fileTab: tab.runners.indexOf("fennek-search") >= 0
+    readonly property string filters: fileTab ? when + (large ? "size:>100mb " : "") : ""
 
-    onExpandedChanged: if (!expanded) { query = ""; tab = tabs[0] }
+    onExpandedChanged: if (!expanded) { query = ""; tab = tabs[0]; when = ""; large = false }
 
     Kicker.RunnerModel {
         id: runnerModel
         appletInterface: root
         mergeResults: true
         runners: root.tab.runners
-        query: root.query.length ? (root.tab.prefix || "") + root.query : ""
+        query: root.query.length ? (root.tab.prefix || "") + root.filters + root.query : ""
     }
     Kicker.RecentUsageModel {
         id: recentModel
@@ -115,6 +124,31 @@ PlasmoidItem {
             Item { Layout.fillWidth: true }
         }
         Kirigami.Separator { Layout.fillWidth: true }
+
+        Flow {
+            visible: root.fileTab
+            Layout.fillWidth: true
+            Layout.leftMargin: Kirigami.Units.largeSpacing
+            spacing: Kirigami.Units.smallSpacing
+            Repeater {
+                model: root.whenChips
+                delegate: Kirigami.Chip {
+                    text: modelData.name
+                    closable: false
+                    checkable: false   // "checked" follows the filter (a click must not break the binding)
+                    checked: root.when === modelData.filter
+                    onClicked: root.when = modelData.filter
+                }
+            }
+            Kirigami.Chip {
+                text: "Large files"
+                icon.name: "drive-harddisk"
+                closable: false
+                checkable: false   // "checked" follows the filter (a click must not break the binding)
+                checked: root.large
+                onClicked: root.large = !root.large
+            }
+        }
 
         PlasmaComponents.Label {
             visible: !root.searching
