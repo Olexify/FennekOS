@@ -3,6 +3,11 @@ set -euo pipefail
 files=${1:?usage: build.sh SYSTEM_FILES_DIR}   # the shipped tree, used as the list for permission fixes
 
 arch=$(uname -m)   # x86_64 (PCs) or aarch64 (ARM laptops, Macs via a VM; native Macs later)
+# Downloads during this build only: fastest mirror, parallel, and give up on a mirror slower than 100 KB/s
+# (a stalled mirror once ate a whole build). Restored at the end.
+cp /etc/dnf/dnf.conf /tmp/dnf.conf.orig
+printf '\n# Fennek image build (temporary)\nfastestmirror=True\nmax_parallel_downloads=10\nminrate=100k\ntimeout=60\n' \
+    >> /etc/dnf/dnf.conf
 # OpenSnitch (per-app firewall engine) isn't in Fedora repos: pinned upstream RPM per architecture, checksummed.
 OSN_VER=1.8.0
 declare -A OSN_SHA256=([x86_64]=e06e9119daf764e56455b61c319e496274c0274bb53bb94a0ff1ab72967fea7d
@@ -443,6 +448,7 @@ open(p + ".fennek-new", "w").write(s.replace(old, "[Panel][ContainmentActions]\n
 os.chmod(p + ".fennek-new", 0o644); os.replace(p + ".fennek-new", p)
 EOF
 
-# Leave no dnf state behind (bootc lint).
+# Leave no dnf state behind (bootc lint), and the download settings as the base had them.
 dnf clean all
+cp /tmp/dnf.conf.orig /etc/dnf/dnf.conf && rm /tmp/dnf.conf.orig
 rm -rf /run/dnf /var/log/dnf5.log /var/lib/dnf /var/cache/libdnf5 /var/cache/ldconfig

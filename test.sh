@@ -20,6 +20,7 @@ grep -q 'Indexing-Enabled=false' /etc/xdg/baloofilerc        || fail "baloo off"
 grep -q '^NAME="Fennek OS"' /usr/lib/os-release                 || fail "os-release name"
 grep -q '^ID=fedora' /usr/lib/os-release                      || fail "os-release id must stay fedora"
 ! rpm -q plasma-welcome-fedora >/dev/null                     || fail "fedora welcome pages"
+! grep -q "Fennek image build" /etc/dnf/dnf.conf                || fail "build-time dnf settings left in the image"
 [ -s /usr/share/wallpapers/Fennek/contents/images/3840x2160.png ] || fail "wallpaper"
 [ "$(magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.png -crop 1x1+1920+1290 -format '%[fx:r>b && r>0.6]' info:)" = 1 ] \
                                                               || fail "wallpaper isn't the desert dusk (warm horizon)"
