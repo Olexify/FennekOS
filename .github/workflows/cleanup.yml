@@ -1,0 +1,23 @@
+name: cleanup
+
+# Weekly: keep the newest published image versions (each build = image + signature), delete older ones.
+# The newest image and its signature are always among the kept versions.
+on:
+  schedule:
+    - cron: "0 6 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  images:
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55   # v5.0.0
+        with:
+          package-name: fennekos
+          package-type: container
+          min-versions-to-keep: 60
