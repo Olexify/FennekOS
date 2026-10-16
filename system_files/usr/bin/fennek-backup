@@ -75,6 +75,47 @@ def destination(mount):
     return Path(mount) / "Fennek Backup" / f"{os.environ.get('USER', 'user')}@{socket.gethostname()}"
 
 
+TOKEN = ".fennek-backup-id"
+
+
+def real_dir(mount, path):
+    """path (inside mount), created one level at a time. A drive is untrusted: a link anywhere on the way, or a
+    path leading off the drive, could make a backup or clean-up write to or delete the user's own files."""
+    root = os.path.realpath(mount)
+    cur = Path(mount)
+    for part in Path(path).relative_to(mount).parts:
+        cur = cur / part
+        if cur.is_symlink():
+            raise ValueError(f"{cur} is a link")
+        if not cur.exists():
+            cur.mkdir()
+        if not cur.is_dir():
+            raise ValueError(f"{cur} is not a folder")
+    real = os.path.realpath(cur)
+    if real != root and not real.startswith(root + os.sep):
+        raise ValueError(f"{cur} leads off the drive")
+    return cur
+
+
+def write_token(dest):
+    """Random secret on the drive, also kept in the config: automatic backups go only to the drive that has it
+    (a drive copying another drive's ID gets nothing)."""
+    token = os.urandom(16).hex()
+    fd = os.open(dest / TOKEN, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "w") as f:
+        f.write(token)
+    return token
+
+
+def read_token(dest):
+    try:
+        fd = os.open(dest / TOKEN, os.O_RDONLY | os.O_NOFOLLOW)
+    except OSError:
+        return ""
+    with os.fdopen(fd) as f:
+        return f.read(64).strip()
+
+
 def rsync_args(src, current, older):
     # -rt plus no owners/permissions/links: works on exFAT/NTFS too. --modify-window: FAT keeps 2 s timestamps.
     return ["rsync", "-rt", "--no-perms", "--no-owner", "--no-group", "--modify-window=2", "--delete",
@@ -82,12 +123,14 @@ def rsync_args(src, current, older):
 
 
 def prune(older_root, now=None):
-    """Drop "Older versions" folders past KEEP_DAYS (names are YYYY-MM-DD HH.MM)."""
+    """Drop "Older versions" folders past KEEP_DAYS (names are YYYY-MM-DD HH.MM). Links are never followed."""
     now = now or datetime.now()
-    if not older_root.is_dir():
+    if older_root.is_symlink() or not older_root.is_dir():
         return []
     gone = []
     for d in older_root.iterdir():
+        if d.is_symlink() or not d.is_dir():
+            continue
         try:
             when = datetime.strptime(d.name, "%Y-%m-%d %H.%M")
         except ValueError:
@@ -108,11 +151,22 @@ def run(if_due=False):
     if not mount:
         return "The backup drive isn't connected."
     dest = destination(mount)
+    if not cfg.get("token") or read_token(dest) != cfg["token"]:
+        return "This isn't your backup drive any more (its backup doesn't match). Choose the drive again in Backup."
     stamp = datetime.now().strftime("%Y-%m-%d %H.%M")
-    current, older = dest / "Current", dest / "Older versions"
-    current.mkdir(parents=True, exist_ok=True)
+    try:
+        current, older = real_dir(mount, dest / "Current"), real_dir(mount, dest / "Older versions")
+        if (older / stamp).is_symlink():
+            raise ValueError("link in Older versions")
+    except (ValueError, OSError) as e:
+        return f"Backup stopped: the drive's backup folder looks wrong ({e})."
     failed = []
     for src in sources():
+        try:
+            real_dir(mount, current / Path(src).name)
+        except (ValueError, OSError):
+            failed.append(Path(src).name)
+            continue
         rc = subprocess.run(rsync_args(src, current, older / stamp / Path(src).name)).returncode
         if rc not in (0, 24):   # 24 = some files vanished while copying: fine
             failed.append(Path(src).name)
@@ -140,6 +194,23 @@ def selftest():
             (old / name).mkdir(parents=True)
         assert prune(old, now=datetime(2026, 10, 17)) == ["2025-01-01 10.00"]
         assert sorted(p.name for p in old.iterdir()) == ["2026-10-01 10.00", "notes"]
+    with tempfile.TemporaryDirectory() as t:   # an untrusted drive: links must not lead anywhere
+        mount, other = Path(t) / "drive", Path(t) / "home"
+        mount.mkdir(); other.mkdir()
+        assert real_dir(mount, mount / "Fennek Backup" / "u@pc" / "Current").is_dir()
+        (mount / "Evil").symlink_to(other)
+        for bad in (mount / "Evil" / "x", mount / "Evil"):
+            try:
+                real_dir(mount, bad); raise AssertionError("followed a link")
+            except ValueError:
+                pass
+        (mount / "Older").mkdir(); (mount / "Older" / "2020-01-01 10.00").symlink_to(other)
+        assert prune(mount / "Older", now=datetime(2026, 10, 17)) == [] and other.exists()
+        dest = real_dir(mount, mount / "Fennek Backup" / "u@pc")
+        tok = write_token(dest)
+        assert read_token(dest) == tok and len(tok) == 32
+        (dest / TOKEN).unlink(); (dest / TOKEN).symlink_to(other / "x")
+        assert read_token(dest) == ""
     f = parse_pairs(r'UUID="AB12-CD34" LABEL="My\x20Stick" TARGET="/run/media/u/My\x20Stick"')   # as findmnt writes it
     assert f == {"UUID": "AB12-CD34", "LABEL": "My Stick", "TARGET": "/run/media/u/My Stick"}, f
     assert parse_pairs('UUID="" LABEL="" TARGET="/"') == {"UUID": "", "LABEL": "", "TARGET": "/"}
@@ -157,7 +228,11 @@ def main(argv):
         d = next((d for d in drives() if d["uuid"] == argv[1]), None)
         if not d:
             sys.exit("That drive isn't connected.")
-        save({**load(), "uuid": d["uuid"], "label": d["label"]})
+        try:
+            token = write_token(real_dir(d["path"], destination(d["path"])))
+        except (ValueError, OSError) as e:
+            sys.exit(f"Can't use this drive: {e}")
+        save({**load(), "uuid": d["uuid"], "label": d["label"], "token": token})
         print(f"Backing up to {d['label']}. " + run())
     elif cmd == "off":
         cfg = load(); cfg.pop("uuid", None); save(cfg)
