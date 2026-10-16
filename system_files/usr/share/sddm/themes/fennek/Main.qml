@@ -18,6 +18,14 @@ Rectangle {
     property string realName: userModel.data(userModel.index(userIndex, 0), Qt.UserRole + 2) || userName
     property string userIcon: userModel.data(userModel.index(userIndex, 0), Qt.UserRole + 4) || ""
 
+    readonly property bool uk: Qt.locale().name.startsWith("uk")
+    property int hour: new Date().getHours()
+    readonly property string greeting: hour < 5 ? (uk ? "Доброї ночі" : "Good night")
+                                     : hour < 12 ? (uk ? "Доброго ранку" : "Good morning")
+                                     : hour < 18 ? (uk ? "Добрий день" : "Good afternoon")
+                                     : (uk ? "Добрий вечір" : "Good evening")
+    readonly property string font: "Inter"
+
     function reveal() {
         if (!signIn) {
             signIn = true
@@ -33,7 +41,7 @@ Rectangle {
         target: sddm
         function onLoginFailed() {
             password.text = ""
-            message.text = "The password is incorrect. Try again."
+            message.text = root.uk ? "Неправильний пароль. Спробуйте ще раз." : "The password is incorrect. Try again."
             password.forceActiveFocus()
         }
     }
@@ -64,13 +72,24 @@ Rectangle {
         Text {
             id: time
             color: "white"
+            font.family: root.font
             font.pixelSize: Math.round(root.height * 0.11)
             font.weight: Font.Light
         }
         Text {
             id: date
             color: "white"
+            font.family: root.font
             font.pixelSize: Math.round(root.height * 0.035)
+        }
+        Text {
+            text: root.greeting
+            color: "white"
+            opacity: 0.85
+            font.family: root.font
+            font.weight: Font.Light
+            font.pixelSize: Math.round(root.height * 0.028)
+            topPadding: Math.round(root.height * 0.012)
         }
     }
     Timer {
@@ -78,7 +97,8 @@ Rectangle {
         onTriggered: {
             const now = new Date()
             time.text = Qt.formatTime(now, Qt.locale().timeFormat(Locale.ShortFormat))
-            date.text = Qt.formatDate(now, "dddd, MMMM d")
+            date.text = now.toLocaleDateString(Qt.locale(), "dddd, d MMMM")
+            root.hour = now.getHours()
         }
     }
 
@@ -88,10 +108,21 @@ Rectangle {
         anchors.centerIn: parent
         spacing: 22
 
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: root.greeting
+            color: "white"
+            opacity: 0.85
+            font.family: root.font
+            font.weight: Font.Light
+            font.pixelSize: 26
+        }
         Rectangle {   // round picture
             anchors.horizontalCenter: parent.horizontalCenter
             width: 192; height: 192; radius: 96
             color: "#3b3155"
+            border.color: Qt.rgba(1, 1, 1, 0.35)
+            border.width: 2
             clip: true
             Image {
                 id: face
@@ -121,29 +152,48 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             text: root.realName
             color: "white"
-            font.pixelSize: 36
+            font.family: root.font
+            font.weight: Font.DemiBold
+            font.pixelSize: 34
         }
-        Row {   // password box with the arrow inside, like the classic desktop
+        Item {   // rounded frosted password field, arrow inside
             anchors.horizontalCenter: parent.horizontalCenter
+            width: 320; height: 44
+            Rectangle {   // soft violet glow while typing
+                anchors.fill: parent
+                anchors.margins: -3
+                radius: 25
+                color: "transparent"
+                border.color: "#9b7be0"
+                border.width: 3
+                opacity: password.activeFocus ? 0.6 : 0
+                Behavior on opacity { NumberAnimation { duration: 150 } }
+            }
             TextField {
                 id: password
-                width: 296; height: 36
+                anchors.fill: parent
                 echoMode: TextInput.Password
-                placeholderText: "Password"
-                leftPadding: 10
-                color: "black"
-                placeholderTextColor: "#666666"
-                background: Rectangle { color: "white"; border.color: password.activeFocus ? "#f2b766" : "#cccccc"; border.width: 2 }
+                placeholderText: root.uk ? "Пароль" : "Password"
+                leftPadding: 18
+                rightPadding: 48
+                color: "white"
+                font.family: root.font
+                font.pixelSize: 16
+                placeholderTextColor: Qt.rgba(1, 1, 1, 0.6)
+                background: Rectangle { radius: 22; color: Qt.rgba(1, 1, 1, 0.16); border.color: Qt.rgba(1, 1, 1, 0.3); border.width: 1 }
                 Keys.onReturnPressed: root.tryLogin()
                 Keys.onEnterPressed: root.tryLogin()
             }
             Button {
-                width: 36; height: 36
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.rightMargin: 5
+                width: 34; height: 34
                 text: "→"
                 font.pixelSize: 18
                 onClicked: root.tryLogin()
-                background: Rectangle { color: parent.down ? "#c98a3d" : "#f2b766" }
-                contentItem: Text { text: parent.text; color: "black"; font: parent.font
+                background: Rectangle { radius: 17; color: parent.down ? "#5a3a9c" : "#6d45b8" }
+                contentItem: Text { text: parent.text; color: "white"; font: parent.font
                                     horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
             }
         }
