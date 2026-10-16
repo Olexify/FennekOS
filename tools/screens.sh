@@ -10,9 +10,9 @@ mkdir -p "$XDG_RUNTIME_DIR" && chown anna: "$XDG_RUNTIME_DIR" && chmod 700 "$XDG
 cat >/tmp/session.sh <<'EOF'
 set -u
 export XDG_SESSION_TYPE=wayland XDG_CURRENT_DESKTOP=KDE KDE_FULL_SESSION=true QT_QPA_PLATFORM=wayland WAYLAND_DISPLAY=wayland-fennek
-shot() { sleep "${2:-3}"; spectacle -b -n -f -o "/out/$1.png" >/dev/null 2>&1 || echo "no screenshot: $1"; }
-call() { gdbus call --session --dest "$1" --object-path "$2" --method "$3" "${@:4}" >/dev/null 2>&1; }
-script() { gdbus call --session --dest org.kde.plasmashell --object-path /PlasmaShell --method org.kde.PlasmaShell.evaluateScript "$1" 2>/dev/null; }
+shot() { sleep "${2:-3}"; timeout 20 spectacle -b -n -f -o "/out/$1.png" >/dev/null 2>&1 || echo "no screenshot: $1"; }
+call() { timeout 10 gdbus call --session --dest "$1" --object-path "$2" --method "$3" "${@:4}" >/dev/null 2>&1; }
+script() { timeout 10 gdbus call --session --dest org.kde.plasmashell --object-path /PlasmaShell --method org.kde.PlasmaShell.evaluateScript "$1" 2>/dev/null; }
 widget() {   # open a taskbar widget's popup by plugin id
     local id; id=$(script "panels().forEach(p => p.widgets('$1').forEach(w => print(w.id)))" | grep -o '[0-9]\+' | head -1)
     [ -n "$id" ] && call org.kde.kglobalaccel /component/plasmashell org.kde.kglobalaccel.Component.invokeShortcut "activate widget $id"
@@ -38,7 +38,8 @@ konsole >/dev/null 2>&1 & shot 11-terminal 5; close
 plasma-systemmonitor >/dev/null 2>&1 & shot 12-task-manager 8; close
 plasmawindowed org.fennek.welcome >/dev/null 2>&1 & shot 13-welcome 6; close
 cp /tmp/kwin.log /tmp/plasma.log /out/ 2>/dev/null
+kill $(jobs -p) 2>/dev/null; exit 0
 EOF
 chmod 755 /tmp/session.sh
-runuser -u anna -- env XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" HOME=/home/anna dbus-run-session -- bash /tmp/session.sh
+timeout 900 runuser -u anna -- env XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" HOME=/home/anna dbus-run-session -- bash /tmp/session.sh
 ls -la "$out"
