@@ -143,6 +143,38 @@ kwriteconfig6 --file "$c" --group Colors:Selection --key BackgroundNormal 109,69
 kwriteconfig6 --file "$lnf/contents/defaults" --group plasmarc --group Theme --key name fennek-dark
 kwriteconfig6 --file /etc/xdg/plasmarc --group Theme --key name fennek-dark
 gtk-update-icon-cache -f -t /usr/share/icons/Fennek 2>/dev/null || true
+# Colour schemes "Fennek Light" / "Fennek Dark": Breeze with Fennek violet where Breeze has its blue (selection,
+# focus, hover, links). Apps read colours, not the accent setting, so the violet has to be in the scheme itself.
+python3 - <<'EOF'
+import re, pathlib
+cs = pathlib.Path("/usr/share/color-schemes")
+for src, dst, name, swap in (
+        ("BreezeLight", "FennekLight", "Fennek Light",
+         {"61,174,233": "109,69,184", "41,128,185": "109,69,184", "29,153,243": "109,69,184", "163,212,250": "205,190,236"}),
+        ("BreezeDark", "FennekDark", "Fennek Dark",
+         {"61,174,233": "138,99,210", "29,153,243": "160,130,230", "30,87,116": "70,50,110"})):
+    s = (cs / f"{src}.colors").read_text()
+    assert "61,174,233" in s, f"{src} lost Breeze blue: revisit the Fennek colour schemes"
+    for a, b in swap.items():
+        s = s.replace(a, b)
+    s = re.sub(r"^Name\[[^\]]+\]=.*\n", "", s, flags=re.M)
+    s = re.sub(r"^Name=.*$", f"Name={name}", s, count=1, flags=re.M)
+    (cs / f"{dst}.colors").write_text(s)
+EOF
+# New users: the light scheme's colours as the system default (apps read kdeglobals), and in the Fennek theme.
+python3 - <<'EOF'
+import configparser, subprocess
+cp = configparser.ConfigParser(interpolation=None, strict=False); cp.optionxform = str
+cp.read("/usr/share/color-schemes/FennekLight.colors")
+for sec in cp.sections():
+    if sec.startswith(("Colors:", "WM")):
+        for k, v in cp[sec].items():
+            subprocess.run(["kwriteconfig6", "--file", "/etc/xdg/kdeglobals", *sum((["--group", g] for g in sec.split("][")), []),
+                            "--key", k, v], check=True)
+EOF
+kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key ColorScheme FennekLight
+sed -i '/^ColorScheme=/d' "$lnf/contents/defaults"
+printf '\n[kdeglobals][General]\nColorScheme=FennekLight\n' >> "$lnf/contents/defaults"
 # Lock screen: the installed one (password, fingerprint, user switching stay KDE's own) with a personal
 # greeting under the clock, on the Fennek wallpaper.
 cp -a /usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen "$lnf/contents/"
@@ -177,7 +209,7 @@ kwriteconfig6 --file /etc/xdg/kscreenlockerrc --group Greeter --group Wallpaper 
 # Fennek taskbar and Start menu with Fedora's layout (looks like the desktop got "erased").
 dark=/usr/share/plasma/look-and-feel/org.fennek.dark.desktop
 cp -a "$lnf/contents/." "$dark/contents/"
-{ sed '/^ColorScheme=/d' "$lnf/contents/defaults"; printf '\n[kdeglobals][General]\nColorScheme=BreezeDark\n'; } \
+{ sed '/^ColorScheme=/d' "$lnf/contents/defaults"; printf '\n[kdeglobals][General]\nColorScheme=FennekDark\n'; } \
     > "$dark/contents/defaults"
 rm -rf /usr/share/plasma/look-and-feel/org.fedoraproject.*
 # KDE's own global themes leave the list too (picking one swapped in KDE's frame, taskbar and Start menu).

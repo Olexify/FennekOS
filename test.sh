@@ -84,6 +84,13 @@ an=$(mktemp -d) && mkdir -p "$an/exp" && printf '[Desktop Entry]\nName=Okular\nE
   && FENNEK_FLATPAK_EXPORTS="$an/exp" XDG_DATA_HOME="$an" /usr/libexec/fennek-app-names && [ ! -e "$an/applications/org.kde.okular.desktop" ] \
   && [ -L /etc/systemd/user/graphical-session.target.wants/fennek-app-names.service ] || fail "plain names for everyday apps"
 rm -rf "$an"
+# Fennek colour schemes: violet instead of Breeze blue; system default for new users; existing users switched once.
+grep -q '^Name=Fennek Light$' /usr/share/color-schemes/FennekLight.colors && ! grep -q '61,174,233' /usr/share/color-schemes/FennekLight.colors   && grep -q '^Name=Fennek Dark$' /usr/share/color-schemes/FennekDark.colors && ! grep -q '61,174,233' /usr/share/color-schemes/FennekDark.colors   && [ "$(kreadconfig6 --file /etc/xdg/kdeglobals --group Colors:Selection --key BackgroundNormal)" = 109,69,184 ]   && grep -q '^ColorScheme=FennekDark' /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults || fail "Fennek colour schemes"
+cs=$(mktemp -d) && mkdir -p "$cs/bin" && printf '#!/bin/sh\necho "$1" >"%s/applied"\n' "$cs" >"$cs/bin/plasma-apply-colorscheme" \
+  && chmod +x "$cs/bin/plasma-apply-colorscheme" && printf '[General]\nColorScheme=BreezeDark\n' >"$cs/kdeglobals" \
+  && PATH="$cs/bin:$PATH" XDG_CONFIG_HOME="$cs" XDG_STATE_HOME="$cs" /usr/libexec/fennek-shortcuts-update \
+  && [ "$(cat "$cs/applied")" = FennekDark ] || fail "existing users move to the Fennek colour scheme"
+rm -rf "$cs"
 # "Update ready" note: once per downloaded update, enabled for every user.
 ur=$(mktemp -d) && echo one >"$ur/staged" && export FENNEK_STAGED="$ur/staged" XDG_STATE_HOME="$ur" FENNEK_DRY_RUN=1 \
   && [ "$(/usr/libexec/fennek-update-ready)" = "would notify" ] && [ -z "$(/usr/libexec/fennek-update-ready)" ] \

@@ -3,6 +3,16 @@
 # manager starts (KDE copies every shortcut into the user's own file, so new defaults never reach them).
 # New users get the same from /etc/xdg/kglobalshortcutsrc.
 set -u
+# Colour scheme, once: Breeze (blue) -> Fennek (violet). A scheme the user picked themselves stays.
+colors_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/colors-version
+if [ "$(cat "$colors_seen" 2>/dev/null)" != 2026-10-17 ]; then
+    case "$(kreadconfig6 --file kdeglobals --group General --key ColorScheme)" in
+        ""|BreezeLight|BreezeClassic) plasma-apply-colorscheme FennekLight >/dev/null 2>&1 ;;
+        BreezeDark) plasma-apply-colorscheme FennekDark >/dev/null 2>&1 ;;
+    esac
+    mkdir -p "${colors_seen%/*}" && echo 2026-10-17 >"$colors_seen"
+fi
+
 version=2026-10-16
 seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/shortcuts-version
 [ "$(cat "$seen" 2>/dev/null)" = "$version" ] && exit 0
