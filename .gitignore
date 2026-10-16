@@ -1,0 +1,3 @@
+# Rust: versions come from Fedora's packaged crates at image build time
+src/*/Cargo.lock
+src/*/target/
