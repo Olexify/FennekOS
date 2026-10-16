@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [{ "Name": "Fennek OS" }],
+        "Category": "Utilities",
+        "Description": "Action center: your notifications and quick settings",
+        "Icon": "notifications",
+        "Id": "org.fennek.actioncenter",
+        "License": "GPL-3.0-only",
+        "Name": "Action center"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

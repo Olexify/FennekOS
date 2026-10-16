@@ -34,7 +34,7 @@ if (tray) {
     tray.currentConfigGroup = ["General"]
     tray.writeConfig("shownItems", ["org.fennek.network", "org.fennek.volume",
                                     "org.kde.plasma.battery", "org.kde.plasma.keyboardlayout"])
-    tray.writeConfig("hiddenItems", ["org.kde.plasma.networkmanagement", "org.kde.plasma.volume", "org.kde.plasma.clipboard", "org.kde.plasma.devicenotifier", "org.kde.kdeconnect",
+    tray.writeConfig("hiddenItems", ["org.kde.plasma.notifications", "org.kde.plasma.networkmanagement", "org.kde.plasma.volume", "org.kde.plasma.clipboard", "org.kde.plasma.devicenotifier", "org.kde.kdeconnect",
                                      "org.kde.plasma.bluetooth", "org.kde.plasma.printmanager", "org.kde.plasma.vault",
                                      "org.kde.plasma.mediacontroller", "org.kde.kscreen", "org.kde.plasma.brightness",
                                      "org.kde.plasma.cameraindicator", "org.kde.plasma.manage-inputmethod",
@@ -42,6 +42,7 @@ if (tray) {
 }
 // Clock: time with the date underneath; click for the calendar panel.
 panel.addWidget("org.fennek.clock")
+panel.addWidget("org.fennek.actioncenter")   // notifications + quick tiles
 panel.addWidget("org.fennek.showdesktop")   // thin strip at the very end, no icon
 
 var desktopsArray = desktopsForActivity(currentActivity());
