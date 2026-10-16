@@ -1,8 +1,11 @@
 name: build-arm
 
 # ARM64 build (ARM laptops; Macs in a VM, native Macs later). Same Containerfile and build.sh as x86-64, on
-# Fedora's official Kinoite for arm64. Build + tests only for now: nothing is published from here yet.
+# Fedora's official Kinoite for arm64 (pinned by digest; Universal Blue's base is amd64-only). Published as
+# ghcr.io/olexify/fennekos:latest-arm64, signed with the same key as the x86-64 image.
 on:
+  schedule:
+    - cron: "30 6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -11,9 +14,16 @@ permissions:
 jobs:
   image:
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 120
+    timeout-minutes: 150
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/olexify/fennekos
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6  # v4.1.2
 
       - name: Tools and disk space
         run: |
@@ -33,3 +43,22 @@ jobs:
 
       - name: Test image
         run: sudo podman run --rm -v "$PWD/test.sh:/t.sh:ro,z" fennek:arm bash /t.sh
+
+      - name: Publish and sign
+        if: github.ref == 'refs/heads/main'
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GH_TOKEN" | sudo podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+          echo "$GH_TOKEN" | cosign login ghcr.io -u "${{ github.actor }}" --password-stdin
+          day=$(date -u +%Y%m%d)
+          for tag in latest-arm64 "$day-arm64"; do
+            sudo podman push --digestfile "/tmp/digest-$tag" fennek:arm "$IMAGE:$tag"
+            # Classic signature format, readable by installed systems (see build.yml).
+            cosign sign --yes --key env://COSIGN_PRIVATE_KEY --new-bundle-format=false --use-signing-config=false \
+              "$IMAGE@$(cat "/tmp/digest-$tag")"
+          done
+          cosign verify --key keys/fennek-cosign.pub "$IMAGE:latest-arm64" > /dev/null
+          echo "Published $IMAGE:latest-arm64 and :$day-arm64 ($(cat /tmp/digest-latest-arm64)), signed and verified."
