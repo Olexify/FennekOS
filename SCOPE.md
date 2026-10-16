@@ -135,7 +135,7 @@ and behave like the rest of the desktop. Built in the image from Fedora's packag
 2. Download virus guard: done (fennek-download-guard 2.0, one small process instead of bash + inotifywait).
 3. Not ported (decided): sandbox launcher and firewall helper only run for a moment, then hand over to
    bwrap/pasta/OpenSnitch; their safety is the tested lockdown rules, not the language.
-3. Next: Task Manager data collector (per-app CPU/RAM/battery history), own firewall engine instead of
+4. Next: Task Manager data collector (per-app CPU/RAM/battery history), own firewall engine instead of
    OpenSnitch (Go).
 
 ## Build order
