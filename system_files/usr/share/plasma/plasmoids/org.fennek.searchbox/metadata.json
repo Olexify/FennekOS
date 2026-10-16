@@ -3,11 +3,11 @@
     "KPlugin": {
         "Authors": [{ "Name": "Fennek OS" }],
         "Category": "Application Launchers",
-        "Description": "A classic search box for the taskbar",
+        "Description": "Search apps, files and settings",
         "Icon": "search",
         "Id": "org.fennek.searchbox",
         "License": "GPL-3.0-only",
-        "Name": "Search box"
+        "Name": "Search"
     },
     "X-Plasma-API-Minimum-Version": "6.0"
 }

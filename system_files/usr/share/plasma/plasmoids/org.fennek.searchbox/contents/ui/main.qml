@@ -16,6 +16,9 @@ PlasmoidItem {
     id: root
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
     preferredRepresentation: compactRepresentation
+    // The taskbar's own tooltip (an in-place tooltip sat under the pointer and swallowed the click).
+    toolTipMainText: "Search"
+    toolTipSubText: "Apps, files and settings"
 
     // Filter tabs: runner ids ([] = all runners).
     readonly property var tabs: [
@@ -74,8 +77,6 @@ PlasmoidItem {
         Layout.fillHeight: true
         hoverEnabled: true
         onClicked: root.expanded = !root.expanded
-        PlasmaComponents.ToolTip.text: "Search"
-        PlasmaComponents.ToolTip.visible: containsMouse && !root.expanded
 
         Rectangle {
             anchors.fill: parent

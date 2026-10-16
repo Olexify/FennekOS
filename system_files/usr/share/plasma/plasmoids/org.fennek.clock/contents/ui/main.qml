@@ -65,7 +65,8 @@ PlasmoidItem {
             PC3.Label {
                 Layout.fillWidth: true
                 Layout.leftMargin: Kirigami.Units.smallSpacing
-                text: root.shown.toLocaleDateString(root.locale, "LLLL yyyy")
+                // Standalone month name ("Жовтень 2026", not "жовтня"), first letter capitalised.
+                text: { const m = root.locale.standaloneMonthName(root.shown.getMonth(), Locale.LongFormat); return m.charAt(0).toUpperCase() + m.slice(1) + " " + root.shown.getFullYear() }
                 font.weight: Font.DemiBold
             }
             PC3.ToolButton { icon.name: "go-up"; onClicked: root.shown = new Date(root.shown.getFullYear(), root.shown.getMonth() - 1, 1) }
