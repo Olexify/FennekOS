@@ -1,0 +1,12 @@
+[Unit]
+Description=Fennek OS usage history (per-app CPU and memory, once a minute)
+
+[Service]
+ExecStart=/usr/bin/fennek-usage --record
+Nice=19
+IOSchedulingClass=idle
+MemoryMax=32M
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

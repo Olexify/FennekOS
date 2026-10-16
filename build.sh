@@ -342,7 +342,7 @@ EOF
 systemctl enable fennek-detect-windows.service
 
 # Instant file search feeds the Start menu / KRunner.
-systemctl --global enable fennek-search.service
+systemctl --global enable fennek-search.service fennek-usage.service
 
 # zsh is the default shell for new users, with suggestions + highlighting + Fennek OS aliases.
 sed -i 's|^SHELL=.*|SHELL=/bin/zsh|' /etc/default/useradd
@@ -406,11 +406,12 @@ directory = "/usr/share/cargo/registry"
 [net]
 offline = true
 EOF
-for prog in fennek-search fennek-download-guard; do
+for prog in fennek-search fennek-download-guard fennek-usage; do
     cp -r "$files/../src/$prog" "/tmp/$prog"        # the source mount is read-only; cargo writes Cargo.lock
     rm -f "/tmp/$prog/Cargo.lock"                     # resolve against Fedora's crate versions
     CARGO_HOME=/tmp/cargo-home cargo build --release --manifest-path "/tmp/$prog/Cargo.toml" --target-dir "/tmp/$prog/target"
-    install -m 755 "/tmp/$prog/target/release/$prog" "/usr/libexec/$prog"
+    dest=/usr/libexec; [ "$prog" = fennek-usage ] && dest=/usr/bin   # usage has a user command
+    install -m 755 "/tmp/$prog/target/release/$prog" "$dest/$prog"
     rm -rf "/tmp/$prog"
 done
 rm -rf /tmp/cargo-home
