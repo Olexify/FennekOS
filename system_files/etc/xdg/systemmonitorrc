@@ -1,0 +1,5 @@
+# Fennek OS: Task Manager opens on its per-app list (like the classic Task Manager's Processes tab),
+# with Applications first in the sidebar.
+[General]
+startPage=applications.page
+pageOrder=applications.page,overview.page,history.page,processes.page

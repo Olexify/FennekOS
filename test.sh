@@ -45,6 +45,7 @@ grep -q '"Id": "org.fennek.firewall"' /usr/share/plasma/plasmoids/org.fennek.fir
 fennek-firewall list --json | python3 -c 'import json,sys; assert json.load(sys.stdin) == []' || fail "firewall list --json"
 [ -x /usr/libexec/fennek-first-login ] && grep -q '^Exec=/usr/libexec/fennek-first-login' /etc/xdg/autostart/fennek-first-login.desktop || fail "first-login Fennek look"
 cmp -s /usr/share/plasma/look-and-feel/org.fennek.{desktop,dark.desktop}/contents/layouts/org.kde.plasma.desktop-layout.js || fail "Fennek Dark has the Fennek layout"
+grep -q "^startPage=applications.page" /etc/xdg/systemmonitorrc || fail "Task Manager opens on apps"
 grep -q "^ColorScheme=BreezeDark" /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults || fail "Fennek Dark colors"
 grep -q "^theme=__aurorae__svg__FennekClassicDark" /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults && grep -q "^theme=__aurorae__svg__FennekClassic$" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults && grep -q "fill=\"#202020\"" /usr/share/aurorae/themes/FennekClassicDark/decoration.svg && [ -s /usr/share/aurorae/themes/FennekClassicDark/FennekClassicDarkrc ] || fail "window frame follows light/dark theme"
 ! ls -d /usr/share/plasma/look-and-feel/org.fedoraproject.* 2>/dev/null || fail "Fedora global themes still listed"
