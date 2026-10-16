@@ -1,5 +1,5 @@
 [Unit]
-Description=Install the everyday apps once (photos, PDF, video, music, calculator, notepad, archives)
+Description=Install the everyday apps once (photos, PDF, video, music, calculator, notepad, archives, paint, scanning)
 Wants=network-online.target
 After=network-online.target flatpak-add-fedora-repos.service
 ConditionPathExists=!/var/lib/fennek/essential-apps.done

@@ -13,7 +13,7 @@ we treat it as a bug.
 |---|---|---|---|---|
 | **System updates** | `ghcr.io` (GitHub) | Daily check, download when there's a new version | The update request. Nothing about you or your files. | `sudo systemctl disable --now rpm-ostreed-automatic.timer` |
 | **App updates** (Flatpak) | `flathub.org` and the app's servers | Daily | The list of installed apps, to find updates | `sudo systemctl disable --now flatpak-system-update.timer`, plus `systemctl --user disable --now flatpak-user-update.timer` |
-| **Everyday apps** (photos, PDF, video, music, calculator, notepad, archives) | `flathub.org` | Once, after the first start (retried until done) | Download requests for those apps | `sudo systemctl disable fennek-essential-apps.service` before connecting to the internet |
+| **Everyday apps** (photos, PDF, video, music, calculator, notepad, archives, paint, scanning) | `flathub.org` | Once, after the first start (retried until done) | Download requests for those apps | `sudo systemctl disable fennek-essential-apps.service` before connecting to the internet |
 | **Virus definitions** (ClamAV) | `database.clamav.net` (Cisco) | Daily, and 15 minutes after start-up | Download request only | `sudo systemctl disable --now clamav-freshclam-once.timer` (new downloads are then no longer scanned against fresh definitions) |
 | **Clock** | Fedora's time servers (NTP) | Regularly | The time request | System Settings → Date & Time |
 | **Wi-Fi "is there internet?" check** | `fedoraproject.org` | When connecting to a network | A plain web request | `printf '[connectivity]\nenabled=false\n' \| sudo tee /etc/NetworkManager/conf.d/99-no-check.conf` (then restart; Wi-Fi sign-in pages are no longer detected) |
