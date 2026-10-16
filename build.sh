@@ -118,8 +118,21 @@ printf '\n[kdeglobals][General]\nAccentColor=109,69,184\n' >> "$lnf/contents/def
 printf '\n[kdeglobals][Icons]\nTheme=Fennek\n' >> "$lnf/contents/defaults"
 printf '\n[kcminputrc][Mouse]\ncursorTheme=Bibata-Modern-Ice\n' >> "$lnf/contents/defaults"
 # Taskbar, Start and tray panels dark, apps light (the familiar default); the dark theme copies this.
-kwriteconfig6 --file "$lnf/contents/defaults" --group plasmarc --group Theme --key name breeze-dark
-kwriteconfig6 --file /etc/xdg/plasmarc --group Theme --key name breeze-dark
+# Panel theme "Fennek Dark": KDE's Breeze Dark plus Fennek's taskbar buttons (widgets/tasks.svg from
+# branding/make-taskbar-svg.py: line under running apps, soft background on the focused one).
+dt=/usr/share/plasma/desktoptheme
+cp -an "$dt/breeze-dark/." "$dt/fennek-dark/"
+python3 - "$dt/fennek-dark" <<'EOF'
+import json, pathlib, sys
+d = pathlib.Path(sys.argv[1]); m = d / "metadata.json"
+assert m.exists(), "Breeze Dark has no metadata.json any more: revisit the Fennek panel theme"
+j = json.loads(m.read_text())
+j["KPlugin"].update(Id="fennek-dark", Name="Fennek Dark", Description="Breeze Dark with Fennek taskbar buttons")
+j["KPlugin"] = {k: v for k, v in j["KPlugin"].items() if not k.startswith(("Name[", "Description["))}
+m.write_text(json.dumps(j, indent=2, ensure_ascii=False))
+EOF
+kwriteconfig6 --file "$lnf/contents/defaults" --group plasmarc --group Theme --key name fennek-dark
+kwriteconfig6 --file /etc/xdg/plasmarc --group Theme --key name fennek-dark
 gtk-update-icon-cache -f -t /usr/share/icons/Fennek 2>/dev/null || true
 # Lock screen: the installed one (password, fingerprint, user switching stay KDE's own) with a personal
 # greeting under the clock, on the Fennek wallpaper.
@@ -478,8 +491,7 @@ open(p + ".fennek-new", "w").write(s.replace(old, "[Panel][ContainmentActions]\n
 os.chmod(p + ".fennek-new", 0o644); os.replace(p + ".fennek-new", p)
 EOF
 
-# Taskbar look: no line over an open button (Start, tray); app buttons get a small line at the bottom while the
-# app runs (longer, accent colour, for the focused one) and a soft background only for the focused app.
+# Taskbar look: no line over an open button (Start, tray). App buttons: see the Fennek Dark panel theme.
 python3 - <<'EOF'
 import os
 def patch(p, pairs):
@@ -491,39 +503,6 @@ def patch(p, pairs):
 
 patch("/usr/share/plasma/shells/org.kde.plasma.desktop/contents/applet/CompactApplet.qml", [
     ("opacity: root.plasmoidItem.expanded ? 1 : 0", "opacity: 0   // Fennek OS: no line over an open button"),
-])
-patch("/usr/share/plasma/plasmoids/org.kde.plasma.taskmanager/contents/ui/Task.qml", [
-    ('        imagePath: "widgets/tasks"\n',
-     '        imagePath: "widgets/tasks"\n'
-     '        opacity: task.inPopup ? 1 : 0   // Fennek OS: own indicators on the taskbar (below)\n'),
-    ("\n    Loader {\n        id: taskProgressOverlayLoader\n", """
-    // Fennek OS: focused app = soft background; hover = fainter; others just the icon.
-    Rectangle {
-        visible: !task.inPopup
-        anchors.fill: frame
-        anchors.margins: 2
-        radius: 6
-        color: Kirigami.Theme.textColor
-        opacity: task.model.IsActive ? 0.13 : (task.highlighted ? 0.07 : 0)
-        Behavior on opacity { NumberAnimation { duration: 120 } }
-    }
-    // Fennek OS: running apps = small line at the bottom; focused = longer, accent; needs attention = amber.
-    Rectangle {
-        visible: !task.inPopup && !task.model.IsLauncher
-        anchors.horizontalCenter: frame.horizontalCenter
-        anchors.bottom: frame.bottom
-        anchors.bottomMargin: 2
-        height: 3
-        radius: 1.5
-        width: task.model.IsActive ? Kirigami.Units.gridUnit * 1.1 : Kirigami.Units.gridUnit * 0.55
-        color: task.model.IsDemandingAttention ? "#f0a030" : (task.model.IsActive ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor)
-        opacity: task.model.IsActive || task.model.IsDemandingAttention ? 1 : 0.5
-        Behavior on width { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-    }
-
-    Loader {
-        id: taskProgressOverlayLoader
-"""),
 ])
 EOF
 
