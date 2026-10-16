@@ -216,9 +216,13 @@ if edit == "files-toolbar":
     assert m and 'name="go_back"' in m.group(2), "Files main toolbar changed upstream"
     acts = ("go_back", "go_forward", "go_up", "url_navigators", "toggle_search", "hamburger_menu")
     s = s[:m.start(2)] + "".join(f'\n        <Action name="{a}" />' for a in acts) + s[m.end(2):]
-elif edit == "hide-toolbars":
+elif edit in ("hide-toolbars", "terminal-session"):
     s, n = re.subn(r'<ToolBar(?![^>]*hidden=)', '<ToolBar hidden="true"', s)
     assert n, f"no toolbar in {rcfile}"
+    if edit == "terminal-session":   # Ctrl+V pastes too (Ctrl+Shift+V keeps working)
+        assert 'name="edit_paste"' in s and "<ActionProperties" not in s, "Terminal paste action changed upstream"
+        s = s.replace("</gui>", '<ActionProperties scheme="Default">\n'
+                      '    <Action name="edit_paste" shortcut="Ctrl+Shift+V; Ctrl+V; Shift+Ins"/>\n</ActionProperties>\n</gui>')
 else:
     sys.exit(f"unknown edit {edit}")
 s, n = re.subn(r'(<gui[^>]*\bversion=")(\d+)', lambda v: v.group(1) + str(int(v.group(2)) + 1000), s, count=1)
@@ -230,7 +234,7 @@ PYEOF
 python3 /tmp/xmlgui.py dolphin dolphin dolphinui.rc files-toolbar /usr/bin/dolphin
 konsole_bins=(/usr/bin/konsole /usr/lib64/libkonsole*.so.*)
 python3 /tmp/xmlgui.py konsole konsole konsoleui.rc hide-toolbars "${konsole_bins[@]}"
-python3 /tmp/xmlgui.py konsole session sessionui.rc hide-toolbars "${konsole_bins[@]}"
+python3 /tmp/xmlgui.py konsole session sessionui.rc terminal-session "${konsole_bins[@]}"
 rm /tmp/xmlgui.py
 # Login screen wallpaper.
 sed -i 's|/usr/share/wallpapers/Fedora/|/usr/share/wallpapers/Fennek/|g' /usr/lib/plasmalogin/defaults.conf
