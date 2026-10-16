@@ -7,6 +7,7 @@ import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
+import org.kde.coreaddons as KCoreAddons
 import "catalog.js" as Catalog
 
 QQC2.ApplicationWindow {
@@ -25,6 +26,23 @@ QQC2.ApplicationWindow {
         id: run
         engine: "executable"
         onNewData: source => disconnectSource(source)
+    }
+
+    // Home header: who you are and how this PC is doing (update waiting, firewall network profile).
+    KCoreAddons.KUser { id: kuser }
+    property string netProfile: ""
+    property bool updateWaiting: false
+    readonly property string statusCmd: "fennek-firewall profile; test -e /run/ostree/staged-deployment && echo staged"
+    P5Support.DataSource {
+        id: status
+        engine: "executable"
+        connectedSources: [root.statusCmd]
+        interval: 30000
+        onNewData: (source, data) => {
+            const out = data.stdout.split("\n")
+            root.netProfile = out[0].trim()
+            root.updateWaiting = out.indexOf("staged") >= 0
+        }
     }
     function open(item) {
         run.connectSource(item.kcm ? "systemsettings " + item.kcm : item.cmd)
@@ -153,13 +171,68 @@ QQC2.ApplicationWindow {
                         level: 1
                     }
 
-                    // Home: categories as large cards.
+                    // Home: your account and this PC's state, then the categories as large cards.
+                    Rectangle {
+                        visible: root.category === null && root.query === ""
+                        Layout.fillWidth: true
+                        Layout.leftMargin: Kirigami.Units.gridUnit * 2
+                        Layout.rightMargin: Kirigami.Units.gridUnit * 2
+                        implicitHeight: header.implicitHeight + Kirigami.Units.gridUnit * 2
+                        radius: 12
+                        color: root.cardColor
+                        RowLayout {
+                            id: header
+                            anchors.fill: parent
+                            anchors.margins: Kirigami.Units.gridUnit
+                            spacing: Kirigami.Units.largeSpacing * 2
+                            Kirigami.Avatar {
+                                source: kuser.faceIconUrl
+                                name: kuser.fullName || kuser.loginName
+                                Layout.preferredWidth: Kirigami.Units.gridUnit * 3.5
+                                Layout.preferredHeight: Layout.preferredWidth
+                            }
+                            ColumnLayout {
+                                spacing: 2
+                                Layout.fillWidth: true
+                                Kirigami.Heading { text: kuser.fullName || kuser.loginName; level: 2; Layout.fillWidth: true; elide: Text.ElideRight }
+                                QQC2.Label { text: "Local account · Fennek OS"; opacity: 0.7 }
+                            }
+                            // Status chips: click to open the matching place.
+                            Repeater {
+                                model: [
+                                    { icon: root.updateWaiting ? "system-reboot" : "update-none",
+                                      text: root.updateWaiting ? "Restart to finish the update" : "Updates are automatic",
+                                      cmd: "plasma-discover --mode update" },
+                                    { icon: "security-high",
+                                      text: root.netProfile === "public" ? "Firewall: public network" : "Firewall: home network",
+                                      cmd: "fennek-app firewall" }
+                                ]
+                                delegate: QQC2.ItemDelegate {
+                                    required property var modelData
+                                    onClicked: run.connectSource(modelData.cmd)
+                                    background: Rectangle { radius: 8; color: parent.hovered ? root.cardHover : "transparent" }
+                                    contentItem: ColumnLayout {
+                                        spacing: Kirigami.Units.smallSpacing
+                                        Kirigami.Icon { source: modelData.icon; Layout.alignment: Qt.AlignHCenter; Layout.preferredWidth: 24; Layout.preferredHeight: 24 }
+                                        QQC2.Label {
+                                            text: modelData.text
+                                            font: Kirigami.Theme.smallFont
+                                            horizontalAlignment: Text.AlignHCenter
+                                            wrapMode: Text.Wrap
+                                            Layout.preferredWidth: Kirigami.Units.gridUnit * 7
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     GridLayout {
                         visible: root.category === null && root.query === ""
                         Layout.fillWidth: true
                         Layout.leftMargin: Kirigami.Units.gridUnit * 2
                         Layout.rightMargin: Kirigami.Units.gridUnit * 2
-                        columns: 2
+                        columns: root.width > Kirigami.Units.gridUnit * 46 ? 2 : 1   // one column in a narrow window
                         columnSpacing: Kirigami.Units.largeSpacing
                         rowSpacing: Kirigami.Units.largeSpacing
                         Repeater {
