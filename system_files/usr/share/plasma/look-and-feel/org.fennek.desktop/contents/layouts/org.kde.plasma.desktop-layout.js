@@ -27,13 +27,25 @@ panel.addWidget("org.fennek.searchbox")
 panel.addWidget("org.fennek.taskview")
 panel.addWidget("org.kde.plasma.icontasks")
 panel.addWidget("org.kde.plasma.marginsseparator")
-panel.addWidget("org.kde.plasma.systemtray")
+// Tray: network, sound, battery and language always visible; everything else behind the ^ arrow.
+var systray = panel.addWidget("org.kde.plasma.systemtray")
+var tray = desktopById(systray.readConfig("SystrayContainmentId"))
+if (tray) {
+    tray.currentConfigGroup = ["General"]
+    tray.writeConfig("shownItems", ["org.kde.plasma.networkmanagement", "org.kde.plasma.volume",
+                                    "org.kde.plasma.battery", "org.kde.plasma.keyboardlayout"])
+    tray.writeConfig("hiddenItems", ["org.kde.plasma.clipboard", "org.kde.plasma.devicenotifier", "org.kde.kdeconnect",
+                                     "org.kde.plasma.bluetooth", "org.kde.plasma.printmanager", "org.kde.plasma.vault",
+                                     "org.kde.plasma.mediacontroller", "org.kde.kscreen", "org.kde.plasma.brightness",
+                                     "org.kde.plasma.cameraindicator", "org.kde.plasma.manage-inputmethod",
+                                     "org.kde.plasma.keyboardindicator", "org.kde.plasma.weather"])
+}
 // Clock like the classic desktop: time with the date underneath.
 var clock = panel.addWidget("org.kde.plasma.digitalclock")
 clock.currentConfigGroup = ["Appearance"]
 clock.writeConfig("showDate", true)
 clock.writeConfig("dateDisplayFormat", 2)   // BelowTime
-panel.addWidget("org.kde.plasma.showdesktop")
+panel.addWidget("org.fennek.showdesktop")   // thin strip at the very end, no icon
 
 var desktopsArray = desktopsForActivity(currentActivity());
 for (var j = 0; j < desktopsArray.length; j++) {

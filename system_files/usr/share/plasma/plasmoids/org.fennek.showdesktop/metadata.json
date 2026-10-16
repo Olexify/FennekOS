@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [{ "Name": "Fennek OS" }],
+        "Category": "Windows and Tasks",
+        "Description": "A thin strip at the end of the taskbar: click to show the desktop",
+        "Icon": "user-desktop",
+        "Id": "org.fennek.showdesktop",
+        "License": "GPL-3.0-only",
+        "Name": "Show desktop strip"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

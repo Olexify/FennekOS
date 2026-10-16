@@ -23,7 +23,8 @@ grep -q '^ID=fedora' /usr/lib/os-release                      || fail "os-releas
 [ "$(magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.png -crop 1x1+3839+2159 -format '%[fx:r>b]' info:)" = 1 ] \
                                                               || fail "wallpaper isn't the warm dusk gradient"
 grep -q '^Image=Fennek' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults || fail "lnf wallpaper"
-for p in org.fennek.searchbox org.fennek.taskview; do
+grep -q "SystrayContainmentId" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "tray shown/hidden icons"
+for p in org.fennek.searchbox org.fennek.taskview org.fennek.showdesktop; do
     python3 -c "import json; json.load(open('/usr/share/plasma/plasmoids/$p/metadata.json'))" && [ -s /usr/share/plasma/plasmoids/$p/contents/ui/main.qml ] \
         && grep -q "\"$p\"" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js \
         || fail "taskbar widget $p"
@@ -116,6 +117,7 @@ command -v opensnitchd >/dev/null                            || fail "opensnitch
 ! systemctl is-enabled -q opensnitch.service                  || fail "opensnitch must start only when something is blocked"
 fennek-firewall --selftest >/dev/null                         || fail "firewall selftest"
 /usr/libexec/fennek-first-login-places --selftest >/dev/null || fail "classic Files sidebar"
+/usr/libexec/fennek-first-login-keyboard --selftest >/dev/null || fail "language switcher labels"
 /usr/libexec/fennek-previous-versions-helper --selftest >/dev/null && command -v kdialog numfmt >/dev/null && grep -q "exec.path\">/usr/libexec/fennek-previous-versions-helper" /usr/share/polkit-1/actions/org.fennek.previous-versions.policy || fail "Restore previous versions"
 grep -q '^Exec=fennek-firewall block %f' /usr/share/kio/servicemenus/fennek-firewall.desktop || fail "firewall menu"
 [ -f /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/metadata.json ] || fail "classic start menu (Tiled Menu)"

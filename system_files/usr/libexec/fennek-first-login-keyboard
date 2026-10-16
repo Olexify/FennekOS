@@ -1,0 +1,68 @@
+#!/usr/bin/python3
+"""Language switcher labels on the taskbar: ENG / УКР / DEU … instead of us / ua / de.
+Once per user (first login): takes the keyboard layouts chosen at install (localectl) and writes them with
+short labels to the user's keyboard settings. Changing layouts later in Settings keeps working as usual.
+
+  fennek-first-login-keyboard            write ~/.config/kxkbrc if the user has none
+  fennek-first-login-keyboard --selftest
+"""
+import os, re, subprocess, sys
+
+# Layout code -> label in that language (what people see on the taskbar).
+LABELS = {
+    "us": "ENG", "gb": "ENG", "au": "ENG", "ca": "ENG", "ie": "ENG", "ua": "УКР", "ru": "РУС", "by": "БЕЛ",
+    "de": "DEU", "at": "DEU", "ch": "DEU", "fr": "FRA", "be": "FRA", "es": "ESP", "latam": "ESP", "it": "ITA",
+    "pt": "POR", "br": "POR", "pl": "POL", "cz": "CES", "sk": "SLK", "hu": "MAG", "ro": "ROM", "bg": "БЪЛ",
+    "rs": "СРП", "hr": "HRV", "si": "SLV", "gr": "ΕΛΛ", "tr": "TÜR", "nl": "NLD", "se": "SVE", "no": "NOR",
+    "dk": "DAN", "fi": "FIN", "ee": "EST", "lv": "LAT", "lt": "LIT", "il": "עבר", "ara": "عرب", "jp": "日本",
+    "kr": "한국", "cn": "中文", "ge": "ქარ", "am": "ՀԱՅ", "kz": "ҚАЗ",
+}
+
+
+def label(code):
+    return LABELS.get(code, code.upper()[:3])
+
+
+def parse_localectl(out):
+    """'X11 Layout: us,ua' + 'X11 Variant: ,enhanced' -> (['us','ua'], ['','enhanced'])"""
+    get = lambda key: (re.search(rf"^\s*{key}:\s*(\S*)\s*$", out, re.M) or [None, ""])[1]
+    layouts = [l for l in get("X11 Layout").split(",") if l]
+    variants = get("X11 Variant").split(",") if get("X11 Variant") else []
+    return layouts, (variants + [""] * len(layouts))[:len(layouts)]
+
+
+def kxkbrc(layouts, variants):
+    return ("[Layout]\nUse=true\n"
+            f"LayoutList={','.join(layouts)}\nVariantList={','.join(variants)}\n"
+            f"DisplayNames={','.join(label(l) for l in layouts)}\n")
+
+
+def main():
+    path = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), "kxkbrc")
+    if os.path.exists(path):
+        return
+    try:
+        out = subprocess.run(["localectl", "status"], capture_output=True, text=True).stdout
+    except OSError:
+        return
+    layouts, variants = parse_localectl(out)
+    if not layouts:
+        return
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(kxkbrc(layouts, variants))
+
+
+def selftest():
+    out = "   System Locale: LANG=uk_UA.UTF-8\n       VC Keymap: us\n      X11 Layout: us,ua\n     X11 Variant: ,enhanced\n"
+    layouts, variants = parse_localectl(out)
+    assert (layouts, variants) == (["us", "ua"], ["", "enhanced"])
+    assert "DisplayNames=ENG,УКР\n" in kxkbrc(layouts, variants)
+    assert parse_localectl("X11 Layout: de\n") == (["de"], [""])
+    assert parse_localectl("VC Keymap: us\n") == ([], [])
+    assert label("xyz") == "XYZ"
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    selftest() if sys.argv[1:] == ["--selftest"] else main()
