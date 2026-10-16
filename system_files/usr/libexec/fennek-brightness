@@ -1,0 +1,22 @@
+#!/usr/bin/bash
+# Screen brightness for the action center, through KDE's power daemon (session bus).
+#   fennek-brightness get      -> percent of the first display that has a brightness control (nothing if none)
+#   fennek-brightness set N    -> N percent on every such display
+set -u
+svc=org.kde.ScreenBrightness; root=/org/kde/ScreenBrightness; iface=org.kde.ScreenBrightness.Display
+displays=$(busctl --user get-property $svc $root $svc DisplaysDBusNames 2>/dev/null | grep -o '"[^"]*"' | tr -d '"')
+prop() { busctl --user get-property $svc "$root/$1" $iface "$2" 2>/dev/null | awk '{print $2}'; }
+case "${1:-}" in
+    get)
+        for d in $displays; do
+            max=$(prop "$d" MaxBrightness); cur=$(prop "$d" Brightness)
+            [ -n "$max" ] && [ "$max" -gt 0 ] && { echo $(( cur * 100 / max )); exit 0; }
+        done ;;
+    set)
+        pct=${2:?percent}; [ "$pct" -ge 1 ] 2>/dev/null || pct=1; [ "$pct" -le 100 ] || pct=100
+        for d in $displays; do
+            max=$(prop "$d" MaxBrightness)
+            [ -n "$max" ] && [ "$max" -gt 0 ] && busctl --user call $svc "$root/$d" $iface SetBrightness iu $(( pct * max / 100 )) 1
+        done ;;
+    *) echo "usage: fennek-brightness get | set PERCENT" >&2; exit 2 ;;
+esac

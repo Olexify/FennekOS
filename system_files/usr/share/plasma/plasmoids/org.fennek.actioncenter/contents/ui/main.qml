@@ -51,6 +51,8 @@ PlasmoidItem {
                 root.batterySaver = data.stdout.indexOf("power-saver") >= 0
             else if (source === root.nightCmd)
                 root.nightLight = data.stdout.trim() === "true"
+            else if (source === "/usr/libexec/fennek-brightness get")
+                root.brightness = data.stdout.trim() === "" ? -1 : parseInt(data.stdout)
             disconnectSource(source)
         }
     }
@@ -66,7 +68,12 @@ PlasmoidItem {
                           + " && dbus-send --session --dest=org.kde.KWin --type=method_call /KWin org.kde.KWin.reconfigure")
         nightLight = on
     }
-    onExpandedChanged: if (expanded) { run.connectSource(profileCmd); run.connectSource(nightCmd) }
+    // Screen brightness (laptops, monitors with brightness control); -1 = none, slider hidden.
+    property int brightness: -1
+    Timer { id: setBrightness; interval: 120; onTriggered: run.connectSource("/usr/libexec/fennek-brightness set " + root.brightness) }
+    onExpandedChanged: if (expanded) {
+        run.connectSource(profileCmd); run.connectSource(nightCmd); run.connectSource("/usr/libexec/fennek-brightness get")
+    }
     function setProfile(name) {
         run.connectSource("busctl --system set-property org.freedesktop.UPower.PowerProfiles /org/freedesktop/UPower/PowerProfiles "
                           + "org.freedesktop.UPower.PowerProfiles ActiveProfile s " + name)
@@ -195,6 +202,20 @@ PlasmoidItem {
                     font: Kirigami.Theme.smallFont
                     onClicked: modelData.act()
                 }
+            }
+        }
+
+        RowLayout {   // brightness, only where the screen supports it
+            visible: root.brightness >= 0
+            Layout.fillWidth: true
+            Layout.margins: Kirigami.Units.largeSpacing
+            spacing: Kirigami.Units.largeSpacing
+            Kirigami.Icon { source: "brightness-high"; Layout.preferredWidth: 22; Layout.preferredHeight: 22 }
+            PC3.Slider {
+                Layout.fillWidth: true
+                from: 1; to: 100; stepSize: 1
+                value: Math.max(1, root.brightness)
+                onMoved: { root.brightness = value; setBrightness.restart() }
             }
         }
     }
