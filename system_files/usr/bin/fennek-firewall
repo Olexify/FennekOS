@@ -109,12 +109,14 @@ def root_part(cmd, prog):
 
 
 def exe_of(pid):
-    """Program behind a process: the .exe for programs run through the compatibility layer, else its path."""
+    """Program behind a process: its real executable; for compatibility-layer loaders, the .exe they run."""
     try:
-        for arg in Path(f"/proc/{pid}/cmdline").read_bytes().decode(errors="replace").split("\0"):
-            if is_exe(arg):
-                return re.split(r"[\\/]", arg)[-1]
-        return os.readlink(f"/proc/{pid}/exe")
+        path = os.readlink(f"/proc/{pid}/exe")
+        if Path(path).name.startswith("wine"):   # wine, wine64, wine64-preloader (also inside Proton)
+            for arg in Path(f"/proc/{pid}/cmdline").read_bytes().decode(errors="replace").split("\0"):
+                if is_exe(arg):
+                    return re.split(r"[\\/]", arg)[-1]
+        return path
     except OSError:
         return None
 
@@ -129,11 +131,13 @@ def active(ss_out, exe=exe_of):
         host = f[5].rsplit(":", 1)[0].strip("[]").removeprefix("::ffff:")
         if host in ("*", "0.0.0.0", "::") or host.startswith("127.") or host == "::1":
             continue                                       # listening/unconnected, or this computer itself
-        m = re.search(r'\("([^"]*)",pid=(\d+)', line)
-        if not m:
+        # The process name ss prints is chosen by the process itself: take only the pid (last, anchored) and
+        # name the app after its real executable.
+        pids = re.findall(r"pid=(\d+),fd=\d+\)", line)
+        prog = exe(int(pids[-1])) if pids else None
+        if not prog:
             continue                                       # another user's process: not visible to us
-        prog = exe(int(m[2])) or m[1]
-        e = apps.setdefault(prog, {"name": prog if is_exe(prog) else m[1], "program": prog, "connections": 0})
+        e = apps.setdefault(prog, {"name": Path(prog).name, "program": prog, "connections": 0})
         e["connections"] += 1
     return sorted(apps.values(), key=lambda a: a["name"].lower())
 
@@ -216,11 +220,14 @@ def selftest():
           'tcp ESTAB 0 0 127.0.0.1:5000 127.0.0.1:41002 users:(("dev",pid=12,fd=5))\n'
           'udp UNCONN 0 0 0.0.0.0:5353 0.0.0.0:* users:(("avahi",pid=13,fd=6))\n'
           'tcp ESTAB 0 0 10.0.2.15:41003 1.1.1.1:443 users:(("wine64-preload",pid=14,fd=7))\n'
-          'tcp ESTAB 0 0 10.0.2.15:41004 8.8.8.8:53\n')
-    paths = {10: "/usr/lib64/firefox/firefox", 11: "/usr/lib64/firefox/firefox", 14: "Game.exe"}
+          'tcp ESTAB 0 0 10.0.2.15:41004 8.8.8.8:53\n'
+          'tcp ESTAB 0 0 10.0.2.15:41005 9.9.9.9:443 users:(("x\\",pid=10,fd=1)",pid=15,fd=3))\n'
+          'tcp ESTAB 0 0 10.0.2.15:41006 9.9.9.9:443 users:(("someone",pid=16,fd=3))\n')
+    paths = {10: "/usr/lib64/firefox/firefox", 11: "/usr/lib64/firefox/firefox", 14: "Game.exe", 15: "/tmp/sneaky"}
     assert active(ss, paths.get) == [
         {"name": "firefox", "program": "/usr/lib64/firefox/firefox", "connections": 2},
-        {"name": "Game.exe", "program": "Game.exe", "connections": 1}]
+        {"name": "Game.exe", "program": "Game.exe", "connections": 1},
+        {"name": "sneaky", "program": "/tmp/sneaky", "connections": 1}]
     print("selftest ok")
 
 
