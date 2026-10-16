@@ -4,14 +4,14 @@
 set -u
 out=/out; mkdir -p "$out"; chmod 777 "$out"
 # Test-container only (never in the image): a virtual X screen to photograph, and an image tool.
-dnf -y -q install xorg-x11-server-Xvfb ImageMagick >/dev/null 2>&1 || echo "tools install failed"
+dnf -y -q install xorg-x11-server-Xvfb ImageMagick xdotool >/dev/null 2>&1 || echo "tools install failed"
 id anna >/dev/null 2>&1 || useradd -m -c "Anna" anna
 uid=$(id -u anna); export XDG_RUNTIME_DIR=/run/user/$uid
 mkdir -p "$XDG_RUNTIME_DIR" && chown anna: "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR"
 
 cat >/tmp/session.sh <<'EOF'
 set -u
-export LANG=C.UTF-8 XDG_SESSION_TYPE=wayland XDG_CURRENT_DESKTOP=KDE KDE_FULL_SESSION=true QT_FORCE_STDERR_LOGGING=1 QT_LOGGING_RULES="spectacle*.debug=true;kwin_screenshot*.debug=true"
+export SHELL=/bin/zsh LANG=C.UTF-8 XDG_SESSION_TYPE=wayland XDG_CURRENT_DESKTOP=KDE KDE_FULL_SESSION=true QT_FORCE_STDERR_LOGGING=1 QT_LOGGING_RULES="spectacle*.debug=true;kwin_screenshot*.debug=true"
 # Photograph the virtual X screen KWin draws into (KWin's own screenshot needs a GPU).
 shot() { sleep "${2:-3}"; timeout 20 magick import -display :99 -window root "/out/$1.png" >>/out/shot.log 2>&1 || echo "no screenshot: $1 (exit $?)"; }
 call() { timeout 10 gdbus call --session --dest "$1" --object-path "$2" --method "$3" "${@:4}" >/dev/null 2>&1; }
@@ -20,6 +20,7 @@ widget() {   # open a taskbar widget's popup by plugin id
     local id; id=$(script "panels().forEach(p => p.widgets('$1').forEach(w => print(w.id)))" | grep -o '[0-9]\+' | head -1)
     [ -n "$id" ] && call org.kde.kglobalaccel /component/plasmashell org.kde.kglobalaccel.Component.invokeShortcut "activate widget $id"
 }
+click() { DISPLAY=:99 xdotool mousemove "$1" "$2" click 1; }   # on the 1600x900 virtual screen
 close() { kill $! 2>/dev/null; sleep 1; }   # the app just started in the background
 
 # KWin first, without client display variables; its own test switch lets spectacle take screenshots here.
@@ -38,11 +39,11 @@ plasmashell >/out/plasma.log 2>&1 &
 shot 01-desktop 30
 call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; shot 02-start
 call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; sleep 1
-widget org.fennek.searchbox; shot 03-search; widget org.fennek.searchbox
-widget org.fennek.actioncenter; shot 04-action-center; widget org.fennek.actioncenter
-widget org.fennek.clock; shot 05-calendar; widget org.fennek.clock
-widget org.fennek.volume; shot 06-sound; widget org.fennek.volume
-widget org.fennek.network; shot 07-network; widget org.fennek.network
+click 60 880; shot 03-search; click 60 880; sleep 1
+click 1560 880; shot 04-action-center; click 1560 880; sleep 1
+click 1498 880; shot 05-calendar; click 1498 880; sleep 1
+click 1390 880; shot 06-sound; click 1390 880; sleep 1
+click 1360 880; shot 07-network; click 1360 880; sleep 1
 dolphin thispc:/ >/dev/null 2>&1 & shot 08-file-explorer 6; close
 fennek-app settings >/dev/null 2>&1 & shot 09-settings 6; close
 fennek-app firewall >/dev/null 2>&1 & shot 10-firewall 6; close
