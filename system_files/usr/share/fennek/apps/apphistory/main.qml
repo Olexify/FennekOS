@@ -1,16 +1,20 @@
 // Fennek App history: which apps used the processor (and so the battery) and how much memory, over the last
 // hour / 8 hours / day / week. Data from fennek-usage (sampled once a minute, kept 7 days, never leaves the PC).
-// Runs as plasmawindowed org.fennek.apphistory (see fennek-apphistory.desktop).
+// Runs as fennek-app apphistory (see fennek-apphistory.desktop).
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
-import org.kde.plasma.plasmoid
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
 
-PlasmoidItem {
+QQC2.ApplicationWindow {
+    visible: true
+    title: "App history"
+    width: Kirigami.Units.gridUnit * 40
+    height: Kirigami.Units.gridUnit * 32
+    minimumWidth: Kirigami.Units.gridUnit * 28
+    minimumHeight: Kirigami.Units.gridUnit * 20
     id: root
-    preferredRepresentation: fullRepresentation
     property int hours: 8
     property var rows: []
     readonly property real total: rows.reduce((s, r) => s + r.cpu_ms, 0) || 1
@@ -38,9 +42,8 @@ PlasmoidItem {
         return s < 60 ? s + " s" : s < 3600 ? Math.round(s / 60) + " min" : (s / 3600).toFixed(1) + " h"
     }
 
-    fullRepresentation: QQC2.Page {
-        Layout.preferredWidth: Kirigami.Units.gridUnit * 40
-        Layout.preferredHeight: Kirigami.Units.gridUnit * 32
+    QQC2.Page {
+        anchors.fill: parent
 
         ColumnLayout {
             anchors.fill: parent

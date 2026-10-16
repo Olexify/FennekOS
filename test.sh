@@ -25,6 +25,7 @@ grep -q '^ID=fedora' /usr/lib/os-release                      || fail "os-releas
 [ "$(magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.png -crop 1x1+1920+1290 -format '%[fx:r>b && r>0.6]' info:)" = 1 ] \
                                                               || fail "wallpaper isn't the desert dusk (warm horizon)"
 grep -q '^Image=Fennek' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults || fail "lnf wallpaper"
+! grep -q "61,174,233" /usr/share/plasma/desktoptheme/fennek-dark/colors && grep -q "138,99,210" /usr/share/plasma/desktoptheme/fennek-dark/colors || fail "panel accent is Fennek violet"
 # Existing desktops follow layout changes by themselves (Plasma update scripts, once per user): no reset needed.
 u=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/fennek-2026-10-16-taskbar.js
 [ -f "$u" ] && grep -q 'org.fennek.taskview' "$u" && grep -q 'hideSearchField' "$u"   && [ "$(kreadconfig6 --file /etc/xdg/plasmarc --group Theme --key name)" = fennek-dark ]   && grep -q '^name=fennek-dark' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults   && [ -f /usr/share/plasma/desktoptheme/fennek-dark/widgets/tasks.svg ] && python3 -c "import json; assert json.load(open('/usr/share/plasma/desktoptheme/fennek-dark/metadata.json'))['KPlugin']['Id'] == 'fennek-dark'"  || fail "taskbar update for existing desktops / dark panels"
@@ -53,7 +54,7 @@ grep -q '^BorderlessMaximizedWindows=false' /etc/xdg/kwinrc       || fail "title
 r=/usr/share/kxmlgui5/dolphin/dolphinui.rc
 grep -q 'name="go_up"' "$r" && grep -q 'version="10[0-9][0-9]"' "$r" && grep -q '<Menu' "$r" || fail "Files toolbar (Back/Forward/Up)"
 python3 -c "import sys, xml.dom.minidom as x; x.parse(sys.argv[1])" "$r"   || fail "Files toolbar file is not valid XML"
-grep -q '"Id": "org.fennek.firewall"' /usr/share/plasma/plasmoids/org.fennek.firewall/metadata.json && grep -q '^Exec=plasmawindowed org.fennek.firewall' /usr/share/applications/fennek-firewall.desktop || fail "Firewall window"
+[ -s /usr/share/fennek/apps/firewall/main.qml ] && grep -q '^Exec=fennek-app firewall' /usr/share/applications/fennek-firewall.desktop || fail "Firewall window"
 fennek-firewall list --json | python3 -c 'import json,sys; assert json.load(sys.stdin) == []' || fail "firewall list --json"
 # Go back (undo last update): stand-in rpm-ostree/pkexec, so only the decision logic runs.
 gb=$(mktemp -d) && printf '#!/bin/sh\necho "$GB_JSON"\n' >"$gb/rpm-ostree" && printf '#!/bin/sh\necho "pkexec $*"\n' >"$gb/pkexec" && chmod +x "$gb"/* \
@@ -105,7 +106,7 @@ grep -q "^font=Inter,10" /etc/xdg/kdeglobals && grep -q "^fixed=Cascadia Mono" /
 grep -q "^DefaultProfile=Fennek.profile" /etc/xdg/konsolerc && grep -q "^ColorScheme=Fennek" /usr/share/konsole/Fennek.profile && [ -s /usr/share/konsole/Fennek.colorscheme ] || fail "Fennek terminal profile"
 grep -q "Fennek OS: a personal greeting" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/lockscreen/LockScreenUi.qml && grep -q "Fennek" /etc/xdg/kscreenlockerrc || fail "lock screen greeting + wallpaper"
 grep -q "^LastSeenVersion=99" /etc/xdg/plasma-welcomerc || fail "only one welcome window"
-[ -s /usr/share/plasma/plasmoids/org.fennek.welcome/contents/ui/main.qml ] && grep -q "^Exec=plasmawindowed org.fennek.welcome" /usr/share/applications/fennek-welcome.desktop && grep -q "org.fennek.welcome" /usr/libexec/fennek-first-login || fail "welcome app"
+[ -s /usr/share/fennek/apps/welcome/main.qml ] && grep -q "^Exec=fennek-app welcome" /usr/share/applications/fennek-welcome.desktop && grep -q "fennek-app welcome" /usr/libexec/fennek-first-login || fail "welcome app"
 grep -q "Fennek OS splash" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/splash/Splash.qml && grep -q "Fennek OS splash" /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/splash/Splash.qml || fail "Fennek splash"
 grep -q "nmi_watchdog=0" /usr/lib/bootc/kargs.d/20-fennek-battery.toml && grep -q "^vm.dirty_writeback_centisecs = 1500" /usr/lib/sysctl.d/60-fennek-battery.conf || fail "battery kernel settings"
 grep -q "^ColorScheme=BreezeDark" /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults || fail "Fennek Dark colors"
@@ -140,7 +141,7 @@ wm=usr/share/plymouth/themes/spinner/watermark.png; img=$(ls /usr/lib/modules/*/
 { rpm -V fedora-logos 2>/dev/null || true; } | grep -q "/$wm$" || fail "watermark still Fedora's"
 /usr/libexec/fennek-download-guard --selftest >/dev/null    || fail "download guard selftest"
 fennek-usage --selftest >/dev/null && [ -L /etc/systemd/user/default.target.wants/fennek-usage.service ] || fail "usage history"
-grep -q "^Exec=plasmawindowed org.fennek.apphistory" /usr/share/applications/fennek-apphistory.desktop && [ -s /usr/share/plasma/plasmoids/org.fennek.apphistory/contents/ui/main.qml ] || fail "App history window"
+grep -q "^Exec=fennek-app apphistory" /usr/share/applications/fennek-apphistory.desktop && [ -s /usr/share/fennek/apps/apphistory/main.qml ] || fail "App history window"
 bash -n /usr/libexec/fennek-brightness && [ -x /usr/libexec/fennek-brightness ] || fail "brightness helper"
 # Download guard: a sample matching a custom signature goes to quarantine, a clean file stays.
 t=$(mktemp -d); mkdir -p "$t/db"
@@ -242,10 +243,15 @@ assert not missing, missing
 assert sum(1 for t in tiles if t.get("tileType") == "group") >= 2
 PY
 # Fennek Settings: every page it links to exists (no dead buttons); Super+I belongs to it alone.
-command -v plasmawindowed >/dev/null                          || fail "plasmawindowed (runs Fennek Settings)"
+# Fennek's own apps run as normal windows (system look, own taskbar icon) through fennek-app.
+rc=0; fennek-app ../etc 2>/dev/null || rc=$?; [ $rc -eq 2 ] && ! command -v g++ >/dev/null || fail "fennek-app launcher (rejects paths; no compiler left)"
+for a in settings firewall welcome apphistory; do   # starts off-screen and keeps running = the QML loads
+    rc=0; QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-app "$a" >/tmp/app-$a.log 2>&1 || rc=$?
+    [ $rc -eq 124 ] || { tail -5 /tmp/app-$a.log; fail "app $a does not start (exit $rc)"; }
+done
 python3 - <<'PY' || fail "Fennek Settings links to something that isn't installed"
 import glob, json, os, re, shutil
-src = open("/usr/share/plasma/plasmoids/org.fennek.settings/contents/ui/catalog.js").read()
+src = open("/usr/share/fennek/apps/settings/catalog.js").read()
 cats = json.loads(src[src.index("["):])
 kcms = {os.path.basename(p)[:-3] for p in glob.glob("/usr/lib64/qt6/plugins/plasma/kcms/**/*.so", recursive=True)}
 bad = []

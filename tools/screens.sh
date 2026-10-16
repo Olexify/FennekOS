@@ -44,11 +44,11 @@ widget org.fennek.clock; shot 05-calendar; widget org.fennek.clock
 widget org.fennek.volume; shot 06-sound; widget org.fennek.volume
 widget org.fennek.network; shot 07-network; widget org.fennek.network
 dolphin thispc:/ >/dev/null 2>&1 & shot 08-file-explorer 6; close
-plasmawindowed org.fennek.settings >/dev/null 2>&1 & shot 09-settings 6; close
-plasmawindowed org.fennek.firewall >/dev/null 2>&1 & shot 10-firewall 6; close
+fennek-app settings >/dev/null 2>&1 & shot 09-settings 6; close
+fennek-app firewall >/dev/null 2>&1 & shot 10-firewall 6; close
 konsole >/dev/null 2>&1 & shot 11-terminal 5; close
 plasma-systemmonitor >/dev/null 2>&1 & shot 12-task-manager 8; close
-plasmawindowed org.fennek.welcome >/dev/null 2>&1 & shot 13-welcome 6; close
+fennek-app welcome >/dev/null 2>&1 & shot 13-welcome 6; close
 ps -eo pid,user,args >>/out/diag.log 2>&1
 kill $(jobs -p) 2>/dev/null; exit 0
 EOF

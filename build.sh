@@ -131,6 +131,9 @@ j["KPlugin"].update(Id="fennek-dark", Name="Fennek Dark", Description="Breeze Da
 j["KPlugin"] = {k: v for k, v in j["KPlugin"].items() if not k.startswith(("Name[", "Description["))}
 m.write_text(json.dumps(j, indent=2, ensure_ascii=False))
 EOF
+# Its colours: Fennek violet instead of Breeze blue for highlights, focus, links (taskbar lines, Start selection).
+grep -q "61,174,233" "$dt/fennek-dark/colors" || { echo "Breeze Dark colours changed: revisit the Fennek accent"; exit 1; }
+sed -i "s/61,174,233/138,99,210/g; s/29,153,243/160,130,230/g" "$dt/fennek-dark/colors"
 kwriteconfig6 --file "$lnf/contents/defaults" --group plasmarc --group Theme --key name fennek-dark
 kwriteconfig6 --file /etc/xdg/plasmarc --group Theme --key name fennek-dark
 gtk-update-icon-cache -f -t /usr/share/icons/Fennek 2>/dev/null || true
@@ -446,7 +449,7 @@ tools=(cmake extra-cmake-modules gcc-c++ libplasma-devel kf6-kcoreaddons-devel k
        rust cargo 'rust-zbus+default-devel' 'rust-inotify+default-devel')
 missing=(); for p in "${tools[@]}"; do rpm -q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 dnf -y install "${missing[@]}"
-for plugin in taskbar-menu thispc; do
+for plugin in taskbar-menu thispc fennek-app; do
     cmake -S "$files/../src/$plugin" -B "/tmp/$plugin" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
     cmake --build "/tmp/$plugin" -j"$(nproc)"
     cmake --install "/tmp/$plugin"
@@ -473,7 +476,7 @@ done
 rm -rf /tmp/cargo-home
 # Syntax check of every Fennek QML file while Qt's tools are here: a typo fails the build, not the desktop.
 qmlformat=$(command -v qmlformat || echo /usr/lib64/qt6/bin/qmlformat)
-for f in /usr/share/plasma/plasmoids/org.fennek.*/contents/ui/*.qml /usr/share/sddm/themes/fennek/*.qml \
+for f in /usr/share/plasma/plasmoids/org.fennek.*/contents/ui/*.qml /usr/share/fennek/apps/*/main.qml /usr/share/sddm/themes/fennek/*.qml \
          /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/splash/Splash.qml; do
     "$qmlformat" "$f" >/dev/null || { echo "QML syntax error in $f"; exit 1; }
 done

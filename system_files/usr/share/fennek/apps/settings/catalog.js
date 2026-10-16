@@ -8,7 +8,7 @@ var categories = [
    {"name": "Sound", "kcm": "kcm_pulseaudio", "icon": "audio-volume-high", "desc": "Speakers, microphones, volume"},
    {"name": "Notifications", "kcm": "kcm_notifications", "icon": "preferences-desktop-notification-bell", "desc": "Popups, do not disturb"},
    {"name": "Power & battery", "kcm": "kcm_powerdevilprofilesconfig", "icon": "preferences-system-power-management", "desc": "Sleep, screen off, battery saving"},
-   {"name": "Battery & app usage", "cmd": "plasmawindowed org.fennek.apphistory", "icon": "utilities-system-monitor", "desc": "Which apps used the battery"},
+   {"name": "Battery & app usage", "cmd": "fennek-app apphistory", "icon": "utilities-system-monitor", "desc": "Which apps used the battery"},
    {"name": "Storage", "cmd": "filelight", "icon": "drive-harddisk", "desc": "What uses space on your disks"},
    {"name": "About this computer", "kcm": "kcm_about-distro", "icon": "help-about", "desc": "Version, hardware"}
   ]},
@@ -55,7 +55,7 @@ var categories = [
   ]},
  {"name": "Privacy & Security", "icon": "fennek-settings-privacy", "sub": "Firewall, quarantine, permissions",
   "items": [
-   {"name": "Firewall", "cmd": "plasmawindowed org.fennek.firewall", "icon": "security-high", "desc": "Choose which apps may use the internet"},
+   {"name": "Firewall", "cmd": "fennek-app firewall", "icon": "security-high", "desc": "Choose which apps may use the internet"},
    {"name": "Quarantine", "cmd": "fennek-quarantine", "icon": "security-medium", "desc": "Downloads the antivirus blocked"},
    {"name": "App permissions", "kcm": "kcm_app-permissions", "icon": "preferences-system-privacy", "desc": "What store apps may access"},
    {"name": "Privacy policy", "cmd": "xdg-open https://github.com/Olexify/FennekOS/blob/main/PRIVACY.md", "icon": "help-about", "desc": "Every connection Fennek OS makes"}

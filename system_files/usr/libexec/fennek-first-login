@@ -23,4 +23,4 @@ if [ -n "$desk" ] && [ "$desk" != "$HOME" ] && mkdir -p "$desk"; then
 fi
 mkdir -p "${stamp%/*}" && touch "$stamp"
 # First login only: say hello (pick a look, what keeps you safe, tips).
-(sleep 2; plasmawindowed org.fennek.welcome) >/dev/null 2>&1 &
+(sleep 2; fennek-app welcome) >/dev/null 2>&1 &

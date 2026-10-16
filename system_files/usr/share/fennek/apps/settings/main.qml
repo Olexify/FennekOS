@@ -1,18 +1,22 @@
 // Fennek Settings: a sidebar ("Find a setting" + categories with their icons) and, on the right, the chosen
 // category's settings as rounded cards. Home shows the categories as large cards. Each setting opens the
 // matching KDE settings page (so everything stays in sync) or runs a tool.
-// Runs as a normal window: plasmawindowed org.fennek.settings (see fennek-settings.desktop).
+// Runs as a normal window: fennek-app settings (see fennek-settings.desktop).
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
-import org.kde.plasma.plasmoid
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
 import "catalog.js" as Catalog
 
-PlasmoidItem {
+QQC2.ApplicationWindow {
+    visible: true
+    title: "Settings"
+    width: Kirigami.Units.gridUnit * 60
+    height: Kirigami.Units.gridUnit * 38
+    minimumWidth: Kirigami.Units.gridUnit * 28
+    minimumHeight: Kirigami.Units.gridUnit * 20
     id: root
-    preferredRepresentation: fullRepresentation
 
     property var category: null          // open category, or null for Home
     property string query: ""
@@ -62,9 +66,8 @@ PlasmoidItem {
         }
     }
 
-    fullRepresentation: QQC2.Page {
-        Layout.preferredWidth: Kirigami.Units.gridUnit * 60
-        Layout.preferredHeight: Kirigami.Units.gridUnit * 38
+    QQC2.Page {
+        anchors.fill: parent
 
         RowLayout {
             anchors.fill: parent

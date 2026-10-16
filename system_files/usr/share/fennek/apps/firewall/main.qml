@@ -1,16 +1,20 @@
 // Fennek Firewall: which apps may use the internet. A window over fennek-firewall (block / allow / list --json);
-// blocking and allowing ask for the admin password (pkexec). Runs as plasmawindowed org.fennek.firewall.
+// blocking and allowing ask for the admin password (pkexec). Runs as fennek-app firewall.
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtQuick.Controls as QQC2
-import org.kde.plasma.plasmoid
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
 
-PlasmoidItem {
+QQC2.ApplicationWindow {
+    visible: true
+    title: "Firewall"
+    width: Kirigami.Units.gridUnit * 36
+    height: Kirigami.Units.gridUnit * 40
+    minimumWidth: Kirigami.Units.gridUnit * 28
+    minimumHeight: Kirigami.Units.gridUnit * 20
     id: root
-    preferredRepresentation: fullRepresentation
 
     property var blocked: []
     property var online: []                // apps with connections right now (refreshed while the window is open)
@@ -60,9 +64,8 @@ PlasmoidItem {
         onAccepted: program.text = decodeURIComponent(selectedFile.toString().replace(/^file:\/\//, ""))
     }
 
-    fullRepresentation: QQC2.Page {
-        Layout.preferredWidth: Kirigami.Units.gridUnit * 36
-        Layout.preferredHeight: Kirigami.Units.gridUnit * 40
+    QQC2.Page {
+        anchors.fill: parent
 
         ColumnLayout {
             anchors.fill: parent

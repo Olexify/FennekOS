@@ -188,7 +188,7 @@ PlasmoidItem {
                     { label: "Screenshot", icon: "spectacle", show: true, checkable: false,
                       on: () => false, act: () => { root.expanded = false; run.connectSource("spectacle --region") } },
                     { label: "All settings", icon: "fennek-settings", show: true, checkable: false,
-                      on: () => false, act: () => { root.expanded = false; run.connectSource("plasmawindowed org.fennek.settings") } }
+                      on: () => false, act: () => { root.expanded = false; run.connectSource("fennek-app settings") } }
                 ]
                 delegate: PC3.Button {
                     visible: modelData.show

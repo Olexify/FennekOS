@@ -1,17 +1,21 @@
 // Fennek welcome: opens once at a new user's first login (and from Start any time). Four calm pages:
 // greeting, pick your look (applied right away), what keeps you safe, a few tips. Runs as
-// plasmawindowed org.fennek.welcome (see fennek-welcome.desktop).
+// fennek-app welcome (see fennek-welcome.desktop).
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
-import org.kde.plasma.plasmoid
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.coreaddons as KCoreAddons
 import org.kde.kirigami as Kirigami
 
-PlasmoidItem {
+QQC2.ApplicationWindow {
+    visible: true
+    title: "Welcome"
+    width: Kirigami.Units.gridUnit * 44
+    height: Kirigami.Units.gridUnit * 30
+    minimumWidth: Kirigami.Units.gridUnit * 28
+    minimumHeight: Kirigami.Units.gridUnit * 20
     id: root
-    preferredRepresentation: fullRepresentation
     property int page: 0
     readonly property bool uk: Qt.locale().name.startsWith("uk")
     readonly property string name: {
@@ -23,9 +27,8 @@ PlasmoidItem {
     KCoreAddons.KUser { id: kuser }
     P5Support.DataSource { id: run; engine: "executable"; onNewData: source => disconnectSource(source) }
 
-    fullRepresentation: QQC2.Page {
-        Layout.preferredWidth: Kirigami.Units.gridUnit * 44
-        Layout.preferredHeight: Kirigami.Units.gridUnit * 30
+    QQC2.Page {
+        anchors.fill: parent
 
         ColumnLayout {
             anchors.fill: parent
@@ -122,7 +125,7 @@ PlasmoidItem {
                             { icon: "fennek-firewall", title: root.t("Firewall", "Брандмауер"),
                               text: root.t("Nobody on the network can connect in. Choose which apps may use the internet.",
                                            "Ніхто з мережі не може підключитися. Оберіть, яким застосункам дозволено інтернет."),
-                              cmd: "plasmawindowed org.fennek.firewall" },
+                              cmd: "fennek-app firewall" },
                             { icon: "fennek-quarantine", title: root.t("Download guard", "Захист завантажень"),
                               text: root.t("New downloads are checked; threats go to quarantine.",
                                            "Нові завантаження перевіряються; загрози йдуть у карантин."), cmd: "fennek-quarantine" },

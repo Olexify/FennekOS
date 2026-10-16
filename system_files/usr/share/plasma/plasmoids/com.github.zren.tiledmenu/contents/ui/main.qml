@@ -191,7 +191,8 @@ PlasmoidItem {
 				if (plasmoid.configuration.fullscreen) {
 					attemptsLeft = 0
 				} else {
-					var favWidth = Math.max(0, widget.width - config.leftSectionWidth) // 398 // 888-60-430
+					// Fennek OS: the open menu's width (was the taskbar button's, which left 0 tile columns).
+					var favWidth = Math.max(0, popup.width - config.leftSectionWidth)
 					// console.log(favWidth, widget.width, config.leftSectionWidth)
 					// console.log(favWidth / config.cellBoxSize)
 					// var cols = Math.floor(favWidth / config.favColWidth) * 2
@@ -237,7 +238,7 @@ PlasmoidItem {
 		PlasmaCore.Action { isSeparator: true },
 		PlasmaCore.Action { text: i18n("Terminal"); icon.name: "utilities-terminal"; onTriggered: widget.run("konsole") },
 		PlasmaCore.Action { text: i18n("Task Manager"); icon.name: "utilities-system-monitor"; onTriggered: widget.run("plasma-systemmonitor") },
-		PlasmaCore.Action { text: i18n("Settings"); icon.name: "fennek-settings"; onTriggered: widget.run("plasmawindowed org.fennek.settings") },
+		PlasmaCore.Action { text: i18n("Settings"); icon.name: "fennek-settings"; onTriggered: widget.run("fennek-app settings") },
 		PlasmaCore.Action { text: i18n("File Explorer"); icon.name: "system-file-manager"; onTriggered: widget.run("dolphin") },
 		PlasmaCore.Action { text: i18n("Run"); icon.name: "system-run"; onTriggered: widget.run("krunner") },
 		PlasmaCore.Action { isSeparator: true },
