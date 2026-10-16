@@ -185,9 +185,9 @@ PlasmoidItem {
                       on: () => root.batterySaver, act: () => root.setProfile(root.batterySaver ? "balanced" : "power-saver") },
                     { label: "Night light", icon: "redshift-status-on", show: true, checkable: true,
                       on: () => root.nightLight, act: () => root.setNightLight(!root.nightLight) },
-                    { label: "Screenshot", icon: "spectacle", show: true, checkable: false,
+                    { label: "Screenshot", icon: "camera-photo", show: true, checkable: false,
                       on: () => false, act: () => { root.expanded = false; run.connectSource("spectacle --region") } },
-                    { label: "All settings", icon: "fennek-settings", show: true, checkable: false,
+                    { label: "All settings", icon: "configure", show: true, checkable: false,
                       on: () => false, act: () => { root.expanded = false; run.connectSource("fennek-app settings") } }
                 ]
                 // Quick tile: filled accent when on, soft grey when off; icon over the label.
