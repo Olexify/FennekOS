@@ -1,0 +1,3 @@
+# Battery: no NMI watchdog (a debugging timer that wakes every CPU core regularly; desktops and laptops don't
+# need it).
+kargs = ["nmi_watchdog=0"]
