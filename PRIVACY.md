@@ -22,9 +22,9 @@ we treat it as a bug.
 | Feature | Contacts | What is sent |
 |---|---|---|
 | **Check with VirusTotal** (right-click a file) | `virustotal.com` (Google) | Only the file's **SHA-256 fingerprint**, never the file, plus your own API key. Only when you click. |
-| **Windows programs** (Proton/umu): first use | `github.com`, `repo.steampowered.com` | Download of Proton and its runtime (a few hundred MB), once |
-| **Windows programs**: later | the same | An update check **at most once a day**, and only for programs you trusted. **Never** for sandboxed ones. |
-| **Sandboxed Windows programs** | whatever the program contacts | The program's own traffic. Block it with right-click → **Firewall → Block internet access**. |
+| **.exe programs** (Proton/umu): first use | `github.com`, `repo.steampowered.com` | Download of Proton and its runtime (a few hundred MB), once |
+| **.exe programs**: later | the same | An update check **at most once a day**, and only for programs you trusted. **Never** for sandboxed ones. |
+| **Sandboxed .exe programs** | whatever the program contacts | The program's own traffic. Block it with right-click → **Firewall → Block internet access**. |
 
 ## Programs that come with Fennek OS
 
