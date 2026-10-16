@@ -8,7 +8,8 @@ Repeater {
 	delegate: SidebarItem {
 		buttonHeight: repeater.buttonHeight
 		iconSize: repeater.iconSize
-		icon.name:  model.iconName || model.decoration
+		// Fennek OS: quiet monochrome folder icons in the left strip (the coloured ones shout on the dark menu).
+		icon.name: (model.iconName && /^(folder|user-home)/.test(model.iconName)) ? model.iconName + "-symbolic" : (model.iconName || model.decoration)
 		text: model.name || model.display
 		sidebarMenu: repeater.parent.parent // SidebarContextMenu { Column { Repeater{} } }
 		onClicked: {
