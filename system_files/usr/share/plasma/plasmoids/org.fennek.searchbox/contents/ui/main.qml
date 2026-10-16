@@ -1,6 +1,6 @@
-// Classic taskbar search: a "Type here to search" box. Clicking it opens a search panel above the taskbar with
-// filter tabs (All / Apps / Documents / Settings / More) and file filters (changed when, large files), recent items before you type, results grouped by
-// kind, and the search field at the bottom. Results come from KDE's search runners (same as KRunner),
+// Taskbar search: one search icon. Clicking it opens a large search panel: the search field on top, filter tabs
+// (All / Apps / Documents / Settings / More), file filters (changed when, large files), top apps and recent
+// files before you type, results grouped by kind. Results come from KDE's search runners (same as KRunner),
 // including Fennek's instant file search (runner "fennek-search").
 import QtQuick
 import QtQuick.Layouts
@@ -53,7 +53,11 @@ PlasmoidItem {
     }
     Kicker.RecentUsageModel {
         id: recentModel
-        shownItems: Kicker.RecentUsageModel.AppsAndDocs
+        shownItems: Kicker.RecentUsageModel.OnlyDocs
+    }
+    Kicker.RecentUsageModel {
+        id: topApps
+        shownItems: Kicker.RecentUsageModel.OnlyApps
     }
     readonly property var results: runnerModel.count > 0 ? runnerModel.modelForRow(0) : null
     readonly property bool searching: query.length > 0
@@ -93,9 +97,29 @@ PlasmoidItem {
 
     // The search panel.
     fullRepresentation: ColumnLayout {
-        Layout.preferredWidth: Kirigami.Units.gridUnit * 34
-        Layout.preferredHeight: Kirigami.Units.gridUnit * 34
+        Layout.preferredWidth: Kirigami.Units.gridUnit * 44
+        Layout.preferredHeight: Kirigami.Units.gridUnit * 40
         spacing: Kirigami.Units.smallSpacing
+
+        // Search field on top, large and calm.
+        PlasmaExtras.SearchField {
+            id: field
+            Layout.fillWidth: true
+            Layout.margins: Kirigami.Units.largeSpacing
+            Layout.preferredHeight: Kirigami.Units.gridUnit * 2.2
+            font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.15
+            placeholderText: "Type here to search"
+            text: root.query
+            onTextChanged: { root.query = text; list.currentIndex = 0 }
+            Keys.onDownPressed: list.incrementCurrentIndex()
+            Keys.onUpPressed: list.decrementCurrentIndex()
+            Keys.onEscapePressed: root.expanded = false
+            onAccepted: if (list.count > 0) root.launch(list.model, Math.max(list.currentIndex, 0))
+            Connections {
+                target: root
+                function onExpandedChanged() { if (root.expanded) field.forceActiveFocus() }
+            }
+        }
 
         // Filter tabs.
         RowLayout {
@@ -148,6 +172,47 @@ PlasmoidItem {
                 checked: root.large
                 onClicked: root.large = !root.large
             }
+        }
+
+        // Before typing: the apps you use most, as big tiles.
+        PlasmaComponents.Label {
+            visible: !root.searching && topApps.count > 0
+            text: "Top apps"
+            font.bold: true
+            Layout.leftMargin: Kirigami.Units.largeSpacing
+            Layout.topMargin: Kirigami.Units.largeSpacing
+        }
+        RowLayout {
+            visible: !root.searching && topApps.count > 0
+            Layout.fillWidth: true
+            Layout.leftMargin: Kirigami.Units.largeSpacing
+            Layout.rightMargin: Kirigami.Units.largeSpacing
+            spacing: Kirigami.Units.smallSpacing
+            Repeater {
+                model: topApps
+                delegate: PlasmaComponents.ItemDelegate {
+                    visible: index < 6
+                    Layout.preferredWidth: Kirigami.Units.gridUnit * 6.6
+                    Layout.preferredHeight: Kirigami.Units.gridUnit * 5.5
+                    onClicked: root.launch(topApps, index)
+                    contentItem: ColumnLayout {
+                        spacing: Kirigami.Units.smallSpacing
+                        Kirigami.Icon {
+                            source: model.decoration
+                            Layout.alignment: Qt.AlignHCenter
+                            Layout.preferredWidth: Kirigami.Units.iconSizes.large
+                            Layout.preferredHeight: Kirigami.Units.iconSizes.large
+                        }
+                        PlasmaComponents.Label {
+                            text: model.display
+                            Layout.fillWidth: true
+                            horizontalAlignment: Text.AlignHCenter
+                            elide: Text.ElideRight
+                        }
+                    }
+                }
+            }
+            Item { Layout.fillWidth: true }
         }
 
         PlasmaComponents.Label {
@@ -207,23 +272,6 @@ PlasmoidItem {
                 width: parent.width - Kirigami.Units.gridUnit * 4
                 visible: list.count === 0
                 text: root.searching ? "No results for \"" + root.query + "\"" : "Nothing opened recently"
-            }
-        }
-
-        // Search field at the bottom, like the classic search.
-        PlasmaExtras.SearchField {
-            id: field
-            Layout.fillWidth: true
-            placeholderText: "Type here to search"
-            text: root.query
-            onTextChanged: { root.query = text; list.currentIndex = 0 }
-            Keys.onDownPressed: list.incrementCurrentIndex()
-            Keys.onUpPressed: list.decrementCurrentIndex()
-            Keys.onEscapePressed: root.expanded = false
-            onAccepted: if (list.count > 0) root.launch(list.model, Math.max(list.currentIndex, 0))
-            Connections {
-                target: root
-                function onExpandedChanged() { if (root.expanded) field.forceActiveFocus() }
             }
         }
     }

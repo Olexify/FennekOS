@@ -25,8 +25,11 @@ grep -q '^ID=fedora' /usr/lib/os-release                      || fail "os-releas
 [ "$(magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.png -crop 1x1+1920+1290 -format '%[fx:r>b && r>0.6]' info:)" = 1 ] \
                                                               || fail "wallpaper isn't the desert dusk (warm horizon)"
 grep -q '^Image=Fennek' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults || fail "lnf wallpaper"
+# Existing desktops follow layout changes by themselves (Plasma update scripts, once per user): no reset needed.
+u=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/fennek-2026-10-16-taskbar.js
+[ -f "$u" ] && grep -q 'org.fennek.taskview' "$u" && grep -q 'hideSearchField' "$u"   && [ "$(kreadconfig6 --file /etc/xdg/plasmarc --group Theme --key name)" = breeze-dark ]   && grep -q '^name=breeze-dark' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults   && [ -d /usr/share/plasma/desktoptheme/breeze-dark ] || fail "taskbar update for existing desktops / dark panels"
 grep -q "SystrayContainmentId" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "tray shown/hidden icons"
-for p in org.fennek.searchbox org.fennek.taskview org.fennek.showdesktop org.fennek.volume org.fennek.clock org.fennek.network org.fennek.actioncenter; do
+for p in org.fennek.searchbox org.fennek.showdesktop org.fennek.volume org.fennek.clock org.fennek.network org.fennek.actioncenter; do
     python3 -c "import json; json.load(open('/usr/share/plasma/plasmoids/$p/metadata.json'))" && [ -s /usr/share/plasma/plasmoids/$p/contents/ui/main.qml ] \
         && grep -q "\"$p\"" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js \
         || fail "taskbar widget $p"

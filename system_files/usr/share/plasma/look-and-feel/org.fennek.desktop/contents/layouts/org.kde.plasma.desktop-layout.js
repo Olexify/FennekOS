@@ -17,6 +17,7 @@ start.writeConfig("searchFieldFollowsTheme", true)
 start.writeConfig("defaultTileColor", "#406d45b8")   // translucent accent violet (AARRGGBB), light and dark
 start.writeConfig("showRecentApps", false)           // clean A-Z list, no "Most used" block
 start.writeConfig("appDescription", "hidden")
+start.writeConfig("hideSearchField", true)                 // just start typing; the field appears then
 start.writeConfig("sidebarShortcuts", ["xdg:DOCUMENTS", "xdg:DOWNLOAD", "xdg:PICTURES", "xdg:VIDEOS", "fennek-settings.desktop"])
 // Default tiles, classic: named groups, big and small tiles (base64 JSON, Tiled Menu's format;
 // test.sh checks every tile points to an installed app). Groups: Fennek, Safety.
@@ -24,9 +25,8 @@ start.writeConfig("tileModel", "W3sieCI6MCwieSI6MCwidyI6NiwiaCI6MSwidGlsZVR5cGUi
 start.writeConfig("favoriteApps", ["preferred://browser", "org.kde.dolphin.desktop", "fennek-settings.desktop",
                                    "org.kde.konsole.desktop", "org.kde.discover.desktop"])
 
-// Classic order: Start, search box, window overview button, then the app icons.
+// Classic order: Start, search icon, then the app icons (window overview: Super+Tab).
 panel.addWidget("org.fennek.searchbox")
-panel.addWidget("org.fennek.taskview")
 panel.addWidget("org.kde.plasma.icontasks")
 panel.addWidget("org.kde.plasma.marginsseparator")
 // Tray: network, sound, battery and language always visible; everything else behind the ^ arrow.

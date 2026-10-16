@@ -117,6 +117,9 @@ kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key AccentColor 109,6
 printf '\n[kdeglobals][General]\nAccentColor=109,69,184\n' >> "$lnf/contents/defaults"
 printf '\n[kdeglobals][Icons]\nTheme=Fennek\n' >> "$lnf/contents/defaults"
 printf '\n[kcminputrc][Mouse]\ncursorTheme=Bibata-Modern-Ice\n' >> "$lnf/contents/defaults"
+# Taskbar, Start and tray panels dark, apps light (the familiar default); the dark theme copies this.
+kwriteconfig6 --file "$lnf/contents/defaults" --group plasmarc --group Theme --key name breeze-dark
+kwriteconfig6 --file /etc/xdg/plasmarc --group Theme --key name breeze-dark
 gtk-update-icon-cache -f -t /usr/share/icons/Fennek 2>/dev/null || true
 # Lock screen: the installed one (password, fingerprint, user switching stay KDE's own) with a personal
 # greeting under the clock, on the Fennek wallpaper.
