@@ -132,8 +132,14 @@ j["KPlugin"] = {k: v for k, v in j["KPlugin"].items() if not k.startswith(("Name
 m.write_text(json.dumps(j, indent=2, ensure_ascii=False))
 EOF
 # Its colours: Fennek violet instead of Breeze blue for highlights, focus, links (taskbar lines, Start selection).
-grep -q "61,174,233" "$dt/fennek-dark/colors" || { echo "Breeze Dark colours changed: revisit the Fennek accent"; exit 1; }
-sed -i "s/61,174,233/138,99,210/g; s/29,153,243/160,130,230/g" "$dt/fennek-dark/colors"
+c=$dt/fennek-dark/colors
+grep -q "^\[Colors:Selection\]" "$c" || { echo "Breeze Dark colours changed: revisit the Fennek accent"; exit 1; }
+sed -i "s/29,153,243/160,130,230/g; s/30,87,116/70,50,110/g" "$c"   # links, alternate selection
+for g in Button Complementary Header View Window Tooltip Selection; do
+    kwriteconfig6 --file "$c" --group "Colors:$g" --key DecorationFocus 138,99,210
+    kwriteconfig6 --file "$c" --group "Colors:$g" --key DecorationHover 138,99,210
+done
+kwriteconfig6 --file "$c" --group Colors:Selection --key BackgroundNormal 109,69,184
 kwriteconfig6 --file "$lnf/contents/defaults" --group plasmarc --group Theme --key name fennek-dark
 kwriteconfig6 --file /etc/xdg/plasmarc --group Theme --key name fennek-dark
 gtk-update-icon-cache -f -t /usr/share/icons/Fennek 2>/dev/null || true

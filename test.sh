@@ -25,7 +25,7 @@ grep -q '^ID=fedora' /usr/lib/os-release                      || fail "os-releas
 [ "$(magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.png -crop 1x1+1920+1290 -format '%[fx:r>b && r>0.6]' info:)" = 1 ] \
                                                               || fail "wallpaper isn't the desert dusk (warm horizon)"
 grep -q '^Image=Fennek' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults || fail "lnf wallpaper"
-! grep -q "61,174,233" /usr/share/plasma/desktoptheme/fennek-dark/colors && grep -q "138,99,210" /usr/share/plasma/desktoptheme/fennek-dark/colors || fail "panel accent is Fennek violet"
+[ "$(kreadconfig6 --file /usr/share/plasma/desktoptheme/fennek-dark/colors --group Colors:Selection --key BackgroundNormal)" = 109,69,184 ] && ! grep -q "29,153,243" /usr/share/plasma/desktoptheme/fennek-dark/colors || fail "panel accent is Fennek violet"
 # Existing desktops follow layout changes by themselves (Plasma update scripts, once per user): no reset needed.
 u=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/fennek-2026-10-16-taskbar.js
 [ -f "$u" ] && grep -q 'org.fennek.taskview' "$u" && grep -q 'hideSearchField' "$u"   && [ "$(kreadconfig6 --file /etc/xdg/plasmarc --group Theme --key name)" = fennek-dark ]   && grep -q '^name=fennek-dark' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults   && [ -f /usr/share/plasma/desktoptheme/fennek-dark/widgets/tasks.svg ] && python3 -c "import json; assert json.load(open('/usr/share/plasma/desktoptheme/fennek-dark/metadata.json'))['KPlugin']['Id'] == 'fennek-dark'"  || fail "taskbar update for existing desktops / dark panels"
