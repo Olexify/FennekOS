@@ -190,17 +190,54 @@ PlasmoidItem {
                     { label: "All settings", icon: "fennek-settings", show: true, checkable: false,
                       on: () => false, act: () => { root.expanded = false; run.connectSource("fennek-app settings") } }
                 ]
-                delegate: PC3.Button {
+                // Quick tile: filled accent when on, soft grey when off; icon over the label.
+                delegate: Rectangle {
+                    id: tile
+                    readonly property bool on: modelData.checkable && modelData.on()
                     visible: modelData.show
                     Layout.fillWidth: true
-                    Layout.preferredHeight: Kirigami.Units.gridUnit * 3.5
-                    checkable: modelData.checkable
-                    checked: modelData.on()
-                    icon.name: modelData.icon
-                    text: modelData.label
-                    display: PC3.AbstractButton.TextUnderIcon
-                    font: Kirigami.Theme.smallFont
-                    onClicked: modelData.act()
+                    Layout.preferredHeight: Kirigami.Units.gridUnit * 3.6
+                    radius: 8
+                    color: on ? Kirigami.Theme.highlightColor
+                              : Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b,
+                                        tileMouse.containsMouse ? 0.14 : 0.08)
+                    Behavior on color { ColorAnimation { duration: 120 } }
+                    Accessible.role: modelData.checkable ? Accessible.CheckBox : Accessible.Button
+                    Accessible.name: modelData.label
+                    Accessible.checked: on
+                    activeFocusOnTab: true
+                    Keys.onSpacePressed: modelData.act()
+                    Keys.onReturnPressed: modelData.act()
+                    border.width: activeFocus ? 2 : 0
+                    border.color: Kirigami.Theme.focusColor
+                    ColumnLayout {
+                        anchors.centerIn: parent
+                        width: parent.width - Kirigami.Units.smallSpacing * 2
+                        spacing: Kirigami.Units.smallSpacing
+                        Kirigami.Icon {
+                            source: modelData.icon
+                            Layout.alignment: Qt.AlignHCenter
+                            Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
+                            Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
+                            color: tile.on ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
+                            isMask: true
+                        }
+                        PC3.Label {
+                            text: modelData.label
+                            Layout.fillWidth: true
+                            horizontalAlignment: Text.AlignHCenter
+                            elide: Text.ElideRight
+                            font: Kirigami.Theme.smallFont
+                            color: tile.on ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
+                        }
+                    }
+                    MouseArea {
+                        id: tileMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: modelData.act()
+                    }
                 }
             }
         }
