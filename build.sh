@@ -252,6 +252,11 @@ EOF
 
 # Dolphin shows up as "Files" (English name; translations keep their own).
 sed -i 's/^Name=Dolphin$/Name=Files/' /usr/share/applications/org.kde.dolphin.desktop
+# Start list without admin clutter: these still open from Settings and Start's right-click menu.
+for app in org.kde.kmenuedit systemsettings org.kde.khelpcenter org.kde.kinfocenter; do
+    f=/usr/share/applications/$app.desktop
+    [ -f "$f" ] && sed -i -e '/^NoDisplay=/d' -e '0,/^\[Desktop Entry\]$/s//[Desktop Entry]\nNoDisplay=true/' "$f"
+done
 # Toolbar layouts. KDE apps compile their menu/toolbar layout (KXMLGUI .rc) into the program; take that copy,
 # change only a toolbar and install it with a higher version (KXMLGUI loads the newest), so the menus always
 # stay the ones the installed app ships.

@@ -28,6 +28,9 @@ grep -q '^Image=Fennek' /usr/share/plasma/look-and-feel/org.fennek.desktop/conte
 # Existing desktops follow layout changes by themselves (Plasma update scripts, once per user): no reset needed.
 u=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/fennek-2026-10-16-taskbar.js
 [ -f "$u" ] && grep -q 'org.fennek.taskview' "$u" && grep -q 'hideSearchField' "$u"   && [ "$(kreadconfig6 --file /etc/xdg/plasmarc --group Theme --key name)" = breeze-dark ]   && grep -q '^name=breeze-dark' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults   && [ -d /usr/share/plasma/desktoptheme/breeze-dark ] || fail "taskbar update for existing desktops / dark panels"
+for app in org.kde.kmenuedit systemsettings org.kde.khelpcenter org.kde.kinfocenter; do
+    f=/usr/share/applications/$app.desktop; [ ! -f "$f" ] || { [ "$(grep -c '^NoDisplay=' "$f")" = 1 ] && grep -q '^NoDisplay=true' "$f"; } || fail "Start list still shows $app"
+done
 grep -q "SystrayContainmentId" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "tray shown/hidden icons"
 for p in org.fennek.searchbox org.fennek.showdesktop org.fennek.volume org.fennek.clock org.fennek.network org.fennek.actioncenter; do
     python3 -c "import json; json.load(open('/usr/share/plasma/plasmoids/$p/metadata.json'))" && [ -s /usr/share/plasma/plasmoids/$p/contents/ui/main.qml ] \
@@ -257,6 +260,7 @@ echo "user timers:    $(ls /etc/systemd/user/timers.target.wants/ 2>/dev/null | 
 echo "NM connectivity: $(grep -rh '^uri=' /usr/lib/NetworkManager/conf.d/ /etc/NetworkManager/conf.d/ 2>/dev/null | tr '\n' ' ')"
 echo "services:       $(systemctl list-unit-files --type=service --state=enabled --no-legend 2>/dev/null | awk '{print $1}' | tr '\n' ' ')"
 echo "user services:  $(systemctl --global list-unit-files --type=service --state=enabled --no-legend 2>/dev/null | awk '{print $1}' | tr '\n' ' ')"
+echo "start menu apps: $(grep -L -E '^(NoDisplay|Hidden)=true' /usr/share/applications/*.desktop | xargs -n1 basename | tr '\n' ' ')"
 echo "firefox: $(rpm -q firefox 2>/dev/null || echo 'not installed (rpm)')"
 echo "--- end audit ---"
 echo "all checks passed"
