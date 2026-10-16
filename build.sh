@@ -258,7 +258,7 @@ sed -i 's/^Name=Dolphin$/Name=Files/' /usr/share/applications/org.kde.dolphin.de
 for app in org.kde.kmenuedit systemsettings kdesystemsettings org.kde.khelpcenter org.kde.kinfocenter firewall-config \
            org.kde.drkonqi.coredump.gui org.kde.kdebugsettings org.kde.kjournaldbrowser org.kde.kwalletmanager \
            org.kde.partitionmanager org.kde.plasma-welcome org.kde.plasma.emojier org.kde.kcharselect org.kde.kfind \
-           org.kde.kdeconnect.nonplasma org.kde.kdeconnect.sms; do
+           org.kde.kdeconnect.nonplasma org.kde.kdeconnect.sms htop nvtop fcitx5-configtool kbd-layout-viewer5 org.kde.kate; do
     f=/usr/share/applications/$app.desktop
     [ -f "$f" ] && sed -i -e '/^NoDisplay=/d' -e '0,/^\[Desktop Entry\]$/s//[Desktop Entry]\nNoDisplay=true/' "$f"
 done
