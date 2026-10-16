@@ -2,7 +2,7 @@
 # Smoke test, run inside the built image: docker run --rm -v ./test.sh:/t.sh fennek:dev bash /t.sh
 set -euo pipefail
 fail() { echo "FAIL: $*"; exit 1; }
-x86() { [ "$(uname -m)" = x86_64 ]; }   # .exe runner (umu) and per-app firewall engine: x86-64 only so far
+x86() { [ "$(uname -m)" = x86_64 ]; }   # .exe runner (umu): x86-64 only so far (ARM: FEX)
 
 grep -q '^SHELL=/bin/zsh' /etc/default/useradd             || fail "default shell"
 [ "$(zsh -ic 'alias dir' 2>/dev/null)" = "dir='ls -lah'" ]  || fail "zsh aliases"
@@ -125,12 +125,8 @@ fi
 [ "$(firewall-offline-cmd --get-default-zone 2>/dev/null)" = FennekOS ] || fail "default firewall zone"
 [ -z "$(firewall-offline-cmd --zone=FennekOS --list-ports 2>/dev/null)" ] || fail "FennekOS zone opens ports"
 [ "$(firewall-offline-cmd --zone=FennekOS-Public --list-services 2>/dev/null)" = dhcpv6-client ] || fail "public zone"
-if x86; then
-    command -v opensnitchd >/dev/null || fail "opensnitchd"
-    ! systemctl is-enabled -q opensnitch.service || fail "opensnitch must start only when something is blocked"
-else
-    ! fennek-firewall block /usr/bin/true >/dev/null 2>&1 || fail "firewall must refuse to block without its engine"
-fi
+command -v opensnitchd >/dev/null                            || fail "opensnitchd"
+! systemctl is-enabled -q opensnitch.service                  || fail "opensnitch must start only when something is blocked"
 fennek-firewall --selftest >/dev/null                         || fail "firewall selftest"
 /usr/libexec/fennek-first-login-places --selftest >/dev/null || fail "classic Files sidebar"
 /usr/libexec/fennek-first-login-keyboard --selftest >/dev/null || fail "language switcher labels"

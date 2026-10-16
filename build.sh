@@ -3,27 +3,27 @@ set -euo pipefail
 files=${1:?usage: build.sh SYSTEM_FILES_DIR}   # the shipped tree, used as the list for permission fixes
 
 arch=$(uname -m)   # x86_64 (PCs) or aarch64 (ARM laptops, Macs via a VM; native Macs later)
-extra=()
+# OpenSnitch (per-app firewall engine) isn't in Fedora repos: pinned upstream RPM per architecture, checksummed.
+OSN_VER=1.8.0
+declare -A OSN_SHA256=([x86_64]=e06e9119daf764e56455b61c319e496274c0274bb53bb94a0ff1ab72967fea7d
+                       [aarch64]=3a8896a0697a4c6cfae522b6be0713d293118f03cc63c4c61cef41ea7db606e9)
+OSN_RPM=/tmp/opensnitch.rpm
+curl -fsSL -o "$OSN_RPM" \
+    "https://github.com/evilsocket/opensnitch/releases/download/v${OSN_VER}/opensnitch-${OSN_VER}-1.${arch}.rpm"
+echo "${OSN_SHA256[$arch]}  ${OSN_RPM}" | sha256sum -c -
+extra=(libnetfilter_queue)
 if [ "$arch" = x86_64 ]; then
     # umu-launcher (Proton outside Steam) isn't in Fedora repos; pinned upstream RPM, checksum-verified.
     UMU_VER=1.4.4
     UMU_SHA256=f38dfe05c109a0ebeaecacad2ebe2e60fddc1fb2e50f7755023553ad256f8b32
     UMU_RPM=/tmp/umu-launcher.rpm
-    curl -fsSL -o "$UMU_RPM" \
-        "https://github.com/Open-Wine-Components/umu-launcher/releases/download/${UMU_VER}/umu-launcher-${UMU_VER}.fc44.x86_64.rpm"
+    curl -fsSL -o "$UMU_RPM"         "https://github.com/Open-Wine-Components/umu-launcher/releases/download/${UMU_VER}/umu-launcher-${UMU_VER}.fc44.x86_64.rpm"
     echo "${UMU_SHA256}  ${UMU_RPM}" | sha256sum -c -
-    # OpenSnitch (per-app firewall engine) isn't in Fedora repos either: pinned upstream RPM, checksum-verified.
-    OSN_VER=1.8.0
-    OSN_SHA256=e06e9119daf764e56455b61c319e496274c0274bb53bb94a0ff1ab72967fea7d
-    OSN_RPM=/tmp/opensnitch.rpm
-    curl -fsSL -o "$OSN_RPM" \
-        "https://github.com/evilsocket/opensnitch/releases/download/v${OSN_VER}/opensnitch-${OSN_VER}-1.x86_64.rpm"
-    echo "${OSN_SHA256}  ${OSN_RPM}" | sha256sum -c -
-    extra=(libnetfilter_queue "$UMU_RPM")
+    extra+=("$UMU_RPM")
 else
     # ARM64: x86-64 programs run through FEX (an x86-64 emulator for ARM Linux); muvm runs them in a small VM
     # where the host's memory page size differs (Apple Silicon). .exe support on ARM comes with Proton on FEX.
-    extra=(fex-emu muvm)
+    extra+=(fex-emu muvm)
 fi
 
 # Firefox as a regular app: the base leaves the browser out, but a fresh install needs one from the first
@@ -36,12 +36,10 @@ dnf -y install \
     snapper \
     clamav clamav-freshclam inotify-tools \
     "${extra[@]}"
-if [ "$arch" = x86_64 ]; then
-    # Its scripts only enable+start the daemon (and fail in a container); we want it off until something is
-    # blocked, so install without them. Its one dependency came with the main install above.
-    dnf -y install --setopt=tsflags=noscripts "$OSN_RPM"
-    rm "$UMU_RPM" "$OSN_RPM"
-fi
+# OpenSnitch's scripts only enable+start the daemon (and fail in a container); we want it off until something
+# is blocked, so install without them. Its one dependency came with the main install above.
+dnf -y install --setopt=tsflags=noscripts "$OSN_RPM"
+rm -f "$OSN_RPM" /tmp/umu-launcher.rpm
 
 # Mouse pointer: Bibata Modern Ice (white, rounded, minimal; GPL-3.0). Not in Fedora: pinned upstream release.
 BIBATA_VER=v2.0.7
