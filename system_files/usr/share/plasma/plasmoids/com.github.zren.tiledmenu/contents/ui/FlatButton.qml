@@ -8,6 +8,11 @@ QQC2.ToolButton {
 	id: flatButton
 
 	icon.name: ""
+	// Fennek OS: colours from the panel theme, not the app colour scheme (dark Start + light apps would
+	// otherwise draw dark icons, e.g. Power, on the dark menu).
+	icon.color: Kirigami.Theme.textColor
+	palette.buttonText: Kirigami.Theme.textColor
+	palette.windowText: Kirigami.Theme.textColor
 	property bool expanded: true
 	text: ""
 	display: expanded ? QQC2.AbstractButton.TextBesideIcon : QQC2.AbstractButton.IconOnly
