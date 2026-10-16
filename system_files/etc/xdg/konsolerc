@@ -4,3 +4,7 @@
 TabBarVisibility=AlwaysShowTabBar
 TabBarPosition=Top
 NewTabButton=true
+
+[Desktop Entry]
+# Fennek profile: Fennek colours, Cascadia Mono 11, line cursor, unlimited scrollback.
+DefaultProfile=Fennek.profile
