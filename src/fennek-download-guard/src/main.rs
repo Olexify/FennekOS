@@ -42,8 +42,9 @@ fn downloads() -> PathBuf {
 }
 
 /// Still being downloaded by a browser: wait for the final name.
-fn incomplete(name: &str) -> bool {
-    [".part", ".crdownload", ".download", ".tmp"].iter().any(|s| name.ends_with(s))
+/// Works on raw bytes: a file name that isn't valid UTF-8 must still be scanned.
+fn incomplete(name: &[u8]) -> bool {
+    [b".part".as_slice(), b".crdownload", b".download", b".tmp"].iter().any(|s| name.ends_with(s))
 }
 
 fn have_definitions(db: &Path) -> bool {
@@ -85,7 +86,16 @@ fn quarantine(file: &Path, threat: &str, quar: &Path, now: u64) -> std::io::Resu
     let mut dest_name = std::ffi::OsString::from(format!("{}-", stamp(now)));
     dest_name.push(&name);
     let dest = quar.join(dest_name);
-    fs::rename(file, &dest)?;
+    // Downloads may live on another drive than the quarantine (rename can't cross file systems): copy,
+    // lock the copy, then delete the original. If even that fails, lock the file where it is.
+    if fs::rename(file, &dest).is_err() {
+        let moved = fs::copy(file, &dest).and_then(|_| fs::File::open(&dest)?.sync_all()).and_then(|_| fs::remove_file(file));
+        if let Err(e) = moved {
+            let _ = fs::remove_file(&dest);
+            fs::set_permissions(file, fs::Permissions::from_mode(0o000))?;
+            return Err(e);
+        }
+    }
     fs::set_permissions(&dest, fs::Permissions::from_mode(0o000))?;
     let mut info = threat.as_bytes().to_vec();
     info.push(0);
@@ -98,9 +108,11 @@ fn quarantine(file: &Path, threat: &str, quar: &Path, now: u64) -> std::io::Resu
 }
 
 fn scan(file: &Path) {
-    let Some(name) = file.file_name().and_then(|n| n.to_str()).map(String::from) else { return };
+    use std::os::unix::ffi::OsStrExt;
+    let Some(raw) = file.file_name() else { return };
+    let name = raw.to_string_lossy().into_owned(); // display only
     let db = virus_db();
-    if !file.is_file() || incomplete(&name) || !have_definitions(&db) {
+    if !file.is_file() || incomplete(raw.as_bytes()) || !have_definitions(&db) {
         return;
     }
     let Ok(out) = Command::new("clamscan").args(["--no-summary", "--infected", "-d"]).arg(&db).arg("--").arg(file).output() else { return };
@@ -109,13 +121,12 @@ fn scan(file: &Path) {
     }
     let threat = threat_name(&String::from_utf8_lossy(&out.stdout));
     let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
-    if quarantine(file, &threat, &quarantine_dir(), now).is_ok() {
-        let _ = Command::new("notify-send")
-            .args(["-u", "critical", "-a", "Fennek OS Security", "Threat blocked"])
-            .arg(format!("{name} contains {threat}. It was moved to quarantine."))
-            .status();
-        println!("quarantined: {name} ({threat})");
-    }
+    let text = match quarantine(file, &threat, &quarantine_dir(), now) {
+        Ok(_) => format!("{name} contains {threat}. It was moved to quarantine."),
+        Err(_) => format!("{name} contains {threat}. It couldn't be moved to quarantine, so it was locked where it is. Delete it."),
+    };
+    let _ = Command::new("notify-send").args(["-u", "critical", "-a", "Fennek OS Security", "Threat blocked"]).arg(&text).status();
+    println!("{text}");
 }
 
 #[cfg(target_os = "linux")]
@@ -137,7 +148,8 @@ fn watch(dir: &Path) -> std::io::Result<()> {
 fn selftest() {
     assert_eq!(threat_name("/home/u/Downloads/x.exe: Win.Test.EICAR_HDB-1 FOUND\n"), "Win.Test.EICAR_HDB-1");
     assert_eq!(threat_name("/a: b/c.zip: Eicar-Signature FOUND"), "Eicar-Signature", "colons in the path");
-    assert!(incomplete("setup.exe.part") && incomplete("a.crdownload") && !incomplete("setup.exe"));
+    assert!(incomplete(b"setup.exe.part") && incomplete(b"a.crdownload") && !incomplete(b"setup.exe"));
+    assert!(!incomplete(b"\xff\xfeevil.exe"), "names that aren't UTF-8 are scanned too");
     assert_eq!(stamp(0), "19700101-000000");
     assert_eq!(stamp(1_792_156_000), "20261016-130640");
     assert_eq!(stamp(951_782_400), "20000229-000000", "leap day");
