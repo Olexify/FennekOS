@@ -1,0 +1,76 @@
+#!/usr/bin/python3
+"""Pin folders to Quick access (the top of the Files sidebar), right after the pinned ones, before This PC.
+
+  fennek-pin-quick-access FOLDER...
+  fennek-pin-quick-access --selftest
+"""
+import os, subprocess, sys
+import xml.etree.ElementTree as ET
+from urllib.parse import quote
+
+NS = {"bookmark": "http://www.freedesktop.org/standards/desktop-bookmarks"}
+for prefix, uri in (("bookmark", NS["bookmark"]), ("mime", "http://www.freedesktop.org/standards/shared-mime-info"),
+                    ("kdepriv", "http://www.kde.org/kdepriv")):
+    ET.register_namespace(prefix, uri)
+
+
+def places_file():
+    return os.path.join(os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share"), "user-places.xbel")
+
+
+def pin(xml_text, folders):
+    """Return the places XML with FOLDERS added (once each), placed before This PC."""
+    root = ET.fromstring(xml_text)
+    have = {b.get("href") for b in root.findall("bookmark")}
+    kids = list(root)
+    pos = next((i for i, b in enumerate(kids) if b.tag == "bookmark" and b.get("href") == "thispc:/"), len(kids))
+    for folder in folders:
+        href = "file://" + quote(os.path.abspath(folder))
+        if href in have:
+            continue
+        b = ET.Element("bookmark", href=href)
+        ET.SubElement(b, "title").text = os.path.basename(os.path.abspath(folder)) or folder
+        info = ET.SubElement(b, "info")
+        meta = ET.SubElement(info, "metadata", owner="http://freedesktop.org")
+        ET.SubElement(meta, "{%s}icon" % NS["bookmark"], name="folder")
+        root.insert(pos, b)
+        pos += 1
+        have.add(href)
+    return '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE xbel>\n' + ET.tostring(root, encoding="unicode") + "\n"
+
+
+def main(folders):
+    path = places_file()
+    if not os.path.exists(path):   # no sidebar yet: write the classic one first
+        subprocess.run(["/usr/libexec/fennek-first-login-places", path], check=True)
+    with open(path, encoding="utf-8") as f:
+        text = f.read()
+    new = pin(text, [f for f in folders if os.path.isdir(f)])
+    tmp = path + ".fennek-new"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(new)
+    os.replace(tmp, path)
+
+
+def selftest():
+    base = ('<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE xbel><xbel xmlns:bookmark="http://www.freedesktop.org/standards/desktop-bookmarks">'
+            '<info><metadata owner="http://www.kde.org"><kde_places_version>4</kde_places_version></metadata></info>'
+            '<bookmark href="file:///var/home/u/Desktop"><title>Desktop</title></bookmark>'
+            '<bookmark href="thispc:/"><title>This PC</title></bookmark>'
+            '<bookmark href="trash:/"><title>Recycle Bin</title></bookmark></xbel>')
+    out = pin(base, ["/var/home/u/Work Stuff", "/var/home/u/Desktop"])
+    root = ET.fromstring(out.split("\n", 2)[2])
+    hrefs = [b.get("href") for b in root.findall("bookmark")]
+    assert hrefs == ["file:///var/home/u/Desktop", "file:///var/home/u/Work%20Stuff", "thispc:/", "trash:/"], hrefs
+    assert pin(out, ["/var/home/u/Work Stuff"]).count("Work%20Stuff") == 1, "pinned once"
+    assert root.find("info") is not None, "KDE's version info kept"
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["--selftest"]:
+        selftest()
+    elif sys.argv[1:]:
+        main(sys.argv[1:])
+    else:
+        sys.exit(__doc__)

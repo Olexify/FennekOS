@@ -122,6 +122,7 @@ command -v opensnitchd >/dev/null                            || fail "opensnitch
 fennek-firewall --selftest >/dev/null                         || fail "firewall selftest"
 /usr/libexec/fennek-first-login-places --selftest >/dev/null || fail "classic Files sidebar"
 /usr/libexec/fennek-first-login-keyboard --selftest >/dev/null || fail "language switcher labels"
+/usr/libexec/fennek-pin-quick-access --selftest >/dev/null || fail "Pin to Quick access"
 /usr/libexec/fennek-previous-versions-helper --selftest >/dev/null && command -v kdialog numfmt >/dev/null && grep -q "exec.path\">/usr/libexec/fennek-previous-versions-helper" /usr/share/polkit-1/actions/org.fennek.previous-versions.policy || fail "Restore previous versions"
 grep -q '^Exec=fennek-firewall block %f' /usr/share/kio/servicemenus/fennek-firewall.desktop || fail "firewall menu"
 [ -f /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/metadata.json ] || fail "classic start menu (Tiled Menu)"
