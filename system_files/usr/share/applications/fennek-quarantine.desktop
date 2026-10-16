@@ -4,6 +4,6 @@ Name=Quarantine
 GenericName=Blocked downloads
 Comment=Files the download guard blocked: delete them or restore a false alarm
 Exec=fennek-quarantine
-Icon=security-medium
+Icon=fennek-quarantine
 Categories=System;Security;
 Keywords=virus;antivirus;malware;threat;blocked;defender;

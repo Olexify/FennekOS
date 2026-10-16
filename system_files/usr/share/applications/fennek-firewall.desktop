@@ -4,6 +4,6 @@ Name=Firewall
 GenericName=Firewall
 Comment=Choose which apps may use the internet
 Exec=plasmawindowed org.fennek.firewall
-Icon=security-high
+Icon=fennek-firewall
 Categories=Settings;Security;
 Keywords=firewall;internet;block;network;security;
