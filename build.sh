@@ -316,7 +316,7 @@ systemctl enable rpm-ostreed-automatic.timer
 
 # Classic taskbar right-click menu (src/taskbar-menu): compiled here, build tools removed again.
 tools=(cmake extra-cmake-modules gcc-c++ libplasma-devel kf6-kcoreaddons-devel kf6-kconfig-devel kf6-kwindowsystem-devel
-       kf6-kpackage-devel kf6-kservice-devel qt6-qtbase-devel qt6-qtdeclarative-devel)
+       kf6-kpackage-devel kf6-kservice-devel kf6-kirigami-devel qt6-qtbase-devel qt6-qtdeclarative-devel)
 missing=(); for p in "${tools[@]}"; do rpm -q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 dnf -y install "${missing[@]}"
 cmake -S "$files/../src/taskbar-menu" -B /tmp/taskbar-menu -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
