@@ -124,7 +124,7 @@ grep -q "^LastSeenVersion=99" /etc/xdg/plasma-welcomerc || fail "only one welcom
 [ -s /usr/share/fennek/apps/welcome/main.qml ] && grep -q "^Exec=fennek-app welcome" /usr/share/applications/fennek-welcome.desktop && grep -q "fennek-app welcome" /usr/libexec/fennek-first-login || fail "welcome app"
 grep -q "Fennek OS splash" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/splash/Splash.qml && grep -q "Fennek OS splash" /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/splash/Splash.qml || fail "Fennek splash"
 grep -q "nmi_watchdog=0" /usr/lib/bootc/kargs.d/20-fennek-battery.toml && grep -q "^vm.dirty_writeback_centisecs = 1500" /usr/lib/sysctl.d/60-fennek-battery.conf || fail "battery kernel settings"
-grep -q "^ColorScheme=BreezeDark" /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults || fail "Fennek Dark colors"
+grep -q "^ColorScheme=FennekDark" /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults || fail "Fennek Dark colors"
 grep -q "^theme=__aurorae__svg__FennekClassicDark" /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults && grep -q "^theme=__aurorae__svg__FennekClassic$" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults && grep -q "fill=\"#202020\"" /usr/share/aurorae/themes/FennekClassicDark/decoration.svg && [ -s /usr/share/aurorae/themes/FennekClassicDark/FennekClassicDarkrc ] || fail "window frame follows light/dark theme"
 ! ls -d /usr/share/plasma/look-and-feel/org.fedoraproject.* 2>/dev/null || fail "Fedora global themes still listed"
 ! ls /usr/share/plasma/look-and-feel/org.kde.breeze*/contents/defaults 2>/dev/null || fail "KDE global themes still listed"
