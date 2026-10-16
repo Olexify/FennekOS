@@ -32,7 +32,7 @@ u=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/fennek-2026-1
 for app in org.kde.kmenuedit systemsettings kdesystemsettings org.kde.khelpcenter org.kde.kinfocenter firewall-config org.kde.kjournaldbrowser org.kde.plasma-welcome; do
     f=/usr/share/applications/$app.desktop; [ ! -f "$f" ] || { [ "$(grep -c '^NoDisplay=' "$f")" = 1 ] && grep -q '^NoDisplay=true' "$f"; } || fail "Start list still shows $app"
 done
-grep -q '^Name=Terminal$' /usr/share/applications/org.kde.konsole.desktop && grep -q '^Name=Store$' /usr/share/applications/org.kde.discover.desktop || fail "plain app names in Start"
+grep -q '^Name=Terminal$' /usr/share/applications/org.kde.konsole.desktop && grep -q '^Name=Store$' /usr/share/applications/org.kde.discover.desktop && ! grep -q '^Name\[en_GB\]=' /usr/share/applications/org.kde.konsole.desktop || fail "plain app names in Start"
 grep -q "SystrayContainmentId" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "tray shown/hidden icons"
 for p in org.fennek.searchbox org.fennek.showdesktop org.fennek.volume org.fennek.clock org.fennek.network org.fennek.actioncenter; do
     python3 -c "import json; json.load(open('/usr/share/plasma/plasmoids/$p/metadata.json'))" && [ -s /usr/share/plasma/plasmoids/$p/contents/ui/main.qml ] \
@@ -90,6 +90,14 @@ cs=$(mktemp -d) && mkdir -p "$cs/bin" && printf '#!/bin/sh\necho "$1" >"%s/appli
   && chmod +x "$cs/bin/plasma-apply-colorscheme" && printf '[General]\nColorScheme=BreezeDark\n' >"$cs/kdeglobals" \
   && PATH="$cs/bin:$PATH" XDG_CONFIG_HOME="$cs" XDG_STATE_HOME="$cs" /usr/libexec/fennek-shortcuts-update \
   && [ "$(cat "$cs/applied")" = FennekDark ] || fail "existing users move to the Fennek colour scheme"
+# A stock theme that took over (Breeze Dark via the Dark mode switch) is replaced by Fennek Dark, once.
+lf=$(mktemp -d) && mkdir -p "$lf/bin" && cp "$cs/bin/plasma-apply-colorscheme" "$lf/bin/" \
+  && printf '#!/bin/sh\necho "$2" >"%s/lnf"\n' "$lf" >"$lf/bin/plasma-apply-lookandfeel" && chmod +x "$lf/bin/plasma-apply-lookandfeel" \
+  && printf '[KDE]\nLookAndFeelPackage=org.kde.breezedark.desktop\nDefaultDarkLookAndFeel=org.kde.breezedark.desktop\n' >"$lf/kdeglobals" \
+  && PATH="$lf/bin:$PATH" XDG_CONFIG_HOME="$lf" XDG_STATE_HOME="$lf" XDG_DATA_HOME="$lf" /usr/libexec/fennek-shortcuts-update \
+  && [ "$(cat "$lf/lnf")" = org.fennek.dark.desktop ] \
+  && [ "$(kreadconfig6 --file "$lf/kdeglobals" --group KDE --key DefaultDarkLookAndFeel)" = org.fennek.dark.desktop ] || fail "stock theme replaced by Fennek's"
+rm -rf "$lf"
 rm -rf "$cs"
 # "Update ready" note: once per downloaded update, enabled for every user.
 ur=$(mktemp -d) && echo one >"$ur/staged" && export FENNEK_STAGED="$ur/staged" XDG_STATE_HOME="$ur" FENNEK_DRY_RUN=1 \

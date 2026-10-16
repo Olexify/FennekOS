@@ -12,7 +12,7 @@ for id in "${!names[@]}"; do
     out=$dst/$id.desktop
     if [ -f "$src/$id.desktop" ]; then
         # Only the first Name= (the main entry); translations and actions stay the app's own.
-        sed "0,/^Name=.*/s//Name=${names[$id]}/" "$src/$id.desktop" >"$out.tmp" \
+        sed -e "0,/^Name=.*/s//Name=${names[$id]}/" -e '/^Name\[en_[A-Za-z@]*\]=/d' "$src/$id.desktop" >"$out.tmp" \
             && printf 'X-Fennek-Renamed=true\n' >>"$out.tmp" && mv "$out.tmp" "$out"
     elif grep -qs '^X-Fennek-Renamed=true' "$out"; then
         rm -f "$out"   # app was removed: don't leave a dead launcher

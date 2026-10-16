@@ -5,6 +5,7 @@ pinned folders, This PC, Network, Recycle Bin. Drives still appear on their own 
 Written with KDE's current places format version (4), so KDE doesn't add its own defaults on top.
 
   fennek-first-login-places FILE
+  fennek-first-login-places --ensure-thispc FILE   existing sidebar: add This PC on top if it isn't there
   fennek-first-login-places --selftest
 """
 import os, subprocess, sys
@@ -36,6 +37,20 @@ def places(folders):
     return "\n".join(out + ["</xbel>", ""])
 
 
+THISPC = (' <bookmark href="thispc:/">\n  <title>This PC</title>\n  <info>\n'
+          '   <metadata owner="http://freedesktop.org"><bookmark:icon name="computer"/></metadata>\n'
+          '   <metadata owner="http://www.kde.org"><ID>fennek/thispc</ID></metadata>\n  </info>\n </bookmark>\n')
+
+
+def ensure_thispc(text):
+    """Existing sidebar (KDE's places file): This PC as the first place, if missing. Everything else stays."""
+    if 'href="thispc:/"' in text or "<bookmark" not in text:
+        return text
+    i = text.index("<bookmark")
+    i = text.rindex("\n", 0, i) + 1   # start of that line
+    return text[:i] + THISPC + text[i:]
+
+
 def main(path):
     folders = []
     for kind, icon in (("DESKTOP", "user-desktop"), ("DOWNLOAD", "folder-download"), ("DOCUMENTS", "folder-documents"),
@@ -59,12 +74,23 @@ def selftest():
     assert hrefs[1] == "file:///var/home/u/A%20%26%20B" and hrefs[2:] == ["thispc:/", "remote:/", "trash:/"]
     assert doc.getElementsByTagName("title")[1].firstChild.data == "A & B"
     assert doc.getElementsByTagName("kde_places_version")[0].firstChild.data == "4"
+    old = '<xbel>\n <info/>\n <bookmark href="file:///home/u">\n  <title>Home</title>\n </bookmark>\n</xbel>\n'
+    new = ensure_thispc(old)
+    assert new.index('href="thispc:/"') < new.index('href="file:///home/u"') and ensure_thispc(new) == new
+    xml.dom.minidom.parseString(new.replace("<xbel>", '<xbel xmlns:bookmark="x">'))
     print("selftest ok")
 
 
 if __name__ == "__main__":
     if sys.argv[1:] == ["--selftest"]:
         selftest()
+    elif len(sys.argv) == 3 and sys.argv[1] == "--ensure-thispc":
+        p = sys.argv[2]
+        t = open(p, encoding="utf-8").read()
+        if ensure_thispc(t) != t:
+            with open(p + ".fennek-new", "w", encoding="utf-8") as f:
+                f.write(ensure_thispc(t))
+            os.replace(p + ".fennek-new", p)
     elif len(sys.argv) == 2:
         main(sys.argv[1])
     else:

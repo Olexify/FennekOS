@@ -305,7 +305,7 @@ for name in ("systemsettings.desktop",):
 EOF
 
 # Dolphin shows up as "Files" (English name; translations keep their own).
-sed -i 's/^Name=Dolphin$/Name=Files/' /usr/share/applications/org.kde.dolphin.desktop
+sed -i -e 's/^Name=Dolphin$/Name=Files/' -e '/^Name\[en_[A-Za-z@]*\]=/d' /usr/share/applications/org.kde.dolphin.desktop
 # Start list without admin clutter: these still open from Settings and Start's right-click menu.
 # (Admin and developer tools, duplicates of Fennek's own Settings/Firewall/Welcome/search, the emoji window
 # that Super+. opens anyway.)
@@ -321,7 +321,8 @@ for pair in org.kde.spectacle:Spectacle:Screenshot org.kde.filelight:Filelight:S
             org.kde.konsole:Konsole:Terminal org.kde.kwrite:KWrite:"Text Editor" org.kde.ark:Ark:Archives \
             "org.kde.kdeconnect.app:KDE Connect:Phone" "org.kde.krfb:Krfb:Desktop Sharing"; do
     IFS=: read -r app old new <<<"$pair"
-    sed -i "s/^Name=$old\$/Name=$new/" "/usr/share/applications/$app.desktop" 2>/dev/null || true
+    # English variants (en_GB "Konsole", "Wastebin"...) go too, so every English shows the plain name.
+    sed -i -e "s/^Name=$old\$/Name=$new/" -e '/^Name\[en_[A-Za-z@]*\]=/d' "/usr/share/applications/$app.desktop" 2>/dev/null || true
 done
 # Toolbar layouts. KDE apps compile their menu/toolbar layout (KXMLGUI .rc) into the program; take that copy,
 # change only a toolbar and install it with a higher version (KXMLGUI loads the newest), so the menus always
