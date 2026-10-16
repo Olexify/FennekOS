@@ -50,8 +50,8 @@ grep -q '"Id": "org.fennek.firewall"' /usr/share/plasma/plasmoids/org.fennek.fir
 fennek-firewall list --json | python3 -c 'import json,sys; assert json.load(sys.stdin) == []' || fail "firewall list --json"
 # Go back (undo last update): stand-in rpm-ostree/pkexec, so only the decision logic runs.
 gb=$(mktemp -d) && printf '#!/bin/sh\necho "$GB_JSON"\n' >"$gb/rpm-ostree" && printf '#!/bin/sh\necho "pkexec $*"\n' >"$gb/pkexec" && chmod +x "$gb"/* \
-  && GB_JSON='{"deployments":[{"booted":true,"timestamp":1760000000}]}' PATH="$gb:$PATH" fennek-go-back --yes 2>&1 | grep -q "no previous version" \
-  && GB_JSON='{"deployments":[{"staged":true},{"booted":true},{"timestamp":1760000000}]}' PATH="$gb:$PATH" fennek-go-back --yes | grep -q "pkexec bootc rollback" \
+  && [[ $(GB_JSON='{"deployments":[{"booted":true,"timestamp":1760000000}]}' PATH="$gb:$PATH" fennek-go-back --yes 2>&1) == *"no previous version"* ]] \
+  && [[ $(GB_JSON='{"deployments":[{"staged":true},{"booted":true},{"timestamp":1760000000}]}' PATH="$gb:$PATH" fennek-go-back --yes) == *"pkexec bootc rollback"* ]] \
   && ! GB_JSON='{"deployments":[{"booted":true},{"timestamp":1}]}' PATH="$gb:$PATH" fennek-go-back >/dev/null 2>&1 || fail "go back (rollback) logic"
 rm -rf "$gb"
 command -v ss >/dev/null && fennek-firewall active --json | python3 -c 'import json,sys; assert isinstance(json.load(sys.stdin), list)' || fail "firewall active --json"
