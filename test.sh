@@ -247,6 +247,7 @@ grep -q '^X-KDE-Shortcuts=Meta+I' /usr/share/applications/fennek-settings.deskto
                                                               || fail "power-saver profile on battery"
 [ "$(kreadconfig6 --file /etc/xdg/powerdevilrc --group AC --group Performance --key PowerProfile)" = balanced ] || fail "balanced on AC"
 { rpm -q tuned-ppd >/dev/null || rpm -q power-profiles-daemon >/dev/null; } || fail "no power-profiles provider"
+[ "$(kreadconfig6 --file /etc/xdg/powerdevilrc --group BatteryManagement --key BatteryCriticalAction)" = 1 ] || fail "sleep on critical battery"
 echo "--- privacy audit ---"
 echo "enabled timers: $(systemctl list-unit-files --type=timer --state=enabled --no-legend 2>/dev/null | awk '{print $1}' | tr '\n' ' ')"
 echo "user timers:    $(ls /etc/systemd/user/timers.target.wants/ 2>/dev/null | tr '\n' ' ')"

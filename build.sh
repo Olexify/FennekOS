@@ -345,6 +345,9 @@ done
 pd AC Performance PowerProfile balanced
 pd AC Display TurnOffDisplayWhenIdle true
 pd AC Display TurnOffDisplayIdleTimeoutSec 600
+# Critical battery: sleep (open work stays; plug in and continue) instead of shutting down. No hibernation:
+# Fedora has no swap partition to hibernate into.
+kwriteconfig6 --file /etc/xdg/powerdevilrc --group BatteryManagement --key BatteryCriticalAction 1
 
 # Sign-in screen like the classic desktop. Plasma Login Manager's screens are compiled into the program; SDDM (KDE's
 # long-standing login manager) takes QML themes: /usr/share/sddm/themes/fennek. Wayland greeter via KWin.
