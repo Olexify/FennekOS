@@ -19,5 +19,5 @@ BorderlessMaximizedWindows=false
 LayoutName=thumbnail_grid
 
 [Plugins]
-# Alt+F4 on the desktop opens Shut down (/usr/share/kwin/scripts/fennekaltf4).
+# Alt+F4 on the desktop opens Shut down (/usr/share/kwin-wayland/scripts/fennekaltf4).
 fennekaltf4Enabled=true
