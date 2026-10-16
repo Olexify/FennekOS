@@ -38,7 +38,9 @@ QList<Item> items()
 
     const QLocale locale;
     const auto describe = [&](const QString &label, const QStorageInfo &s) {
-        return QStringLiteral("%1 (%2 free of %3)").arg(label, locale.formattedDataSize(s.bytesAvailable()), locale.formattedDataSize(s.bytesTotal()));
+        // "50.4 GB free of 61.4 GB": one decimal, GB (base 1024), the way the classic This PC writes it.
+        const auto size = [&](qint64 b) { return locale.formattedDataSize(b, 1, QLocale::DataSizeTraditionalFormat); };
+        return QStringLiteral("%1 (%2 free of %3)").arg(label, size(s.bytesAvailable()), size(s.bytesTotal()));
     };
     // The disk your files live on, then every other mounted drive (USB sticks, second disks, partitions).
     const QStorageInfo mine(home);
