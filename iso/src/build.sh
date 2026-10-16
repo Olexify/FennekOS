@@ -3,7 +3,9 @@
 # Titanoboa example for Bazzite). Runs inside iso/Containerfile. FENNEK_IMAGE = the exact image installed.
 set -euxo pipefail
 : "${FENNEK_IMAGE:?}"
-UPDATES_FROM=ghcr.io/olexify/fennekos:latest   # where installed systems take signed updates from
+# Where installed systems take signed updates from (x86-64: latest, ARM64: latest-arm64).
+UPDATES_FROM=ghcr.io/olexify/fennekos:latest
+[ "$(uname -m)" = aarch64 ] && UPDATES_FROM=ghcr.io/olexify/fennekos:latest-arm64
 
 mkdir -p "$(realpath /root)" /var/lib/rpm-state
 mount -o remount,rw /proc/sys || true
@@ -79,10 +81,11 @@ sed -i -e 's/^Icon=.*/Icon=fennek/' -e 's/^Name=.*/Name=Install Fennek OS/' /usr
 grep -q '^Icon=fennek' /usr/share/applications/liveinst.desktop
 
 # 4. Boot files the ISO needs.
-dnf install -y grub2-efi-x64-cdboot xorriso isomd5sum
+efi=x64; [ "$(uname -m)" = aarch64 ] && efi=aa64   # boot loader file names differ per architecture
+dnf install -y "grub2-efi-$efi-cdboot" xorriso isomd5sum
 mkdir -p /boot/efi
 cp -av /usr/lib/efi/*/*/EFI /boot/efi/
-cp -v /boot/efi/EFI/fedora/grubx64.efi /boot/efi/EFI/BOOT/fbx64.efi
+cp -v "/boot/efi/EFI/fedora/grub$efi.efi" "/boot/efi/EFI/BOOT/fb$efi.efi"
 
 # 5. Live-session housekeeping (from the Titanoboa example).
 rm -f /etc/localtime
