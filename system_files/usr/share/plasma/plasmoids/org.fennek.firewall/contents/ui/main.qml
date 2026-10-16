@@ -15,6 +15,8 @@ PlasmoidItem {
     property var blocked: []
     property bool busy: false
     readonly property string listCmd: "fennek-firewall list --json"
+    readonly property string profileCmd: "fennek-firewall profile"
+    property string profile: ""            // "home" or "public" (current connection)
 
     // Shell-quote one argument (the engine runs commands through sh).
     function q(s) { return "'" + String(s).replace(/'/g, "'\\''") + "'" }
@@ -30,6 +32,11 @@ PlasmoidItem {
         onNewData: (source, data) => {
             if (source === root.listCmd) {
                 try { root.blocked = JSON.parse(data.stdout) } catch (e) { root.blocked = [] }
+            } else if (source === root.profileCmd) {
+                root.profile = data.stdout.trim()
+            } else if (source.startsWith(root.profileCmd)) {
+                root.busy = false
+                connectSource(root.profileCmd)     // re-read: the change may have been cancelled
             } else {
                 root.busy = false
                 program.text = ""
@@ -37,7 +44,7 @@ PlasmoidItem {
             }
             disconnectSource(source)
         }
-        Component.onCompleted: connectSource(root.listCmd)
+        Component.onCompleted: { connectSource(root.listCmd); connectSource(root.profileCmd) }
     }
 
     FileDialog {
@@ -61,6 +68,20 @@ PlasmoidItem {
                 wrapMode: Text.Wrap
                 text: "Nothing on the network can connect to this PC, except what the desktop needs (finding printers, "
                     + "pairing your phone). Below you choose which apps may not use the internet."
+            }
+
+            Kirigami.Heading { text: "This network"; level: 3 }
+            QQC2.RadioButton {
+                text: "Home or work: other devices can find printers and pair your phone"
+                checked: root.profile === "home"
+                enabled: !root.busy
+                onClicked: if (root.profile !== "home") { root.busy = true; run.connectSource(root.profileCmd + " home") }
+            }
+            QQC2.RadioButton {
+                text: "Public (café, airport, hotel): nothing can connect to this PC"
+                checked: root.profile === "public"
+                enabled: !root.busy
+                onClicked: if (root.profile !== "public") { root.busy = true; run.connectSource(root.profileCmd + " public") }
             }
 
             Kirigami.Heading { text: "Apps without internet"; level: 3 }

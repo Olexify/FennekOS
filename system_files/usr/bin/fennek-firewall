@@ -4,6 +4,7 @@
 Usage: fennek-firewall block PROGRAM    PROGRAM = path, command name (firefox) or a Windows .exe
        fennek-firewall allow PROGRAM
        fennek-firewall list [--json]
+       fennek-firewall profile [home|public]   network profile of the current connection (show / set)
        fennek-firewall --selftest
 
 Native programs and trusted Windows programs get an OpenSnitch rule (connections are rejected).
@@ -99,9 +100,40 @@ def root_part(cmd, prog):
             engine(False)
 
 
+PROFILES = {"home": "FennekOS", "public": "FennekOS-Public"}
+
+
+def connections(nmcli_out):
+    """`nmcli -t -f NAME,TYPE connection show --active` → names of real network connections."""
+    out = []
+    for line in nmcli_out.splitlines():
+        name, _, kind = line.rpartition(":")
+        if name and kind not in ("loopback", "bridge", "tun", "wireguard"):
+            out.append(name.replace("\\:", ":"))
+    return out
+
+
+def profile(set_to=None):
+    """Network profile of the active connections: home (printers, phone pairing) or public (nothing in)."""
+    nm = lambda *a: subprocess.run(["nmcli", *a], capture_output=True, text=True).stdout
+    active = connections(nm("-t", "-f", "NAME,TYPE", "connection", "show", "--active"))
+    if set_to:
+        for c in active:   # NetworkManager asks for the admin password itself when needed
+            subprocess.run(["nmcli", "connection", "modify", c, "connection.zone", PROFILES[set_to]], check=True)
+            subprocess.run(["nmcli", "connection", "up", c], capture_output=True)   # apply now
+        return set_to
+    zones = {nm("-g", "connection.zone", "connection", "show", c).strip() for c in active}
+    return "public" if PROFILES["public"] in zones else "home"
+
+
 def main(argv):
     if argv == ["--selftest"]:
         return selftest()
+    if argv[:1] == ["profile"] and len(argv) <= 2:
+        if argv[1:] and argv[1] not in PROFILES:
+            sys.exit(__doc__)
+        print(profile(argv[1] if argv[1:] else None))
+        return
     if argv[:1] == ["list"]:
         blocked = [blocked_entry(json.loads(p.read_text())) for p in ours()]
         print(json.dumps(blocked) if argv[1:] == ["--json"] else "\n".join(b["name"] for b in blocked if b["name"]))
@@ -121,6 +153,8 @@ def main(argv):
 
 
 def selftest():
+    assert connections("Wired connection 1:802-3-ethernet\nlo:loopback\nCafe\\:Free:802-11-wireless\n") \
+        == ["Wired connection 1", "Cafe:Free"]
     r = rule("/usr/bin/curl", now="t")
     assert r["name"] == "fennek-block-curl" and r["action"] == "reject" and r["duration"] == "always"
     assert r["operator"]["operand"] == "process.path" and r["operator"]["data"] == "/usr/bin/curl"
