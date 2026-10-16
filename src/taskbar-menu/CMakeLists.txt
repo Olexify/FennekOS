@@ -5,6 +5,7 @@ find_package(ECM REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
 include(KDEInstallDirs)
 include(KDECMakeSettings)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)  # kcoreaddons_add_plugin needs it
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets DBus)
 find_package(Plasma REQUIRED)
 find_package(KF6CoreAddons REQUIRED)
