@@ -4,6 +4,7 @@
 Usage: fennek-firewall block PROGRAM    PROGRAM = path, command name (firefox) or a Windows .exe
        fennek-firewall allow PROGRAM
        fennek-firewall list [--json]
+       fennek-firewall active [--json]          apps with internet connections right now (your own apps)
        fennek-firewall profile [home|public]   network profile of the current connection (show / set)
        fennek-firewall --selftest
 
@@ -107,6 +108,36 @@ def root_part(cmd, prog):
             engine(False)
 
 
+def exe_of(pid):
+    """Program behind a process: the .exe for programs run through the compatibility layer, else its path."""
+    try:
+        for arg in Path(f"/proc/{pid}/cmdline").read_bytes().decode(errors="replace").split("\0"):
+            if is_exe(arg):
+                return re.split(r"[\\/]", arg)[-1]
+        return os.readlink(f"/proc/{pid}/exe")
+    except OSError:
+        return None
+
+
+def active(ss_out, exe=exe_of):
+    """`ss -tunpH` → apps with connections to other computers, one entry per program."""
+    apps = {}
+    for line in ss_out.splitlines():
+        f = line.split()
+        if len(f) < 7:
+            continue
+        host = f[5].rsplit(":", 1)[0].strip("[]").removeprefix("::ffff:")
+        if host in ("*", "0.0.0.0", "::") or host.startswith("127.") or host == "::1":
+            continue                                       # listening/unconnected, or this computer itself
+        m = re.search(r'\("([^"]*)",pid=(\d+)', line)
+        if not m:
+            continue                                       # another user's process: not visible to us
+        prog = exe(int(m[2])) or m[1]
+        e = apps.setdefault(prog, {"name": prog if is_exe(prog) else m[1], "program": prog, "connections": 0})
+        e["connections"] += 1
+    return sorted(apps.values(), key=lambda a: a["name"].lower())
+
+
 PROFILES = {"home": "FennekOS", "public": "FennekOS-Public"}
 
 
@@ -140,6 +171,10 @@ def main(argv):
         if argv[1:] and argv[1] not in PROFILES:
             sys.exit(__doc__)
         print(profile(argv[1] if argv[1:] else None))
+        return
+    if argv[:1] == ["active"]:
+        apps = active(subprocess.run(["ss", "-tunpH"], capture_output=True, text=True).stdout)
+        print(json.dumps(apps) if argv[1:] == ["--json"] else "\n".join(f"{a['name']} ({a['connections']})" for a in apps))
         return
     if argv[:1] == ["list"]:
         blocked = [blocked_entry(json.loads(p.read_text())) for p in ours()]
@@ -176,6 +211,16 @@ def selftest():
     assert slug("../../etc") == "etc", "rule names can't leave the rules folder"
     assert blocked_entry(r) == {"name": "curl", "program": "/usr/bin/curl"}
     assert blocked_entry(w) == {"name": "My Game.exe", "program": "My Game.exe"}
+    ss = ('tcp ESTAB 0 0 10.0.2.15:41000 93.184.216.34:443 users:(("firefox",pid=10,fd=3))\n'
+          'tcp ESTAB 0 0 10.0.2.15:41001 [2606:4700::1]:443 users:(("firefox",pid=11,fd=4))\n'
+          'tcp ESTAB 0 0 127.0.0.1:5000 127.0.0.1:41002 users:(("dev",pid=12,fd=5))\n'
+          'udp UNCONN 0 0 0.0.0.0:5353 0.0.0.0:* users:(("avahi",pid=13,fd=6))\n'
+          'tcp ESTAB 0 0 10.0.2.15:41003 1.1.1.1:443 users:(("wine64-preload",pid=14,fd=7))\n'
+          'tcp ESTAB 0 0 10.0.2.15:41004 8.8.8.8:53\n')
+    paths = {10: "/usr/lib64/firefox/firefox", 11: "/usr/lib64/firefox/firefox", 14: "Game.exe"}
+    assert active(ss, paths.get) == [
+        {"name": "firefox", "program": "/usr/lib64/firefox/firefox", "connections": 2},
+        {"name": "Game.exe", "program": "Game.exe", "connections": 1}]
     print("selftest ok")
 
 

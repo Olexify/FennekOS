@@ -13,8 +13,10 @@ PlasmoidItem {
     preferredRepresentation: fullRepresentation
 
     property var blocked: []
+    property var online: []                // apps with connections right now (refreshed while the window is open)
     property bool busy: false
     readonly property string listCmd: "fennek-firewall list --json"
+    readonly property string activeCmd: "fennek-firewall active --json"
     readonly property string profileCmd: "fennek-firewall profile"
     property string profile: ""            // "home" or "public" (current connection)
 
@@ -32,6 +34,8 @@ PlasmoidItem {
         onNewData: (source, data) => {
             if (source === root.listCmd) {
                 try { root.blocked = JSON.parse(data.stdout) } catch (e) { root.blocked = [] }
+            } else if (source === root.activeCmd) {
+                try { root.online = JSON.parse(data.stdout) } catch (e) { root.online = [] }
             } else if (source === root.profileCmd) {
                 root.profile = data.stdout.trim()
             } else if (source.startsWith(root.profileCmd)) {
@@ -44,8 +48,11 @@ PlasmoidItem {
             }
             disconnectSource(source)
         }
-        Component.onCompleted: { connectSource(root.listCmd); connectSource(root.profileCmd) }
+        Component.onCompleted: { connectSource(root.listCmd); connectSource(root.profileCmd); connectSource(root.activeCmd) }
     }
+
+    // Only runs while this window is open: no background cost.
+    Timer { interval: 4000; repeat: true; running: true; onTriggered: run.connectSource(root.activeCmd) }
 
     FileDialog {
         id: picker
@@ -55,7 +62,7 @@ PlasmoidItem {
 
     fullRepresentation: QQC2.Page {
         Layout.preferredWidth: Kirigami.Units.gridUnit * 36
-        Layout.preferredHeight: Kirigami.Units.gridUnit * 30
+        Layout.preferredHeight: Kirigami.Units.gridUnit * 40
 
         ColumnLayout {
             anchors.fill: parent
@@ -82,6 +89,29 @@ PlasmoidItem {
                 checked: root.profile === "public"
                 enabled: !root.busy
                 onClicked: if (root.profile !== "public") { root.busy = true; run.connectSource(root.profileCmd + " public") }
+            }
+
+            Kirigami.Heading { text: "Using the internet now"; level: 3 }
+            ListView {
+                Layout.fillWidth: true
+                Layout.preferredHeight: Kirigami.Units.gridUnit * 9
+                clip: true
+                model: root.online
+                delegate: QQC2.ItemDelegate {
+                    width: ListView.view.width
+                    contentItem: RowLayout {
+                        Kirigami.Icon { source: "network-connect"; Layout.preferredWidth: Kirigami.Units.iconSizes.medium; Layout.preferredHeight: Layout.preferredWidth }
+                        QQC2.Label { text: modelData.name; font.bold: true; Layout.fillWidth: true; elide: Text.ElideMiddle }
+                        QQC2.Label { text: modelData.connections === 1 ? "1 connection" : modelData.connections + " connections"; opacity: 0.7 }
+                        QQC2.Button { text: "Block"; icon.name: "network-disconnect"; enabled: !root.busy; onClicked: root.change("block", modelData.program) }
+                    }
+                }
+                QQC2.Label {
+                    anchors.centerIn: parent
+                    visible: root.online.length === 0
+                    opacity: 0.7
+                    text: "No app is connected to the internet right now."
+                }
             }
 
             Kirigami.Heading { text: "Apps without internet"; level: 3 }

@@ -48,6 +48,7 @@ grep -q 'name="go_up"' "$r" && grep -q 'version="10[0-9][0-9]"' "$r" && grep -q 
 python3 -c "import sys, xml.dom.minidom as x; x.parse(sys.argv[1])" "$r"   || fail "Files toolbar file is not valid XML"
 grep -q '"Id": "org.fennek.firewall"' /usr/share/plasma/plasmoids/org.fennek.firewall/metadata.json && grep -q '^Exec=plasmawindowed org.fennek.firewall' /usr/share/applications/fennek-firewall.desktop || fail "Firewall window"
 fennek-firewall list --json | python3 -c 'import json,sys; assert json.load(sys.stdin) == []' || fail "firewall list --json"
+command -v ss >/dev/null && fennek-firewall active --json | python3 -c 'import json,sys; assert isinstance(json.load(sys.stdin), list)' || fail "firewall active --json"
 grep -qF "fennek-firewall profile [home|public]" /usr/bin/fennek-firewall || fail "firewall network profile command"
 [ -x /usr/libexec/fennek-first-login ] && grep -q '^Exec=/usr/libexec/fennek-first-login' /etc/xdg/autostart/fennek-first-login.desktop || fail "first-login Fennek look"
 cmp -s /usr/share/plasma/look-and-feel/org.fennek.{desktop,dark.desktop}/contents/layouts/org.kde.plasma.desktop-layout.js || fail "Fennek Dark has the Fennek layout"
