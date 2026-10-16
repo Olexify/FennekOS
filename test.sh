@@ -76,6 +76,13 @@ sh=$(mktemp -d) && printf '[kwin]\nOverview=Meta+W,Meta+W,Toggle Overview\nWindo
 rm -rf "$sh"
 [ "$(kreadconfig6 --file /etc/xdg/ksmserverrc --group General --key confirmLogout)" = false ] || fail "power menu acts without a second confirmation"
 grep -q 'Fennek OS: no line over an open button' /usr/share/plasma/shells/org.kde.plasma.desktop/contents/applet/CompactApplet.qml || fail "no line over open taskbar buttons"
+# Everyday apps get plain names in Start (Okular -> PDF Reader); the copy goes when the app goes.
+an=$(mktemp -d) && mkdir -p "$an/exp" && printf '[Desktop Entry]\nName=Okular\nExec=x\n' >"$an/exp/org.kde.okular.desktop" \
+  && FENNEK_FLATPAK_EXPORTS="$an/exp" XDG_DATA_HOME="$an" /usr/libexec/fennek-app-names \
+  && grep -q '^Name=PDF Reader$' "$an/applications/org.kde.okular.desktop" && rm "$an/exp/org.kde.okular.desktop" \
+  && FENNEK_FLATPAK_EXPORTS="$an/exp" XDG_DATA_HOME="$an" /usr/libexec/fennek-app-names && [ ! -e "$an/applications/org.kde.okular.desktop" ] \
+  && [ -L /etc/systemd/user/graphical-session.target.wants/fennek-app-names.service ] || fail "plain names for everyday apps"
+rm -rf "$an"
 # "Update ready" note: once per downloaded update, enabled for every user.
 ur=$(mktemp -d) && echo one >"$ur/staged" && export FENNEK_STAGED="$ur/staged" XDG_STATE_HOME="$ur" FENNEK_DRY_RUN=1 \
   && [ "$(/usr/libexec/fennek-update-ready)" = "would notify" ] && [ -z "$(/usr/libexec/fennek-update-ready)" ] \

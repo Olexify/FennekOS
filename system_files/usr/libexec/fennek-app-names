@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Plain names in Start for the everyday apps (installed from Flathub, where they keep their project names).
+# At each sign-in: a copy of the app's own launcher with only the English name changed, in the user's
+# applications folder (the only place that can rename a Flatpak launcher). Removed again with the app.
+set -u
+src=${FENNEK_FLATPAK_EXPORTS:-/var/lib/flatpak/exports/share/applications}
+dst=${XDG_DATA_HOME:-$HOME/.local/share}/applications
+declare -A names=([org.kde.gwenview]=Photos [org.kde.okular]="PDF Reader" [org.kde.haruna]="Media Player"
+                  [org.kde.elisa]=Music [org.kde.kcalc]=Calculator [org.kde.kolourpaint]=Paint [org.kde.skanpage]=Scanner)
+mkdir -p "$dst"
+for id in "${!names[@]}"; do
+    out=$dst/$id.desktop
+    if [ -f "$src/$id.desktop" ]; then
+        # Only the first Name= (the main entry); translations and actions stay the app's own.
+        sed "0,/^Name=.*/s//Name=${names[$id]}/" "$src/$id.desktop" >"$out.tmp" \
+            && printf 'X-Fennek-Renamed=true\n' >>"$out.tmp" && mv "$out.tmp" "$out"
+    elif grep -qs '^X-Fennek-Renamed=true' "$out"; then
+        rm -f "$out"   # app was removed: don't leave a dead launcher
+    fi
+done

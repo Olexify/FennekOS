@@ -1,0 +1,9 @@
+[Unit]
+Description=Plain names in Start for the everyday apps
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/fennek-app-names
+
+[Install]
+WantedBy=graphical-session.target

@@ -398,7 +398,7 @@ EOF
 systemctl enable fennek-detect-windows.service fennek-essential-apps.service
 
 # Instant file search feeds the Start menu / KRunner.
-systemctl --global enable fennek-search.service fennek-usage.service fennek-update-ready.service fennek-update-ready.path fennek-shortcuts-update.service
+systemctl --global enable fennek-search.service fennek-usage.service fennek-update-ready.service fennek-update-ready.path fennek-shortcuts-update.service fennek-app-names.service
 
 # zsh is the default shell for new users, with suggestions + highlighting + Fennek OS aliases.
 sed -i 's|^SHELL=.*|SHELL=/bin/zsh|' /etc/default/useradd
