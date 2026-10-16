@@ -19,7 +19,7 @@ jobs:
     env:
       TAG: ${{ inputs.arch == 'aarch64' && 'latest-arm64' || 'latest' }}
       NAME: ${{ inputs.arch == 'aarch64' && 'fennek-os-arm64' || 'fennek-os' }}
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
@@ -65,6 +65,13 @@ jobs:
           [ "$BUILT" -ef "output/$NAME.iso" ] || mv "$BUILT" "output/$NAME.iso"
           cd output && sha256sum "$NAME.iso" | tee "$NAME.iso.sha256" && ls -lh
           [ "$(stat -c %s "$NAME.iso")" -gt 1000000000 ]   # a real ISO is GBs, never a stub
+
+      # ARM runners have no KVM: emulated boot, hence the long limit.
+      - name: Boot test
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q qemu-system-x86 qemu-system-arm ovmf qemu-efi-aarch64
+          sudo chmod 666 /dev/kvm 2>/dev/null || true
+          bash iso/boot-test.sh "output/$NAME.iso" ${{ inputs.arch == 'aarch64' && 45 || 10 }}
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
