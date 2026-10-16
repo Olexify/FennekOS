@@ -1,7 +1,11 @@
 #!/usr/bin/bash
-# Once per user, at the first login: make sure the Fennek look (taskbar, Start menu, wallpaper) is active.
-# The base writes Fedora's theme into new users' own settings, which would hide the Fennek default.
+# Once per user, at the first login: make sure the Fennek look (taskbar, Start menu, wallpaper) is active,
+# and give Files the classic sidebar. The base writes Fedora's theme into new users' own settings, which
+# would hide the Fennek default.
 set -u
+places="${XDG_DATA_HOME:-$HOME/.local/share}/user-places.xbel"
+[ -e "$places" ] || /usr/libexec/fennek-first-login-places "$places"
+
 stamp="${XDG_CONFIG_HOME:-$HOME/.config}/fennek/first-login-done"
 [ -e "$stamp" ] && exit 0
 lnf=$(kreadconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage)

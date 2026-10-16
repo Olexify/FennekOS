@@ -1,0 +1,71 @@
+#!/usr/bin/python3
+"""Write a new user's Files sidebar in the classic order (only when they have none yet):
+pinned folders, This PC, Network, Recycle Bin. Drives still appear on their own (KDE adds them live).
+
+Written with KDE's current places format version (4), so KDE doesn't add its own defaults on top.
+
+  fennek-first-login-places FILE
+  fennek-first-login-places --selftest
+"""
+import os, subprocess, sys
+from xml.sax.saxutils import escape, quoteattr
+from urllib.parse import quote
+
+
+def xdg(kind):
+    try:
+        out = subprocess.run(["xdg-user-dir", kind], capture_output=True, text=True).stdout.strip()
+    except OSError:
+        return None
+    return out if out and out != os.path.expanduser("~") and os.path.isdir(out) else None
+
+
+def places(folders):
+    """folders: [(label, path, icon)] -> xbel text."""
+    items = [(label, "file://" + quote(path), icon) for label, path, icon in folders]
+    items += [("This PC", "thispc:/", "computer"), ("Network", "remote:/", "folder-network"), ("Recycle Bin", "trash:/", "user-trash")]
+    out = ['<?xml version="1.0" encoding="UTF-8"?>', "<!DOCTYPE xbel>",
+           '<xbel xmlns:bookmark="http://www.freedesktop.org/standards/desktop-bookmarks" '
+           'xmlns:mime="http://www.freedesktop.org/standards/shared-mime-info" xmlns:kdepriv="http://www.kde.org/kdepriv">',
+           ' <info>', '  <metadata owner="http://www.kde.org">', '   <kde_places_version>4</kde_places_version>',
+           '  </metadata>', ' </info>']
+    for n, (label, href, icon) in enumerate(items):
+        out += [f" <bookmark href={quoteattr(href)}>", f"  <title>{escape(label)}</title>", "  <info>",
+                f'   <metadata owner="http://freedesktop.org"><bookmark:icon name={quoteattr(icon)}/></metadata>',
+                f'   <metadata owner="http://www.kde.org"><ID>fennek/{n}</ID></metadata>', "  </info>", " </bookmark>"]
+    return "\n".join(out + ["</xbel>", ""])
+
+
+def main(path):
+    folders = []
+    for kind, icon in (("DESKTOP", "user-desktop"), ("DOWNLOAD", "folder-download"), ("DOCUMENTS", "folder-documents"),
+                       ("PICTURES", "folder-pictures"), ("MUSIC", "folder-music"), ("VIDEOS", "folder-videos")):
+        d = xdg(kind)
+        if d:
+            folders.append((os.path.basename(d), d, icon))   # names in the user's language
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".fennek-new"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(places(folders))
+    os.replace(tmp, path)
+
+
+def selftest():
+    import xml.dom.minidom
+    x = places([("Документи", "/var/home/u/Документи", "folder-documents"), ("A & B", "/var/home/u/A & B", "folder")])
+    doc = xml.dom.minidom.parseString(x)
+    hrefs = [b.getAttribute("href") for b in doc.getElementsByTagName("bookmark")]
+    assert hrefs[0] == "file:///var/home/u/%D0%94%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82%D0%B8", hrefs[0]
+    assert hrefs[1] == "file:///var/home/u/A%20%26%20B" and hrefs[2:] == ["thispc:/", "remote:/", "trash:/"]
+    assert doc.getElementsByTagName("title")[1].firstChild.data == "A & B"
+    assert doc.getElementsByTagName("kde_places_version")[0].firstChild.data == "4"
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["--selftest"]:
+        selftest()
+    elif len(sys.argv) == 2:
+        main(sys.argv[1])
+    else:
+        sys.exit(__doc__)
