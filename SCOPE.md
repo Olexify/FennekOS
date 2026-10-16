@@ -69,7 +69,8 @@ Not in Fedora repos: upstream RPM v1.8.0 (pin + sha256, like umu): daemon
 `FennekOS-Public` (in: dhcpv6 only) to pick per Wi-Fi network. `fennek-firewall block|allow|list PROGRAM` +
 Dolphin right-click → Firewall: OpenSnitch reject rule (native by path, Windows by .exe in command line);
 sandboxed .exe → no network namespace at all. opensnitchd runs only while ≥1 program is blocked.
-Verified: blocked curl can't connect, python can. Next: GUI with live connections + Process viewer.
+Verified: blocked curl can't connect, python can. Firewall window done (apps without internet, Home/Public).
+Next: live connections view + Process viewer.
 OpenSnitch daemon + our own friendly UI: per-app allow/block, ask-or-silent modes, network profiles
 (Home / Public / Offline), DNS tracker blocking, temporary rules, live connection view.
 
@@ -202,8 +203,14 @@ podman run --rm --privileged -v fennek-umu-test:/var/home -v E:/Fennek-build/tmp
 - Done: Fennek OS boot splash watermark (initramfs rebuilt with dracut) + login screen wallpaper.
 - Done: ClamAV download guard (user service, inotify on Downloads, clamscan only on arrival → no resident
   daemon; threats → ~/.local/share/fennek/quarantine, chmod 000, notification). Definitions: daily + 15 min after boot.
+- 2026-10-16: first install from the ISO in a VM works (installer, own user account, internet, updates).
+- Done (2026-10-15/16): classic window frame (wide min/max/close, red close hover, title bar on maximized
+  windows, shadow; light + dark), Fennek OS Dark global theme (Fedora's removed), first-login look fix,
+  File Explorer menu bar + Back/Forward/Up toolbar + Super+E, Firewall window (apps without internet,
+  Home/Public network), Task Manager opens on apps, Restore previous versions (right-click, from hourly
+  home snapshots, copy next to the file), installer launcher branding.
 - To do: check /var/home subvolume layout in VM; sandbox UX in a real desktop session (dialogs, sound, GPU);
-  per-app network block (firewall step); quarantine restore UI.
+  quarantine restore UI.
 - To do (no-telemetry promise): PRIVACY.md listing every outbound connection. Known so far: VirusTotal (hash +
   user's key, only on click), umu → repo.steampowered.com + GitHub update checks (fixed: patched umu + fennek-run-exe
   allow it at most once a day for trusted runs, never for sandboxed ones; verified with networking off), GitHub on first Proton download, Fedora update checks, ClamAV definitions (database.clamav.net, daily + after boot).
