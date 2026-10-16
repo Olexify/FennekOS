@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Welcome
+Comment=Pick your look and see what keeps you safe
+Exec=plasmawindowed org.fennek.welcome
+Icon=fennek
+Categories=System;
+Keywords=welcome;start;tour;tips;

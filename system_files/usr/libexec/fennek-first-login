@@ -15,3 +15,5 @@ if [ "${lnf#org.fennek.}" = "$lnf" ]; then   # not a Fennek look (light or dark)
     plasma-apply-lookandfeel --apply org.fennek.desktop --resetLayout || exit 1   # retried next login
 fi
 mkdir -p "${stamp%/*}" && touch "$stamp"
+# First login only: say hello (pick a look, what keeps you safe, tips).
+(sleep 2; plasmawindowed org.fennek.welcome) >/dev/null 2>&1 &
