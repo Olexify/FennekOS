@@ -1,0 +1,6 @@
+# Fennek OS Terminal: tabs always on top with a "+" for a new tab, like a classic terminal app
+# (the toolbars are hidden in its layout files, see build.sh).
+[TabBar]
+TabBarVisibility=AlwaysShowTabBar
+TabBarPosition=Top
+NewTabButton=true

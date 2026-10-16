@@ -166,15 +166,17 @@ EOF
 
 # Dolphin shows up as "Files" (English name; translations keep their own).
 sed -i 's/^Name=Dolphin$/Name=Files/' /usr/share/applications/org.kde.dolphin.desktop
-# Files toolbar: Back, Forward, Up, address bar, search. Dolphin compiles its menu/toolbar layout
-# into the binary; take that copy, change only the main toolbar and install it with a higher version
-# (KXMLGUI loads the newest version), so the menus always stay the ones this Dolphin ships.
-python3 - <<'PYEOF'
-import pathlib, re, zlib
-raw = pathlib.Path("/usr/bin/dolphin").read_bytes()
-data = memoryview(raw)  # slices without copying
-want = b'<gui name="dolphin"'
-def candidates():
+# Toolbar layouts. KDE apps compile their menu/toolbar layout (KXMLGUI .rc) into the program; take that copy,
+# change only a toolbar and install it with a higher version (KXMLGUI loads the newest), so the menus always
+# stay the ones the installed app ships.
+#   Files: Back, Forward, Up, address bar, search.
+#   Terminal: no "New tab / Split view / Copy / Paste" toolbars; tabs on top like a classic terminal app.
+cat > /tmp/xmlgui.py <<'PYEOF'
+import pathlib, re, sys, zlib
+component, guiname, rcfile, edit, *binaries = sys.argv[1:]
+gui = rf'<gui name="{re.escape(guiname)}" version="(\d+)"'.encode()
+def candidates(raw):
+    data = memoryview(raw)  # slices without copying
     try:
         from compression import zstd
         for m in re.finditer(rb"\x28\xb5\x2f\xfd", data):
@@ -185,24 +187,34 @@ def candidates():
     for m in re.finditer(rb"\x78[\x01\x5e\x9c\xda]", data):
         try: yield zlib.decompressobj().decompress(data[m.start():m.start() + 4_000_000])
         except zlib.error: pass
-    i = raw.find(want)
-    if i > 0: yield raw[raw.rfind(b"<?xml", 0, i):raw.find(b"</gui>", i) + 6]
-# Dolphin also embeds a phone layout (low version, toolbar at the bottom): the desktop one has the highest version.
-ver = lambda c: int(re.search(rb'<gui name="dolphin" version="(\d+)"', c).group(1))
-found = [c for c in candidates() if re.search(rb'<gui name="dolphin" version="\d+"', c) and b"</gui>" in c]
-assert found, "Dolphin layout (dolphinui.rc) not found in /usr/bin/dolphin"
-rc = max(found, key=ver)
+    m = re.search(gui, raw)
+    if m: yield raw[raw.rfind(b"<?xml", 0, m.start()):raw.find(b"</gui>", m.start()) + 6]
+# Some apps also embed a phone layout (lower version): the desktop one has the highest version.
+found = [c for b in binaries for c in candidates(pathlib.Path(b).read_bytes()) if re.search(gui, c) and b"</gui>" in c]
+assert found, f"{component} layout ({rcfile}) not found in {binaries}"
+rc = max(found, key=lambda c: int(re.search(gui, c).group(1)))
 s = rc[:rc.find(b"</gui>") + 6].decode()
-m = re.search(r'(<ToolBar[^>]*name="mainToolBar"[^>]*>\s*<text[^<]*</text>)(.*?)(\s*</ToolBar>)', s, re.S)
-assert m and 'name="go_back"' in m.group(2), "Dolphin main toolbar changed upstream"
-acts = "".join(f'\n        <Action name="{a}" />' for a in ("go_back", "go_forward", "go_up", "url_navigators", "toggle_search", "hamburger_menu"))
-s = s[:m.start(2)] + acts + s[m.end(2):]
-s, n = re.subn(r'(<gui name="dolphin" version=")(\d+)"', lambda v: f'{v.group(1)}{int(v.group(2)) + 1000}"', s, count=1)
-assert n == 1, "Dolphin layout version not found"
-out = pathlib.Path("/usr/share/kxmlgui5/dolphin/dolphinui.rc")
+if edit == "files-toolbar":
+    m = re.search(r'(<ToolBar[^>]*name="mainToolBar"[^>]*>\s*<text[^<]*</text>)(.*?)(\s*</ToolBar>)', s, re.S)
+    assert m and 'name="go_back"' in m.group(2), "Files main toolbar changed upstream"
+    acts = ("go_back", "go_forward", "go_up", "url_navigators", "toggle_search", "hamburger_menu")
+    s = s[:m.start(2)] + "".join(f'\n        <Action name="{a}" />' for a in acts) + s[m.end(2):]
+elif edit == "hide-toolbars":
+    s, n = re.subn(r'<ToolBar(?![^>]*hidden=)', '<ToolBar hidden="true"', s)
+    assert n, f"no toolbar in {rcfile}"
+else:
+    sys.exit(f"unknown edit {edit}")
+s, n = re.subn(r'(<gui[^>]*\bversion=")(\d+)', lambda v: v.group(1) + str(int(v.group(2)) + 1000), s, count=1)
+assert n == 1, f"{rcfile}: version not found"
+out = pathlib.Path("/usr/share/kxmlgui5", component, rcfile)
 out.parent.mkdir(parents=True, exist_ok=True)
 out.write_text(s)
 PYEOF
+python3 /tmp/xmlgui.py dolphin dolphin dolphinui.rc files-toolbar /usr/bin/dolphin
+konsole_bins=(/usr/bin/konsole /usr/lib64/libkonsole*.so.*)
+python3 /tmp/xmlgui.py konsole konsole konsoleui.rc hide-toolbars "${konsole_bins[@]}"
+python3 /tmp/xmlgui.py konsole session sessionui.rc hide-toolbars "${konsole_bins[@]}"
+rm /tmp/xmlgui.py
 # Login screen wallpaper.
 sed -i 's|/usr/share/wallpapers/Fedora/|/usr/share/wallpapers/Fennek/|g' /usr/lib/plasmalogin/defaults.conf
 # Boot splash watermark (bgrt theme reads spinner's images). rm first: the file is hardlinked.
