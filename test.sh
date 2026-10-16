@@ -20,8 +20,8 @@ grep -q '^NAME="Fennek OS"' /usr/lib/os-release                 || fail "os-rele
 grep -q '^ID=fedora' /usr/lib/os-release                      || fail "os-release id must stay fedora"
 ! rpm -q plasma-welcome-fedora >/dev/null                     || fail "fedora welcome pages"
 [ -s /usr/share/wallpapers/Fennek/contents/images/3840x2160.png ] || fail "wallpaper"
-[ "$(magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.png -crop 1x1+3839+2159 -format '%[fx:r>b]' info:)" = 1 ] \
-                                                              || fail "wallpaper isn't the warm dusk gradient"
+[ "$(magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.png -crop 1x1+1920+1290 -format '%[fx:r>b && r>0.6]' info:)" = 1 ] \
+                                                              || fail "wallpaper isn't the desert dusk (warm horizon)"
 grep -q '^Image=Fennek' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults || fail "lnf wallpaper"
 grep -q "SystrayContainmentId" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "tray shown/hidden icons"
 for p in org.fennek.searchbox org.fennek.taskview org.fennek.showdesktop org.fennek.volume org.fennek.clock org.fennek.network org.fennek.actioncenter; do

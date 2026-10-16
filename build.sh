@@ -79,8 +79,8 @@ sed -i -e 's/^NAME=.*/NAME="Fennek OS"/' \
 if rpm -q plasma-welcome-fedora >/dev/null; then dnf -y remove plasma-welcome-fedora; fi   # "Fedora loves KDE" pages
 # Wallpaper, generated at build time (no binaries in the repo).
 mkdir -p /usr/share/wallpapers/Fennek/contents/images
-magick -size 3840x2160 -define gradient:angle=135 gradient:'#16122b-#c8743a' \
-    /usr/share/wallpapers/Fennek/contents/images/3840x2160.png
+# Wallpaper: desert dusk (branding/wallpaper.py), rendered from its vector source to 4K.
+magick -background none /usr/share/fennek/wallpaper.svg -depth 8 /usr/share/wallpapers/Fennek/contents/images/3840x2160.png
 # Look-and-feel: Fedora's as base; our metadata + taskbar layout (from system_files) win.
 lnf=/usr/share/plasma/look-and-feel/org.fennek.desktop
 cp -an /usr/share/plasma/look-and-feel/org.fedoraproject.fedora.desktop/contents/. "$lnf/contents/"
