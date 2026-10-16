@@ -4,6 +4,7 @@ panel.location = "bottom"
 panel.floating = false   // docked to the screen edge, never floating
 panel.hiding = "none"    // always visible
 panel.height = 40
+panel.opacity = "translucent"   // the wallpaper shows softly through (blurred)
 
 // Classic Start menu (Tiled Menu): left rail, A-Z list with "Recently added", tile groups.
 var start = panel.addWidget("com.github.zren.tiledmenu")
