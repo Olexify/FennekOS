@@ -1,0 +1,8 @@
+{
+    "KPlugin": {
+        "Authors": [{ "Name": "Fennek OS" }],
+        "Description": "Classic taskbar right-click menu",
+        "License": "GPL-3.0-only",
+        "Name": "Taskbar menu"
+    }
+}

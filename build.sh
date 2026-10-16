@@ -314,6 +314,26 @@ sed -i 's/^countme=1/countme=0/' /etc/yum.repos.d/*.repo
 # Updates download + stage in background, apply on next normal reboot. Never forced.
 systemctl enable rpm-ostreed-automatic.timer
 
+# Classic taskbar right-click menu (src/taskbar-menu): compiled here, build tools removed again.
+tools=(cmake extra-cmake-modules gcc-c++ libplasma-devel kf6-kcoreaddons-devel qt6-qtbase-devel)
+missing=(); for p in "${tools[@]}"; do rpm -q "$p" >/dev/null 2>&1 || missing+=("$p"); done
+dnf -y install "${missing[@]}"
+cmake -S "$files/../src/taskbar-menu" -B /tmp/taskbar-menu -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
+cmake --build /tmp/taskbar-menu -j"$(nproc)"
+cmake --install /tmp/taskbar-menu
+rm -rf /tmp/taskbar-menu
+[ ${#missing[@]} -eq 0 ] || dnf -y remove "${missing[@]}"
+# Panels use it instead of Plasma's own panel menu (new file + rename, see replace_file).
+shell=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/defaults
+python3 - "$shell" <<'EOF'
+import os, sys
+p = sys.argv[1]; s = open(p).read()
+old = "[Panel][ContainmentActions]\nRightButton;NoModifier=org.kde.contextmenu"
+assert old in s, "Plasma shell defaults changed: revisit the taskbar menu"
+open(p + ".fennek-new", "w").write(s.replace(old, "[Panel][ContainmentActions]\nRightButton;NoModifier=org.fennek.taskbarmenu"))
+os.chmod(p + ".fennek-new", 0o644); os.replace(p + ".fennek-new", p)
+EOF
+
 # Leave no dnf state behind (bootc lint).
 dnf clean all
 rm -rf /run/dnf /var/log/dnf5.log /var/lib/dnf /var/cache/libdnf5 /var/cache/ldconfig
