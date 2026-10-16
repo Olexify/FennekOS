@@ -65,8 +65,15 @@ def ours():
 
 
 def engine(on):
+    """Start/stop the blocking engine. Starting must really work: a block without a running engine is a lie."""
     action = ["enable", "--now"] if on else ["disable", "--now"]
     subprocess.run(["systemctl", *action, "--quiet", "opensnitch.service"], check=False)
+    if on and subprocess.run(["systemctl", "is-active", "--quiet", "opensnitch.service"]).returncode != 0:
+        sys.exit("The firewall engine didn't start: nothing is blocked. Try again or restart the computer.")
+
+
+def engine_installed():
+    return shutil.which("opensnitchd") is not None
 
 
 def set_offline(exe, offline):
@@ -143,6 +150,9 @@ def main(argv):
     if len(argv) != 2 or argv[0] not in ("block", "allow"):
         sys.exit(__doc__)
     cmd, prog = argv[0], resolve(argv[1])
+    if cmd == "block" and not engine_installed():
+        tell("Blocking an app's internet isn't available on this computer yet. Nothing was changed.")
+        return 1
     if is_exe(prog):
         set_offline(prog, cmd == "block")                 # sandboxed runs: no network at all
     root = [os.path.realpath(sys.argv[0]), "--root", cmd, prog]

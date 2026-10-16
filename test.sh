@@ -127,6 +127,8 @@ fi
 if x86; then
     command -v opensnitchd >/dev/null || fail "opensnitchd"
     ! systemctl is-enabled -q opensnitch.service || fail "opensnitch must start only when something is blocked"
+else
+    ! fennek-firewall block /usr/bin/true >/dev/null 2>&1 || fail "firewall must refuse to block without its engine"
 fi
 fennek-firewall --selftest >/dev/null                         || fail "firewall selftest"
 /usr/libexec/fennek-first-login-places --selftest >/dev/null || fail "classic Files sidebar"
