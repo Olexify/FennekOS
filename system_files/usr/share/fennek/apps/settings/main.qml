@@ -185,9 +185,8 @@ QQC2.ApplicationWindow {
                             anchors.fill: parent
                             anchors.margins: Kirigami.Units.gridUnit
                             spacing: Kirigami.Units.largeSpacing * 2
-                            Kirigami.Avatar {
-                                source: kuser.faceIconUrl
-                                name: kuser.fullName || kuser.loginName
+                            Kirigami.Icon {   // your account picture, or the generic one
+                                source: kuser.faceIconUrl.toString() !== "" ? kuser.faceIconUrl : "user-identity"
                                 Layout.preferredWidth: Kirigami.Units.gridUnit * 3.5
                                 Layout.preferredHeight: Layout.preferredWidth
                             }
