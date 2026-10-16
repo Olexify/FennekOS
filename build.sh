@@ -78,6 +78,9 @@ sed -i 's/^LookAndFeelPackage=.*/LookAndFeelPackage=org.fennek.desktop/' \
 kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key LookAndFeelPackage org.fennek.desktop
 # Fennek icons (classic folders, own app icons; the rest inherits Breeze), also set by both Fennek themes.
 kwriteconfig6 --file /etc/xdg/kdeglobals --group Icons --key Theme Fennek
+# Fennek accent colour (highlights, selection, Start tiles): deep violet, from the wallpaper and the logo.
+kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key AccentColor 109,69,184
+printf '\n[kdeglobals][General]\nAccentColor=109,69,184\n' >> "$lnf/contents/defaults"
 printf '\n[kdeglobals][Icons]\nTheme=Fennek\n' >> "$lnf/contents/defaults"
 gtk-update-icon-cache -f -t /usr/share/icons/Fennek 2>/dev/null || true
 # Fennek OS Dark: same taskbar/Start layout, dark colors. Fedora's global themes go: picking one replaces the

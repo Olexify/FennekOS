@@ -9,16 +9,15 @@ import org.kde.plasma.components as PlasmaComponents3
 PlasmaComponents3.TextField {
 	id: searchField
 	placeholderText: {
-		if (search.isDefaultFilter) {
-			return i18n("Search")
-		} else if (search.isAppsFilter) {
+		// Fennek OS: one clean prompt; the old fallback listed internal runner ids ("Search krunner_...").
+		if (search.isAppsFilter) {
 			return i18n("Search Apps")
 		} else if (search.isFileFilter) {
 			return i18n("Search Files")
 		} else if (search.isBookmarksFilter) {
 			return i18n("Search Bookmarks")
 		} else {
-			return i18nc("Search [krunnerName, krunnerName, ...], ", "Search %1", search.filters.toString())
+			return i18n("Type here to search")
 		}
 	}
 	property int topMargin: 0
