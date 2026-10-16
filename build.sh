@@ -359,7 +359,7 @@ CursorTheme=Bibata-Modern-Ice
 EOF
 
 # Dual boot: "Restart to Windows" appears when a Windows boot entry exists.
-systemctl enable fennek-detect-windows.service
+systemctl enable fennek-detect-windows.service fennek-essential-apps.service
 
 # Instant file search feeds the Start menu / KRunner.
 systemctl --global enable fennek-search.service fennek-usage.service fennek-update-ready.service fennek-update-ready.path

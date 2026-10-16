@@ -54,6 +54,11 @@ gb=$(mktemp -d) && printf '#!/bin/sh\necho "$GB_JSON"\n' >"$gb/rpm-ostree" && pr
   && [[ $(GB_JSON='{"deployments":[{"staged":true},{"booted":true},{"timestamp":1760000000}]}' PATH="$gb:$PATH" fennek-go-back --yes) == *"pkexec bootc rollback"* ]] \
   && ! GB_JSON='{"deployments":[{"booted":true},{"timestamp":1}]}' PATH="$gb:$PATH" fennek-go-back >/dev/null 2>&1 || fail "go back (rollback) logic"
 rm -rf "$gb"
+# Everyday apps: installed once after the first start (never in the live session); --list = what's still missing.
+ea=$(/usr/libexec/fennek-essential-apps --list) && echo "everyday apps to fetch: $ea" | tr '\n' ' ' && echo \
+  && [ -L /etc/systemd/system/multi-user.target.wants/fennek-essential-apps.service ] \
+  && grep -q '^ConditionKernelCommandLine=!rd.live.image' /usr/lib/systemd/system/fennek-essential-apps.service \
+  && [ -z "$(grep -vx 'org\.kde\.[a-z]*' <<<"$ea")" ] || fail "everyday apps installer"
 # "Update ready" note: once per downloaded update, enabled for every user.
 ur=$(mktemp -d) && echo one >"$ur/staged" && export FENNEK_STAGED="$ur/staged" XDG_STATE_HOME="$ur" FENNEK_DRY_RUN=1 \
   && [ "$(/usr/libexec/fennek-update-ready)" = "would notify" ] && [ -z "$(/usr/libexec/fennek-update-ready)" ] \

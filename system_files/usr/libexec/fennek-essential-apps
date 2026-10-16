@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Once, in the background: the everyday apps people expect (photos, PDF, video, music, calculator, notepad,
+# archives), from Flathub. Apps already in the image are skipped. Retried later if the network isn't there.
+set -u
+stamp=/var/lib/fennek/essential-apps.done
+declare -A apps=([gwenview]=org.kde.gwenview [okular]=org.kde.okular [haruna]=org.kde.haruna [elisa]=org.kde.elisa
+                 [kcalc]=org.kde.kcalc [kwrite]=org.kde.kwrite [ark]=org.kde.ark)
+want=()
+for cmd in "${!apps[@]}"; do
+    command -v "$cmd" >/dev/null || flatpak info --system "${apps[$cmd]}" >/dev/null 2>&1 || want+=("${apps[$cmd]}")
+done
+[ "${1:-}" = --list ] && { printf '%s\n' "${want[@]}"; exit 0; }
+flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || exit 1
+[ ${#want[@]} -eq 0 ] || flatpak install --system -y --noninteractive flathub "${want[@]}" || exit 1
+mkdir -p "${stamp%/*}" && touch "$stamp"
