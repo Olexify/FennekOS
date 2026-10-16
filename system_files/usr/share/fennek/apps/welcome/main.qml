@@ -162,6 +162,9 @@ QQC2.ApplicationWindow {
                             ["Super + E", root.t("Files", "Файли")],
                             ["Super + I", root.t("Settings", "Налаштування")],
                             ["Ctrl + Shift + Esc", root.t("Task Manager", "Диспетчер завдань")],
+                            ["Super + Shift + S", root.t("Screenshot of a part of the screen", "Знімок частини екрана")],
+                            ["Super + Tab", root.t("All open windows", "Усі відкриті вікна")],
+                            ["Super + A", root.t("Notifications and quick settings", "Сповіщення та швидкі налаштування")],
                             ["Super + R", root.t("Run a command", "Виконати команду")],
                             [root.t("Double-click a .exe", "Подвійний клік на .exe"),
                              root.t("Unknown programs run in a safe sandbox", "Невідомі програми запускаються в безпечній пісочниці")]
