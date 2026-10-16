@@ -1,0 +1,19 @@
+[Icon Theme]
+Name=Fennek
+Comment=Fennek OS icons: classic yellow folders and Fennek's own apps; everything else from Breeze
+Inherits=breeze,hicolor
+Directories=scalable/places,scalable/apps
+
+[scalable/places]
+Size=64
+MinSize=16
+MaxSize=512
+Context=Places
+Type=Scalable
+
+[scalable/apps]
+Size=64
+MinSize=16
+MaxSize=512
+Context=Applications
+Type=Scalable
