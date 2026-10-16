@@ -142,6 +142,14 @@ cp -a "$lnf/contents/." "$dark/contents/"
 { sed '/^ColorScheme=/d' "$lnf/contents/defaults"; printf '\n[kdeglobals][General]\nColorScheme=BreezeDark\n'; } \
     > "$dark/contents/defaults"
 rm -rf /usr/share/plasma/look-and-feel/org.fedoraproject.*
+# KDE's own global themes leave the list too (picking one swapped in KDE's frame, taskbar and Start menu).
+# Only their defaults + layout go: the theme list shows packages that have them, while the rest of Breeze
+# (splash, logout, fallbacks KDE relies on) stays. Automatic light/dark switching uses the Fennek themes.
+for p in org.kde.breeze.desktop org.kde.breezedark.desktop org.kde.breezetwilight.desktop; do
+    rm -rf "/usr/share/plasma/look-and-feel/$p/contents/defaults" "/usr/share/plasma/look-and-feel/$p/contents/layouts"
+done
+kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key DefaultLightLookAndFeel org.fennek.desktop
+kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key DefaultDarkLookAndFeel org.fennek.dark.desktop
 # Window frame per theme: Fennek Classic (white title bar) / Fennek Classic Dark, generated from it by color swap.
 fc=/usr/share/aurorae/themes/FennekClassic; fcd=/usr/share/aurorae/themes/FennekClassicDark
 mkdir -p "$fcd"
