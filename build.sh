@@ -83,6 +83,21 @@ cp -a "$lnf/contents/." "$dark/contents/"
 { sed '/^ColorScheme=/d' "$lnf/contents/defaults"; printf '\n[kdeglobals][General]\nColorScheme=BreezeDark\n'; } \
     > "$dark/contents/defaults"
 rm -rf /usr/share/plasma/look-and-feel/org.fedoraproject.*
+# Window frame per theme: Fennek Classic (white title bar) / Fennek Classic Dark, generated from it by color swap.
+fc=/usr/share/aurorae/themes/FennekClassic; fcd=/usr/share/aurorae/themes/FennekClassicDark
+mkdir -p "$fcd"
+for f in decoration minimize maximize restore close; do
+    # title/background white -> near black; glyphs black -> white; hover/pressed grays darker. Close stays red.
+    sed -e 's/fill="#fff"/fill="#202020"/g' -e 's/stroke="#000000"/stroke="#ffffff"/g' \
+        -e 's/fill="#e5e5e5"/fill="#3a3a3a"/g' -e 's/fill="#cccccc"/fill="#505050"/g' "$fc/$f.svg" > "$fcd/$f.svg"
+done
+sed -e 's/^ActiveTextColor=.*/ActiveTextColor=255,255,255,255/' "$fc/FennekClassicrc" > "$fcd/FennekClassicDarkrc"
+sed -e 's/^Name=.*/Name=Fennek Classic Dark/' -e 's/^X-KDE-PluginInfo-Name=.*/X-KDE-PluginInfo-Name=FennekClassicDark/' \
+    "$fc/metadata.desktop" > "$fcd/metadata.desktop"
+for t in "$lnf:FennekClassic" "$dark:FennekClassicDark"; do
+    printf '\n[kwinrc][org.kde.kdecoration2]\nlibrary=org.kde.kwin.aurorae.v2\ntheme=__aurorae__svg__%s\n' "${t#*:}" \
+        >> "${t%%:*}/contents/defaults"
+done
 # Comfort: the mouse wheel scrolls the page; it never changes a dropdown, number box or slider you happen to
 # pass over (KDE's default). Values change by click, drag or keyboard only. Patches KDE's control style.
 python3 - <<'EOF'
