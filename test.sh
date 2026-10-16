@@ -6,6 +6,8 @@ fail() { echo "FAIL: $*"; exit 1; }
 grep -q '^SHELL=/bin/zsh' /etc/default/useradd             || fail "default shell"
 [ "$(zsh -ic 'alias dir' 2>/dev/null)" = "dir='ls -lah'" ]  || fail "zsh aliases"
 [ "$(bash --rcfile /etc/skel/.bashrc -ic 'alias cls' 2>/dev/null)" = "alias cls='clear'" ] || fail "bash aliases"
+[ "$(zsh -ic 'a=$SAVEHIST; history-off >/dev/null; b=$SAVEHIST; history-on >/dev/null; print "$a $b $SAVEHIST"' 2>/dev/null)" = "10000 0 10000" ] \
+                                                             || fail "terminal history on/off"
 zsh -ic 'typeset -f _zsh_autosuggest_start' >/dev/null 2>&1 || fail "zsh autosuggestions"
 command -v umu-run >/dev/null                                || fail "umu-run"
 grep -q '^Exec=fennek-run-exe %f' /usr/share/applications/fennek-run-exe.desktop || fail "exe launcher"
