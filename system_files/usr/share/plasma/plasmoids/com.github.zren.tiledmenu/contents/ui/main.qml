@@ -195,7 +195,8 @@ PlasmoidItem {
 					// console.log(favWidth, widget.width, config.leftSectionWidth)
 					// console.log(favWidth / config.cellBoxSize)
 					// var cols = Math.floor(favWidth / config.favColWidth) * 2
-					var cols = Math.floor(favWidth / config.cellBoxSize)
+					// Fennek OS: never fewer than 4 columns (a narrow resize used to hide all tiles for good).
+					var cols = Math.max(4, Math.floor(favWidth / config.cellBoxSize))
 					if (plasmoid.configuration.favGridCols != cols) {
 						// console.log(plasmoid.configuration.favGridCols, cols)
 						plasmoid.configuration.favGridCols = cols
