@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=App history
+Comment=Which apps used the processor and memory, and so the battery
+Exec=plasmawindowed org.fennek.apphistory
+Icon=utilities-system-monitor
+Categories=System;Monitor;
+Keywords=battery;usage;history;cpu;memory;power;

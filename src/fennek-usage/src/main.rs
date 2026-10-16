@@ -4,6 +4,7 @@
 //!
 //!   fennek-usage --record          sample every minute (systemd user service)
 //!   fennek-usage [HOURS]           top apps over the last HOURS (default 8)
+//!   fennek-usage --json HOURS      the same as JSON (for the App history window)
 //!   fennek-usage --selftest
 
 use std::collections::HashMap;
@@ -154,6 +155,14 @@ fn report(hours: u64) {
     }
 }
 
+/// [{"app": .., "cpu_ms": .., "mem": ..}, ...] (app names are cgroup unit names: no quotes or backslashes
+/// survive app_name(), but escape them anyway).
+fn json(rows: &[(String, u64, u64)]) -> String {
+    let esc = |s: &str| s.replace('\\', "\\\\").replace('"', "\\\"");
+    let items: Vec<String> = rows.iter().map(|(n, c, m)| format!("{{\"app\":\"{}\",\"cpu_ms\":{c},\"mem\":{m}}}", esc(n))).collect();
+    format!("[{}]", items.join(","))
+}
+
 fn selftest() {
     assert_eq!(app_name("app-org.kde.dolphin-4711.scope").as_deref(), Some("org.kde.dolphin"));
     assert_eq!(app_name("app-flatpak-org.mozilla.firefox-12.scope").as_deref(), Some("org.mozilla.firefox"));
@@ -163,6 +172,7 @@ fn selftest() {
     assert_eq!(app_name("session-2.scope"), None);
     let text = "100\tfirefox\t5000\t300000000\n200\tfirefox\t3000\t400000000\n150\tdolphin\t1000\t50000000\nbad line\n50\told\t9999\t1\n";
     assert_eq!(top(text, 100), vec![("firefox".into(), 8000, 400000000), ("dolphin".into(), 1000, 50000000)]);
+    assert_eq!(json(&[("a\"b".into(), 5, 6)]), "[{\"app\":\"a\\\"b\",\"cpu_ms\":5,\"mem\":6}]");
     let dir = env::temp_dir().join(format!("fennek-usage-test-{}", std::process::id()));
     fs::create_dir_all(&dir).unwrap();
     let f = dir.join("usage.tsv");
@@ -178,6 +188,11 @@ fn main() {
     match args.first().map(String::as_str) {
         Some("--selftest") => selftest(),
         Some("--record") => record(),
+        Some("--json") => {
+            let hours: u64 = args.get(1).and_then(|h| h.parse().ok()).unwrap_or(8);
+            let text = fs::read_to_string(state_file()).unwrap_or_default();
+            println!("{}", json(&top(&text, now().saturating_sub(hours * 3600))));
+        }
         Some(h) => report(h.parse().unwrap_or(8)),
         None => report(8),
     }

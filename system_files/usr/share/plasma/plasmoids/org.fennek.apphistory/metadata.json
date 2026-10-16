@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [{ "Name": "Fennek OS" }],
+        "Category": "System Information",
+        "Description": "App history: which apps used the processor and memory, and so the battery",
+        "Icon": "utilities-system-monitor",
+        "Id": "org.fennek.apphistory",
+        "License": "GPL-3.0-only",
+        "Name": "App history"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

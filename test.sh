@@ -93,6 +93,7 @@ wm=usr/share/plymouth/themes/spinner/watermark.png; img=$(ls /usr/lib/modules/*/
 { rpm -V fedora-logos 2>/dev/null || true; } | grep -q "/$wm$" || fail "watermark still Fedora's"
 /usr/libexec/fennek-download-guard --selftest >/dev/null    || fail "download guard selftest"
 fennek-usage --selftest >/dev/null && [ -L /etc/systemd/user/default.target.wants/fennek-usage.service ] || fail "usage history"
+grep -q "^Exec=plasmawindowed org.fennek.apphistory" /usr/share/applications/fennek-apphistory.desktop && [ -s /usr/share/plasma/plasmoids/org.fennek.apphistory/contents/ui/main.qml ] || fail "App history window"
 bash -n /usr/libexec/fennek-brightness && [ -x /usr/libexec/fennek-brightness ] || fail "brightness helper"
 # Download guard: a sample matching a custom signature goes to quarantine, a clean file stays.
 t=$(mktemp -d); mkdir -p "$t/db"
