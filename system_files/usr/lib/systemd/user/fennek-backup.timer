@@ -1,0 +1,9 @@
+[Unit]
+Description=Check for a backup every 15 minutes (backs up at most hourly, only with the drive connected)
+
+[Timer]
+OnStartupSec=10min
+OnUnitActiveSec=15min
+
+[Install]
+WantedBy=timers.target

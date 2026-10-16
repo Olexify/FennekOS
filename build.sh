@@ -41,6 +41,7 @@ dnf -y install \
     zsh zsh-autosuggestions zsh-syntax-highlighting \
     snapper \
     clamav clamav-freshclam inotify-tools \
+    rsync \
     "${extra[@]}"
 # OpenSnitch's scripts only enable+start the daemon (and fail in a container); we want it off until something
 # is blocked, so install without them. Its one dependency came with the main install above.
@@ -440,7 +441,7 @@ EOF
 systemctl enable fennek-detect-windows.service fennek-essential-apps.service
 
 # Instant file search feeds the Start menu / KRunner.
-systemctl --global enable fennek-search.service fennek-usage.service fennek-update-ready.service fennek-update-ready.path fennek-shortcuts-update.service fennek-app-names.service
+systemctl --global enable fennek-search.service fennek-usage.service fennek-update-ready.service fennek-update-ready.path fennek-shortcuts-update.service fennek-app-names.service fennek-backup.timer
 
 # zsh is the default shell for new users, with suggestions + highlighting + Fennek OS aliases.
 sed -i 's|^SHELL=.*|SHELL=/bin/zsh|' /etc/default/useradd

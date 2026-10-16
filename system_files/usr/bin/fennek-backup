@@ -1,0 +1,176 @@
+#!/usr/bin/python3
+"""Back up your folders to a USB drive (like the classic File History).
+
+A copy of Documents, Pictures, Music, Videos and Desktop on the drive you chose, refreshed every hour while the
+drive is connected (fennek-backup.timer). Files you changed or deleted are not lost: the previous version moves
+to "Older versions/<date>" on the drive, kept for a year. Works on any drive format (exFAT, NTFS, ext4...).
+
+  fennek-backup drives [--json]   connected drives you can back up to
+  fennek-backup use UUID          back up to this drive (by its filesystem ID, so any mount point works)
+  fennek-backup off               stop backing up (the backup on the drive stays)
+  fennek-backup run [--if-due]    back up now (--if-due: only if the drive is here and the last run is >1 h old)
+  fennek-backup status [--json]
+  fennek-backup --selftest
+"""
+import json, os, re, shutil, socket, subprocess, sys, time
+from datetime import datetime, timedelta
+from pathlib import Path
+
+CONFIG = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "fennek" / "backup.json"
+FOLDERS = ("DOCUMENTS", "PICTURES", "MUSIC", "VIDEOS", "DESKTOP")
+KEEP_DAYS = 365
+
+
+def load():
+    try:
+        return json.loads(CONFIG.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def save(cfg):
+    CONFIG.parent.mkdir(parents=True, exist_ok=True)
+    tmp = CONFIG.with_suffix(".new")
+    tmp.write_text(json.dumps(cfg, indent=2))
+    tmp.replace(CONFIG)
+
+
+def parse_pairs(line):
+    """findmnt -P line: UUID="..." LABEL="My Drive" TARGET="..." (\\x20-style escapes decoded)."""
+    out = {}
+    for key, val in re.findall(r'(\w+)="((?:[^"\\]|\\.)*)"', line):
+        out[key] = re.sub(r"\\x([0-9a-fA-F]{2})", lambda m: chr(int(m[1], 16)), val)
+    return out
+
+
+def drives():
+    """Mounted removable drives: [{uuid, label, path, free, size}] (USB sticks and disks mounted for this user)."""
+    out = subprocess.run(["findmnt", "-n", "-P", "-o", "UUID,LABEL,TARGET", "-t", "vfat,exfat,ntfs,ntfs3,fuseblk,ext4,btrfs,xfs"],
+                         capture_output=True, text=True).stdout
+    found = []
+    for line in out.splitlines():
+        f = parse_pairs(line)
+        uuid, label, target = f.get("UUID", ""), f.get("LABEL", ""), f.get("TARGET", "")
+        if not uuid or not target.startswith(("/run/media/", "/media/")):
+            continue
+        st = shutil.disk_usage(target)
+        found.append({"uuid": uuid, "label": label or Path(target).name, "path": target, "free": st.free, "size": st.total})
+    return found
+
+
+def mountpoint(uuid):
+    return next((d["path"] for d in drives() if d["uuid"] == uuid), None)
+
+
+def sources():
+    out = []
+    for kind in FOLDERS:
+        p = subprocess.run(["xdg-user-dir", kind], capture_output=True, text=True).stdout.strip()
+        if p and p != str(Path.home()) and os.path.isdir(p):
+            out.append(p)
+    return out
+
+
+def destination(mount):
+    return Path(mount) / "Fennek Backup" / f"{os.environ.get('USER', 'user')}@{socket.gethostname()}"
+
+
+def rsync_args(src, current, older):
+    # -rt plus no owners/permissions/links: works on exFAT/NTFS too. --modify-window: FAT keeps 2 s timestamps.
+    return ["rsync", "-rt", "--no-perms", "--no-owner", "--no-group", "--modify-window=2", "--delete",
+            "--backup", f"--backup-dir={older}", "--exclude=.cache/", f"{src}/", f"{current}/{Path(src).name}/"]
+
+
+def prune(older_root, now=None):
+    """Drop "Older versions" folders past KEEP_DAYS (names are YYYY-MM-DD HH.MM)."""
+    now = now or datetime.now()
+    if not older_root.is_dir():
+        return []
+    gone = []
+    for d in older_root.iterdir():
+        try:
+            when = datetime.strptime(d.name, "%Y-%m-%d %H.%M")
+        except ValueError:
+            continue
+        if now - when > timedelta(days=KEEP_DAYS):
+            shutil.rmtree(d, ignore_errors=True)
+            gone.append(d.name)
+    return gone
+
+
+def run(if_due=False):
+    cfg = load()
+    if not cfg.get("uuid"):
+        return "Backup is off."
+    if if_due and time.time() - cfg.get("last", 0) < 3600:
+        return "Backed up less than an hour ago."
+    mount = mountpoint(cfg["uuid"])
+    if not mount:
+        return "The backup drive isn't connected."
+    dest = destination(mount)
+    stamp = datetime.now().strftime("%Y-%m-%d %H.%M")
+    current, older = dest / "Current", dest / "Older versions"
+    current.mkdir(parents=True, exist_ok=True)
+    failed = []
+    for src in sources():
+        rc = subprocess.run(rsync_args(src, current, older / stamp / Path(src).name)).returncode
+        if rc not in (0, 24):   # 24 = some files vanished while copying: fine
+            failed.append(Path(src).name)
+    prune(older)
+    if failed:
+        return "Backup incomplete: " + ", ".join(failed) + " (is the drive full?)"
+    cfg["last"] = int(time.time())
+    save(cfg)
+    return "Backed up."
+
+
+def status():
+    cfg = load()
+    return {"on": bool(cfg.get("uuid")), "uuid": cfg.get("uuid", ""), "label": cfg.get("label", ""), "connected": bool(cfg.get("uuid") and mountpoint(cfg["uuid"])),
+            "last": cfg.get("last", 0), "folder": str(destination(mountpoint(cfg["uuid"]))) if cfg.get("uuid") and mountpoint(cfg["uuid"]) else ""}
+
+
+def selftest():
+    import tempfile
+    a = rsync_args("/home/u/Documents", "/m/Fennek Backup/u@pc/Current", "/m/Fennek Backup/u@pc/Older versions/2026-10-17 10.00/Documents")
+    assert a[-2:] == ["/home/u/Documents/", "/m/Fennek Backup/u@pc/Current/Documents/"] and "--delete" in a and "--no-perms" in a
+    with tempfile.TemporaryDirectory() as t:
+        old = Path(t) / "Older versions"
+        for name in ("2025-01-01 10.00", "2026-10-01 10.00", "notes"):
+            (old / name).mkdir(parents=True)
+        assert prune(old, now=datetime(2026, 10, 17)) == ["2025-01-01 10.00"]
+        assert sorted(p.name for p in old.iterdir()) == ["2026-10-01 10.00", "notes"]
+    f = parse_pairs(r'UUID="AB12-CD34" LABEL="My\x20Stick" TARGET="/run/media/u/My\x20Stick"')   # as findmnt writes it
+    assert f == {"UUID": "AB12-CD34", "LABEL": "My Stick", "TARGET": "/run/media/u/My Stick"}, f
+    assert parse_pairs('UUID="" LABEL="" TARGET="/"') == {"UUID": "", "LABEL": "", "TARGET": "/"}
+    print("selftest ok")
+
+
+def main(argv):
+    if argv == ["--selftest"]:
+        return selftest()
+    cmd = argv[0] if argv else "status"
+    if cmd == "drives":
+        ds = drives()
+        print(json.dumps(ds) if argv[1:] == ["--json"] else "\n".join(f"{d['label']}  ({d['uuid']})" for d in ds) or "No drive connected.")
+    elif cmd == "use" and len(argv) == 2:
+        d = next((d for d in drives() if d["uuid"] == argv[1]), None)
+        if not d:
+            sys.exit("That drive isn't connected.")
+        save({**load(), "uuid": d["uuid"], "label": d["label"]})
+        print(f"Backing up to {d['label']}. " + run())
+    elif cmd == "off":
+        cfg = load(); cfg.pop("uuid", None); save(cfg)
+        print("Backup is off. The copy on the drive stays.")
+    elif cmd == "run":
+        print(run(if_due=argv[1:] == ["--if-due"]))
+    elif cmd == "status":
+        s = status()
+        print(json.dumps(s) if argv[1:] == ["--json"] else
+              ("Off" if not s["on"] else f"On: {s['label']} ({'connected' if s['connected'] else 'not connected'})"))
+    else:
+        sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]) or 0)

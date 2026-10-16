@@ -111,6 +111,20 @@ lf=$(mktemp -d) && mkdir -p "$lf/bin" && cp "$cs/bin/plasma-apply-colorscheme" "
   && [ "$(kreadconfig6 --file "$lf/kdeglobals" --group KDE --key DefaultDarkLookAndFeel)" = org.fennek.dark.desktop ] || fail "stock theme replaced by Fennek's"
 rm -rf "$lf"
 rm -rf "$cs"
+# Backup to a USB drive: logic, hourly check for everyone, and a real two-pass copy that keeps the older version.
+fennek-backup --selftest >/dev/null && [ -L /etc/systemd/user/timers.target.wants/fennek-backup.timer ]   && python3 - <<'PY' || fail "backup to a USB drive"
+import importlib.machinery, importlib.util, pathlib, subprocess, tempfile
+spec = importlib.util.spec_from_loader("fb", importlib.machinery.SourceFileLoader("fb", "/usr/bin/fennek-backup"))
+fb = importlib.util.module_from_spec(spec); spec.loader.exec_module(fb)
+t = pathlib.Path(tempfile.mkdtemp()); src = t / "Documents"; src.mkdir(); (src / "a.txt").write_text("v1")
+cur, old = t / "drive/Current", t / "drive/Older versions"
+cur.mkdir(parents=True)
+assert subprocess.run(fb.rsync_args(str(src), str(cur), str(old / "2026-10-17 10.00/Documents"))).returncode == 0
+(src / "a.txt").write_text("v2")
+assert subprocess.run(fb.rsync_args(str(src), str(cur), str(old / "2026-10-17 11.00/Documents"))).returncode == 0
+assert (cur / "Documents/a.txt").read_text() == "v2"
+assert (old / "2026-10-17 11.00/Documents/a.txt").read_text() == "v1"
+PY
 # "Update ready" note: once per downloaded update, enabled for every user.
 ur=$(mktemp -d) && echo one >"$ur/staged" && export FENNEK_STAGED="$ur/staged" XDG_STATE_HOME="$ur" FENNEK_DRY_RUN=1 \
   && [ "$(/usr/libexec/fennek-update-ready)" = "would notify" ] && [ -z "$(/usr/libexec/fennek-update-ready)" ] \
@@ -272,7 +286,7 @@ PY
 # Fennek Settings: every page it links to exists (no dead buttons); Super+I belongs to it alone.
 # Fennek's own apps run as normal windows (system look, own taskbar icon) through fennek-app.
 rc=0; fennek-app ../etc 2>/dev/null || rc=$?; [ $rc -eq 2 ] && ! command -v g++ >/dev/null || fail "fennek-app launcher (rejects paths; no compiler left)"
-for a in settings firewall welcome apphistory; do   # starts off-screen and keeps running = the QML loads
+for a in settings firewall welcome apphistory backup; do   # starts off-screen and keeps running = the QML loads
     rc=0; QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-app "$a" >/tmp/app-$a.log 2>&1 || rc=$?
     [ $rc -eq 124 ] || { tail -5 /tmp/app-$a.log; fail "app $a does not start (exit $rc)"; }
 done

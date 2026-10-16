@@ -60,9 +60,10 @@ var categories = [
    {"name": "App permissions", "kcm": "kcm_app-permissions", "icon": "preferences-system-privacy", "desc": "What store apps may access"},
    {"name": "Privacy policy", "cmd": "xdg-open https://github.com/Olexify/FennekOS/blob/main/PRIVACY.md", "icon": "help-about", "desc": "Every connection Fennek OS makes"}
   ]},
- {"name": "Update & Recovery", "icon": "fennek-settings-update", "sub": "Updates, previous versions",
+ {"name": "Update & Recovery", "icon": "fennek-settings-update", "sub": "Updates, backup, previous versions",
   "items": [
    {"name": "Updates", "cmd": "plasma-discover --mode update", "icon": "system-software-update", "desc": "Fennek OS and app updates"},
-   {"name": "Go back", "cmd": "fennek-go-back", "icon": "edit-undo", "desc": "Undo the last update, keep your files"}
+   {"name": "Go back", "cmd": "fennek-go-back", "icon": "edit-undo", "desc": "Undo the last update, keep your files"},
+   {"name": "Backup", "cmd": "fennek-app backup", "icon": "drive-removable-media", "desc": "Copy your folders to a USB drive"}
   ]}
 ]

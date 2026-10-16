@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Backup
+Comment=Copy your folders to a USB drive, every hour while it is connected
+Icon=drive-removable-media
+Exec=fennek-app backup
+Categories=Settings;System;
+NoDisplay=true

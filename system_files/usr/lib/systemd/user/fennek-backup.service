@@ -1,0 +1,8 @@
+[Unit]
+Description=Back up your folders to the chosen USB drive (if it is connected and the last backup is over an hour old)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/fennek-backup run --if-due
+Nice=19
+IOSchedulingClass=idle
