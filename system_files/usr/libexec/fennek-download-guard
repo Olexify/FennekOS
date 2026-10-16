@@ -4,6 +4,9 @@
 #   fennek-download-guard            watch Downloads (systemd user service)
 #   fennek-download-guard FILE...    scan these files once
 set -uo pipefail
+# At the first login this may start before the user's folders exist: create them first (in the user's
+# language, e.g. "Завантажене"), so we never make an extra English "Downloads" next to it.
+[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs" ] || xdg-user-dirs-update 2>/dev/null
 dir=$(xdg-user-dir DOWNLOAD 2>/dev/null)
 # Without a user-dirs config, xdg-user-dir answers $HOME itself: never watch the whole home.
 [ -z "$dir" ] || [ "$dir" = "$HOME" ] && dir="$HOME/Downloads"

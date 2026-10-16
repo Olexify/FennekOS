@@ -4,6 +4,9 @@
     "DisableFirefoxStudies": true,
     "DisableFeedbackCommands": true,
     "DisablePocket": true,
+    "Preferences": {
+      "browser.tabs.inTitlebar": { "Value": 0, "Status": "default" }
+    },
     "UserMessaging": {
       "ExtensionRecommendations": false,
       "FeatureRecommendations": false,

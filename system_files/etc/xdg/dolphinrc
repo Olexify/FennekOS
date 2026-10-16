@@ -12,3 +12,9 @@ ShowToolTips=true
 [MainWindow]
 # Classic menu bar (File, Edit, View, Go...) shown from the first start; Ctrl+M hides it.
 MenuBar=Enabled
+
+[DetailsMode]
+# Classic details view: compact rows, small icons, no tree lines (folders open on double-click).
+ExpandableFolders=false
+IconSize=16
+PreviewSize=16
