@@ -30,7 +30,14 @@ jobs:
           sudo podman run --rm --cap-add SYS_NICE -v "$PWD/out:/out:z" -v "$PWD/tools:/t:ro,z" \
             "ghcr.io/olexify/fennekos:${{ inputs.tag }}" bash /t/screens.sh
 
+      - name: Check that screenshots were taken
+        run: |
+          n=$(ls out/*.png 2>/dev/null | wc -l)
+          echo "$n screenshots"
+          [ "$n" -gt 0 ] || { echo "::error::no screenshots (logs are in the artifact)"; tail -n 30 out/*.log 2>/dev/null; exit 1; }
+
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        if: always()
         with:
           name: screens
           path: out/
