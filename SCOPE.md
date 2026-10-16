@@ -133,8 +133,10 @@ Battery and safety: programs that stay running (or guard security) are Rust; win
 and behave like the rest of the desktop. Built in the image from Fedora's packaged crates (offline, signed RPMs).
 1. Instant file search daemon: done (fennek-search 2.0, replaces the Python version).
 2. Download virus guard: done (fennek-download-guard 2.0, one small process instead of bash + inotifywait).
-3. Sandbox launcher (fennek-run-exe) and the firewall helper.
-4. Later: Task Manager data collector, own firewall engine instead of OpenSnitch (Go).
+3. Not ported (decided): sandbox launcher and firewall helper only run for a moment, then hand over to
+   bwrap/pasta/OpenSnitch; their safety is the tested lockdown rules, not the language.
+3. Next: Task Manager data collector (per-app CPU/RAM/battery history), own firewall engine instead of
+   OpenSnitch (Go).
 
 ## Build order
 1. Base image: Proton integration, power tuning, classic desktop (KDE Plasma)
