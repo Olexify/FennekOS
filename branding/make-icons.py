@@ -1,4 +1,4 @@
-# Fennek icons, Apple-style: squircle app tiles with a soft gradient + white glyph; refined yellow folders.
+# Fennek icons: squircle app tiles with a soft gradient + white glyph; refined yellow folders.
 # Regenerates the SVGs:  python branding/make-icons.py system_files
 import sys
 base = sys.argv[1] + "/usr/share/icons/Fennek/scalable"

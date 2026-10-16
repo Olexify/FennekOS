@@ -1,4 +1,4 @@
-//! Fennek OS instant file search (Everything-style), one per user.
+//! Fennek OS instant file search, one per user.
 //!
 //! Keeps every file name under your home and plugged-in drives in memory, kept live with inotify: no
 //! rescans, no CPU while idle. Answers the Start menu / search panel / KRunner over D-Bus (org.kde.krunner1).

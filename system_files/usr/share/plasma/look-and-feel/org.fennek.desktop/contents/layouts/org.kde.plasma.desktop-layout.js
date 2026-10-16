@@ -1,4 +1,4 @@
-// Classic taskbar: full width, docked at the bottom, 40 px like Windows, no virtual-desktop pager.
+// Classic taskbar: full width, docked at the bottom, 40 px, no virtual-desktop pager.
 var panel = new Panel
 panel.location = "bottom"
 panel.floating = false   // docked to the screen edge, never floating

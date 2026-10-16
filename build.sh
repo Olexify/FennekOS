@@ -303,7 +303,7 @@ EOF
 # Dual boot: "Restart to Windows" appears when a Windows boot entry exists.
 systemctl enable fennek-detect-windows.service
 
-# Instant file search (Everything-style), feeds the Start menu / KRunner.
+# Instant file search feeds the Start menu / KRunner.
 systemctl --global enable fennek-search.service
 
 # zsh is the default shell for new users, with suggestions + highlighting + Fennek OS aliases.

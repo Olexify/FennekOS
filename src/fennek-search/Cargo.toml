@@ -3,7 +3,7 @@ name = "fennek-search"
 version = "2.0.0"
 edition = "2021"
 license = "GPL-3.0-only"
-description = "Fennek OS instant file search (Everything-style), one per user"
+description = "Fennek OS instant file search, one per user"
 
 # Built in the image from Fedora's packaged crates (offline, see build.sh); no crates.io downloads.
 [dependencies]
