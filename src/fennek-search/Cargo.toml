@@ -1,0 +1,20 @@
+[package]
+name = "fennek-search"
+version = "2.0.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Fennek OS instant file search (Everything-style), one per user"
+
+# Built in the image from Fedora's packaged crates (offline, see build.sh); no crates.io downloads.
+[dependencies]
+zbus = "5"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+inotify = "0.11"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

@@ -79,7 +79,7 @@ OpenSnitch daemon + our own friendly UI: per-app allow/block, ask-or-silent mode
 dirs/caches/sandboxes skipped, served to Start menu + KRunner over D-Bus (org.kde.krunner1), filters ext: type:
 path:, opened-files history ranks first, "Open containing folder" action. Python, linear scan (~10 ms/100k
 files). Next: Everything-style window with columns/sort, Files search integration, size:/dm: filters,
-whole-disk index (needs a root helper with per-user permission filtering), Rust if homes get huge.
+whole-disk index (needs a root helper with per-user permission filtering). Now Rust (2026-10-16).
 - Own Rust daemon: fast parallel initial scan, compact in-memory filename index, live updates via fanotify
   filesystem marks (no periodic re-indexing, ~zero idle cost). Results filtered by the asking user's permissions.
 - Filters: `ext:` `size:` `dm:` (date) `path:` `type:audio|video|doc|image|exe` + regex; clickable filter chips.
@@ -127,6 +127,14 @@ Off until chosen: local (llama.cpp, small model) or cloud (user's own key). Acts
 - "Install next to the existing system" as the first, default choice when another OS is found; "Use whole disk"
   clearly says what gets erased.
 - Disk encryption: offer a recovery key to save/print, and TPM unlock so most people need no extra password.
+
+## Rust for everything that runs all the time (decided 2026-10-16)
+Battery and safety: programs that stay running (or guard security) are Rust; windows stay KDE/Qt so they look
+and behave like the rest of the desktop. Built in the image from Fedora's packaged crates (offline, signed RPMs).
+1. Instant file search daemon: done (fennek-search 2.0, replaces the Python version).
+2. Download virus guard (inotify watcher around ClamAV).
+3. Sandbox launcher (fennek-run-exe) and the firewall helper.
+4. Later: Task Manager data collector, own firewall engine instead of OpenSnitch (Go).
 
 ## Build order
 1. Base image: Proton integration, power tuning, classic desktop (KDE Plasma)

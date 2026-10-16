@@ -317,7 +317,8 @@ systemctl enable rpm-ostreed-automatic.timer
 # Fennek's compiled plugins (src/): classic taskbar right-click menu, This PC page for Files.
 # Compiled here; the build tools are removed again.
 tools=(cmake extra-cmake-modules gcc-c++ libplasma-devel kf6-kcoreaddons-devel kf6-kconfig-devel kf6-kwindowsystem-devel
-       kf6-kpackage-devel kf6-kservice-devel kf6-kirigami-devel kf6-kio-devel qt6-qtbase-devel qt6-qtdeclarative-devel)
+       kf6-kpackage-devel kf6-kservice-devel kf6-kirigami-devel kf6-kio-devel qt6-qtbase-devel qt6-qtdeclarative-devel
+       rust cargo 'rust-zbus+default-devel' 'rust-inotify+default-devel')
 missing=(); for p in "${tools[@]}"; do rpm -q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 dnf -y install "${missing[@]}"
 for plugin in taskbar-menu thispc; do
@@ -326,6 +327,23 @@ for plugin in taskbar-menu thispc; do
     cmake --install "/tmp/$plugin"
     rm -rf "/tmp/$plugin"
 done
+# Rust programs: compiled offline from Fedora's packaged crates (signed RPMs), never from crates.io.
+mkdir -p /tmp/cargo-home
+cat > /tmp/cargo-home/config.toml <<'EOF'
+[source.crates-io]
+replace-with = "fedora"
+[source.fedora]
+directory = "/usr/share/cargo/registry"
+[net]
+offline = true
+EOF
+for prog in fennek-search; do
+    cp -r "$files/../src/$prog" "/tmp/$prog"        # the source mount is read-only; cargo writes Cargo.lock
+    CARGO_HOME=/tmp/cargo-home cargo build --release --manifest-path "/tmp/$prog/Cargo.toml" --target-dir "/tmp/$prog/target"
+    install -m 755 "/tmp/$prog/target/release/$prog" "/usr/libexec/$prog"
+    rm -rf "/tmp/$prog"
+done
+rm -rf /tmp/cargo-home
 [ ${#missing[@]} -eq 0 ] || dnf -y remove "${missing[@]}"
 # This PC groups (Folders / Storage drives) are two MIME types.
 update-mime-database /usr/share/mime
