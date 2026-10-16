@@ -37,7 +37,12 @@ PlasmoidItem {
             anchors.centerIn: parent
             spacing: 0
             PC3.Label { Layout.alignment: Qt.AlignHCenter; text: root.now.toLocaleTimeString(root.locale, Locale.ShortFormat) }
-            PC3.Label { Layout.alignment: Qt.AlignHCenter; text: root.now.toLocaleDateString(root.locale, Locale.ShortFormat); font: Kirigami.Theme.smallFont }
+            // The locale's short date, always with the full year (16.10.2026, not 16.10.26).
+            PC3.Label {
+                Layout.alignment: Qt.AlignHCenter
+                text: root.now.toLocaleDateString(root.locale, root.locale.dateFormat(Locale.ShortFormat).replace(/y+/, "yyyy"))
+                font: Kirigami.Theme.smallFont
+            }
         }
     }
 
