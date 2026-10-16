@@ -33,6 +33,19 @@ dnf -y install \
 dnf -y install --setopt=tsflags=noscripts "$OSN_RPM"
 rm "$UMU_RPM" "$OSN_RPM"
 
+# Mouse pointer: Bibata Modern Ice (white, rounded, minimal; GPL-3.0). Not in Fedora: pinned upstream release.
+BIBATA_VER=v2.0.7
+BIBATA_SHA256=a68cae60c4dc706350e194ebc91c5fe48bc7bc9d59e119555834a2a7ee5078ef
+curl -fsSL -o /tmp/bibata.tar.xz \
+    "https://github.com/ful1e5/Bibata_Cursor/releases/download/${BIBATA_VER}/Bibata-Modern-Ice.tar.xz"
+echo "${BIBATA_SHA256}  /tmp/bibata.tar.xz" | sha256sum -c -
+tar -xJf /tmp/bibata.tar.xz -C /usr/share/icons --no-same-owner
+rm /tmp/bibata.tar.xz
+# Default for everyone: KDE, GTK/X11 apps (icons/default), the sign-in screen (SDDM config below).
+kwriteconfig6 --file /etc/xdg/kcminputrc --group Mouse --key cursorTheme Bibata-Modern-Ice
+mkdir -p /usr/share/icons/default
+printf '[Icon Theme]\nInherits=Bibata-Modern-Ice\n' > /usr/share/icons/default/index.theme
+
 # No-telemetry: umu contacts Valve on every launch even with UMU_RUNTIME_UPDATE=0. Make "0" fully offline
 # when the runtime is already installed (fennek-run-exe allows update checks at most once a day).
 python3 - <<'EOF'
@@ -82,6 +95,7 @@ kwriteconfig6 --file /etc/xdg/kdeglobals --group Icons --key Theme Fennek
 kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key AccentColor 109,69,184
 printf '\n[kdeglobals][General]\nAccentColor=109,69,184\n' >> "$lnf/contents/defaults"
 printf '\n[kdeglobals][Icons]\nTheme=Fennek\n' >> "$lnf/contents/defaults"
+printf '\n[kcminputrc][Mouse]\ncursorTheme=Bibata-Modern-Ice\n' >> "$lnf/contents/defaults"
 gtk-update-icon-cache -f -t /usr/share/icons/Fennek 2>/dev/null || true
 # Fennek OS Dark: same taskbar/Start layout, dark colors. Fedora's global themes go: picking one replaces the
 # Fennek taskbar and Start menu with Fedora's layout (looks like the desktop got "erased").
@@ -271,6 +285,7 @@ mkdir -p /etc/sddm.conf.d
 cat >/etc/sddm.conf.d/10-fennek.conf <<'EOF'
 [Theme]
 Current=fennek
+CursorTheme=Bibata-Modern-Ice
 EOF
 
 # Dual boot: "Restart to Windows" appears when a Windows boot entry exists.
