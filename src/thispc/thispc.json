@@ -1,0 +1,18 @@
+{
+    "KDE-KIO-Protocols": {
+        "thispc": {
+            "Class": ":local",
+            "Icon": "computer",
+            "input": "none",
+            "listing": ["Name", "Type", "Access", "Icon"],
+            "output": "filesystem",
+            "protocol": "thispc",
+            "reading": false
+        }
+    },
+    "KPlugin": {
+        "Description": "This PC: your folders and drives",
+        "License": "GPL-3.0-only",
+        "Name": "This PC"
+    }
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Fennek OS: the two groups on the This PC page in Files (thispc:/). "Folders" sorts before "Storage drives". -->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="inode/x-fennek-folder">
+    <comment>Folders</comment>
+    <generic-icon name="folder"/>
+  </mime-type>
+  <mime-type type="inode/x-fennek-drive">
+    <comment>Storage drives</comment>
+    <generic-icon name="drive-harddisk"/>
+  </mime-type>
+</mime-info>

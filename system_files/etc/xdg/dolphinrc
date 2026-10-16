@@ -3,7 +3,10 @@
 ShowStatusBar=FullWidth
 SortingChoice=NaturalSorting
 RememberOpenedTabs=false
-GlobalViewProps=true
+# Each folder remembers its own view (default: details); This PC keeps its grouped big-icon view.
+GlobalViewProps=false
+# Files opens on This PC (folders + drives), like the classic file manager.
+HomeUrl=thispc:/
 ShowToolTips=true
 
 [MainWindow]

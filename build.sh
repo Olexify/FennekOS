@@ -314,16 +314,21 @@ sed -i 's/^countme=1/countme=0/' /etc/yum.repos.d/*.repo
 # Updates download + stage in background, apply on next normal reboot. Never forced.
 systemctl enable rpm-ostreed-automatic.timer
 
-# Classic taskbar right-click menu (src/taskbar-menu): compiled here, build tools removed again.
+# Fennek's compiled plugins (src/): classic taskbar right-click menu, This PC page for Files.
+# Compiled here; the build tools are removed again.
 tools=(cmake extra-cmake-modules gcc-c++ libplasma-devel kf6-kcoreaddons-devel kf6-kconfig-devel kf6-kwindowsystem-devel
-       kf6-kpackage-devel kf6-kservice-devel kf6-kirigami-devel qt6-qtbase-devel qt6-qtdeclarative-devel)
+       kf6-kpackage-devel kf6-kservice-devel kf6-kirigami-devel kf6-kio-devel qt6-qtbase-devel qt6-qtdeclarative-devel)
 missing=(); for p in "${tools[@]}"; do rpm -q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 dnf -y install "${missing[@]}"
-cmake -S "$files/../src/taskbar-menu" -B /tmp/taskbar-menu -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
-cmake --build /tmp/taskbar-menu -j"$(nproc)"
-cmake --install /tmp/taskbar-menu
-rm -rf /tmp/taskbar-menu
+for plugin in taskbar-menu thispc; do
+    cmake -S "$files/../src/$plugin" -B "/tmp/$plugin" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
+    cmake --build "/tmp/$plugin" -j"$(nproc)"
+    cmake --install "/tmp/$plugin"
+    rm -rf "/tmp/$plugin"
+done
 [ ${#missing[@]} -eq 0 ] || dnf -y remove "${missing[@]}"
+# This PC groups (Folders / Storage drives) are two MIME types.
+update-mime-database /usr/share/mime
 # Panels use it instead of Plasma's own panel menu (new file + rename, see replace_file).
 shell=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/defaults
 python3 - "$shell" <<'EOF'

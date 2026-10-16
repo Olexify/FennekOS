@@ -1,0 +1,8 @@
+[Dolphin]
+Version=4
+ViewMode=0
+SortRole=type
+GroupedSorting=true
+SortFoldersFirst=false
+VisibleRoles=Icons_text
+PreviewsShown=false
