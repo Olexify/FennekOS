@@ -8,7 +8,7 @@ var categories = [
    {"name": "Sound", "kcm": "kcm_pulseaudio", "icon": "audio-volume-high", "desc": "Speakers, microphones, volume"},
    {"name": "Notifications", "kcm": "kcm_notifications", "icon": "preferences-desktop-notification-bell", "desc": "Popups, do not disturb"},
    {"name": "Power & battery", "kcm": "kcm_powerdevilprofilesconfig", "icon": "preferences-system-power-management", "desc": "Sleep, screen off, battery saving"},
-   {"name": "Battery & app usage", "cmd": "fennek-app apphistory", "icon": "utilities-system-monitor", "desc": "Which apps used the battery"},
+   {"name": "Battery & app usage", "cmd": "fennek-app apphistory", "icon": "fennek-apphistory", "desc": "Which apps used the battery"},
    {"name": "Storage", "cmd": "filelight", "icon": "drive-harddisk", "desc": "What uses space on your disks"},
    {"name": "About this computer", "kcm": "kcm_about-distro", "icon": "help-about", "desc": "Version, hardware"}
   ]},
