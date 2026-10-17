@@ -33,3 +33,15 @@ application/x-7z-compressed=org.kde.ark.desktop
 application/vnd.rar=org.kde.ark.desktop
 application/x-tar=org.kde.ark.desktop
 application/x-compressed-tar=org.kde.ark.desktop
+# Office documents (LibreOffice): Word, Excel, PowerPoint and the open formats.
+application/vnd.openxmlformats-officedocument.wordprocessingml.document=org.libreoffice.LibreOffice.writer.desktop
+application/msword=org.libreoffice.LibreOffice.writer.desktop
+application/rtf=org.libreoffice.LibreOffice.writer.desktop
+application/vnd.oasis.opendocument.text=org.libreoffice.LibreOffice.writer.desktop
+application/vnd.openxmlformats-officedocument.spreadsheetml.sheet=org.libreoffice.LibreOffice.calc.desktop
+application/vnd.ms-excel=org.libreoffice.LibreOffice.calc.desktop
+application/vnd.oasis.opendocument.spreadsheet=org.libreoffice.LibreOffice.calc.desktop
+text/csv=org.libreoffice.LibreOffice.calc.desktop
+application/vnd.openxmlformats-officedocument.presentationml.presentation=org.libreoffice.LibreOffice.impress.desktop
+application/vnd.ms-powerpoint=org.libreoffice.LibreOffice.impress.desktop
+application/vnd.oasis.opendocument.presentation=org.libreoffice.LibreOffice.impress.desktop

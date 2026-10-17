@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Once, in the background: the everyday apps people expect (photos, PDF, video, music, calculator, notepad,
-# archives, paint, scanning), from Flathub. Apps already in the image are skipped. Retried later if the network isn't there.
+# archives, paint, scanning, office), from Flathub. Apps already in the image are skipped. Retried later if the network isn't there.
 set -u
-stamp=/var/lib/fennek/essential-apps.done
+stamp=/var/lib/fennek/essential-apps.v2   # new name when the list grows: existing PCs fetch the new apps
 declare -A apps=([gwenview]=org.kde.gwenview [okular]=org.kde.okular [haruna]=org.kde.haruna [elisa]=org.kde.elisa
                  [kcalc]=org.kde.kcalc [kwrite]=org.kde.kwrite [ark]=org.kde.ark [kolourpaint]=org.kde.kolourpaint
-                 [skanpage]=org.kde.skanpage)
+                 [skanpage]=org.kde.skanpage [libreoffice]=org.libreoffice.LibreOffice)
 want=()
 for cmd in "${!apps[@]}"; do
     command -v "$cmd" >/dev/null || flatpak info --system "${apps[$cmd]}" >/dev/null 2>&1 || want+=("${apps[$cmd]}")

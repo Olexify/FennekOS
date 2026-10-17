@@ -1,8 +1,8 @@
 [Unit]
-Description=Install the everyday apps once (photos, PDF, video, music, calculator, notepad, archives, paint, scanning)
+Description=Install the everyday apps once (photos, PDF, video, music, calculator, notepad, archives, paint, scanning, office)
 Wants=network-online.target
 After=network-online.target flatpak-add-fedora-repos.service
-ConditionPathExists=!/var/lib/fennek/essential-apps.done
+ConditionPathExists=!/var/lib/fennek/essential-apps.v2
 # Not in the live/installer session: it would download into memory.
 ConditionKernelCommandLine=!rd.live.image
 
