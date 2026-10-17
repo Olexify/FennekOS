@@ -51,7 +51,8 @@ GridView {
 
 		enabled: availableSections.indexOf(section) >= 0
 
-		font.pixelSize: height * 0.38   // Fennek OS: smaller, calmer letters
+		font.pixelSize: height * 0.28   // Fennek OS: small, calm letters
+		font.weight: Font.Light
 
 		iconSource: {
 			if (isRecentApps) {
