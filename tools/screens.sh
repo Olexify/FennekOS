@@ -46,6 +46,7 @@ click 1560 880; shot 04-action-center; click 1560 880; sleep 1
 click 1498 880; shot 05-calendar; click 1498 880; sleep 1
 click 1390 880; shot 06-sound; click 1390 880; sleep 1
 click 1360 880; shot 07-network; click 1360 880; sleep 1
+click 1447 880; shot 18-hidden-icons; click 1447 880; sleep 1
 # Files' own first start (panels closed), quit normally: its saved window layout, for the new-user template.
 dolphin >/dev/null 2>&1 & sleep 7; DISPLAY=:99 xdotool key ctrl+q; sleep 3
 cp ~/.local/state/dolphinstaterc /out/dolphinstaterc-firstrun 2>/dev/null; cp ~/.config/dolphinrc /out/dolphinrc-firstrun 2>/dev/null
