@@ -1,0 +1,10 @@
+#!/usr/bin/bash
+# Start → "Open file location": the app's shortcut (its .desktop file) selected in Files.
+set -eu
+id=${1:-}
+case $id in "" | *[!A-Za-z0-9._-]* | .*) exit 1 ;; esac
+IFS=:
+for d in ${XDG_DATA_HOME:-$HOME/.local/share} ${XDG_DATA_DIRS:-/usr/local/share:/usr/share}; do
+    [ -e "$d/applications/$id" ] && exec dolphin --select "$d/applications/$id"
+done
+exit 1

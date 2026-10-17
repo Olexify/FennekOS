@@ -174,6 +174,17 @@ Item {
 
 			appObj.addActionList(menu)
 
+			// Fennek OS: like the classic Start menu, show the app's shortcut in Files.
+			if (/^[A-Za-z0-9_-][A-Za-z0-9._-]*\.desktop$/.test(modelData.url)) {
+				var locationItem = menu.newMenuItem()
+				locationItem.text = i18n("Open file location")
+				locationItem.icon = "folder-open"
+				locationItem.clicked.connect(function() {
+					widget.run("/usr/libexec/fennek-open-location " + modelData.url)
+				})
+				menu.addMenuItem(locationItem)
+			}
+
 			if (!plasmoid.configuration.tilesLocked) {
 				if (modelData.tileType == "group") {
 					var menuItem = menu.newMenuItem()

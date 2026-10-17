@@ -73,6 +73,10 @@ grep -q 'name="go_up"' "$r" && grep -q 'version="10[0-9][0-9]"' "$r" && grep -q 
 python3 -c "import sys, xml.dom.minidom as x; x.parse(sys.argv[1])" "$r"   || fail "Files toolbar file is not valid XML"
 [ -s /usr/share/fennek/apps/firewall/main.qml ] && grep -q '^Exec=fennek-app firewall' /usr/share/applications/fennek-firewall.desktop || fail "Firewall window"
 fennek-firewall list --json | python3 -c 'import json,sys; assert json.load(sys.stdin) == []' || fail "firewall list --json"
+# Start "Open file location": stand-in Files, so only the lookup runs.
+ol=$(mktemp -d) && printf '#!/bin/sh\necho "$*"\n' >"$ol/dolphin" && chmod +x "$ol/dolphin" \
+  && [ "$(PATH="$ol:$PATH" XDG_DATA_DIRS=/usr/share /usr/libexec/fennek-open-location org.kde.dolphin.desktop)" = "--select /usr/share/applications/org.kde.dolphin.desktop" ] \
+  && ! PATH="$ol:$PATH" /usr/libexec/fennek-open-location '../../etc/passwd' >/dev/null || fail "Start: open file location"
 # Go back (undo last update): stand-in rpm-ostree/pkexec, so only the decision logic runs.
 gb=$(mktemp -d) && printf '#!/bin/sh\necho "$GB_JSON"\n' >"$gb/rpm-ostree" && printf '#!/bin/sh\necho "pkexec $*"\n' >"$gb/pkexec" && chmod +x "$gb"/* \
   && [[ $(GB_JSON='{"deployments":[{"booted":true,"timestamp":1760000000}]}' PATH="$gb:$PATH" fennek-go-back --yes 2>&1) == *"no previous version"* ]] \
