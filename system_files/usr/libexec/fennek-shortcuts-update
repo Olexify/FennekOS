@@ -65,6 +65,17 @@ if [ "$(cat "$tb_seen" 2>/dev/null)" != 2026-10-18 ]; then
     mkdir -p "${tb_seen%/*}" && echo 2026-10-18 >"$tb_seen"
 fi
 
+# Desktop right-click, once: classic and short (New, Paste, Icons, Terminal, Wallpaper, Display); lock and sign
+# out stay in Start, editing the desktop layout in its own menu.
+dm_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/desktop-menu-version
+if [ "$(cat "$dm_seen" 2>/dev/null)" != 2026-10-18 ]; then
+    for a in _lock_screen _logout "edit mode"; do
+        kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 \
+            --group 'RightButton;NoModifier' --key "$a" false
+    done
+    mkdir -p "${dm_seen%/*}" && echo 2026-10-18 >"$dm_seen"
+fi
+
 # Files, once: the classic menu bar on (KDE hid it at the first start).
 files_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/files-version
 if [ "$(cat "$files_seen" 2>/dev/null)" != 2026-10-17 ]; then
