@@ -1,7 +1,5 @@
 # Fennek OS: Files (Dolphin) defaults that feel like the classic desktop.
 [General]
-# Not a "first run": on one, Files hides the menu bar (and its version check moves settings around).
-Version=202
 ShowStatusBar=FullWidth
 SortingChoice=NaturalSorting
 RememberOpenedTabs=false
