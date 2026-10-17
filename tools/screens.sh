@@ -74,5 +74,12 @@ kill $(jobs -p) 2>/dev/null; exit 0
 EOF
 chmod 755 /tmp/session.sh
 timeout 900 runuser -u anna -- env XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" HOME=/home/anna dbus-run-session -- bash /tmp/session.sh
+# Pointer sheet: every Fennek pointer at 48 px on light and on dark (screenshots don't show the pointer).
+s=/usr/share/fennek/cursor-src
+for bg in '#f3f3f3' '#2b2b2b'; do
+    magick -background "$bg" $(for n in default pointer text help progress-00 wait-00 copy alias move ew-resize ns-resize nwse-resize nesw-resize not-allowed crosshair grab grabbing; do echo "$s/$n.svg"; done) \
+        -resize 48x48 -bordercolor "$bg" -border 8 +append "/tmp/row-${bg#\#}.png"
+done
+magick /tmp/row-f3f3f3.png /tmp/row-2b2b2b.png -append "$out/20-pointers.png" || echo "no pointer sheet"
 chmod -R a+rX "$out"   # files written as the test user must be readable for the upload
 ls -la "$out"

@@ -35,12 +35,13 @@ if [ "$(cat "$theme_seen" 2>/dev/null)" != 2026-10-17 ]; then
     mkdir -p "${theme_seen%/*}" && echo 2026-10-17 >"$theme_seen"
 fi
 
-# Pointer, once: the earlier rounded pointer -> the classic-looking Breeze Light (an own choice stays).
+# Pointer, once per change: the earlier stock pointers -> Fennek's own (an own choice stays).
 ptr_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/pointer-version
-if [ "$(cat "$ptr_seen" 2>/dev/null)" != 2026-10-17 ]; then
-    [ "$(kreadconfig6 --file kcminputrc --group Mouse --key cursorTheme)" = Bibata-Modern-Ice ] \
-        && kwriteconfig6 --file kcminputrc --group Mouse --key cursorTheme Breeze_Light
-    mkdir -p "${ptr_seen%/*}" && echo 2026-10-17 >"$ptr_seen"
+if [ "$(cat "$ptr_seen" 2>/dev/null)" != 2026-10-18 ]; then
+    case "$(kreadconfig6 --file kcminputrc --group Mouse --key cursorTheme)" in
+        ""|Bibata-Modern-Ice|Breeze_Light|breeze_cursors) kwriteconfig6 --file kcminputrc --group Mouse --key cursorTheme Fennek-Cursors ;;
+    esac
+    mkdir -p "${ptr_seen%/*}" && echo 2026-10-18 >"$ptr_seen"
 fi
 
 # Icons, once: a dark desktop gets the dark-ready Fennek icons (the light set drew dark symbols on dark windows).

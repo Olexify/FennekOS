@@ -48,11 +48,11 @@ dnf -y install \
 dnf -y install --setopt=tsflags=noscripts "$OSN_RPM"
 rm -f "$OSN_RPM" /tmp/umu-launcher.rpm
 
-# Mouse pointer: KDE's Breeze Light (slim, sharp white arrow with a dark outline, the classic look). Built in.
+# Mouse pointer: Fennek's own (classic shapes, sharp, soft shadow; rendered further down), Breeze Light behind it.
 # Default for everyone: KDE, GTK/X11 apps (icons/default), the sign-in screen (SDDM config below).
-kwriteconfig6 --file /etc/xdg/kcminputrc --group Mouse --key cursorTheme Breeze_Light
+kwriteconfig6 --file /etc/xdg/kcminputrc --group Mouse --key cursorTheme Fennek-Cursors
 mkdir -p /usr/share/icons/default
-printf '[Icon Theme]\nInherits=Breeze_Light\n' > /usr/share/icons/default/index.theme
+printf '[Icon Theme]\nInherits=Fennek-Cursors\n' > /usr/share/icons/default/index.theme
 
 # No-telemetry: umu contacts Valve on every launch even with UMU_RUNTIME_UPDATE=0. Make "0" fully offline
 # when the runtime is already installed (fennek-run-exe allows update checks at most once a day).
@@ -110,7 +110,7 @@ kwriteconfig6 --file /etc/xdg/kdeglobals --group WM --key activeFont "Inter,10,-
 kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key AccentColor 109,69,184
 printf '\n[kdeglobals][General]\nAccentColor=109,69,184\n' >> "$lnf/contents/defaults"
 printf '\n[kdeglobals][Icons]\nTheme=Fennek\n' >> "$lnf/contents/defaults"
-printf '\n[kcminputrc][Mouse]\ncursorTheme=Breeze_Light\n' >> "$lnf/contents/defaults"
+printf '\n[kcminputrc][Mouse]\ncursorTheme=Fennek-Cursors\n' >> "$lnf/contents/defaults"
 # Taskbar, Start and tray panels dark, apps light (the familiar default); the dark theme copies this.
 # Panel theme "Fennek Dark": KDE's Breeze Dark plus Fennek's taskbar buttons (widgets/tasks.svg from
 # branding/make-taskbar-svg.py: line under running apps, soft background on the focused one).
@@ -466,7 +466,7 @@ mkdir -p /etc/sddm.conf.d
 cat >/etc/sddm.conf.d/10-fennek.conf <<'EOF'
 [Theme]
 Current=fennek
-CursorTheme=Breeze_Light
+CursorTheme=Fennek-Cursors
 EOF
 
 # Dual boot: "Restart to Windows" appears when a Windows boot entry exists.
@@ -524,7 +524,7 @@ systemctl enable rpm-ostreed-automatic.timer
 # Compiled here; the build tools are removed again.
 tools=(cmake extra-cmake-modules gcc-c++ libplasma-devel kf6-kcoreaddons-devel kf6-kconfig-devel kf6-kwindowsystem-devel
        kf6-kpackage-devel kf6-kservice-devel kf6-kirigami-devel kf6-kio-devel qt6-qtbase-devel qt6-qtdeclarative-devel
-       rust cargo 'rust-zbus+default-devel' 'rust-inotify+default-devel')
+       rust cargo 'rust-zbus+default-devel' 'rust-inotify+default-devel' librsvg2-tools xcursorgen)
 missing=(); for p in "${tools[@]}"; do rpm -q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 dnf -y install "${missing[@]}"
 for plugin in taskbar-menu thispc fennek-app; do
@@ -554,10 +554,34 @@ done
 rm -rf /tmp/cargo-home
 # Syntax check of every Fennek QML file while Qt's tools are here: a typo fails the build, not the desktop.
 qmlformat=$(command -v qmlformat || echo /usr/lib64/qt6/bin/qmlformat)
-for f in /usr/share/plasma/plasmoids/org.fennek.*/contents/ui/*.qml /usr/share/fennek/apps/*/main.qml /usr/share/sddm/themes/fennek/*.qml \
+for f in /usr/share/plasma/plasmoids/org.fennek.*/contents/ui/*.qml /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/*.qml /usr/share/fennek/apps/*/main.qml /usr/share/sddm/themes/fennek/*.qml \
          /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/splash/Splash.qml; do
     "$qmlformat" "$f" >/dev/null || { echo "QML syntax error in $f"; exit 1; }
 done
+# Fennek pointers (branding/make-cursors.py): rendered at 24/32/48/64 px into the pointer theme Fennek-Cursors;
+# shapes it does not draw come from Breeze Light.
+csrc=/usr/share/fennek/cursor-src; ctheme=/usr/share/icons/Fennek-Cursors
+mkdir -p "$ctheme/cursors" /tmp/cur
+while read -r name hx hy frames aliases; do
+    : > "/tmp/cur/$name.cfg"
+    for size in 24 32 48 64; do
+        x=$(awk -v h="$hx" -v s="$size" 'BEGIN { printf "%d", h * s / 32 + 0.5 }')
+        y=$(awk -v h="$hy" -v s="$size" 'BEGIN { printf "%d", h * s / 32 + 0.5 }')
+        if [ "$frames" = 0 ]; then
+            rsvg-convert -w "$size" -h "$size" "$csrc/$name.svg" -o "/tmp/cur/$name-$size.png"
+            echo "$size $x $y /tmp/cur/$name-$size.png" >> "/tmp/cur/$name.cfg"
+        else
+            for i in $(seq -w 0 $((frames - 1))); do
+                rsvg-convert -w "$size" -h "$size" "$csrc/$name-$i.svg" -o "/tmp/cur/$name-$size-$i.png"
+                echo "$size $x $y /tmp/cur/$name-$size-$i.png 50" >> "/tmp/cur/$name.cfg"
+            done
+        fi
+    done
+    xcursorgen "/tmp/cur/$name.cfg" "$ctheme/cursors/$name"
+    for a in $aliases; do ln -sf "$name" "$ctheme/cursors/$a"; done
+done < "$csrc/cursors.txt"
+printf '[Icon Theme]\nName=Fennek\nComment=Fennek OS pointers: the classic shapes, sharp and clean\nInherits=Breeze_Light\n' > "$ctheme/index.theme"
+rm -rf /tmp/cur
 [ ${#missing[@]} -eq 0 ] || dnf -y remove "${missing[@]}"
 # This PC groups (Folders / Storage drives) are two MIME types.
 update-mime-database /usr/share/mime
