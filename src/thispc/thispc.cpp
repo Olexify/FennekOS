@@ -2,6 +2,7 @@
 // to the sidebar, the folders you use most, then your drives with free space, like the classic This PC page.
 // Entries are links: opening one goes to the real folder or drive.
 // Grouping ("Folders" / "Frequent folders" / "Storage drives") comes from the MIME types in fennek-thispc.xml.
+#include <cmath>
 #include <KIO/WorkerBase>
 #include <QCoreApplication>
 #include <QDir>
@@ -110,9 +111,15 @@ QList<Item> items()
         const auto size = [&](qint64 b) { return locale.formattedDataSize(b, 1, QLocale::DataSizeTraditionalFormat); };
         return QStringLiteral("%1 · %2 free").arg(label, size(s.bytesAvailable()));
     };
+    // Drive icon with a usage bar (like the classic This PC page): fennek-drive-used-0 ... -100 in steps of 10.
+    const auto usageIcon = [](const QStorageInfo &s) {
+        const qint64 total = s.bytesTotal();
+        const int used = total > 0 ? int(std::lround(10.0 * double(total - s.bytesAvailable()) / double(total))) * 10 : 0;
+        return QStringLiteral("fennek-drive-used-%1").arg(std::clamp(used, 0, 100));
+    };
     // The disk your files live on, then every other mounted drive (USB sticks, second disks, partitions).
     const QStorageInfo mine(home);
-    out.append({QStringLiteral("local-disk"), describe(QStringLiteral("Local Disk"), mine), QStringLiteral("drive-harddisk"),
+    out.append({QStringLiteral("local-disk"), describe(QStringLiteral("Local Disk"), mine), usageIcon(mine),
                 QStringLiteral("inode/x-fennek-drive"), home});
     n = 0;
     const auto volumes = QStorageInfo::mountedVolumes();
@@ -122,8 +129,7 @@ QList<Item> items()
             || !(root.startsWith(QLatin1String("/run/media/")) || root.startsWith(QLatin1String("/media/")) || root.startsWith(QLatin1String("/mnt/"))))
             continue;
         const QString label = s.name().isEmpty() ? QDir(root).dirName() : s.name();
-        const bool removable = root.startsWith(QLatin1String("/run/media/"));
-        out.append({QStringLiteral("drive-%1").arg(++n), describe(label, s), QLatin1String(removable ? "drive-removable-media" : "drive-harddisk"),
+        out.append({QStringLiteral("drive-%1").arg(++n), describe(label, s), usageIcon(s),
                     QStringLiteral("inode/x-fennek-drive"), root});
     }
     return out;

@@ -384,8 +384,10 @@ s = rc[:rc.find(b"</gui>") + 6].decode()
 if edit == "files-toolbar":
     m = re.search(r'(<ToolBar[^>]*name="mainToolBar"[^>]*>\s*<text[^<]*</text>)(.*?)(\s*</ToolBar>)', s, re.S)
     assert m and 'name="go_back"' in m.group(2), "Files main toolbar changed upstream"
-    acts = ("go_back", "go_forward", "go_up", "url_navigators", "toggle_search", "hamburger_menu")
-    s = s[:m.start(2)] + "".join(f'\n        <Action name="{a}" />' for a in acts) + s[m.end(2):]
+    # Then the classic View tools: view mode, sort, hidden files, filter, details pane.
+    acts = ("go_back", "go_forward", "go_up", "url_navigators", "toggle_search", "-",
+            "view_mode", "sort", "show_hidden_files", "show_filter_bar", "show_information_panel")
+    s = s[:m.start(2)] + "".join("\n        <Separator />" if a == "-" else f'\n        <Action name="{a}" />' for a in acts) + s[m.end(2):]
 elif edit in ("hide-toolbars", "terminal-session"):
     s, n = re.subn(r'<ToolBar(?![^>]*hidden=)', '<ToolBar hidden="true"', s)
     assert n, f"no toolbar in {rcfile}"

@@ -52,6 +52,18 @@ if [ "$(cat "$icons_seen" 2>/dev/null)" != 2026-10-18 ]; then
     mkdir -p "${icons_seen%/*}" && echo 2026-10-18 >"$icons_seen"
 fi
 
+# Taskbar and This PC, once: right-click on the taskbar = the classic taskbar menu (panels made before it
+# existed kept KDE's panel menu), and This PC as big grouped icons for accounts made before that existed.
+tb_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/taskbar-menu-version
+if [ "$(cat "$tb_seen" 2>/dev/null)" != 2026-10-18 ]; then
+    rc=plasma-org.kde.plasma.desktop-appletsrc
+    [ "$(kreadconfig6 --file "$rc" --group ActionPlugins --group 1 --key 'RightButton;NoModifier')" = org.kde.contextmenu ] \
+        && kwriteconfig6 --file "$rc" --group ActionPlugins --group 1 --key 'RightButton;NoModifier' org.fennek.taskbarmenu
+    vp=${XDG_DATA_HOME:-$HOME/.local/share}/dolphin/view_properties/remote/.directory
+    [ -e "$vp" ] || { mkdir -p "${vp%/*}" && cp /etc/skel/.local/share/dolphin/view_properties/remote/.directory "$vp"; }
+    mkdir -p "${tb_seen%/*}" && echo 2026-10-18 >"$tb_seen"
+fi
+
 # Files, once: the classic menu bar on (KDE hid it at the first start).
 files_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/files-version
 if [ "$(cat "$files_seen" 2>/dev/null)" != 2026-10-17 ]; then

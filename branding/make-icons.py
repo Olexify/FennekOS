@@ -75,6 +75,14 @@ for k, ns in names.items():
     s = app(*glyphs[k])
     for n in ns:
         open(f"{base}/{n}.svg", "w", newline="\n").write(s)
+# Drives with a usage bar for This PC (fennek-drive-used-0 ... -100): the bar turns red when nearly full.
+for pct in range(0, 101, 10):
+    fill = "#ff6b6b" if pct >= 90 else "#fff"
+    bar = (f'<rect x="15" y="40" width="34" height="5" rx="2.5" fill="#fff" fill-opacity=".3" stroke="none"/>'
+           f'<rect x="15" y="40" width="{34 * pct / 100:.1f}" height="5" rx="2.5" fill="{fill}" stroke="none"/>' if pct else
+           '<rect x="15" y="40" width="34" height="5" rx="2.5" fill="#fff" fill-opacity=".3" stroke="none"/>')
+    glyph = '<rect x="17" y="18" width="30" height="15" rx="4"/><circle cx="40" cy="25.5" r="1.8" fill="#fff" stroke="none"/>' + bar
+    open(f"{base}/devices/fennek-drive-used-{pct}.svg", "w", newline="\n").write(app("#9aa3b0", "#5d6674", glyph))
 for n in ("fennek-firewall", "fennek-quarantine", "fennek-settings", "fennek-apphistory"):
     open(f"{hicolor}/{n}.svg", "w", newline="\n").write(open(f"{base}/apps/{n}.svg").read())
 
