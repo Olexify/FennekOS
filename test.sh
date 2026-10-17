@@ -359,6 +359,7 @@ echo "services:       $(systemctl list-unit-files --type=service --state=enabled
 echo "user services:  $(systemctl --global list-unit-files --type=service --state=enabled --no-legend 2>/dev/null | awk '{print $1}' | tr '\n' ' ')"
 echo "start menu apps: $(grep -L -E '^(NoDisplay|Hidden)=true' /usr/share/applications/*.desktop | xargs -n1 basename | tr '\n' ' ')"
 echo "firefox: $(rpm -q firefox 2>/dev/null || echo 'not installed (rpm)')"
+echo "printing/scanning: $(rpm -q cups print-manager sane-backends ipp-usb avahi cups-filters 2>&1 | tr '\n' ' ')"
 # For the action center's Clipboard tab: what the clipboard module offers.
 cb=$(dirname "$(find /usr/lib64/qt6/qml/org/kde/plasma/private -name qmldir -path '*clipboard*' | head -1)" 2>/dev/null)
 echo "clipboard module: $cb $(cat "$cb/qmldir" 2>/dev/null | tr '\n' ' ')"
