@@ -34,6 +34,15 @@ glyphs = {
     "trashfull": ("#c3cad4", "#8b95a3", trash + '<path d="M29 30v8M35 30v8" stroke-width="2.6"/>'),
     "drive": ("#9aa3b0", "#5d6674", '<rect x="17" y="25" width="30" height="16" rx="4"/><circle cx="40" cy="33" r="1.8" fill="#fff" stroke="none"/>'),
     "pc": ("#5aa9f8", "#1f6fd6", '<rect x="17" y="20" width="30" height="19" rx="3"/><path d="M27 45h10M32 39v6"/>'),
+    "archives": ("#d2ab82", "#916b4c", '<path d="M18 20h28v6H18z"/><path d="M20 26h24v16a3 3 0 0 1-3 3H23a3 3 0 0 1-3-3z"/><path d="M29 32h6"/>'),
+    "storage": ("#43d0c2", "#159a8f", '<circle cx="32" cy="32" r="12"/><path d="M32 20v12h12"/>'),
+    "phone": ("#6fd36f", "#2f9e46", '<rect x="24" y="17" width="16" height="30" rx="3.5"/><path d="M30 42h4"/>'),
+    "sharing": ("#7c8cf8", "#4352d6", '<rect x="17" y="20" width="30" height="19" rx="3"/><path d="M27 45h10M32 39v6"/><path d="M28 30l4-4 4 4M32 26v8" stroke-width="3"/>'),
+    "pdf": ("#ff7a6b", "#d93a2b", '<path d="M24 17h12l8 8v19a3 3 0 0 1-3 3H24a3 3 0 0 1-3-3V20a3 3 0 0 1 3-3z"/><path d="M36 17v8h8"/><path d="M26 34h12M26 39h8" stroke-width="3"/>'),
+    "media": ("#ff6aa0", "#d62f6b", '<path d="M27 22l15 10-15 10z" fill="#fff" stroke="none"/>'),
+    "music": ("#ff8a65", "#e8503a", '<path d="M30 42V24l12-3v17"/><circle cx="26.5" cy="42" r="3.5"/><circle cx="38.5" cy="38" r="3.5"/>'),
+    "paint": ("#ffb74d", "#f57c00", '<path d="M40 18l6 6-14 14-6-6z"/><path d="M26 32c-4 0-6 3-6 6 0 2-1 4-3 5 5 1 12 0 14-5"/>'),
+    "scanner": ("#90a4ae", "#546e7a", '<rect x="17" y="30" width="30" height="12" rx="3"/><path d="M20 30l4-8h20"/><path d="M23 36h12" stroke-width="3"/>'),
 }
 names = {
     "files": ["apps/org.kde.dolphin", "apps/system-file-manager", "apps/file-manager"],
@@ -48,6 +57,15 @@ names = {
     "screenshot": ["apps/org.kde.spectacle", "apps/spectacle", "apps/applets-screenshooter"],
     "trash": ["places/user-trash", "places/trash-empty"], "trashfull": ["places/user-trash-full", "places/trash-full"],
     "drive": ["devices/drive-harddisk", "devices/drive-harddisk-root"], "pc": ["devices/computer", "places/computer"],
+    "archives": ["apps/org.kde.ark", "apps/ark", "apps/utilities-file-archiver"],
+    "storage": ["apps/org.kde.filelight", "apps/filelight"],
+    "phone": ["apps/org.kde.kdeconnect.app", "apps/kdeconnect", "apps/kdeconnect-app"],
+    "sharing": ["apps/org.kde.krfb", "apps/krfb", "apps/preferences-desktop-remote-desktop"],
+    "pdf": ["apps/org.kde.okular", "apps/okular"],
+    "media": ["apps/org.kde.haruna", "apps/haruna"],
+    "music": ["apps/org.kde.elisa", "apps/elisa"],
+    "paint": ["apps/org.kde.kolourpaint", "apps/kolourpaint"],
+    "scanner": ["apps/org.kde.skanpage", "apps/skanpage"],
 }
 for k, ns in names.items():
     s = app(*glyphs[k])
