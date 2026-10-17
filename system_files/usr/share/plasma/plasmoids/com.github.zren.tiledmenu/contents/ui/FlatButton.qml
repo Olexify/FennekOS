@@ -10,9 +10,7 @@ QQC2.ToolButton {
 	icon.name: ""
 	// Fennek OS: colours from the panel theme, not the app colour scheme (dark Start + light apps would
 	// otherwise draw dark icons, e.g. Power, on the dark menu).
-	icon.color: menuText
-	// The nearest container that publishes the menu's text colour (the left strip), else the theme's.
-	readonly property color menuText: { for (var p = parent; p; p = p.parent) if (p.menuTextColor !== undefined) return p.menuTextColor; return Kirigami.Theme.textColor }
+	icon.color: config.menuTextColor
 	property bool expanded: true
 	text: ""
 	display: expanded ? QQC2.AbstractButton.TextBesideIcon : QQC2.AbstractButton.IconOnly
@@ -39,7 +37,7 @@ QQC2.ToolButton {
 		spacing: Kirigami.Units.largeSpacing
 		Kirigami.Icon {
 			source: flatButton.icon.name || flatButton.icon.source
-			color: flatButton.menuText
+			color: config.menuTextColor
 			Layout.preferredWidth: flatButton._iconSize
 			Layout.preferredHeight: flatButton._iconSize
 			Layout.alignment: flatButton.display === QQC2.AbstractButton.IconOnly ? Qt.AlignCenter : Qt.AlignVCenter
@@ -47,7 +45,7 @@ QQC2.ToolButton {
 		PlasmaComponents3.Label {
 			visible: flatButton.display !== QQC2.AbstractButton.IconOnly && flatButton.text !== ""
 			text: flatButton.text
-			color: flatButton.menuText
+			color: config.menuTextColor
 			elide: Text.ElideRight
 			Layout.fillWidth: true
 		}

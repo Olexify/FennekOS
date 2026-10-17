@@ -3,9 +3,6 @@ import org.kde.kirigami as Kirigami
 import org.kde.ksvg as KSvg
 
 MouseArea {
-	// Fennek OS: the menu's text colour (drawn with the same theme as this strip's dark background); the strip's
-	// buttons look it up, as their own style reports the light app scheme's dark text.
-	readonly property color menuTextColor: Kirigami.Theme.textColor
 	id: sidebarMenu
 	hoverEnabled: true
 	z: 1

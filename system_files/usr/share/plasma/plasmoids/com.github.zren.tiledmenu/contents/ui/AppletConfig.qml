@@ -2,8 +2,13 @@ import QtQuick
 import QtQuick.Window
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.core as PlasmaCore
+import org.kde.plasma.components as PlasmaComponents3
 
 Item {
+	// Fennek OS: the menu's text colour as Plasma labels get it (the list's light text on the dark menu);
+	// Kirigami.Theme in Start reports the light app scheme's dark text.
+	PlasmaComponents3.Label { id: menuTextProbe; visible: false }
+	readonly property color menuTextColor: menuTextProbe.color
 	function setAlpha(c, a) {
 		var c2 = Qt.darker(c, 1)
 		c2.a = a
