@@ -336,6 +336,13 @@ for c in cats:
         if "cmd" in i and not shutil.which(i["cmd"].split()[0]): bad.append(i["cmd"])
 assert not bad, bad
 PY
+python3 - <<'PY' || fail "classic commands / language list open a Settings page that isn't installed"
+import glob, os, re
+kcms = {os.path.basename(p)[:-3] for p in glob.glob("/usr/lib64/qt6/plugins/plasma/kcms/**/*.so", recursive=True)}
+src = open("/usr/libexec/fennek-classic-command").read() + open("/usr/share/plasma/plasmoids/org.fennek.keyboard/contents/ui/main.qml").read()
+used = set(re.findall(r'\b(kcm_[a-z_]+)', src))
+assert len(used) >= 7 and used <= kcms, sorted(used - kcms)
+PY
 python3 - <<'PY' || fail "Start right-click menu runs something that isn't installed"
 import glob, os, re, shutil
 src = open("/usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/main.qml").read()
