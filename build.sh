@@ -136,6 +136,12 @@ done
 kwriteconfig6 --file "$c" --group Colors:Selection --key BackgroundNormal 109,69,184
 kwriteconfig6 --file "$lnf/contents/defaults" --group plasmarc --group Theme --key name fennek-dark
 kwriteconfig6 --file /etc/xdg/plasmarc --group Theme --key name fennek-dark
+# Monochrome folder icons inside the Fennek set too: KDE's lookup shortens a missing "-symbolic" name within
+# Fennek first (giving the coloured folder) before it would look in Breeze.
+for n in folder folder-documents folder-download folder-pictures folder-videos folder-music user-home user-desktop; do
+    src=$(find /usr/share/icons/breeze -name "$n-symbolic.svg" -path '*places*' | sort | tail -1)
+    [ -n "$src" ] && cp "$src" "/usr/share/icons/Fennek/scalable/places/$n-symbolic.svg"
+done
 gtk-update-icon-cache -f -t /usr/share/icons/Fennek 2>/dev/null || true
 # Colour schemes "Fennek Light" / "Fennek Dark": Breeze with Fennek violet where Breeze has its blue (selection,
 # focus, hover, links). Apps read colours, not the accent setting, so the violet has to be in the scheme itself.

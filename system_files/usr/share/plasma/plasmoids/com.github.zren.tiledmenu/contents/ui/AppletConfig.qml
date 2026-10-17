@@ -4,6 +4,8 @@ import org.kde.kirigami as Kirigami
 import org.kde.plasma.core as PlasmaCore
 
 Item {
+	// Fennek OS: the menu's text colour (this item inherits the panel theme; buttons report the app scheme's).
+	readonly property color menuTextColor: Kirigami.Theme.textColor
 	function setAlpha(c, a) {
 		var c2 = Qt.darker(c, 1)
 		c2.a = a
