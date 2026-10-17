@@ -128,6 +128,7 @@ PlasmoidItem {
         }
 
         PC3.ToolButton {
+            icon.color: Kirigami.Theme.textColor   // symbolic icons follow the panel's text colour
             Layout.margins: Kirigami.Units.smallSpacing
             text: "Date and time settings"
             icon.name: "preferences-system-time"

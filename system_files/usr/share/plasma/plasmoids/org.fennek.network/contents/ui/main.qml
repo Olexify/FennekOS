@@ -124,6 +124,7 @@ PlasmoidItem {
                         onAccepted: row.toggle()
                     }
                     PC3.Button {
+                        icon.color: Kirigami.Theme.textColor   // symbolic icons follow the panel's text colour
                         Layout.alignment: Qt.AlignRight
                         text: row.connected || row.busy ? "Disconnect" : "Connect"
                         enabled: !(row.needsPassword && !row.connected && password.text === "")
@@ -140,6 +141,7 @@ PlasmoidItem {
         }
 
         PC3.ToolButton {
+            icon.color: Kirigami.Theme.textColor   // symbolic icons follow the panel's text colour
             text: "Network settings"
             icon.name: "configure"
             onClicked: { KCMUtils.KCMLauncher.openSystemSettings("kcm_networkmanagement"); root.expanded = false }
@@ -150,6 +152,7 @@ PlasmoidItem {
             Layout.margins: Kirigami.Units.smallSpacing
             spacing: Kirigami.Units.smallSpacing
             PC3.Button {
+                icon.color: Kirigami.Theme.textColor   // symbolic icons follow the panel's text colour
                 visible: devices.wirelessDeviceAvailable
                 Layout.preferredWidth: Kirigami.Units.gridUnit * 6.5
                 Layout.preferredHeight: Kirigami.Units.gridUnit * 3.5
@@ -161,6 +164,7 @@ PlasmoidItem {
                 onClicked: handler.enableWireless(!enabledConnections.wirelessEnabled)
             }
             PC3.Button {
+                icon.color: Kirigami.Theme.textColor   // symbolic icons follow the panel's text colour
                 visible: devices.wirelessDeviceAvailable || devices.modemDeviceAvailable
                 Layout.preferredWidth: Kirigami.Units.gridUnit * 6.5
                 Layout.preferredHeight: Kirigami.Units.gridUnit * 3.5

@@ -55,6 +55,7 @@ PlasmoidItem {
             Layout.bottomMargin: Kirigami.Units.largeSpacing
             spacing: Kirigami.Units.largeSpacing
             PC3.ToolButton {
+                icon.color: Kirigami.Theme.textColor   // symbolic icons follow the panel's text colour
                 icon.name: AudioIcon.forVolume(root.percent, root.muted, "")
                 onClicked: if (root.sink) root.sink.muted = !root.sink.muted
                 PC3.ToolTip.text: root.muted ? "Unmute" : "Mute"

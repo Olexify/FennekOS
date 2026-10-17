@@ -110,6 +110,7 @@ PlasmoidItem {
             Layout.margins: Kirigami.Units.smallSpacing
             Kirigami.Heading { text: "Notifications"; level: 4; Layout.fillWidth: true }
             PC3.ToolButton {
+                icon.color: Kirigami.Theme.textColor   // symbolic icons follow the panel's text colour
                 text: "Clear all"
                 visible: list.count > 0
                 onClicked: history.clear(NotificationManager.Notifications.ClearExpired)
@@ -149,6 +150,7 @@ PlasmoidItem {
                                     maximumLineCount: 3; elide: Text.ElideRight; textFormat: Text.StyledText }
                     }
                     PC3.ToolButton {
+                        icon.color: Kirigami.Theme.textColor   // symbolic icons follow the panel's text colour
                         icon.name: "window-close"
                         Layout.alignment: Qt.AlignTop
                         onClicked: history.close(history.index(index, 0))
