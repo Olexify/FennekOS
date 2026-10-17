@@ -336,6 +336,15 @@ for c in cats:
         if "cmd" in i and not shutil.which(i["cmd"].split()[0]): bad.append(i["cmd"])
 assert not bad, bad
 PY
+python3 - <<'PY' || fail "QML: a top-level property or handler is set twice (the widget would not load)"
+import glob, re, collections
+bad = []
+for f in glob.glob("/usr/share/plasma/plasmoids/org.fennek.*/contents/ui/main.qml") + glob.glob("/usr/share/fennek/apps/*/main.qml"):
+    keys = collections.Counter(m.group(1) for m in re.finditer(r"^    ((?:on[A-Z]\w*|[a-z]\w*(?:\.\w+)*)):(?!:)", open(f).read(), re.M)
+                               if not m.group(1).startswith(("property", "readonly", "function", "signal", "required")))
+    bad += [f"{f}: {k}" for k, n in keys.items() if n > 1]
+assert not bad, bad
+PY
 python3 - <<'PY' || fail "classic commands / language list open a Settings page that isn't installed"
 import glob, os, re
 kcms = {os.path.basename(p)[:-3] for p in glob.glob("/usr/lib64/qt6/plugins/plasma/kcms/**/*.so", recursive=True)}

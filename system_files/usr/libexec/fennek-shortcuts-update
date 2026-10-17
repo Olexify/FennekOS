@@ -68,12 +68,20 @@ fi
 # Desktop right-click, once: classic and short (New, Paste, Icons, Terminal, Wallpaper, Display); lock and sign
 # out stay in Start, editing the desktop layout in its own menu.
 dm_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/desktop-menu-version
-if [ "$(cat "$dm_seen" 2>/dev/null)" != 2026-10-18 ]; then
+# Repair (2026-10-18 build): a first sign-in got only these settings and no menu; give the desktop its menu back.
+arc=${XDG_CONFIG_HOME:-$HOME/.config}/plasma-org.kde.plasma.desktop-appletsrc
+if grep -qF '[ActionPlugins][0][RightButton;NoModifier]' "$arc" 2>/dev/null \
+   && [ -z "$(kreadconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'RightButton;NoModifier')" ]; then
+    kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'RightButton;NoModifier' org.kde.contextmenu
+fi
+# Only once the desktop has made its own menu settings: written earlier, they would stand in for KDE's defaults and
+# leave the desktop with no right-click menu at all (first sign-in). Then it simply happens at the next sign-in.
+if [ "$(cat "$dm_seen" 2>/dev/null)" != 2026-10-18b ]    && [ "$(kreadconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'RightButton;NoModifier')" = org.kde.contextmenu ]; then
     for a in _lock_screen _logout "edit mode"; do
         kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 \
             --group 'RightButton;NoModifier' --key "$a" false
     done
-    mkdir -p "${dm_seen%/*}" && echo 2026-10-18 >"$dm_seen"
+    mkdir -p "${dm_seen%/*}" && echo 2026-10-18b >"$dm_seen"
 fi
 
 # Files, once: the classic menu bar on (KDE hid it at the first start).

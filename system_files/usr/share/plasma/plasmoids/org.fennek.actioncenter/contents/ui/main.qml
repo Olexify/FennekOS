@@ -27,7 +27,6 @@ PlasmoidItem {
     // Clipboard history (the clipboard service's own list: text, links, images and snips).
     Clip.HistoryModel { id: clipHistory }
     property string page: "notifications"   // or "clipboard"
-    onExpandedChanged: if (!expanded) page = "notifications"
     NotificationManager.Notifications {
         id: history
         showExpired: true
@@ -77,7 +76,7 @@ PlasmoidItem {
     // Screen brightness (laptops, monitors with brightness control); -1 = none, slider hidden.
     property int brightness: -1
     Timer { id: setBrightness; interval: 120; onTriggered: run.connectSource("/usr/libexec/fennek-brightness set " + root.brightness) }
-    onExpandedChanged: if (expanded) {
+    onExpandedChanged: if (!expanded) page = "notifications"; else {   // closed: back to Notifications next time
         run.connectSource(profileCmd); run.connectSource(nightCmd); run.connectSource("/usr/libexec/fennek-brightness get")
     }
     function setProfile(name) {
