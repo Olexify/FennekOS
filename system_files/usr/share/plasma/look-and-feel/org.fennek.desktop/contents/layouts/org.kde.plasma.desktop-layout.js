@@ -17,7 +17,9 @@ start.writeConfig("searchFieldFollowsTheme", true)
 start.writeConfig("defaultTileColor", "#406d45b8")   // translucent accent violet (AARRGGBB), light and dark
 start.writeConfig("showRecentApps", false)           // clean A-Z list, no "Most used" block
 start.writeConfig("appDescription", "hidden")
-start.writeConfig("hideSearchField", true)                 // just start typing; the field appears then
+start.writeConfig("hideSearchField", true)
+start.writeConfig("popupHeight", 760)   // big by default: room for many tiles; resizable from its edge
+start.writeConfig("favGridCols", 8)                 // just start typing; the field appears then
 start.writeConfig("sidebarShortcuts", ["xdg:DOCUMENTS", "xdg:DOWNLOAD", "xdg:PICTURES", "xdg:VIDEOS", "fennek-settings.desktop"])
 // Default tiles, classic: named groups, big and small tiles (base64 JSON, Tiled Menu's format;
 // test.sh checks every tile points to an installed app). Groups: Fennek, Safety.

@@ -78,12 +78,14 @@ Item {
 				text: i18n("Alphabetical")
 				onClicked: appsView.showAppsAlphabetically()
 				checked: searchView.showingAppsAlphabetically
+				visible: false   // Fennek OS: no view buttons; click a letter header to filter
 			}
 			SidebarViewButton {
 				appletIconName: 'view-list-categorically'
 				text: i18n("Categories")
 				onClicked:  appsView.showAppsCategorically()
 				checked: searchView.showingAppsCategorically
+				visible: false   // Fennek OS: see above
 			}
 			// SidebarItem {
 			// 	icon.name: 'system-search-symbolic'

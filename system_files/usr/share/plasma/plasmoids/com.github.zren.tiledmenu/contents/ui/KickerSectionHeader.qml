@@ -26,8 +26,9 @@ MouseArea {
 			}
 		}
 
-		// Add 4pt to font. Default 10pt => 14pt
-		font.pointSize: Kirigami.Theme.defaultFont.pointSize + 4
+		// Fennek OS: small, elegant letter headers (normal size, semi-bold, a little muted); click for the letters.
+		font.weight: Font.DemiBold
+		opacity: 0.8
 
 		property bool centerOverIcon: sectionHeading.contentWidth <= listView.iconSize
 		width: centerOverIcon ? listView.iconSize : parent.width
