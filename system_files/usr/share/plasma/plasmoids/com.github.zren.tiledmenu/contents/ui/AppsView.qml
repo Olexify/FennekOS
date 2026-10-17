@@ -10,6 +10,7 @@ QQC2.ScrollView {
 	// possible since it inits at width=350px, then changes to 0px until
 	// the popup is opened before it returns to 350px.
 	QQC2.ScrollBar.horizontal.policy: QQC2.ScrollBar.AlwaysOff
+	QQC2.ScrollBar.vertical: FennekScrollBar {}
 
 	KickerListView {
 		id: appsListView

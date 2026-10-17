@@ -110,6 +110,7 @@ GridLayout {
 		QQC2.ScrollView {
 			id: searchResultsListScrollView
 			visible: false
+			QQC2.ScrollBar.vertical: FennekScrollBar {}
 
 			SearchResultsList {
 				id: searchResultsList
@@ -119,6 +120,7 @@ GridLayout {
 		QQC2.ScrollView {
 			id: searchFiltersViewScrollView
 			visible: false
+			QQC2.ScrollBar.vertical: FennekScrollBar {}
 
 			SearchFiltersView {
 				id: searchFiltersView

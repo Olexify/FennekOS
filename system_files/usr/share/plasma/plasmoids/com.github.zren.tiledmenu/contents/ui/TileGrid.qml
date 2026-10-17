@@ -390,6 +390,7 @@ DropArea {
 	QQC2.ScrollView {
 		id: scrollView
 		anchors.fill: parent
+		QQC2.ScrollBar.vertical: FennekScrollBar {}
 
 		readonly property int scrollTop: flickableItem ? flickableItem.contentY : 0
 		readonly property int scrollHeight: flickableItem ? flickableItem.contentHeight : 0
