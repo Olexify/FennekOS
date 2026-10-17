@@ -357,5 +357,10 @@ echo "services:       $(systemctl list-unit-files --type=service --state=enabled
 echo "user services:  $(systemctl --global list-unit-files --type=service --state=enabled --no-legend 2>/dev/null | awk '{print $1}' | tr '\n' ' ')"
 echo "start menu apps: $(grep -L -E '^(NoDisplay|Hidden)=true' /usr/share/applications/*.desktop | xargs -n1 basename | tr '\n' ' ')"
 echo "firefox: $(rpm -q firefox 2>/dev/null || echo 'not installed (rpm)')"
+# For the action center's Clipboard tab: what the clipboard module offers.
+cb=$(dirname "$(find /usr/lib64/qt6/qml/org/kde/plasma/private -name qmldir -path '*clipboard*' | head -1)" 2>/dev/null)
+echo "clipboard module: $cb $(cat "$cb/qmldir" 2>/dev/null | tr '\n' ' ')"
+grep -hoE '(name|exports): "[^"]*"|Property \{ name: "[^"]*"|Method \{ name: "[^"]*"' "$cb"/*.qmltypes 2>/dev/null | tr '\n' ' ' | cut -c1-3000 || true; echo
+grep -rhoE 'Private\.[A-Za-z]+|import org\.kde\.plasma\.private\.clipboard[^\n]*' /usr/share/plasma/plasmoids/org.kde.plasma.clipboard/ 2>/dev/null | sort -u | tr '\n' ' ' || true; echo
 echo "--- end audit ---"
 echo "all checks passed"
