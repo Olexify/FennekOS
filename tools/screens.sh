@@ -69,6 +69,20 @@ notify-send -a "Fennek OS" -i system-software-update "Update ready" "It's instal
 call org.kde.plasmashell /org/kde/osdService org.kde.osdService.volumeChanged 60 100; shot 16-volume-osd 1
 # File Explorer from the sidebar's This PC, with the classic menu bar.
 dolphin >/dev/null 2>&1 & shot 17-file-explorer-home 6; close
+# Right-click on empty taskbar space: the classic taskbar menu.
+DISPLAY=:99 xdotool mousemove 800 880 click 3; shot 21-taskbar-menu 2
+DISPLAY=:99 xdotool key Escape; sleep 1
+# Drag a Start tile (Firefox) to an empty spot: tiles must move.
+call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; sleep 3
+DISPLAY=:99 xdotool mousemove 470 222 mousedown 1 sleep 0.3 mousemove 520 260 sleep 0.2 mousemove 700 300 sleep 0.2 mousemove 850 380 sleep 0.5
+shot 22-tile-dragging 1
+DISPLAY=:99 xdotool mouseup 1; shot 23-tile-dropped 2
+DISPLAY=:99 xdotool key Escape; sleep 1
+# Dark look: how long applying takes (a hang shows here), then a dialog's button icons on dark.
+{ time timeout 90 plasma-apply-lookandfeel -a org.fennek.dark.desktop; echo "exit $?"; } >>/out/lnf-apply.log 2>&1
+shot 24-dark 4
+kdialog --title "Apply Settings" --warningyesnocancel "The current page has unsaved changes." >/dev/null 2>&1 & shot 25-dark-dialog 3; DISPLAY=:99 xdotool key Escape
+{ time timeout 90 plasma-apply-lookandfeel -a org.fennek.desktop; echo "exit $?"; } >>/out/lnf-apply.log 2>&1
 ps -eo pid,user,args >>/out/diag.log 2>&1
 kill $(jobs -p) 2>/dev/null; exit 0
 EOF

@@ -103,6 +103,8 @@ kwriteconfig6 --file /etc/xdg/kdeglobals --group Icons --key Theme Fennek
 for key in font menuFont toolBarFont; do
     kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key "$key" "Inter,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
 done
+# Snappy: every animation (menus, pop-ups, windows) at half its length.
+kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key AnimationDurationFactor 0.5
 kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key smallestReadableFont "Inter,8,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
 kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key fixed "Cascadia Mono,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
 kwriteconfig6 --file /etc/xdg/kdeglobals --group WM --key activeFont "Inter,10,-1,5,500,0,0,0,0,0,0,0,0,0,0,1"
