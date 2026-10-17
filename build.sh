@@ -172,6 +172,23 @@ for sec in cp.sections():
             subprocess.run(["kwriteconfig6", "--file", "/etc/xdg/kdeglobals", *sum((["--group", g] for g in sec.split("][")), []),
                             "--key", k, v], check=True)
 EOF
+# Time zone map (clock settings, region choosing): Crimea drawn as part of Ukraine. Its own zone stays in the list.
+python3 - <<'EOF'
+import json
+p = "/usr/share/timezonefiles/timezones.json"
+d = json.load(open(p))
+feats = d.get("features", []) if isinstance(d, dict) else []
+tz = lambda f: next((v for v in f.get("properties", {}).values() if isinstance(v, str) and v.startswith("Europe/")), "")
+crimea = [f for f in feats if tz(f) == "Europe/Simferopol"]
+kyiv = next((f for f in feats if tz(f) in ("Europe/Kyiv", "Europe/Kiev")), None)
+if crimea and kyiv:
+    polys = lambda g: [g["coordinates"]] if g["type"] == "Polygon" else g["coordinates"]
+    kyiv["geometry"] = {"type": "MultiPolygon", "coordinates": polys(kyiv["geometry"]) + sum((polys(f["geometry"]) for f in crimea), [])}
+    d["features"] = [f for f in feats if f not in crimea]
+    json.dump(d, open(p, "w"), separators=(",", ":"))
+else:
+    print("time zone map: format changed, Crimea not merged:", str(d)[:300])
+EOF
 kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key ColorScheme FennekLight
 sed -i '/^ColorScheme=/d' "$lnf/contents/defaults"
 printf '\n[kdeglobals][General]\nColorScheme=FennekLight\n' >> "$lnf/contents/defaults"
