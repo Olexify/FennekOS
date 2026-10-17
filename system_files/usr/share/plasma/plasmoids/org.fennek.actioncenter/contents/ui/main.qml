@@ -1,5 +1,5 @@
-// Fennek action center: a button at the end of the taskbar. Opens your notifications (newest first, clear one
-// or all) above a grid of quick tiles: Wi-Fi, Bluetooth, Airplane mode, Do not disturb, Battery saver,
+// Fennek action center: a button at the end of the taskbar. Two tabs: your notifications (newest first, clear one
+// or all; snips with a preview) and your clipboard (copy again, remove, clear). Below, a grid of quick tiles: Wi-Fi, Bluetooth, Airplane mode, Do not disturb, Battery saver,
 // Night light, Screenshot, All settings. Notification history is Plasma's own (pop-ups work as before).
 import QtQuick
 import QtQuick.Layouts
@@ -9,6 +9,8 @@ import org.kde.plasma.components as PC3
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.notificationmanager as NotificationManager
+import org.kde.plasma.private.clipboard as Clip
+import org.kde.kquickcontrolsaddons as KQuickAddons
 import org.kde.plasma.networkmanagement as PlasmaNM
 import org.kde.bluezqt as BluezQt
 import org.kde.kcmutils as KCMUtils
@@ -22,6 +24,10 @@ PlasmoidItem {
     toolTipSubText: unread > 0 ? unread + " new" : "No new notifications"
 
     NotificationManager.Settings { id: notifySettings }
+    // Clipboard history (the clipboard service's own list: text, links, images and snips).
+    Clip.HistoryModel { id: clipHistory }
+    property string page: "notifications"   // or "clipboard"
+    onExpandedChanged: if (!expanded) page = "notifications"
     NotificationManager.Notifications {
         id: history
         showExpired: true
@@ -105,20 +111,39 @@ PlasmoidItem {
         Layout.preferredHeight: Kirigami.Units.gridUnit * 36
         spacing: Kirigami.Units.smallSpacing
 
-        RowLayout {
+        RowLayout {   // two tabs: Notifications | Clipboard
             Layout.fillWidth: true
             Layout.margins: Kirigami.Units.smallSpacing
-            Kirigami.Heading { text: "Notifications"; level: 4; Layout.fillWidth: true }
+            Repeater {
+                model: [{ id: "notifications", name: "Notifications" }, { id: "clipboard", name: "Clipboard" }]
+                PC3.ToolButton {
+                    required property var modelData
+                    readonly property bool current: root.page === modelData.id
+                    text: modelData.name
+                    flat: true
+                    font.weight: current ? Font.DemiBold : Font.Normal
+                    opacity: current ? 1 : 0.65
+                    onClicked: root.page = modelData.id
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.bottom: parent.bottom
+                        width: parent.width * 0.5; height: 2; radius: 1
+                        color: Kirigami.Theme.highlightColor
+                        visible: parent.current
+                    }
+                }
+            }
+            Item { Layout.fillWidth: true }
             PC3.ToolButton {
-                icon.color: Kirigami.Theme.textColor   // symbolic icons follow the panel's text colour
                 text: "Clear all"
-                visible: list.count > 0
-                onClicked: history.clear(NotificationManager.Notifications.ClearExpired)
+                visible: root.page === "notifications" ? list.count > 0 : clips.count > 0
+                onClicked: root.page === "notifications" ? history.clear(NotificationManager.Notifications.ClearExpired) : clipHistory.clearHistory()
             }
         }
 
         ListView {
             id: list
+            visible: root.page === "notifications"
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
@@ -148,6 +173,18 @@ PlasmoidItem {
                         PC3.Label { text: model.summary || ""; font.weight: Font.DemiBold; Layout.fillWidth: true; wrapMode: Text.Wrap }
                         PC3.Label { text: model.body || ""; visible: text !== ""; Layout.fillWidth: true; wrapMode: Text.Wrap
                                     maximumLineCount: 3; elide: Text.ElideRight; textFormat: Text.StyledText }
+                        // A saved screenshot (or any picture the notification points to): its preview, like the classic snip toast.
+                        Image {
+                            readonly property string pic: (model.urls || []).map(String).filter(u => /\.(png|jpe?g|webp)$/i.test(u))[0] || ""
+                            visible: pic !== ""
+                            source: pic
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: visible ? Kirigami.Units.gridUnit * 7 : 0
+                            fillMode: Image.PreserveAspectFit
+                            horizontalAlignment: Image.AlignLeft
+                            asynchronous: true
+                            sourceSize.height: Kirigami.Units.gridUnit * 14
+                        }
                     }
                     PC3.ToolButton {
                         icon.color: Kirigami.Theme.textColor   // symbolic icons follow the panel's text colour
@@ -163,6 +200,66 @@ PlasmoidItem {
                 visible: list.count === 0
                 iconName: "notification-inactive"
                 text: "No new notifications"
+            }
+        }
+
+        ListView {   // clipboard history: click to copy again
+            id: clips
+            visible: root.page === "clipboard"
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            spacing: Kirigami.Units.smallSpacing
+            model: root.expanded && root.page === "clipboard" ? clipHistory : null
+            delegate: Rectangle {
+                id: clipCard
+                required property var model
+                readonly property var uuid: model.uuid !== undefined ? model.uuid : model.UuidRole
+                readonly property bool isImage: model.type === 1 || (!model.display && !!model.decoration)
+                width: ListView.view.width
+                height: clipRow.implicitHeight + Kirigami.Units.largeSpacing * 2
+                radius: 8
+                color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, clipMouse.containsMouse ? 0.12 : 0.06)
+                MouseArea {
+                    id: clipMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: { clipHistory.moveToTop(clipCard.uuid); root.expanded = false }
+                }
+                RowLayout {
+                    id: clipRow
+                    anchors { fill: parent; margins: Kirigami.Units.largeSpacing }
+                    KQuickAddons.QImageItem {
+                        visible: clipCard.isImage
+                        image: clipCard.isImage ? clipCard.model.decoration : undefined
+                        fillMode: KQuickAddons.QImageItem.PreserveAspectFit
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: visible ? Kirigami.Units.gridUnit * 6 : 0
+                    }
+                    PC3.Label {
+                        visible: !clipCard.isImage
+                        text: (clipCard.model.display || "").trim()
+                        Layout.fillWidth: true
+                        wrapMode: Text.Wrap
+                        maximumLineCount: 3
+                        elide: Text.ElideRight
+                        textFormat: Text.PlainText
+                    }
+                    PC3.ToolButton {
+                        icon.color: Kirigami.Theme.textColor
+                        icon.name: "window-close"
+                        Layout.alignment: Qt.AlignTop
+                        onClicked: clipHistory.remove(clipCard.uuid)
+                    }
+                }
+            }
+            PlasmaExtras.PlaceholderMessage {
+                anchors.centerIn: parent
+                width: parent.width - Kirigami.Units.gridUnit * 4
+                visible: clips.count === 0
+                iconName: "edit-paste"
+                text: "Nothing copied yet"
+                explanation: "Text and pictures you copy, and your snips, show up here"
             }
         }
 
