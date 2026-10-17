@@ -43,6 +43,15 @@ if [ "$(cat "$ptr_seen" 2>/dev/null)" != 2026-10-17 ]; then
     mkdir -p "${ptr_seen%/*}" && echo 2026-10-17 >"$ptr_seen"
 fi
 
+# Files, once: the classic menu bar on (KDE hid it at the first start).
+files_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/files-version
+if [ "$(cat "$files_seen" 2>/dev/null)" != 2026-10-17 ]; then
+    kwriteconfig6 --file dolphinrc --group MainWindow --key MenuBar Enabled
+    state=${XDG_STATE_HOME:-$HOME/.local/state}/dolphinstaterc
+    mkdir -p "${state%/*}" && kwriteconfig6 --file "$state" --group MainWindow --key MenuBar Enabled
+    mkdir -p "${files_seen%/*}" && echo 2026-10-17 >"$files_seen"
+fi
+
 version=2026-10-16
 seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/shortcuts-version
 [ "$(cat "$seen" 2>/dev/null)" = "$version" ] && exit 0
