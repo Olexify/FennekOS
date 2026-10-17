@@ -79,7 +79,7 @@ AppToolButton {
 			initDrag(mouse)
 		}
 	}
-	onContainsMouseChanged: function(containsMouse) {
+	onContainsMouseChanged: {   // Fennek OS: no argument in Qt 6 (it was always undefined, which cancelled drags to the tiles)
 		if (!containsMouse) {
 			resetDragState()
 		}

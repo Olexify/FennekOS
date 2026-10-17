@@ -97,7 +97,9 @@ Item {
 	// We use this drag pattern to use the internal drag with events.
 	// https://stackoverflow.com/a/24729837/947742
 	readonly property bool dragActive: tileMouseArea.drag.active
-	onDragActiveChanged: function(dragActive) {
+	// Fennek OS: property-change handlers get no argument in Qt 6; a "dragActive" parameter was always undefined,
+	// so a drag never started and every tile jumped back. The property itself is read instead.
+	onDragActiveChanged: {
 		if (dragActive) {
 			// console.log("drag started")
 			// console.log('onDragStarted', JSON.stringify(modelData), index, tileModel.length)
