@@ -91,7 +91,9 @@ Item {
 		}
 	}
 
-	Drag.dragType: Drag.Automatic
+	// Fennek OS: internal drag (tiles move inside the menu). "Automatic" handed the pointer to the system drag and
+	// drop, so the tile stopped following and never saw the release: it froze half-way.
+	Drag.dragType: Drag.Internal
 	Drag.proposedAction: Qt.MoveAction
 
 	// We use this drag pattern to use the internal drag with events.
