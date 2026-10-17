@@ -48,18 +48,11 @@ dnf -y install \
 dnf -y install --setopt=tsflags=noscripts "$OSN_RPM"
 rm -f "$OSN_RPM" /tmp/umu-launcher.rpm
 
-# Mouse pointer: Bibata Modern Ice (white, rounded, minimal; GPL-3.0). Not in Fedora: pinned upstream release.
-BIBATA_VER=v2.0.7
-BIBATA_SHA256=a68cae60c4dc706350e194ebc91c5fe48bc7bc9d59e119555834a2a7ee5078ef
-curl -fsSL -o /tmp/bibata.tar.xz \
-    "https://github.com/ful1e5/Bibata_Cursor/releases/download/${BIBATA_VER}/Bibata-Modern-Ice.tar.xz"
-echo "${BIBATA_SHA256}  /tmp/bibata.tar.xz" | sha256sum -c -
-tar -xJf /tmp/bibata.tar.xz -C /usr/share/icons --no-same-owner
-rm /tmp/bibata.tar.xz
+# Mouse pointer: KDE's Breeze Light (slim, sharp white arrow with a dark outline, the classic look). Built in.
 # Default for everyone: KDE, GTK/X11 apps (icons/default), the sign-in screen (SDDM config below).
-kwriteconfig6 --file /etc/xdg/kcminputrc --group Mouse --key cursorTheme Bibata-Modern-Ice
+kwriteconfig6 --file /etc/xdg/kcminputrc --group Mouse --key cursorTheme Breeze_Light
 mkdir -p /usr/share/icons/default
-printf '[Icon Theme]\nInherits=Bibata-Modern-Ice\n' > /usr/share/icons/default/index.theme
+printf '[Icon Theme]\nInherits=Breeze_Light\n' > /usr/share/icons/default/index.theme
 
 # No-telemetry: umu contacts Valve on every launch even with UMU_RUNTIME_UPDATE=0. Make "0" fully offline
 # when the runtime is already installed (fennek-run-exe allows update checks at most once a day).
@@ -117,7 +110,7 @@ kwriteconfig6 --file /etc/xdg/kdeglobals --group WM --key activeFont "Inter,10,-
 kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key AccentColor 109,69,184
 printf '\n[kdeglobals][General]\nAccentColor=109,69,184\n' >> "$lnf/contents/defaults"
 printf '\n[kdeglobals][Icons]\nTheme=Fennek\n' >> "$lnf/contents/defaults"
-printf '\n[kcminputrc][Mouse]\ncursorTheme=Bibata-Modern-Ice\n' >> "$lnf/contents/defaults"
+printf '\n[kcminputrc][Mouse]\ncursorTheme=Breeze_Light\n' >> "$lnf/contents/defaults"
 # Taskbar, Start and tray panels dark, apps light (the familiar default); the dark theme copies this.
 # Panel theme "Fennek Dark": KDE's Breeze Dark plus Fennek's taskbar buttons (widgets/tasks.svg from
 # branding/make-taskbar-svg.py: line under running apps, soft background on the focused one).
@@ -386,7 +379,9 @@ wm=/usr/share/plymouth/themes/spinner/watermark.png
     magick -background none -fill white -font Noto-Sans-Medium -pointsize 44 label:"Fennek OS" t.png &&
     rm -f "$wm" && magick l.png t.png -background none -gravity center +smush 18 +repage -depth 8 "$wm" && rm l.png t.png)
 # The splash lives in the initramfs, so rebuild it.
-KVER=$(ls /usr/lib/modules)
+# The newest kernel (a base update can leave an older modules folder next to it).
+KVER=$(ls -d /usr/lib/modules/*/vmlinuz | xargs -n1 dirname | xargs -n1 basename | sort -V | tail -1)
+for k in /usr/lib/modules/*; do [ "${k##*/}" = "$KVER" ] || [ -e "$k/vmlinuz" ] || rm -rf "$k"; done   # leftovers only
 dracut --no-hostonly --kver "$KVER" --reproducible --add ostree -f "/usr/lib/modules/$KVER/initramfs.img"
 chmod 0600 "/usr/lib/modules/$KVER/initramfs.img"
 
@@ -434,7 +429,7 @@ mkdir -p /etc/sddm.conf.d
 cat >/etc/sddm.conf.d/10-fennek.conf <<'EOF'
 [Theme]
 Current=fennek
-CursorTheme=Bibata-Modern-Ice
+CursorTheme=Breeze_Light
 EOF
 
 # Dual boot: "Restart to Windows" appears when a Windows boot entry exists.
