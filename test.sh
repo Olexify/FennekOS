@@ -173,6 +173,7 @@ grep -q "^ExpandableFolders=false" /etc/xdg/dolphinrc && grep -q "browser.tabs.i
 for c in left_ptr pointer xterm watch left_ptr_watch sb_h_double_arrow; do [ "$(head -c4 "/usr/share/icons/Fennek-Cursors/cursors/$c" 2>/dev/null)" = Xcur ] || fail "Fennek pointer $c"; done
 [ -f /usr/share/icons/Breeze_Light/cursors/left_ptr ] && grep -q "^cursorTheme=Fennek-Cursors" /etc/xdg/kcminputrc && grep -q "^CursorTheme=Fennek-Cursors" /etc/sddm.conf.d/10-fennek.conf || fail "Fennek pointers default (Breeze Light behind)"
 grep -q "^font=Inter,10" /etc/xdg/kdeglobals && grep -q "^fixed=Cascadia Mono" /etc/xdg/kdeglobals && [ -n "$(fc-list :family=Inter)" ] && [ -n "$(fc-list ':family=Cascadia Mono')" ] || fail "Inter + Cascadia Mono fonts"
+[ "$(kreadconfig6 --file /etc/xdg/kscreenlockerrc --group Daemon --key Timeout)" = 30 ] && [ "$(kreadconfig6 --file /etc/xdg/kdeglobals --group KDE --key AnimationDurationFactor)" = 0.5 ] || fail "auto-lock after 30 min / snappy animations"
 grep -q "^DefaultProfile=Fennek.profile" /etc/xdg/konsolerc && grep -q "^ColorScheme=Fennek" /usr/share/konsole/Fennek.profile && [ -s /usr/share/konsole/Fennek.colorscheme ] || fail "Fennek terminal profile"
 grep -q "Fennek OS: a personal greeting" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/lockscreen/LockScreenUi.qml && grep -q "Fennek" /etc/xdg/kscreenlockerrc || fail "lock screen greeting + wallpaper"
 grep -q "^LastSeenVersion=99" /etc/xdg/plasma-welcomerc || fail "only one welcome window"

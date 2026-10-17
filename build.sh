@@ -224,6 +224,9 @@ open(p + ".fennek-new", "w").write(s); os.replace(p + ".fennek-new", p)
 EOF
 kwriteconfig6 --file /etc/xdg/kscreenlockerrc --group Greeter --group Wallpaper --group org.kde.image --group General \
     --key Image "file:///usr/share/wallpapers/Fennek/"
+# Locks by itself after 30 minutes without use (KDE: 5), and on waking from sleep.
+kwriteconfig6 --file /etc/xdg/kscreenlockerrc --group Daemon --key Timeout 30
+kwriteconfig6 --file /etc/xdg/kscreenlockerrc --group Daemon --key LockOnResume true
 # Fennek OS Dark: same taskbar/Start layout, dark colors. Fedora's global themes go: picking one replaces the
 # Fennek taskbar and Start menu with Fedora's layout (looks like the desktop got "erased").
 dark=/usr/share/plasma/look-and-feel/org.fennek.dark.desktop
