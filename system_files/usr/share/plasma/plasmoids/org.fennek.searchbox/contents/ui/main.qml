@@ -101,13 +101,13 @@ PlasmoidItem {
             opacity: parent.containsMouse || root.expanded ? 0.12 : 0
             Behavior on opacity { NumberAnimation { duration: 120 } }
         }
+        // Same size and rounded-square style as the app icons next to it, centred.
         Kirigami.Icon {
             anchors.centerIn: parent
-            width: Kirigami.Units.iconSizes.smallMedium
+            width: Math.min(parent.width, parent.height)
             height: width
-            source: "search"
-            color: "white"
-            isMask: true
+            source: "fennek-search"
+            active: parent.containsMouse
         }
     }
 

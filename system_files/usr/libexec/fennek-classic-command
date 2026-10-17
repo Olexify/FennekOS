@@ -1,0 +1,34 @@
+#!/usr/bin/bash
+# Classic command names (Run box Super+R, terminal) open the Fennek OS app that does the same job.
+# build.sh links each name in /usr/bin to this script; the name it was called by picks the app.
+set -u
+app() {   # launch by desktop id (works for built-in and store apps)
+    IFS=:
+    for d in ${XDG_DATA_HOME:-$HOME/.local/share} ${XDG_DATA_DIRS:-/usr/local/share:/usr/share} /var/lib/flatpak/exports/share; do
+        [ -e "$d/applications/$1.desktop" ] && exec gio launch "$d/applications/$1.desktop"
+    done
+    echo "${0##*/}: the app for this is not installed yet (it comes with the first update after setup)" >&2
+    exit 1
+}
+settings() { exec systemsettings "$1"; }
+case ${0##*/} in
+    calc) app org.kde.kcalc ;;
+    notepad) app org.kde.kwrite ;;
+    mspaint) app org.kde.kolourpaint ;;
+    explorer) exec dolphin --new-window "$@" ;;
+    cmd) exec konsole ;;
+    control) exec fennek-app settings ;;
+    taskmgr) exec plasma-systemmonitor ;;
+    snippingtool) exec spectacle ;;
+    msinfo32 | winver) exec kinfocenter ;;
+    appwiz.cpl) exec plasma-discover --mode installed ;;
+    diskmgmt.msc) exec partitionmanager ;;
+    wf.msc | firewall.cpl) exec fennek-app firewall ;;
+    ncpa.cpl) settings kcm_networkmanagement ;;
+    timedate.cpl) settings kcm_clock ;;
+    mmsys.cpl) settings kcm_pulseaudio ;;
+    powercfg.cpl) settings kcm_powerdevilprofilesconfig ;;
+    main.cpl) settings kcm_mouse ;;
+    desk.cpl) settings kcm_kscreen ;;
+    *) echo "fennek-classic-command: unknown name ${0##*/}" >&2; exit 1 ;;
+esac

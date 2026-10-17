@@ -22,6 +22,8 @@ TitleBorderLeft=6
 TitleBorderRight=6
 TitleHeight=31
 ButtonWidth=46
+# App icon (window menu): a small icon with even space around it, not one filling the bar height.
+ButtonWidthMenu=18
 ButtonHeight=31
 ButtonSpacing=0
 ButtonMarginTop=0

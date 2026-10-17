@@ -462,9 +462,9 @@ DropArea {
 						color: {
 							if (cellItem.tileHovered) {
 								if (canDrop) {
-									return "#88336699"
+									return "#558a63d2"
 								} else {
-									return "#88880000"
+									return "#55c0392b"
 								}
 							} else if (cellItem.groupAreaHovered) {
 								return "#8848395d" // purple
@@ -472,8 +472,9 @@ DropArea {
 								return "transparent"
 							}
 						}
+						radius: 10   // Fennek OS: drop spots shaped like the tiles
 						border.width: 1
-						border.color: tileGrid.editing ? "#44000000" : "transparent"
+						border.color: tileGrid.editing ? "#22ffffff" : "transparent"
 					}
 
 					MouseArea {

@@ -89,8 +89,8 @@ Repeater {
 				if (endsWith(s, '.desktop')) {
 					if (endsWith(s, '/org.kde.dolphin.desktop')) {
 						return 'folder-open-symbolic'
-					} else if (endsWith(s, '/systemsettings.desktop')) {
-						return 'configure'
+					} else if (endsWith(s, '/systemsettings.desktop') || endsWith(s, '/fennek-settings.desktop')) {
+						return 'fennek-gear-symbolic'   // Fennek OS: a plain gear, not the app's colour icon
 					}
 				} else if (startsWith(s, 'file:///home/')) {
 					s = s.substring('file:///home/'.length, s.length)

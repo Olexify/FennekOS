@@ -9,3 +9,7 @@ Fennek Close or Shut Down=Alt+F4,Alt+F4,Close the window, or shut down from the 
 [plasmashell]
 # Super+Tab belongs to the task view above, not to switching activities.
 next activity=none,Meta+Tab,Walk through activities
+
+[services][org.kde.krunner.desktop]
+# Super+R: the Run box (type an app, a command, a file or a sum), like the classic Run dialog.
+_launch=Meta+R	Alt+Space	Alt+F2	Search

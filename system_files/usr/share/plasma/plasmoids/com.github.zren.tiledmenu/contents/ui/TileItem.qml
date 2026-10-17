@@ -133,7 +133,8 @@ Item {
 			id: groupOutline
 			color: "transparent"
 			border.width: Math.max(1, Math.round(1 * Screen.devicePixelRatio))
-			border.color: "#80ffffff"
+			border.color: "#33ffffff"   // Fennek OS: a faint rounded outline, not a hard square
+			radius: 10
 			y: modelData.h * cellBoxSize
 			z: 100
 			width: appObj.groupRect.w * cellBoxSize

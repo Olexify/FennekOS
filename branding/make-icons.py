@@ -42,6 +42,7 @@ glyphs = {
     "media": ("#ff6aa0", "#d62f6b", '<path d="M27 22l15 10-15 10z" fill="#fff" stroke="none"/>'),
     "music": ("#ff8a65", "#e8503a", '<path d="M30 42V24l12-3v17"/><circle cx="26.5" cy="42" r="3.5"/><circle cx="38.5" cy="38" r="3.5"/>'),
     "paint": ("#ffb74d", "#f57c00", '<path d="M40 18l6 6-14 14-6-6z"/><path d="M26 32c-4 0-6 3-6 6 0 2-1 4-3 5 5 1 12 0 14-5"/>'),
+    "search": ("#8f86a8", "#4d4565", '<circle cx="29" cy="29" r="9.5"/><path d="M36 36l8 8"/>'),
     "apphistory": ("#ffc35a", "#e8901e", '<path d="M19 32a13 13 0 1 0 4-9.4"/><path d="M18 18v6h6"/><path d="M32 25v8l5 3"/>'),
     "scanner": ("#90a4ae", "#546e7a", '<rect x="17" y="30" width="30" height="12" rx="3"/><path d="M20 30l4-8h20"/><path d="M23 36h12" stroke-width="3"/>'),
 }
@@ -66,6 +67,7 @@ names = {
     "media": ["apps/org.kde.haruna", "apps/haruna"],
     "music": ["apps/org.kde.elisa", "apps/elisa"],
     "paint": ["apps/org.kde.kolourpaint", "apps/kolourpaint"],
+    "search": ["apps/fennek-search"],
     "apphistory": ["apps/fennek-apphistory"],
     "scanner": ["apps/org.kde.skanpage", "apps/skanpage"],
 }

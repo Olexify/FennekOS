@@ -79,6 +79,13 @@ grep -q 'name="go_up"' "$r" && grep -q 'version="10[0-9][0-9]"' "$r" && grep -q 
 python3 -c "import sys, xml.dom.minidom as x; x.parse(sys.argv[1])" "$r"   || fail "Files toolbar file is not valid XML"
 [ -s /usr/share/fennek/apps/firewall/main.qml ] && grep -q '^Exec=fennek-app firewall' /usr/share/applications/fennek-firewall.desktop || fail "Firewall window"
 fennek-firewall list --json | python3 -c 'import json,sys; assert json.load(sys.stdin) == []' || fail "firewall list --json"
+# Classic command names: each one linked, every program they open is installed.
+for c in calc notepad control taskmgr ncpa.cpl appwiz.cpl; do
+    [ "$(readlink -f "/usr/bin/$c")" = /usr/libexec/fennek-classic-command ] || fail "classic command $c"
+done
+for p in gio dolphin konsole fennek-app plasma-systemmonitor spectacle kinfocenter plasma-discover partitionmanager systemsettings; do
+    command -v "$p" >/dev/null || fail "classic commands: $p missing"
+done
 # Start "Open file location": stand-in Files, so only the lookup runs.
 ol=$(mktemp -d) && printf '#!/bin/sh\necho "$*"\n' >"$ol/dolphin" && chmod +x "$ol/dolphin" \
   && [ "$(PATH="$ol:$PATH" XDG_DATA_DIRS=/usr/share /usr/libexec/fennek-open-location org.kde.dolphin.desktop)" = "--select /usr/share/applications/org.kde.dolphin.desktop" ] \

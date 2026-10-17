@@ -36,11 +36,13 @@ Item {
 	property color fillColor: alpha(effectColor, 1/16)
 	property color pressedFillColor: alpha(effectColor, 4/16)
 	property color borderColor: alpha(effectColor, 8/16)
+	property real radius: 8   // Fennek OS: soft corners like the tiles
 
 	Rectangle {
 		id: hoverSolidFill
 		anchors.fill: parent
 		anchors.margins: hoverOutlineSize
+		radius: hoverOutlineEffect.radius
 		color: fillColor
 	}
 
@@ -48,6 +50,7 @@ Item {
 		id: hoverOutline
 		visible: !hoverOutlineEffect.useOutlineMask
 		anchors.fill: parent
+		radius: hoverOutlineEffect.radius
 		// color: "transparent"
 		color: hoverOutlineEffect.pressed ? pressedFillColor : fillColor
 		border.color: borderColor

@@ -18,3 +18,5 @@ MenuBar=Enabled
 ExpandableFolders=false
 IconSize=16
 PreviewSize=16
+# No empty strip left and right of the rows (the list starts at the edge, like the classic file manager).
+SidePadding=0

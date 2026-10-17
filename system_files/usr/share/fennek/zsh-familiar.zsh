@@ -2,7 +2,7 @@
 #   md Photos  ->  In Fennek OS this is: mkdir -p Photos   Run it? [y/N]
 typeset -gA _fennek_familiar=(
     md 'mkdir -p'  rd rmdir  ren mv  xcopy 'cp -r'  findstr grep  tracert tracepath
-    notepad kwrite  explorer dolphin  ver 'cat /etc/os-release'  systeminfo hostnamectl  chkdsk 'df -h'
+    ver 'cat /etc/os-release'  systeminfo hostnamectl  chkdsk 'df -h'
 )
 command_not_found_handler() {
     local cmd=${_fennek_familiar[$1]}
