@@ -33,6 +33,26 @@ QQC2.ToolButton {
 	readonly property int _iconSize: Math.min(buttonHeight, iconSize)
 	implicitHeight: buttonHeight
 
+	// Fennek OS: draw icon and label ourselves in the panel theme's text colour (the desktop button style
+	// tinted symbolic icons, e.g. Power, with the light app scheme's dark text: invisible on the dark menu).
+	contentItem: RowLayout {
+		spacing: Kirigami.Units.largeSpacing
+		Kirigami.Icon {
+			source: flatButton.icon.name || flatButton.icon.source
+			color: Kirigami.Theme.textColor
+			Layout.preferredWidth: flatButton._iconSize
+			Layout.preferredHeight: flatButton._iconSize
+			Layout.alignment: flatButton.display === QQC2.AbstractButton.IconOnly ? Qt.AlignCenter : Qt.AlignVCenter
+		}
+		PlasmaComponents3.Label {
+			visible: flatButton.display !== QQC2.AbstractButton.IconOnly && flatButton.text !== ""
+			text: flatButton.text
+			color: Kirigami.Theme.textColor
+			elide: Text.ElideRight
+			Layout.fillWidth: true
+		}
+	}
+
 	// contentItem: RowLayout {
 	// 	id: labelRowLayout
 	// 	// spacing: Kirigami.Units.smallSpacing

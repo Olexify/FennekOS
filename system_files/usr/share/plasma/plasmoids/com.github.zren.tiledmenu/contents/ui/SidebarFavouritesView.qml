@@ -10,7 +10,11 @@ Repeater {
 	property QtObject xdgUserDir: Lib.XdgUserDir {}
 
 	delegate: SidebarItem {
-		icon.name: symbolicIconName || model.iconName || model.decoration
+		// Fennek OS: monochrome folder icons (homes live in /var/home, which the mapping below doesn't know).
+		icon.name: {
+			const n = symbolicIconName || model.iconName || ""
+			return (/^(folder|user-)/.test(n) && n.indexOf("-symbolic") < 0) ? n + "-symbolic" : (n || model.decoration)
+		}
 		text: xdgDisplayName || model.name || model.display
 		sidebarMenu: repeater.parent.parent // SidebarContextMenu { Column { Repeater{} } }
 		onClicked: {
