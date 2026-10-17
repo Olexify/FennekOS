@@ -90,5 +90,6 @@ Color=200,198,212
 
 [General]
 Description=Fennek
-Opacity=1
+Opacity=0.94
+Blur=true
 Wallpaper=
