@@ -470,6 +470,7 @@ sed -i 's|^SHELL=.*|SHELL=/bin/zsh|' /etc/default/useradd
 source /etc/profile.d/fennek-aliases.sh
 source /usr/share/fennek/zsh-history.zsh
 source /usr/share/fennek/zsh-prompt.zsh
+source /usr/share/fennek/zsh-familiar.zsh
 source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 EOF

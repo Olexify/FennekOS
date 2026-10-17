@@ -40,7 +40,12 @@ for f in glob.glob("/usr/share/plasma/shells/org.kde.plasma.desktop/contents/upd
 PY
 [ -f /usr/share/icons/Fennek/scalable/places/folder-documents-symbolic.svg ] || fail "monochrome folder icons in the Fennek set"
 [ -s /usr/share/fennek/files-first-window-state ] && grep -q "files-first-window-state" /usr/libexec/fennek-first-login || fail "Files: first window with menu bar, side panels closed"
-grep -q "zsh-prompt.zsh" /etc/zshrc && zsh -c "source /usr/share/fennek/zsh-prompt.zsh; [[ \$PROMPT == *❯* ]]" || fail "terminal prompt"
+fam=$(mktemp -d)
+grep -q "zsh-familiar.zsh" /etc/zshrc \
+  && [[ $(echo n | zsh -c "source /usr/share/fennek/zsh-familiar.zsh; md '$fam/a b'" 2>&1) == *"this is: mkdir -p $fam/a\\ b"* ]] && [ ! -e "$fam/a b" ] \
+  && echo y | zsh -c "source /usr/share/fennek/zsh-familiar.zsh; md '$fam/a b'" >/dev/null 2>&1 && [ -d "$fam/a b" ] \
+  && ! zsh -c "source /usr/share/fennek/zsh-familiar.zsh; nosuchcommand" 2>/dev/null || fail "terminal: classic command hints"
+grep -q "zsh-prompt.zsh" /etc/zshrc &&zsh -c "source /usr/share/fennek/zsh-prompt.zsh; [[ \$PROMPT == *❯* ]]" || fail "terminal prompt"
 command -v kioclient >/dev/null && for id in $(grep -o 'id: "[a-z.-]*"' /usr/share/plasma/plasmoids/org.fennek.searchbox/contents/ui/main.qml | cut -d\" -f2); do
     [ -f "/usr/share/applications/$id.desktop" ] || fail "search starter app missing: $id"; done || fail "kioclient (search starter apps)"
 # Existing desktops follow layout changes by themselves (Plasma update scripts, once per user): no reset needed.
