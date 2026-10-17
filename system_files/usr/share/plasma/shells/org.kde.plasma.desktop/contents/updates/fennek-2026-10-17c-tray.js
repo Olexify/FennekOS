@@ -7,9 +7,9 @@ panels().forEach(function (panel) {
         var tray = desktopById(w.readConfig("SystrayContainmentId"))
         if (!tray) return
         tray.currentConfigGroup = ["General"]
-        tray.writeConfig("shownItems", ["org.kde.plasma.networkmanagement", "org.fennek.volume",
+        tray.writeConfig("shownItems", ["org.kde.plasma.networkmanagement", "org.kde.plasma.volume",
                                         "org.kde.plasma.battery", "org.kde.plasma.keyboardlayout"])
-        tray.writeConfig("hiddenItems", ["org.kde.plasma.notifications", "org.kde.plasma.volume",
+        tray.writeConfig("hiddenItems", ["org.kde.plasma.notifications",
                                          "org.kde.plasma.clipboard", "org.kde.plasma.devicenotifier", "org.kde.kdeconnect",
                                          "org.kde.plasma.bluetooth", "org.kde.plasma.printmanager", "org.kde.plasma.vault",
                                          "org.kde.plasma.mediacontroller", "org.kde.kscreen", "org.kde.plasma.brightness",

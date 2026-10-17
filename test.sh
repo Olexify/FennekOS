@@ -57,7 +57,7 @@ for app in org.kde.kmenuedit systemsettings kdesystemsettings org.kde.khelpcente
 done
 grep -q '^Name=Terminal$' /usr/share/applications/org.kde.konsole.desktop && grep -q '^Name=Store$' /usr/share/applications/org.kde.discover.desktop && ! grep -q '^Name\[en_GB\]=' /usr/share/applications/org.kde.konsole.desktop || fail "plain app names in Start"
 grep -q "SystrayContainmentId" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "tray shown/hidden icons"
-for p in org.fennek.searchbox org.fennek.showdesktop org.fennek.volume org.fennek.clock org.fennek.actioncenter; do
+for p in org.fennek.searchbox org.fennek.showdesktop org.fennek.clock org.fennek.actioncenter; do
     python3 -c "import json; json.load(open('/usr/share/plasma/plasmoids/$p/metadata.json'))" && [ -s /usr/share/plasma/plasmoids/$p/contents/ui/main.qml ] \
         && grep -q "\"$p\"" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js \
         || fail "taskbar widget $p"
