@@ -69,4 +69,5 @@ kill $(jobs -p) 2>/dev/null; exit 0
 EOF
 chmod 755 /tmp/session.sh
 timeout 900 runuser -u anna -- env XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" HOME=/home/anna dbus-run-session -- bash /tmp/session.sh
+chmod -R a+rX "$out"   # files written as the test user must be readable for the upload
 ls -la "$out"
