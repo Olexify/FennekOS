@@ -44,6 +44,8 @@ dnf -y install \
     rsync \
     print-manager \
     "${extra[@]}"
+# Printers page in Settings + print queue in the tray (KDE's printer manager; renamed in newer Plasma).
+dnf -y install plasma-print-manager || dnf -y install print-manager
 # OpenSnitch's scripts only enable+start the daemon (and fail in a container); we want it off until something
 # is blocked, so install without them. Its one dependency came with the main install above.
 dnf -y install --setopt=tsflags=noscripts "$OSN_RPM"
