@@ -175,6 +175,7 @@ for c in left_ptr pointer xterm watch left_ptr_watch sb_h_double_arrow; do [ "$(
 [ -f /usr/share/icons/Breeze_Light/cursors/left_ptr ] && grep -q "^cursorTheme=Fennek-Cursors" /etc/xdg/kcminputrc && grep -q "^CursorTheme=Fennek-Cursors" /etc/sddm.conf.d/10-fennek.conf || fail "Fennek pointers default (Breeze Light behind)"
 grep -q "^font=Inter,10" /etc/xdg/kdeglobals && grep -q "^fixed=Cascadia Mono" /etc/xdg/kdeglobals && [ -n "$(fc-list :family=Inter)" ] && [ -n "$(fc-list ':family=Cascadia Mono')" ] || fail "Inter + Cascadia Mono fonts"
 [ "$(kreadconfig6 --file /etc/xdg/kscreenlockerrc --group Daemon --key Timeout)" = 30 ] && [ "$(kreadconfig6 --file /etc/xdg/kdeglobals --group KDE --key AnimationDurationFactor)" = 0.5 ] || fail "auto-lock after 30 min / snappy animations"
+rpm -q print-manager cups sane-backends >/dev/null || fail "printing (Printers page, print queue) and scanning"
 grep -q "^DefaultProfile=Fennek.profile" /etc/xdg/konsolerc && grep -q "^ColorScheme=Fennek" /usr/share/konsole/Fennek.profile && [ -s /usr/share/konsole/Fennek.colorscheme ] || fail "Fennek terminal profile"
 grep -q "Fennek OS: a personal greeting" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/lockscreen/LockScreenUi.qml && grep -q "Fennek" /etc/xdg/kscreenlockerrc || fail "lock screen greeting + wallpaper"
 grep -q "^LastSeenVersion=99" /etc/xdg/plasma-welcomerc || fail "only one welcome window"
@@ -363,7 +364,8 @@ echo "printing/scanning: $(rpm -q cups print-manager sane-backends ipp-usb avahi
 # For the action center's Clipboard tab: what the clipboard module offers.
 cb=$(dirname "$(find /usr/lib64/qt6/qml/org/kde/plasma/private -name qmldir -path '*clipboard*' | head -1)" 2>/dev/null)
 echo "clipboard module: $cb $(cat "$cb/qmldir" 2>/dev/null | tr '\n' ' ')"
-grep -hoE '(name|exports): "[^"]*"|Property \{ name: "[^"]*"|Method \{ name: "[^"]*"' "$cb"/*.qmltypes 2>/dev/null | tr '\n' ' ' | cut -c1-3000 || true; echo
+grep -hoE 'exports: \[[^]]*\]|"[A-Za-z]+Role"|Q_ENUM|name: "[A-Z][A-Za-z]*Role[s]?"' "$cb"/*.qmltypes 2>/dev/null | sort -u | tr '\n' ' ' | cut -c1-2000 || true; echo
+echo "clipboard applet: $(find /usr/share/plasma/plasmoids /usr/lib64/qt6/plugins/plasma/applets -iname '*clipboard*' 2>/dev/null | tr '\n' ' ')"
 grep -rhoE 'Private\.[A-Za-z]+|import org\.kde\.plasma\.private\.clipboard[^\n]*' /usr/share/plasma/plasmoids/org.kde.plasma.clipboard/ 2>/dev/null | sort -u | tr '\n' ' ' || true; echo
 echo "--- end audit ---"
 echo "all checks passed"

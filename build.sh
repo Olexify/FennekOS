@@ -42,6 +42,7 @@ dnf -y install \
     snapper \
     clamav clamav-freshclam inotify-tools \
     rsync \
+    print-manager \
     "${extra[@]}"
 # OpenSnitch's scripts only enable+start the daemon (and fail in a container); we want it off until something
 # is blocked, so install without them. Its one dependency came with the main install above.
