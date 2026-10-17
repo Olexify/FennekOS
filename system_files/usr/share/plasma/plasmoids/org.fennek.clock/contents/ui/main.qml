@@ -74,8 +74,8 @@ PlasmoidItem {
                 text: { const m = root.locale.standaloneMonthName(root.shown.getMonth(), Locale.LongFormat); return m.charAt(0).toUpperCase() + m.slice(1) + " " + root.shown.getFullYear() }
                 font.weight: Font.DemiBold
             }
-            PC3.ToolButton { icon.name: "go-up"; onClicked: root.shown = new Date(root.shown.getFullYear(), root.shown.getMonth() - 1, 1) }
-            PC3.ToolButton { icon.name: "go-down"; onClicked: root.shown = new Date(root.shown.getFullYear(), root.shown.getMonth() + 1, 1) }
+            PC3.ToolButton { icon.name: "go-up"; icon.color: Kirigami.Theme.textColor; onClicked: root.shown = new Date(root.shown.getFullYear(), root.shown.getMonth() - 1, 1) }
+            PC3.ToolButton { icon.name: "go-down"; icon.color: Kirigami.Theme.textColor; onClicked: root.shown = new Date(root.shown.getFullYear(), root.shown.getMonth() + 1, 1) }
         }
 
         GridLayout {
@@ -91,6 +91,7 @@ PlasmoidItem {
                 model: 7
                 PC3.Label {
                     Layout.fillWidth: true
+                    Layout.preferredWidth: Kirigami.Units.gridUnit * 2   // equal columns
                     horizontalAlignment: Text.AlignHCenter
                     text: root.locale.dayName((grid.firstDay + index) % 7, Locale.ShortFormat)
                     opacity: 0.7
@@ -106,6 +107,7 @@ PlasmoidItem {
                     readonly property bool inMonth: day.getMonth() === root.shown.getMonth()
                     readonly property bool today: day.toDateString() === root.now.toDateString()
                     Layout.fillWidth: true
+                    Layout.preferredWidth: Kirigami.Units.gridUnit * 2   // equal columns
                     implicitHeight: Kirigami.Units.gridUnit * 2
                     Rectangle {
                         anchors.centerIn: parent
