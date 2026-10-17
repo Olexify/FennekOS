@@ -10,7 +10,7 @@ command_not_found_handler() {
     shift
     local full="$cmd${@:+ ${(j: :)${(q)@}}}"
     print -u2 "In Fennek OS this is: $full"
-    read -q "?Run it? [y/N] " || { print -u2; return 127; }
+    read -q -u 0 "?Run it? [y/N] " || { print -u2; return 127; }
     print -u2
     eval "$full"
 }

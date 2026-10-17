@@ -44,7 +44,8 @@ fam=$(mktemp -d)
 grep -q "zsh-familiar.zsh" /etc/zshrc \
   && [[ $(echo n | zsh -c "source /usr/share/fennek/zsh-familiar.zsh; md '$fam/a b'" 2>&1) == *"this is: mkdir -p $fam/a\\ b"* ]] && [ ! -e "$fam/a b" ] \
   && echo y | zsh -c "source /usr/share/fennek/zsh-familiar.zsh; md '$fam/a b'" >/dev/null 2>&1 && [ -d "$fam/a b" ] \
-  && ! zsh -c "source /usr/share/fennek/zsh-familiar.zsh; nosuchcommand" 2>/dev/null || fail "terminal: classic command hints"
+  && ! zsh -c "source /usr/share/fennek/zsh-familiar.zsh; nosuchcommand" 2>/dev/null \
+  || fail "terminal: classic command hints: $(echo n | zsh -c "source /usr/share/fennek/zsh-familiar.zsh; md '$fam/a b'" 2>&1 | tr '\n' '|') / y: $(echo y | zsh -c "source /usr/share/fennek/zsh-familiar.zsh; md '$fam/c'" 2>&1 | tr '\n' '|') $(ls "$fam")"
 grep -q "zsh-prompt.zsh" /etc/zshrc &&zsh -c "source /usr/share/fennek/zsh-prompt.zsh; [[ \$PROMPT == *❯* ]]" || fail "terminal prompt"
 command -v kioclient >/dev/null && for id in $(grep -o 'id: "[a-z.-]*"' /usr/share/plasma/plasmoids/org.fennek.searchbox/contents/ui/main.qml | cut -d\" -f2); do
     [ -f "/usr/share/applications/$id.desktop" ] || fail "search starter app missing: $id"; done || fail "kioclient (search starter apps)"
