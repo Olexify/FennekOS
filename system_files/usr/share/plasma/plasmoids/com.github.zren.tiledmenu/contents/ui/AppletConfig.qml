@@ -97,7 +97,7 @@ Item {
 
 	//--- Colors
 	readonly property color themeButtonBgColor: {
-		if (PlasmaCore.Theme.themeName == "oxygen") {
+		if (false) {   // Fennek OS: was an Oxygen theme check (PlasmaCore.Theme is gone in Plasma 6)
 			return "#20FFFFFF"
 		} else {
 			return Kirigami.Theme.backgroundColor

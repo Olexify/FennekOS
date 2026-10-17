@@ -392,6 +392,10 @@ DropArea {
 		anchors.fill: parent
 		QQC2.ScrollBar.vertical: FennekScrollBar {}
 
+		// Fennek OS: Qt 6's ScrollView has no flickableItem/viewport (Qt 5 names); its contentItem is the Flickable.
+		// Without these, the drop position of a dragged tile was never computed and the tile jumped back.
+		readonly property Flickable flickableItem: contentItem
+		readonly property Item viewport: contentItem
 		readonly property int scrollTop: flickableItem ? flickableItem.contentY : 0
 		readonly property int scrollHeight: flickableItem ? flickableItem.contentHeight : 0
 		readonly property int scrollTopAtBottom: viewport ? scrollHeight - viewport.height : 0
