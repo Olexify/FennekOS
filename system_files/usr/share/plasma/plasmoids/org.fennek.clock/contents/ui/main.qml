@@ -74,8 +74,8 @@ PlasmoidItem {
                 text: { const m = root.locale.standaloneMonthName(root.shown.getMonth(), Locale.LongFormat); return m.charAt(0).toUpperCase() + m.slice(1) + " " + root.shown.getFullYear() }
                 font.weight: Font.DemiBold
             }
-            PC3.ToolButton { icon.name: "go-up"; icon.color: Kirigami.Theme.textColor; onClicked: root.shown = new Date(root.shown.getFullYear(), root.shown.getMonth() - 1, 1) }
-            PC3.ToolButton { icon.name: "go-down"; icon.color: Kirigami.Theme.textColor; onClicked: root.shown = new Date(root.shown.getFullYear(), root.shown.getMonth() + 1, 1) }
+            PC3.ToolButton { contentItem: Kirigami.Icon { source: "go-up-symbolic"; isMask: true; color: "#f0eef5"; implicitWidth: Kirigami.Units.iconSizes.small; implicitHeight: implicitWidth }; onClicked: root.shown = new Date(root.shown.getFullYear(), root.shown.getMonth() - 1, 1) }
+            PC3.ToolButton { contentItem: Kirigami.Icon { source: "go-down-symbolic"; isMask: true; color: "#f0eef5"; implicitWidth: Kirigami.Units.iconSizes.small; implicitHeight: implicitWidth }; onClicked: root.shown = new Date(root.shown.getFullYear(), root.shown.getMonth() + 1, 1) }
         }
 
         GridLayout {
