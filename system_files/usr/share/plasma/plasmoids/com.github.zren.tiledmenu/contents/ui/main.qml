@@ -144,13 +144,19 @@ PlasmoidItem {
 		// Layout.minimumHeight: 600 // For quickly testing as a desktop widget
 		// Layout.minimumWidth: 800
 
+		// Fennek OS: only sizes the user drags count. While the menu is being laid out (closed, or just opened) it
+		// passes through small sizes; remembering those shrank it for good.
+		property double openedAt: 0
+		function userResizing() { return widget.expanded && Date.now() - openedAt > 1000 }
+		Connections {
+			target: widget
+			function onExpandedChanged() { if (widget.expanded) popup.openedAt = Date.now() }
+		}
 		onWidthChanged: {
-			// console.log('popup.size', width, height, 'width')
-			resizeToFit.run()  // Fennek OS: wider menu = more tile columns
+			if (userResizing()) resizeToFit.run()  // wider menu = more tile columns
 		}
 		onHeightChanged: {
-			// console.log('popup.size', width, height, 'height')
-			resizeHeight.restart()  // Fennek OS: remember the height
+			if (userResizing()) resizeHeight.restart()  // remember the height
 		}
 
 		// Make popup resizeable like default Kickoff widget.
