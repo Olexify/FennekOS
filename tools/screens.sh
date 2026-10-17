@@ -32,6 +32,7 @@ export QT_QPA_PLATFORM=wayland WAYLAND_DISPLAY=wayland-fennek
 { echo "runtime dir:"; ls -la "$XDG_RUNTIME_DIR"; echo "processes:"; ps -eo pid,user,args | grep -E "kwin|dbus" | grep -v grep; } >/out/diag.log 2>&1
 xdg-user-dirs-update >/dev/null 2>&1
 /usr/libexec/fennek-first-login >/out/first-login.log 2>&1   # what a new user's first sign-in does
+/usr/libexec/fennek-shortcuts-update >>/out/first-login.log 2>&1   # what every sign-in does before the desktop
 # Normally started by systemd (not in a container): activities (plasmashell refuses to start without), kded.
 /usr/libexec/kactivitymanagerd >/out/kactivitymanagerd.log 2>&1 &
 kded6 >/out/kded.log 2>&1 &
@@ -80,6 +81,9 @@ call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; 
 DISPLAY=:99 xdotool mousemove 470 222 mousedown 1 sleep 0.3 mousemove 520 260 sleep 0.2 mousemove 700 300 sleep 0.2 mousemove 850 380 sleep 0.5
 shot 22-tile-dragging 1
 DISPLAY=:99 xdotool mouseup 1; shot 23-tile-dropped 2
+# Drag an app from the list (Phone) onto empty tile space: it becomes a tile.
+DISPLAY=:99 xdotool mousemove 120 437 mousedown 1 sleep 0.3 mousemove 200 450 sleep 0.2 mousemove 600 700 sleep 0.2 mousemove 640 760 sleep 0.5 mouseup 1
+shot 27-app-to-tile 2
 DISPLAY=:99 xdotool key Escape; sleep 1
 # Dark look: how long applying takes (a hang shows here), then a dialog's button icons on dark.
 { time timeout 90 plasma-apply-lookandfeel -a org.fennek.dark.desktop; echo "exit $?"; } >>/out/lnf-apply.log 2>&1
