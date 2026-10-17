@@ -11,6 +11,7 @@ import org.kde.plasma.components as PlasmaComponents
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.plasma.private.kicker as Kicker
 import org.kde.kirigami as Kirigami
+import org.kde.plasma.plasma5support as P5Support
 
 PlasmoidItem {
     id: root
@@ -63,6 +64,20 @@ PlasmoidItem {
         shownItems: Kicker.RecentUsageModel.OnlyApps
     }
     readonly property var results: runnerModel.count > 0 ? runnerModel.modelForRow(0) : null
+    // Until Fennek has learned your apps: the pinned basics as Top apps (never an empty panel).
+    readonly property var starterApps: [
+        { id: "org.mozilla.firefox", name: "Firefox", icon: "firefox" },
+        { id: "org.kde.dolphin", name: "Files", icon: "org.kde.dolphin" },
+        { id: "fennek-settings", name: "Settings", icon: "fennek-settings" },
+        { id: "org.kde.discover", name: "Store", icon: "plasmadiscover" },
+        { id: "org.kde.konsole", name: "Terminal", icon: "utilities-terminal" },
+        { id: "org.kde.kwrite", name: "Text Editor", icon: "accessories-text-editor" }
+    ]
+    P5Support.DataSource { id: exec; engine: "executable"; onNewData: source => disconnectSource(source) }
+    function launchApp(id) {
+        exec.connectSource("kioclient exec /usr/share/applications/" + id + ".desktop")
+        root.expanded = false
+    }
     readonly property bool searching: query.length > 0
 
     function launch(model, row) {
@@ -177,7 +192,7 @@ PlasmoidItem {
 
         // Before typing: the apps you use most, as big tiles.
         PlasmaComponents.Label {
-            visible: !root.searching && topApps.count > 0
+            visible: !root.searching
             text: "Top apps"
             font.bold: true
             Layout.leftMargin: Kirigami.Units.largeSpacing
@@ -206,6 +221,37 @@ PlasmoidItem {
                         }
                         PlasmaComponents.Label {
                             text: model.display
+                            Layout.fillWidth: true
+                            horizontalAlignment: Text.AlignHCenter
+                            elide: Text.ElideRight
+                        }
+                    }
+                }
+            }
+            Item { Layout.fillWidth: true }
+        }
+        RowLayout {   // the starter set, until there is usage
+            visible: !root.searching && topApps.count === 0
+            Layout.fillWidth: true
+            Layout.leftMargin: Kirigami.Units.largeSpacing
+            Layout.rightMargin: Kirigami.Units.largeSpacing
+            spacing: Kirigami.Units.smallSpacing
+            Repeater {
+                model: root.starterApps
+                delegate: PlasmaComponents.ItemDelegate {
+                    Layout.preferredWidth: Kirigami.Units.gridUnit * 6.6
+                    Layout.preferredHeight: Kirigami.Units.gridUnit * 5.5
+                    onClicked: root.launchApp(modelData.id)
+                    contentItem: ColumnLayout {
+                        spacing: Kirigami.Units.smallSpacing
+                        Kirigami.Icon {
+                            source: modelData.icon
+                            Layout.alignment: Qt.AlignHCenter
+                            Layout.preferredWidth: Kirigami.Units.iconSizes.large
+                            Layout.preferredHeight: Kirigami.Units.iconSizes.large
+                        }
+                        PlasmaComponents.Label {
+                            text: modelData.name
                             Layout.fillWidth: true
                             horizontalAlignment: Text.AlignHCenter
                             elide: Text.ElideRight
