@@ -39,6 +39,7 @@ for f in glob.glob("/usr/share/plasma/shells/org.kde.plasma.desktop/contents/upd
     assert not stack and code.count("'") % 2 == 0, f
 PY
 [ -f /usr/share/icons/Fennek/scalable/places/folder-documents-symbolic.svg ] || fail "monochrome folder icons in the Fennek set"
+[ -s /usr/share/fennek/files-first-window-state ] && grep -q "files-first-window-state" /usr/libexec/fennek-first-login || fail "Files: first window with menu bar, side panels closed"
 # Existing desktops follow layout changes by themselves (Plasma update scripts, once per user): no reset needed.
 u=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/fennek-2026-10-16-taskbar.js
 [ -f "$u" ] && grep -q 'org.fennek.taskview' "$u" && grep -q 'hideSearchField' "$u"   && [ "$(kreadconfig6 --file /etc/xdg/plasmarc --group Theme --key name)" = fennek-dark ]   && grep -q '^name=fennek-dark' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults   && [ -f /usr/share/plasma/desktoptheme/fennek-dark/widgets/tasks.svg ] && python3 -c "import json; assert json.load(open('/usr/share/plasma/desktoptheme/fennek-dark/metadata.json'))['KPlugin']['Id'] == 'fennek-dark'"  || fail "taskbar update for existing desktops / dark panels"

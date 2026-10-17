@@ -15,10 +15,15 @@ if [ "${lnf#org.fennek.}" = "$lnf" ]; then   # not a Fennek look (light or dark)
     plasma-apply-lookandfeel --apply org.fennek.desktop --resetLayout || exit 1   # retried next login
 fi
 /usr/libexec/fennek-desktop-icons   # This PC and Recycle Bin on the desktop
-# Files: classic menu bar (File, Edit, View…). KDE keeps this in the per-user state file, which system defaults
-# don't reach.
-state="${XDG_STATE_HOME:-$HOME/.local/state}/dolphinstaterc"
-[ -e "$state" ] || { mkdir -p "${state%/*}" && printf '[MainWindow]\nMenuBar=Enabled\n' > "$state"; }
+# Files: classic menu bar. On its own first start Files hides it; so new users start as "already set up": the
+# window layout Files makes on that first start (side panels closed), menu bar on.
+rc=${XDG_CONFIG_HOME:-$HOME/.config}/dolphinrc
+state=${XDG_STATE_HOME:-$HOME/.local/state}/dolphinstaterc
+if [ -z "$(kreadconfig6 --file "$rc" --group General --key Version)" ]; then
+    kwriteconfig6 --file "$rc" --group General --key Version 202
+    kwriteconfig6 --file "$rc" --group MainWindow --key MenuBar Enabled
+    mkdir -p "${state%/*}" && kwriteconfig6 --file "$state" --group State --key State "$(cat /usr/share/fennek/files-first-window-state)"
+fi
 mkdir -p "${stamp%/*}" && touch "$stamp"
 # First login only: say hello (pick a look, what keeps you safe, tips).
 (sleep 2; fennek-app welcome) >/dev/null 2>&1 &
