@@ -120,7 +120,8 @@ t = pathlib.Path(tempfile.mkdtemp()); src = t / "Documents"; src.mkdir(); (src /
 cur, old = t / "drive/Current", t / "drive/Older versions"
 cur.mkdir(parents=True)
 assert subprocess.run(fb.rsync_args(str(src), str(cur), str(old / "2026-10-17 10.00/Documents"))).returncode == 0
-(src / "a.txt").write_text("v2")
+(src / "a.txt").write_text("v2"); import os, time; os.utime(src / "a.txt", (time.time() + 60, time.time() + 60))   # a later edit
+
 assert subprocess.run(fb.rsync_args(str(src), str(cur), str(old / "2026-10-17 11.00/Documents"))).returncode == 0
 assert (cur / "Documents/a.txt").read_text() == "v2"
 assert (old / "2026-10-17 11.00/Documents/a.txt").read_text() == "v1"
