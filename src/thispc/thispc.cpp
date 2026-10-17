@@ -106,9 +106,9 @@ QList<Item> items()
 
     const QLocale locale;
     const auto describe = [&](const QString &label, const QStorageInfo &s) {
-        // "50.4 GB free of 61.4 GB": one decimal, GB (base 1024), the way the classic This PC writes it.
+        // "Local Disk · 50.4 GB free": short enough for the icon view (one decimal, GB, base 1024).
         const auto size = [&](qint64 b) { return locale.formattedDataSize(b, 1, QLocale::DataSizeTraditionalFormat); };
-        return QStringLiteral("%1 (%2 free of %3)").arg(label, size(s.bytesAvailable()), size(s.bytesTotal()));
+        return QStringLiteral("%1 · %2 free").arg(label, size(s.bytesAvailable()));
     };
     // The disk your files live on, then every other mounted drive (USB sticks, second disks, partitions).
     const QStorageInfo mine(home);
