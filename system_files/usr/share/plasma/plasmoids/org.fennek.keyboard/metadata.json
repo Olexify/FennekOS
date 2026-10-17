@@ -1,0 +1,16 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [{ "Name": "Fennek OS" }],
+        "Category": "System Information",
+        "Description": "Input language: click for the list of your languages and language settings",
+        "EnabledByDefault": true,
+        "Icon": "input-keyboard",
+        "Id": "org.fennek.keyboard",
+        "License": "GPL-3.0-only",
+        "Name": "Input language"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-NotificationArea": "true",
+    "X-Plasma-NotificationAreaCategory": "Hardware"
+}

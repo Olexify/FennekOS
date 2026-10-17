@@ -16,38 +16,33 @@ GridLayout {
 		Layout.preferredHeight: config.searchFilterRowHeight - 1 // -1px is for the underline seperator
 		Layout.fillWidth: true
 
-		FlatButton {
-			icon.name: "system-search-symbolic"
-			Layout.preferredHeight: parent.Layout.preferredHeight
-			Layout.preferredWidth: parent.Layout.preferredHeight
-			onClicked: search.applyDefaultFilters()
-			checked: search.isDefaultFilter
-			checkedEdge: searchView.searchOnTop ?  Qt.TopEdge : Qt.BottomEdge
+		// Fennek OS: plain text tabs with an accent underline (the old icon buttons drew dark, ghost-like icons).
+		// Files = Fennek's own instant file search (KDE's file indexer is off).
+		Repeater {
+			model: [
+				{ name: i18n("All"), filters: [] },
+				{ name: i18n("Apps"), filters: ["services"] },
+				{ name: i18n("Files"), filters: ["fennek-search"] },
+			]
+			PlasmaComponents3.ToolButton {
+				required property var modelData
+				readonly property bool current: modelData.filters.length ? search.isFilter(modelData.filters[0]) : search.isDefaultFilter
+				Layout.preferredHeight: searchFiltersRow.Layout.preferredHeight
+				flat: true
+				text: modelData.name
+				font.weight: current ? Font.DemiBold : Font.Normal
+				opacity: current ? 1 : 0.65
+				onClicked: modelData.filters.length ? search.filters = modelData.filters : search.applyDefaultFilters()
+				Rectangle {
+					anchors.horizontalCenter: parent.horizontalCenter
+					anchors.bottom: parent.bottom
+					anchors.bottomMargin: 4
+					width: parent.width * 0.5; height: 2; radius: 1
+					color: Kirigami.Theme.highlightColor
+					visible: parent.current
+				}
+			}
 		}
-		FlatButton {
-			icon.name: "window"
-			Layout.preferredHeight: parent.Layout.preferredHeight
-			Layout.preferredWidth: parent.Layout.preferredHeight
-			onClicked: search.filters = ['services']
-			checked: search.isAppsFilter
-			checkedEdge: searchView.searchOnTop ?  Qt.TopEdge : Qt.BottomEdge
-		}
-		FlatButton {
-			icon.name: "document-new"
-			Layout.preferredHeight: parent.Layout.preferredHeight
-			Layout.preferredWidth: parent.Layout.preferredHeight
-			onClicked: search.filters = ['baloosearch']
-			checked: search.isFileFilter
-			checkedEdge: searchView.searchOnTop ?  Qt.TopEdge : Qt.BottomEdge
-		}
-		// FlatButton {
-		// 	icon.name: "globe"
-		// 	Layout.preferredHeight: parent.Layout.preferredHeight
-		// 	Layout.preferredWidth: parent.Layout.preferredHeight
-		// 	onClicked: search.filters = ['bookmarks']
-		// 	checked: search.isBookmarksFilter
-		// 	checkedEdge: searchView.searchOnTop ?  Qt.TopEdge : Qt.BottomEdge
-		// }
 
 		Item { Layout.fillWidth: true }
 
@@ -69,7 +64,9 @@ GridLayout {
 					text: i18n("Filters")
 				}
 				Kirigami.Icon {
-					source: "usermenu-down"
+					source: "arrow-down-symbolic"
+					isMask: true
+					color: "#f0eef5"   // light on the dark menu (see FlatButton)
 					rotation: searchResultsView.filterViewOpen ? 180 : 0
 					Layout.preferredHeight: config.flatButtonIconSize
 					Layout.preferredWidth: config.flatButtonIconSize
@@ -85,7 +82,7 @@ GridLayout {
 	}
 
 	Rectangle {
-		color: "#111"
+		color: "#1affffff"   // Fennek OS: a faint line, not a black bar
 		height: 1
 		width: parent.width
 		// anchors.bottom: searchFiltersRow.bottom - 1

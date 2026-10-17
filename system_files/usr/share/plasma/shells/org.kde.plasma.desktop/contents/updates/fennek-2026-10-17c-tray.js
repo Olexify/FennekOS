@@ -8,7 +8,7 @@ panels().forEach(function (panel) {
         if (!tray) return
         tray.currentConfigGroup = ["General"]
         tray.writeConfig("shownItems", ["org.kde.plasma.networkmanagement", "org.kde.plasma.volume",
-                                        "org.kde.plasma.battery", "org.kde.plasma.keyboardlayout"])
+                                        "org.kde.plasma.battery", "org.fennek.keyboard"])
         tray.writeConfig("hiddenItems", ["org.kde.plasma.notifications",
                                          "org.kde.plasma.clipboard", "org.kde.plasma.devicenotifier", "org.kde.kdeconnect",
                                          "org.kde.plasma.bluetooth", "org.kde.plasma.printmanager", "org.kde.plasma.vault",

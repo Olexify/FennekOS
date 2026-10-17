@@ -37,8 +37,8 @@ var tray = desktopById(systray.readConfig("SystrayContainmentId"))
 if (tray) {
     tray.currentConfigGroup = ["General"]
     tray.writeConfig("shownItems", ["org.kde.plasma.networkmanagement", "org.kde.plasma.volume",
-                                    "org.kde.plasma.battery", "org.kde.plasma.keyboardlayout"])
-    tray.writeConfig("hiddenItems", ["org.kde.plasma.notifications", "org.kde.plasma.clipboard", "org.kde.plasma.devicenotifier", "org.kde.kdeconnect",
+                                    "org.kde.plasma.battery", "org.fennek.keyboard"])
+    tray.writeConfig("hiddenItems", ["org.kde.plasma.notifications", "org.kde.plasma.keyboardlayout", "org.kde.plasma.clipboard", "org.kde.plasma.devicenotifier", "org.kde.kdeconnect",
                                      "org.kde.plasma.bluetooth", "org.kde.plasma.printmanager", "org.kde.plasma.vault",
                                      "org.kde.plasma.mediacontroller", "org.kde.kscreen", "org.kde.plasma.brightness",
                                      "org.kde.plasma.cameraindicator", "org.kde.plasma.manage-inputmethod",

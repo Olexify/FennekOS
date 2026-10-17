@@ -81,7 +81,7 @@ Item {
 	}
 	property bool isDefaultFilter: filters == defaultFilters
 	property bool isAppsFilter: isFilter('services')
-	property bool isFileFilter: isFilter('baloosearch')
+	property bool isFileFilter: isFilter('fennek-search')
 	property bool isBookmarksFilter: isFilter('bookmarks')
 
 	function hasFilter(runnerId) {
