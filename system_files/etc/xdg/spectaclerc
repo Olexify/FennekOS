@@ -1,0 +1,7 @@
+# Fennek OS: snipping like the classic Snip tool. Drag, let go: the snip is taken (no extra confirm step),
+# copied to the clipboard and kept in Pictures/Screenshots; a notification offers to open and mark it up.
+[General]
+useReleaseToCapture=true
+clipboardGroup=PostScreenshotCopyImage
+autoSaveImage=true
+showCaptureInstructions=false
