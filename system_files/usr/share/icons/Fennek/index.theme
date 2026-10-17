@@ -2,6 +2,7 @@
 Name=Fennek
 Comment=Fennek OS icons: classic yellow folders and Fennek's own apps; everything else from Breeze
 Inherits=breeze,hicolor
+FollowsColorScheme=true
 Directories=scalable/places,scalable/apps,scalable/devices,scalable/actions
 
 [scalable/places]

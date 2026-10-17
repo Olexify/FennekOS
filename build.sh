@@ -226,8 +226,20 @@ kwriteconfig6 --file /etc/xdg/kscreenlockerrc --group Greeter --group Wallpaper 
 # Fennek taskbar and Start menu with Fedora's layout (looks like the desktop got "erased").
 dark=/usr/share/plasma/look-and-feel/org.fennek.dark.desktop
 cp -a "$lnf/contents/." "$dark/contents/"
-{ sed '/^ColorScheme=/d' "$lnf/contents/defaults"; printf '\n[kdeglobals][General]\nColorScheme=FennekDark\n'; } \
+{ sed -e '/^ColorScheme=/d' -e 's/^Theme=Fennek$/Theme=Fennek-Dark/' "$lnf/contents/defaults"; printf '\n[kdeglobals][General]\nColorScheme=FennekDark\n'; } \
     > "$dark/contents/defaults"
+# Icons for the dark theme: the same Fennek icons, with KDE's light-on-dark Breeze Dark behind them (plain
+# Breeze draws dark symbols, unreadable on dark windows and panels).
+fni=/usr/share/icons/Fennek; fdi=/usr/share/icons/Fennek-Dark
+mkdir -p "$fdi/scalable/places"
+for d in apps devices actions; do ln -s "../../Fennek/scalable/$d" "$fdi/scalable/$d"; done
+for f in "$fni"/scalable/places/*.svg; do
+    n=${f##*/}; src=$(find /usr/share/icons/breeze-dark -name "$n" -path '*places*' | sort | tail -1)
+    if [ "${n%-symbolic.svg}" != "$n" ] && [ -n "$src" ]; then cp "$src" "$fdi/scalable/places/$n"
+    else ln -s "../../../Fennek/scalable/places/$n" "$fdi/scalable/places/$n"; fi
+done
+sed -e 's/^Name=Fennek$/Name=Fennek Dark/' -e 's/^Inherits=breeze,hicolor$/Inherits=breeze-dark,hicolor/' "$fni/index.theme" > "$fdi/index.theme"
+gtk-update-icon-cache -f -t "$fdi" 2>/dev/null || true
 rm -rf /usr/share/plasma/look-and-feel/org.fedoraproject.*
 # KDE's own global themes leave the list too (picking one swapped in KDE's frame, taskbar and Start menu).
 # Only their defaults + layout go: the theme list shows packages that have them, while the rest of Breeze

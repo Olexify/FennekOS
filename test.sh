@@ -80,6 +80,10 @@ grep -q 'name="go_up"' "$r" && grep -q 'version="10[0-9][0-9]"' "$r" && grep -q 
 python3 -c "import sys, xml.dom.minidom as x; x.parse(sys.argv[1])" "$r"   || fail "Files toolbar file is not valid XML"
 [ -s /usr/share/fennek/apps/firewall/main.qml ] && grep -q '^Exec=fennek-app firewall' /usr/share/applications/fennek-firewall.desktop || fail "Firewall window"
 fennek-firewall list --json | python3 -c 'import json,sys; assert json.load(sys.stdin) == []' || fail "firewall list --json"
+# Dark theme icons: Fennek's own icons over Breeze Dark (light symbols), used by the dark look.
+grep -q '^Inherits=breeze-dark' /usr/share/icons/Fennek-Dark/index.theme && [ -e /usr/share/icons/Fennek-Dark/scalable/apps/fennek-settings.svg ] \
+  && grep -q '^Theme=Fennek-Dark$' /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults \
+  && grep -q '^Theme=Fennek$' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults || fail "dark theme icons"
 # Classic command names: each one linked, every program they open is installed.
 for c in calc notepad control taskmgr ncpa.cpl appwiz.cpl; do
     [ "$(readlink -f "/usr/bin/$c")" = /usr/libexec/fennek-classic-command ] || fail "classic command $c"
