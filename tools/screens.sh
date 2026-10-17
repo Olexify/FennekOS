@@ -60,6 +60,10 @@ fennek-app welcome >/dev/null 2>&1 & shot 13-welcome 6; close
 call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; sleep 2
 DISPLAY=:99 xdotool type --delay 80 "fire"; shot 14-start-search 3
 DISPLAY=:99 xdotool key Escape; sleep 1
+# The letter filter: Start (760 px tall: its list starts near the top), click the first letter header.
+call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; sleep 2
+click 78 122; shot 19-start-letters 2
+DISPLAY=:99 xdotool key Escape; sleep 1; DISPLAY=:99 xdotool key Escape; sleep 1
 # A notification popup and the volume on-screen display.
 notify-send -a "Fennek OS" -i system-software-update "Update ready" "It's installed on the next restart." ; shot 15-notification 2
 call org.kde.plasmashell /org/kde/osdService org.kde.osdService.volumeChanged 60 100; shot 16-volume-osd 1
