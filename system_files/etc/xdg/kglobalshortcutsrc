@@ -13,3 +13,10 @@ next activity=none,Meta+Tab,Walk through activities
 [services][org.kde.krunner.desktop]
 # Super+R: the Run box (type an app, a command, a file or a sum), like the classic Run dialog.
 _launch=Meta+R	Alt+Space	Alt+F2	Search
+
+# Super+I: Settings. Ctrl+Shift+Esc: Task Manager (Ctrl+Esc keeps working).
+[services][fennek-settings.desktop]
+_launch=Meta+I
+
+[services][org.kde.plasma-systemmonitor.desktop]
+_launch=Ctrl+Shift+Esc	Ctrl+Esc

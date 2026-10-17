@@ -69,6 +69,9 @@ notify-send -a "Fennek OS" -i system-software-update "Update ready" "It's instal
 call org.kde.plasmashell /org/kde/osdService org.kde.osdService.volumeChanged 60 100; shot 16-volume-osd 1
 # File Explorer from the sidebar's This PC, with the classic menu bar.
 dolphin >/dev/null 2>&1 & shot 17-file-explorer-home 6; close
+# Right-click on the desktop: what a classic user looks for (View, Sort, Refresh, New, Display, Personalise).
+DISPLAY=:99 xdotool mousemove 700 400 click 3; shot 26-desktop-menu 2
+DISPLAY=:99 xdotool key Escape; sleep 1
 # Right-click on empty taskbar space: the classic taskbar menu.
 DISPLAY=:99 xdotool mousemove 800 880 click 3; shot 21-taskbar-menu 2
 DISPLAY=:99 xdotool key Escape; sleep 1
