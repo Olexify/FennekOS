@@ -65,11 +65,11 @@ AppToolButton {
 		// console.log('    iconInstance', iconInstance)
 		// console.log('    dragIcon', dragIcon)
 		if (dragIcon) {
-			dragHelper.startDrag(widget, model.url || model.favoriteId, dragIcon, "favoriteId", model.favoriteId)
+			dragHelper.startDrag(itemDelegate, model.url || model.favoriteId, dragIcon, "favoriteId", model.favoriteId)
 		} else {
 			// Fennek OS: only an icon name (most apps): drag the app's address without a picture instead of not
 			// dragging at all (apps could not be dragged onto the tiles). The tile board reads the address.
-			dragHelper.startDrag(widget, model.url || model.favoriteId)
+			dragHelper.startDrag(itemDelegate, model.url || model.favoriteId)
 		}
 
 		resetDragState()
@@ -163,6 +163,9 @@ AppToolButton {
 	}
 
 	acceptedButtons: Qt.LeftButton | Qt.RightButton
+	// Fennek OS: the list must not take over a press that turns into a drag (its scroll grabbed the mouse and
+	// cancelled every drag of an app to the tiles or the desktop). The wheel still scrolls the list.
+	preventStealing: true
 	onClicked: function(mouse) {
 		mouse.accepted = true
 		resetDragState()
