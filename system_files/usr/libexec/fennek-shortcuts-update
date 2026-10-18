@@ -84,6 +84,15 @@ if [ "$(cat "$dm_seen" 2>/dev/null)" != 2026-10-18b ]    && [ "$(kreadconfig6 --
     mkdir -p "${dm_seen%/*}" && echo 2026-10-18b >"$dm_seen"
 fi
 
+# Widget style, once: Breeze -> Fennek (Breeze plus: the wheel scrolls the page, not the drop-down under it).
+ws_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/widget-style-version
+if [ "$(cat "$ws_seen" 2>/dev/null)" != 2026-10-18 ]; then
+    case "$(kreadconfig6 --file "${XDG_CONFIG_HOME:-$HOME/.config}/kdeglobals" --group KDE --key widgetStyle)" in
+        Breeze|breeze) kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle Fennek ;;
+    esac
+    mkdir -p "${ws_seen%/*}" && echo 2026-10-18 >"$ws_seen"
+fi
+
 # Virtual machine, once: no 3D card there, so every frame is drawn by the processor. Blur behind panels and long
 # animations make it feel slow; switch them off (real PCs keep them). An own choice stays.
 vm_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/vm-speed-version

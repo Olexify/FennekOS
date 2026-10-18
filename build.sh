@@ -107,6 +107,10 @@ for key in font menuFont toolBarFont; do
 done
 # Snappy: every animation (menus, pop-ups, windows) at half its length.
 kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key AnimationDurationFactor 0.5
+# Widget style "Fennek" (src/fennek-style): Breeze as it is, but the wheel scrolls the page instead of changing a
+# drop-down or slider under the pointer. Both themes use it.
+kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key widgetStyle Fennek
+printf '\n[kdeglobals][KDE]\nwidgetStyle=Fennek\n' >> "$lnf/contents/defaults"
 kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key smallestReadableFont "Inter,8,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
 kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key fixed "Cascadia Mono,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
 kwriteconfig6 --file /etc/xdg/kdeglobals --group WM --key activeFont "Inter,10,-1,5,500,0,0,0,0,0,0,0,0,0,0,1"
@@ -534,7 +538,7 @@ tools=(cmake extra-cmake-modules gcc-c++ libplasma-devel kf6-kcoreaddons-devel k
        rust cargo 'rust-zbus+default-devel' 'rust-inotify+default-devel' librsvg2-tools xcursorgen)
 missing=(); for p in "${tools[@]}"; do rpm -q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 dnf -y install "${missing[@]}"
-for plugin in taskbar-menu thispc fennek-app; do
+for plugin in taskbar-menu thispc fennek-app fennek-style; do
     cmake -S "$files/../src/$plugin" -B "/tmp/$plugin" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
     cmake --build "/tmp/$plugin" -j"$(nproc)"
     cmake --install "/tmp/$plugin"
