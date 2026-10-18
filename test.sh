@@ -181,7 +181,7 @@ grep -q "^font=Inter,10" /etc/xdg/kdeglobals && grep -q "^fixed=Cascadia Mono" /
 grep -q "^DefaultProfile=Fennek.profile" /etc/xdg/konsolerc && grep -q "^ColorScheme=Fennek" /usr/share/konsole/Fennek.profile && [ -s /usr/share/konsole/Fennek.colorscheme ] || fail "Fennek terminal profile"
 grep -q "Fennek OS: a personal greeting" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/lockscreen/LockScreenUi.qml && grep -q "Fennek" /etc/xdg/kscreenlockerrc || fail "lock screen greeting + wallpaper"
 grep -q "^LastSeenVersion=99" /etc/xdg/plasma-welcomerc || fail "only one welcome window"
-[ -s /usr/share/fennek/apps/welcome/main.qml ] && grep -q "^Exec=fennek-app welcome" /usr/share/applications/fennek-welcome.desktop && grep -q "fennek-app welcome" /usr/libexec/fennek-first-login || fail "welcome app"
+[ -s /usr/share/fennek/apps/welcome/main.qml ] && grep -q "^Exec=fennek-app welcome" /usr/share/applications/fennek-welcome.desktop && grep -q "app=welcome" /usr/libexec/fennek-first-login && grep -q "app=live" /usr/libexec/fennek-first-login || fail "welcome app"
 grep -q "Fennek OS splash" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/splash/Splash.qml && grep -q "Fennek OS splash" /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/splash/Splash.qml || fail "Fennek splash"
 grep -q "nmi_watchdog=0" /usr/lib/bootc/kargs.d/20-fennek-battery.toml && grep -q "^vm.dirty_writeback_centisecs = 1500" /usr/lib/sysctl.d/60-fennek-battery.conf || fail "battery kernel settings"
 grep -q "^ColorScheme=FennekDark" /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults || fail "Fennek Dark colors"
