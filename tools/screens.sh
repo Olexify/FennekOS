@@ -81,6 +81,9 @@ call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; 
 # (no screenshot mid-drag: taking one grabs the screen and the tile never sees the release)
 DISPLAY=:99 xdotool mousemove 470 222 mousedown 1 sleep 0.3 mousemove 520 260 sleep 0.2 mousemove 700 500 sleep 0.2 mousemove 890 820 sleep 0.5 mouseup 1
 shot 23-tile-dropped 2
+# Fold the Safety group (click its header), then unfold it: its tiles must come back.
+click 445 319; shot 28-group-folded 2
+click 445 319; shot 29-group-unfolded 2
 # Drag an app from the list (Phone) onto empty tile space: it becomes a tile.
 DISPLAY=:99 xdotool mousemove 120 437 mousedown 1 sleep 0.3 mousemove 200 450 sleep 0.2 mousemove 600 700 sleep 0.2 mousemove 640 760 sleep 0.5 mouseup 1
 shot 27-app-to-tile 2
