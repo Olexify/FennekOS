@@ -20,3 +20,8 @@ IconSize=16
 PreviewSize=16
 # No empty strip left and right of the rows (the list starts at the edge, like the classic file manager).
 SidePadding=0
+
+[IconsMode]
+# Big icons where folders show as icons (This PC: folders and drives with their usage bar, like the classic page).
+IconSize=64
+PreviewSize=64

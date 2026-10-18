@@ -1,6 +1,6 @@
 """Fennek pointers: the classic shapes (white arrow with a black edge, sharp corners), a soft shadow, a violet
 busy ring. Writes SVG sources + cursors.txt to <root>/usr/share/fennek/cursor-src; build.sh renders them
-(24/32/48/64 px) into the "Fennek-Cursors" pointer theme. Everything not drawn here comes from Breeze.
+(24 to 96 px) into the "Fennek-Cursors" pointer theme. Everything not drawn here comes from Breeze.
 
   python branding/make-cursors.py system_files
 """

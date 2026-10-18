@@ -58,9 +58,9 @@ QList<Item> items()
     const struct {
         QStandardPaths::StandardLocation where;
         const char *icon;
-    } folders[] = {{QStandardPaths::DesktopLocation, "user-desktop"},     {QStandardPaths::DocumentsLocation, "folder-documents"},
-                   {QStandardPaths::DownloadLocation, "folder-download"}, {QStandardPaths::MusicLocation, "folder-music"},
-                   {QStandardPaths::PicturesLocation, "folder-pictures"}, {QStandardPaths::MoviesLocation, "folder-videos"}};
+    } folders[] = {{QStandardPaths::DesktopLocation, "fennek-folder-desktop"},     {QStandardPaths::DocumentsLocation, "fennek-folder-documents"},
+                   {QStandardPaths::DownloadLocation, "fennek-folder-downloads"}, {QStandardPaths::MusicLocation, "fennek-folder-music"},
+                   {QStandardPaths::PicturesLocation, "fennek-folder-pictures"}, {QStandardPaths::MoviesLocation, "fennek-folder-videos"}};
     for (const auto &f : folders) {
         const QString path = QStandardPaths::writableLocation(f.where);
         if (path.isEmpty() || path == home || !QDir(path).exists())

@@ -75,14 +75,26 @@ for k, ns in names.items():
     s = app(*glyphs[k])
     for n in ns:
         open(f"{base}/{n}.svg", "w", newline="\n").write(s)
-# Drives with a usage bar for This PC (fennek-drive-used-0 ... -100): the bar turns red when nearly full.
+# Drives with a usage bar for This PC (fennek-drive-used-0 ... -100): amber from 75 % full, red from 90 %.
 for pct in range(0, 101, 10):
-    fill = "#ff6b6b" if pct >= 90 else "#fff"
-    bar = (f'<rect x="15" y="40" width="34" height="5" rx="2.5" fill="#fff" fill-opacity=".3" stroke="none"/>'
-           f'<rect x="15" y="40" width="{34 * pct / 100:.1f}" height="5" rx="2.5" fill="{fill}" stroke="none"/>' if pct else
-           '<rect x="15" y="40" width="34" height="5" rx="2.5" fill="#fff" fill-opacity=".3" stroke="none"/>')
-    glyph = '<rect x="17" y="18" width="30" height="15" rx="4"/><circle cx="40" cy="25.5" r="1.8" fill="#fff" stroke="none"/>' + bar
+    # Thick bar on a bright track: amber from 75 % full, red from 90 % (time to free space), white below.
+    fill = "#ff5a5a" if pct >= 90 else "#ffc247" if pct >= 75 else "#fff"
+    track = '<rect x="14" y="39" width="36" height="8" rx="4" fill="#fff" fill-opacity=".38" stroke="none"/>'
+    bar = track + (f'<rect x="14" y="39" width="{max(8, 36 * pct / 100):.1f}" height="8" rx="4" fill="{fill}" stroke="none"/>' if pct else "")
+    glyph = '<rect x="17" y="17" width="30" height="15" rx="4"/><circle cx="40" cy="24.5" r="1.8" fill="#fff" stroke="none"/>' + bar
     open(f"{base}/devices/fennek-drive-used-{pct}.svg", "w", newline="\n").write(app("#9aa3b0", "#5d6674", glyph))
+
+# This PC's main folders, in the app-tile style (each its own colour and symbol).
+special = {
+    "desktop":   ("#46c6d3", "#1d8a9c", '<rect x="18" y="20" width="28" height="18" rx="3"/><path d="M27 45h10M32 38v7"/>'),
+    "documents": ("#5aa0ff", "#2f6fe0", '<path d="M24 16h11l7 7v22a3 3 0 0 1-3 3H24a3 3 0 0 1-3-3V19a3 3 0 0 1 3-3z"/><path d="M35 16v7h7M27 32h10M27 38h7"/>'),
+    "downloads": ("#4fd08a", "#1e9c58", '<path d="M32 17v20M24 30l8 8 8-8M20 46h24"/>'),
+    "music":     ("#ff7eae", "#df4483", '<path d="M29 42V22l13-3v18"/><circle cx="25.5" cy="42" r="3.5"/><circle cx="38.5" cy="37" r="3.5"/>'),
+    "pictures":  ("#ad8cfb", "#6c45e3", '<rect x="17" y="20" width="30" height="24" rx="4"/><circle cx="26" cy="28" r="3"/><path d="M19 41l9-8 6 5 4-3 8 6"/>'),
+    "videos":    ("#ff8f6a", "#e3523c", '<rect x="16" y="21" width="32" height="22" rx="4"/><path d="M29 27l8 5-8 5z" fill="#fff"/>'),
+}
+for k, (top, bot, g) in special.items():
+    open(f"{base}/places/fennek-folder-{k}.svg", "w", newline="\n").write(app(top, bot, g))
 for n in ("fennek-firewall", "fennek-quarantine", "fennek-settings", "fennek-apphistory"):
     open(f"{hicolor}/{n}.svg", "w", newline="\n").write(open(f"{base}/apps/{n}.svg").read())
 
