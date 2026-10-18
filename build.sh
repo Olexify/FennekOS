@@ -110,6 +110,10 @@ kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key AnimationDurationFact
 # Widget style "Fennek" (src/fennek-style): Breeze as it is, but the wheel scrolls the page instead of changing a
 # drop-down or slider under the pointer. Both themes use it.
 kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key widgetStyle Fennek
+# Splash after signing in: Fennek's (contents/splash), not KDE's Plasma one (its default without this).
+kwriteconfig6 --file /etc/xdg/ksplashrc --group KSplash --key Engine KSplashQML
+kwriteconfig6 --file /etc/xdg/ksplashrc --group KSplash --key Theme org.fennek.desktop
+printf '\n[ksplashrc][KSplash]\nEngine=KSplashQML\nTheme=org.fennek.desktop\n' >> "$lnf/contents/defaults"
 printf '\n[kdeglobals][KDE]\nwidgetStyle=Fennek\n' >> "$lnf/contents/defaults"
 kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key smallestReadableFont "Inter,8,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
 kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key fixed "Cascadia Mono,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"

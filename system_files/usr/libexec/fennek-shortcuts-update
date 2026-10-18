@@ -93,6 +93,16 @@ if [ "$(cat "$ws_seen" 2>/dev/null)" != 2026-10-18 ]; then
     mkdir -p "${ws_seen%/*}" && echo 2026-10-18 >"$ws_seen"
 fi
 
+# Splash, once: KDE's Plasma splash -> Fennek's (an own choice of another splash stays).
+splash_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/splash-version
+if [ "$(cat "$splash_seen" 2>/dev/null)" != 2026-10-18 ]; then
+    case "$(kreadconfig6 --file "${XDG_CONFIG_HOME:-$HOME/.config}/ksplashrc" --group KSplash --key Theme)" in
+        ""|org.kde.breeze.desktop|org.fedoraproject.*) kwriteconfig6 --file ksplashrc --group KSplash --key Theme org.fennek.desktop
+                                                       kwriteconfig6 --file ksplashrc --group KSplash --key Engine KSplashQML ;;
+    esac
+    mkdir -p "${splash_seen%/*}" && echo 2026-10-18 >"$splash_seen"
+fi
+
 # Virtual machine, once: no 3D card there, so every frame is drawn by the processor. Blur behind panels and long
 # animations make it feel slow; switch them off (real PCs keep them). An own choice stays.
 vm_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/vm-speed-version
