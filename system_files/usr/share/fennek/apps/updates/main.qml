@@ -165,7 +165,9 @@ QQC2.ApplicationWindow {
                                 : root.state === "available" ? "It downloads in the background; you finish it with a restart."
                                 : root.state === "failed" ? (root.detail || "Check your internet connection and try again.")
                                 : root.state === "uptodate" ? "Checked just now."
-                                : root.state === "idle" ? "Updates arrive by themselves; you can also check now." : ""
+                                : root.state === "idle" ? (root.settings.metered_now && !root.settings.on_metered
+                                        ? "You're on a metered connection: automatic updates wait. You can still update now."
+                                        : "Updates arrive by themselves; you can also check now.") : ""
                         }
                     }
                     QQC2.BusyIndicator { visible: root.state === "checking" || root.state === "installing"; running: visible }
@@ -173,6 +175,10 @@ QQC2.ApplicationWindow {
                         visible: !(root.state === "checking" || root.state === "installing")
                         highlighted: true
                         text: root.staged ? "Restart now" : root.state === "available" ? "Install now" : "Check for updates"
+                        QQC2.ToolTip.visible: hovered
+                        QQC2.ToolTip.delay: 600
+                        QQC2.ToolTip.text: "In a terminal: " + (root.staged ? "systemctl reboot"
+                                           : root.state === "available" ? "sudo bootc upgrade" : "sudo bootc upgrade --check")
                         onClicked: {
                             if (root.staged) run.connectSource("systemctl reboot")
                             else if (root.state === "available") { root.state = "installing"; run.connectSource(root.installCmd) }
@@ -254,10 +260,23 @@ QQC2.ApplicationWindow {
                     onActivated: index => index === 0 ? root.set("resume") : root.set("pause " + [0, 7, 14, 28][index])
                 }
                 QQC2.Switch {
+                    Kirigami.FormData.label: "Metered connections:"
+                    text: "Download there too (phone hotspot, mobile data)"
+                    checked: !!root.settings.on_metered
+                    onToggled: root.set("metered " + (checked ? "on" : "off"))
+                    QQC2.ToolTip.visible: hovered
+                    QQC2.ToolTip.delay: 600
+                    QQC2.ToolTip.text: "Off: automatic updates wait for a normal connection. Checking and installing "
+                                     + "by hand always works. Mark a Wi-Fi as metered in its network settings."
+                }
+                QQC2.Switch {
                     Kirigami.FormData.label: "Store apps:"
                     text: "Update by themselves"
                     checked: root.settings.apps_auto
                     onToggled: root.set("apps " + (checked ? "on" : "off"))
+                    QQC2.ToolTip.visible: hovered
+                    QQC2.ToolTip.delay: 600
+                    QQC2.ToolTip.text: "In a terminal, update them now: flatpak update"
                 }
                 QQC2.Label {
                     Layout.fillWidth: true
@@ -274,6 +293,9 @@ QQC2.ApplicationWindow {
                     icon.name: "edit-undo"
                     text: "Go back to the previous version"
                     onClicked: run.connectSource("fennek-go-back")
+                    QQC2.ToolTip.visible: hovered
+                    QQC2.ToolTip.delay: 600
+                    QQC2.ToolTip.text: "In a terminal: sudo bootc rollback"
                 }
                 QQC2.Button {
                     Kirigami.FormData.label: "Your files:"

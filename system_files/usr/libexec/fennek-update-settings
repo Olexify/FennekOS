@@ -9,7 +9,9 @@
   fennek-update-settings set pause 7|14|28           no automatic updates for that many days
   fennek-update-settings set resume
   fennek-update-settings set apps on|off             Store apps update themselves
-  fennek-update-settings allowed                     exit 0 unless paused (the update services' ExecCondition)
+  fennek-update-settings set metered on|off          also download automatically on metered connections
+  fennek-update-settings allowed                     exit 0 unless paused or on a metered connection
+                                                     (the update services' ExecCondition)
   fennek-update-settings --selftest
 """
 import datetime, json, os, re, subprocess, sys
@@ -20,6 +22,8 @@ ROOT = os.environ.get("FENNEK_ROOT", "") if TESTING else ""
 CONF = ROOT + "/etc/rpm-ostreed.conf"
 SCHEDULE = ROOT + "/etc/systemd/system/rpm-ostreed-automatic.timer.d/fennek-schedule.conf"
 PAUSE = ROOT + "/etc/fennek/updates-paused-until"
+# Present = automatic updates also on metered connections (phone hotspots, mobile data). Default: not there.
+ON_METERED = ROOT + "/etc/fennek/updates-on-metered"
 DAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 SYSTEMCTL = os.environ.get("FENNEK_SYSTEMCTL", "systemctl") if TESTING else "systemctl"
 
@@ -71,12 +75,29 @@ def paused_until(today=None):
         return ""
 
 
+METERED_TEST = None   # selftest only
+
+
+def metered():
+    """NetworkManager's verdict on the current connection: 1 = yes, 3 = guessed yes (e.g. an Android hotspot).
+    No answer (no NetworkManager): not metered."""
+    if METERED_TEST is not None:
+        return METERED_TEST in ("1", "3")
+    try:
+        out = subprocess.run(["busctl", "get-property", "org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager",
+                              "org.freedesktop.NetworkManager", "Metered"], capture_output=True, text=True, timeout=5).stdout.split()
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return out[-1:] in (["1"], ["3"])
+
+
 def get():
     auto = re.search(r"^AutomaticUpdatePolicy=(\w+)", read(CONF), re.M)
     return {"auto": bool(auto) and auto.group(1) != "none",
             "schedule": parse_schedule(read(SCHEDULE)),
             "paused_until": paused_until(),
-            "apps_auto": is_enabled("flatpak-system-update.timer")}
+            "apps_auto": is_enabled("flatpak-system-update.timer"),
+            "on_metered": os.path.exists(ON_METERED), "metered_now": metered()}
 
 
 def set_policy(on):
@@ -91,7 +112,12 @@ def main(argv):
     if argv == ["get"]:
         print(json.dumps(get()))
     elif argv == ["allowed"]:
-        return 1 if paused_until() else 0
+        return 1 if paused_until() or (metered() and not os.path.exists(ON_METERED)) else 0
+    elif argv[:2] == ["set", "metered"] and argv[2:] in (["on"], ["off"]):
+        if argv[2] == "on":
+            write(ON_METERED, "yes\n")
+        elif os.path.exists(ON_METERED):
+            os.remove(ON_METERED)
     elif argv[:2] == ["set", "auto"] and argv[2:] in (["on"], ["off"]):
         on = argv[2] == "on"
         set_policy(on)
@@ -124,7 +150,8 @@ def main(argv):
 
 def selftest():
     import tempfile
-    global ROOT, CONF, SCHEDULE, PAUSE, SYSTEMCTL
+    global ROOT, CONF, SCHEDULE, PAUSE, SYSTEMCTL, METERED_TEST
+    METERED_TEST = "4"
     ROOT = tempfile.mkdtemp()
     CONF, SCHEDULE, PAUSE = ROOT + "/etc/rpm-ostreed.conf", ROOT + "/etc/sched.conf", ROOT + "/etc/fennek/paused"
     SYSTEMCTL = "true"
@@ -140,6 +167,14 @@ def selftest():
     main(["set", "pause", "7"]); assert get()["paused_until"] and main(["allowed"]) == 1
     assert paused_until(datetime.date.today() + datetime.timedelta(days=8)) == "", "a pause ends by itself"
     main(["set", "resume"]); assert main(["allowed"]) == 0
+    global ON_METERED
+    ON_METERED = ROOT + "/etc/fennek/on-metered"
+    METERED_TEST = "3"
+    assert main(["allowed"]) == 1, "metered (e.g. phone hotspot): no automatic download by default"
+    main(["set", "metered", "on"]); assert main(["allowed"]) == 0 and get()["on_metered"]
+    main(["set", "metered", "off"]); assert main(["allowed"]) == 1
+    METERED_TEST = "4"
+    assert main(["allowed"]) == 0, "guessed not metered: updates as usual"
     for bad in (["set", "schedule", "daily", "25:00"], ["set", "schedule", "weekly", "Funday", "03:00"],
                 ["set", "pause", "9999"], ["set", "auto", "maybe"], ["set", "version", "latest"], ["set", "schedule", "daily", "03:00;rm"]):
         try:
