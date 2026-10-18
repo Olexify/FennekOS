@@ -57,6 +57,7 @@ fennek-app firewall >/dev/null 2>&1 & shot 10-firewall 6; close
 konsole >/dev/null 2>&1 & shot 11-terminal 5; close
 plasma-systemmonitor >/dev/null 2>&1 & shot 12-task-manager 8; close
 fennek-app welcome >/dev/null 2>&1 & shot 13-welcome 6; close
+fennek-app updates >/dev/null 2>&1 & shot 30-updates 8; close
 # Start with a search typed in (results, not the list).
 call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; sleep 2
 DISPLAY=:99 xdotool type --delay 80 "fire"; shot 14-start-search 3
