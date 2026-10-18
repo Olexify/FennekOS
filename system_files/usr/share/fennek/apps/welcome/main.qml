@@ -76,15 +76,19 @@ QQC2.ApplicationWindow {
                         Layout.topMargin: Kirigami.Units.gridUnit
                         Repeater {
                             model: [
-                                { label: root.t("Light", "Світлий"), lnf: "org.fennek.desktop", top: "#f4f2f8", bar: "#2b2733" },
-                                { label: root.t("Dark", "Темний"), lnf: "org.fennek.dark.desktop", top: "#26232e", bar: "#18161d" }
+                                { label: root.t("Light", "Світлий"), lnf: "org.fennek.desktop", auto: false, top: "#f4f2f8", bar: "#eceaf2" },
+                                { label: root.t("Dark", "Темний"), lnf: "org.fennek.dark.desktop", auto: false, top: "#26232e", bar: "#18161d" },
+                                // Light by day, dark at night (the same switch as "Automatic" in KDE's Quick Settings).
+                                { label: root.t("Day & Night", "День і ніч"), lnf: "", auto: true, top: "#8c88a0", bar: "#3a3644" }
                             ]
                             delegate: ColumnLayout {
                                 spacing: Kirigami.Units.largeSpacing
                                 QQC2.Button {
-                                    Layout.preferredWidth: Kirigami.Units.gridUnit * 13
+                                    Layout.preferredWidth: Kirigami.Units.gridUnit * 10
                                     Layout.preferredHeight: Kirigami.Units.gridUnit * 8
-                                    onClicked: run.connectSource("plasma-apply-lookandfeel --apply " + modelData.lnf)
+                                    onClicked: run.connectSource(modelData.auto
+                                        ? "kwriteconfig6 --file kdeglobals --group KDE --key AutomaticLookAndFeel true"
+                                        : "sh -c 'kwriteconfig6 --file kdeglobals --group KDE --key AutomaticLookAndFeel false; plasma-apply-lookandfeel --apply " + modelData.lnf + "'")
                                     contentItem: Item {
                                         Rectangle {   // a tiny desktop preview: window + taskbar
                                             anchors.fill: parent

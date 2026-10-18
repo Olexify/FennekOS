@@ -103,6 +103,16 @@ if [ "$(cat "$splash_seen" 2>/dev/null)" != 2026-10-18 ]; then
     mkdir -p "${splash_seen%/*}" && echo 2026-10-18 >"$splash_seen"
 fi
 
+# Day/night pair, again (2026-10-18): back to the two Fennek looks if something set KDE's (Quick Settings then
+# offered Breeze / Breeze Dark and switching swapped in KDE's taskbar and frames).
+pair_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/look-pair-version
+if [ "$(cat "$pair_seen" 2>/dev/null)" != 2026-10-18 ]; then
+    k() { kreadconfig6 --file kdeglobals --group KDE --key "$1"; }
+    case "$(k DefaultLightLookAndFeel)" in org.fennek.*) ;; *) kwriteconfig6 --file kdeglobals --group KDE --key DefaultLightLookAndFeel org.fennek.desktop ;; esac
+    case "$(k DefaultDarkLookAndFeel)" in org.fennek.*) ;; *) kwriteconfig6 --file kdeglobals --group KDE --key DefaultDarkLookAndFeel org.fennek.dark.desktop ;; esac
+    mkdir -p "${pair_seen%/*}" && echo 2026-10-18 >"$pair_seen"
+fi
+
 # Light look, once: fully light (light taskbar, Start, pop-ups) instead of the earlier dark panels.
 panel_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/light-panel-version
 if [ "$(cat "$panel_seen" 2>/dev/null)" != 2026-10-18 ]; then
