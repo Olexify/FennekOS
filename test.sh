@@ -12,7 +12,7 @@ grep -q '^SHELL=/bin/zsh' /etc/default/useradd             || fail "default shel
 zsh -ic 'typeset -f _zsh_autosuggest_start' >/dev/null 2>&1 || fail "zsh autosuggestions"
 if x86; then command -v umu-run >/dev/null || fail "umu-run"; else command -v FEXInterpreter >/dev/null && command -v muvm >/dev/null || fail "FEX (x86-64 programs on ARM)"; fi
 grep -q '^Exec=fennek-run-exe %f' /usr/share/applications/fennek-run-exe.desktop || fail "exe launcher"
-fennek-run-exe --selftest >/dev/null                           || fail "run-exe selftest"
+fennek-run-exe --selftest >/dev/null && grep -q "^Exec=fennek-run-exe --choose %f" /usr/share/kio/servicemenus/fennek-run-exe-choose.desktop || fail "run-exe selftest (remembered choices) + Choose how to run"
 grep -q '^application/x-ms-dos-executable=fennek-run-exe.desktop' /etc/xdg/mimeapps.list || fail "exe default"
 grep -q '^AutomaticUpdatePolicy=stage' /etc/rpm-ostreed.conf || fail "update policy"
 [ -L /etc/systemd/system/timers.target.wants/rpm-ostreed-automatic.timer ] || fail "update timer"

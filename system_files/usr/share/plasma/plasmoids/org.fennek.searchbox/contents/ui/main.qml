@@ -79,6 +79,16 @@ PlasmoidItem {
         root.expanded = false
     }
     readonly property bool searching: query.length > 0
+    // A file result (not an app): its local address, for "Show in folder".
+    function fileUrl(u) {
+        const t = u ? u.toString() : ""
+        return t.startsWith("file://") && !t.endsWith(".desktop") ? t : ""
+    }
+    function showInFolder(u) {
+        // Quoted for the shell; the address is percent-encoded, so only a stray ' needs care.
+        exec.connectSource("dolphin --select '" + u.replace(/'/g, "%27") + "'")
+        root.expanded = false
+    }
 
     function launch(model, row) {
         if (model && model.trigger(row, "", null) !== false)
@@ -119,8 +129,11 @@ PlasmoidItem {
 
     // The search panel.
     fullRepresentation: ColumnLayout {
-        Layout.preferredWidth: Kirigami.Units.gridUnit * 44
-        Layout.preferredHeight: Kirigami.Units.gridUnit * 40
+        // Big by default, like the classic search panel; it can be made bigger, never tiny.
+        Layout.preferredWidth: Kirigami.Units.gridUnit * 52
+        Layout.preferredHeight: Kirigami.Units.gridUnit * 44
+        Layout.minimumWidth: Kirigami.Units.gridUnit * 36
+        Layout.minimumHeight: Kirigami.Units.gridUnit * 30
         spacing: Kirigami.Units.smallSpacing
 
         // Search field on top, large and calm.
@@ -317,6 +330,16 @@ PlasmoidItem {
                             elide: Text.ElideMiddle
                             Layout.fillWidth: true
                         }
+                    }
+                    // Files: open the folder with the file selected (shown on hover).
+                    PlasmaComponents.ToolButton {
+                        readonly property string file: root.fileUrl(model.url)
+                        visible: file !== "" && (parent.parent.hovered || hovered)
+                        icon.name: "folder-open"
+                        icon.color: Kirigami.Theme.textColor
+                        text: "Show in folder"
+                        display: PlasmaComponents.AbstractButton.IconOnly
+                        onClicked: root.showInFolder(file)
                     }
                 }
             }

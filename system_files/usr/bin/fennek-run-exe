@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 """Run a Windows program (.exe/.msi) with Proton. Unknown programs run in a sandbox (Fennek OS auto-containment).
 
-Usage: fennek-run-exe FILE [ARGS...]                  asks once per unknown program
+Usage: fennek-run-exe FILE [ARGS...]                  asks per unknown program (or uses the remembered choice)
+       fennek-run-exe --choose FILE [ARGS...]         ask again, whatever was remembered (right-click: Choose how to run)
        fennek-run-exe --sandbox FILE [ARGS...]        always sandboxed, no sound, no questions
        fennek-run-exe --sandbox-sound FILE [ARGS...]  sandboxed with sound (and therefore microphone)
        fennek-run-exe --trusted FILE [ARGS...]        normal run, no sandbox
@@ -19,6 +20,7 @@ HOME = Path.home()
 CFG = Path(os.environ.get("XDG_CONFIG_HOME") or HOME / ".config") / "fennek"
 DATA = Path(os.environ.get("XDG_DATA_HOME") or HOME / ".local/share")
 TRUSTED = CFG / "trusted-exes"           # one sha256 per line
+CHOICES = CFG / "exe-choices"           # "sha256 sandbox|sandbox-sound" per line: remembered sandbox runs
 OFFLINE = CFG / "offline-exes"           # sha256s blocked by fennek-firewall: sandbox gets no network at all
 BOXES = DATA / "fennek" / "sandboxes"    # private home per sandboxed program
 SHARED = HOME / "Sandbox"                # ~/Sandbox/<program> = the only real folder it can see
@@ -54,6 +56,29 @@ def trust(digest):
     CFG.mkdir(parents=True, exist_ok=True)
     with open(TRUSTED, "a") as f:
         f.write(digest + "\n")
+
+
+def remembered(digest):
+    """The remembered sandbox choice for this program ("sandbox" / "sandbox-sound"), or None."""
+    for line in CHOICES.read_text().splitlines() if CHOICES.is_file() else []:
+        d, _, mode = line.partition(" ")
+        if d == digest and mode in ("sandbox", "sandbox-sound"):
+            return mode
+    return None
+
+
+def forget(digest):
+    """Drop every remembered choice for this program (trusted and sandbox), before a new one is stored."""
+    for f in (TRUSTED, CHOICES):
+        if f.is_file():
+            f.write_text("".join(l + "\n" for l in f.read_text().splitlines() if not l.startswith(digest)))
+
+
+def remember(digest, mode):
+    forget(digest)
+    CFG.mkdir(parents=True, exist_ok=True)
+    with open(CHOICES, "a") as f:
+        f.write(f"{digest} {mode}\n")
 
 
 def safe_name(exe):
@@ -214,24 +239,35 @@ def ask(exe, digest):
 def main(argv):
     if argv == ["--selftest"]:
         return selftest()
-    mode = argv.pop(0) if argv and argv[0] in ("--sandbox", "--sandbox-sound", "--trusted") else None
+    mode = argv.pop(0) if argv and argv[0] in ("--sandbox", "--sandbox-sound", "--trusted", "--choose") else None
+    choose = mode == "--choose"
+    mode = None if choose else mode
     if not argv:
         sys.exit(__doc__)
     exe = Path(argv[0]).resolve()
     if not exe.is_file():
         return say(f"Not found: {exe}", "error")
     digest = sha256(exe)
-    if mode == "--trusted" or (mode is None and is_trusted(digest)):
+    if mode == "--trusted" or (mode is None and not choose and is_trusted(digest)):
         return run_trusted(exe, argv[1:])
+    if mode is None and not choose and remembered(digest):
+        mode = "--" + remembered(digest)
     while mode is None:
         choice = ask(exe, digest)
-        if choice == "vt":
+        if choice == "vt":   # never remembered: checking is a one-off
             subprocess.run(["fennek-vt-check", str(exe)])
         elif choice == "trust":
+            forget(digest)
             trust(digest)
             return run_trusted(exe, argv[1:])
         elif choice in ("sandbox", "sandbox-sound"):
             mode = "--" + choice
+            if GUI and subprocess.run(["kdialog", "--title", "Windows program", "--yesno",
+                                       f"Run {exe.name} this way every time?\n\n"
+                                       "You can change it later: right-click the file, Choose how to run."]).returncode == 0:
+                remember(digest, choice)
+            elif choose:
+                forget(digest)   # asked again and not remembered: ask next time too
         else:
             return 0
     return run_sandboxed(exe, digest, argv[1:], sound=mode == "--sandbox-sound")
@@ -277,6 +313,16 @@ def selftest():
         "no route from the sandbox to host loopback services, no port forwarding"
 
     import tempfile
+    global CFG, TRUSTED, CHOICES
+    CFG = Path(tempfile.mkdtemp()); TRUSTED = CFG / "trusted-exes"; CHOICES = CFG / "exe-choices"
+    assert remembered("aa") is None
+    remember("aa", "sandbox"); remember("bb", "sandbox-sound")
+    assert remembered("aa") == "sandbox" and remembered("bb") == "sandbox-sound"
+    trust("aa"); forget("aa")
+    assert remembered("aa") is None and not is_trusted("aa") and remembered("bb") == "sandbox-sound", "forget: one program only"
+    remember("bb", "sandbox")
+    assert remembered("bb") == "sandbox" and CHOICES.read_text().count("bb") == 1, "a new choice replaces the old one"
+    subprocess.run(["rm", "-rf", str(CFG)])
     DATA = Path(tempfile.mkdtemp())
     (DATA / "umu/compatibilitytools/UMU-Proton-9").mkdir(parents=True)
     (DATA / "umu/compatibilitytools/UMU-Proton-9/proton").write_text("PROTON_ENABLE_WAYLAND")

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Service
+# Right-click a Windows program: ask again how to run it (sandboxed, with sound, normally), whatever was remembered.
+MimeType=application/x-ms-dos-executable;application/x-msdownload;application/vnd.microsoft.portable-executable;application/x-msi;
+Actions=choose
+X-KDE-Priority=TopLevel
+
+[Desktop Action choose]
+Name=Choose how to run…
+Icon=run-build
+Exec=fennek-run-exe --choose %f
