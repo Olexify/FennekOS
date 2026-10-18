@@ -341,7 +341,7 @@ PY
 # Fennek Settings: every page it links to exists (no dead buttons); Super+I belongs to it alone.
 # Fennek's own apps run as normal windows (system look, own taskbar icon) through fennek-app.
 rc=0; fennek-app ../etc 2>/dev/null || rc=$?; [ $rc -eq 2 ] && ! command -v g++ >/dev/null || fail "fennek-app launcher (rejects paths; no compiler left)"
-for a in settings firewall welcome apphistory backup live updates; do   # starts off-screen and keeps running = the QML loads
+for a in settings firewall welcome apphistory backup live updates quarantine; do   # starts off-screen and keeps running = the QML loads
     rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-app "$a" >/tmp/app-$a.log 2>&1 || rc=$?
     [ $rc -eq 124 ] || { tail -5 /tmp/app-$a.log; fail "app $a does not start (exit $rc)"; }
 done

@@ -1,11 +1,14 @@
 #!/usr/bin/python3
 """Fennek OS quarantine: files the download guard blocked. Restore a false alarm or delete for good.
 
-Usage: fennek-quarantine              window (Start menu: "Quarantine")
-       fennek-quarantine --list       list in a terminal
+Usage: fennek-quarantine                    window (Start menu: "Quarantine"; fennek-app quarantine)
+       fennek-quarantine --list             list in a terminal
+       fennek-quarantine --json             list for the window
+       fennek-quarantine --delete NAME...   delete quarantined files for good (NAME = their name in quarantine)
+       fennek-quarantine --restore NAME...  restore false alarms (prints where each went)
        fennek-quarantine --selftest
 """
-import os, shutil, subprocess, sys
+import json, os, shutil, subprocess, sys
 from pathlib import Path
 
 QUAR = Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local/share") / "fennek" / "quarantine"
@@ -53,12 +56,30 @@ def delete(p):
     Path(str(p) + INFO).unlink(missing_ok=True)
 
 
+def as_json():
+    return json.dumps([{"id": p.name, "name": display_name(p), "threat": threat, "origin": origin,
+                        "when": p.stat().st_mtime} for p, threat, origin in items()])
+
+
+def pick(names):
+    """Only files that really are in quarantine: a name from outside can never point anywhere else."""
+    found = {p.name: (p, o) for p, _, o in items()}
+    return [found[n] for n in names if n in found]
+
+
 def kdialog(*args):
     r = subprocess.run(["kdialog", "--title", "Quarantine", *args], capture_output=True, text=True)
     return r.returncode, r.stdout.strip()
 
 
 def window():
+    """The Quarantine window (also when empty): status, the blocked files, scanning tools."""
+    if shutil.which("fennek-app"):
+        os.execvp("fennek-app", ["fennek-app", "quarantine"])
+    old_window()
+
+
+def old_window():
     found = items()
     if not found:
         return kdialog("--msgbox", "Quarantine is empty. No downloads were blocked.")
@@ -109,6 +130,11 @@ def selftest():
     c = QUAR / "20261015-101012-bad.pdf"; c.write_text("z"); os.chmod(c, 0)
     delete(c)
     assert not c.exists() and items() == []
+    d = QUAR / "20261015-101013-x.exe"; d.write_text("w"); os.chmod(d, 0)
+    Path(str(d) + INFO).write_bytes(b"T\0\0")
+    assert json.loads(as_json())[0]["name"] == "x.exe"
+    assert pick(["../../etc/passwd", "nope", d.name]) == [(d, "")], "only real quarantine entries"
+    delete(d)
     shutil.rmtree(root)
     print("selftest ok")
 
@@ -116,6 +142,13 @@ def selftest():
 if __name__ == "__main__":
     if sys.argv[1:] == ["--selftest"]:
         selftest()
+    elif sys.argv[1:] == ["--json"]:
+        print(as_json())
+    elif sys.argv[1:2] == ["--delete"]:
+        for p, _ in pick(sys.argv[2:]):
+            delete(p)
+    elif sys.argv[1:2] == ["--restore"]:
+        print(json.dumps([str(restore(p, o)) for p, o in pick(sys.argv[2:])]))
     elif sys.argv[1:] == ["--list"] or not GUI:
         for p, threat, origin in items():
             print(f"{display_name(p)}\t{threat}\tfrom {origin or '?'}")
