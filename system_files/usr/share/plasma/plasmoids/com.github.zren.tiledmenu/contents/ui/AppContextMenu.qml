@@ -112,8 +112,9 @@ Item {
 
 					//--- Overrides
 					if (actionItem.actionId == 'addToDesktop') {
-						// Remove (user should just drag it)
-						menu.removeMenuItem(menuItem)
+						// Fennek OS: kept (a shortcut on the desktop, like the classic "Send to desktop").
+						menuItem.text = i18n("Add to desktop")
+						menuItem.icon = "user-desktop"
 					} else if (actionItem.actionId == 'addToPanel') {
 						// Remove (user should just drag it)
 						// User usually means to add it to taskmanager anyways.

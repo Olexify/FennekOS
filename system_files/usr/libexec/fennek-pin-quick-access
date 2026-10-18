@@ -45,7 +45,8 @@ def main(folders):
         subprocess.run(["/usr/libexec/fennek-first-login-places", path], check=True)
     with open(path, encoding="utf-8") as f:
         text = f.read()
-    new = pin(text, [f for f in folders if os.path.isdir(f)])
+    # A file: its folder (that is where Quick access takes you).
+    new = pin(text, [f if os.path.isdir(f) else os.path.dirname(os.path.abspath(f)) for f in folders])
     tmp = path + ".fennek-new"
     with open(tmp, "w", encoding="utf-8") as f:
         f.write(new)

@@ -1,0 +1,66 @@
+#!/usr/bin/python3
+"""Pin to Start from anywhere (File Explorer, the desktop): each item becomes a small tile on a new row at the
+bottom of Start's tiles, where it can be dragged to its place. Apps (.desktop files) pin as the app; files and
+folders pin as a tile that opens them.
+
+  fennek-pin-start PATH...
+  fennek-pin-start --selftest
+"""
+import base64, configparser, json, os, subprocess, sys
+
+APPLETSRC = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"),
+                         "plasma-org.kde.plasma.desktop-appletsrc")
+
+
+def tile_url(path):
+    """An app's .desktop file pins as the app (its id); anything else as a link to it."""
+    path = path if path.startswith("/") else os.path.abspath(path)
+    if path.endswith(".desktop") and "/applications/" in path:
+        return os.path.basename(path)
+    return "file://" + path
+
+
+def place(tiles, urls):
+    """New 1x1 tiles, side by side on a fresh row under everything (folded groups keep their place)."""
+    y = max([t.get("y", 0) + t.get("h", 1) for t in tiles] or [0])
+    have = {t.get("url") for t in tiles}
+    new = [u for u in dict.fromkeys(urls) if u not in have]
+    return tiles + [{"x": i, "y": y, "w": 1, "h": 1, "url": u} for i, u in enumerate(new)]
+
+
+def current_tiles():
+    cp = configparser.RawConfigParser(strict=False, interpolation=None)
+    cp.optionxform = str
+    cp.read(APPLETSRC)
+    for sec in cp.sections():
+        if cp.get(sec, "plugin", fallback="") == "com.github.zren.tiledmenu":
+            raw = cp.get(sec + "[Configuration][General]", "tileModel", fallback="")
+            return json.loads(base64.b64decode(raw)) if raw else []
+    return []
+
+
+def save(tiles):
+    b64 = base64.b64encode(json.dumps(tiles).encode()).decode()
+    script = ('panels().forEach(function (p) { p.widgets().forEach(function (w) {'
+              ' if (w.type === "com.github.zren.tiledmenu") { w.currentConfigGroup = ["General"];'
+              ' w.writeConfig("tileModel", "%s") } }) })' % b64)
+    subprocess.run(["gdbus", "call", "--session", "--dest", "org.kde.plasmashell", "--object-path", "/PlasmaShell",
+                    "--method", "org.kde.PlasmaShell.evaluateScript", script], check=True, capture_output=True)
+
+
+def selftest():
+    assert tile_url("/usr/share/applications/org.kde.dolphin.desktop") == "org.kde.dolphin.desktop"
+    assert tile_url("/home/a/Docs/x.pdf") == "file:///home/a/Docs/x.pdf"
+    t = place([{"x": 0, "y": 0, "w": 2, "h": 2, "url": "a.desktop"}], ["b.desktop", "a.desktop", "c", "b.desktop"])
+    assert t[1:] == [{"x": 0, "y": 2, "w": 1, "h": 1, "url": "b.desktop"}, {"x": 1, "y": 2, "w": 1, "h": 1, "url": "c"}], t
+    assert place([], ["z"]) == [{"x": 0, "y": 0, "w": 1, "h": 1, "url": "z"}]
+    print("ok")
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["--selftest"]:
+        selftest()
+    elif len(sys.argv) > 1:
+        save(place(current_tiles(), [tile_url(p) for p in sys.argv[1:]]))
+    else:
+        sys.exit(__doc__)
