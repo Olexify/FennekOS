@@ -84,7 +84,7 @@ AppToolButton {
 		}
 	}
 	onContainsMouseChanged: {   // Fennek OS: no argument in Qt 6 (it was always undefined, which cancelled drags to the tiles)
-		if (!containsMouse) {
+		if (!containsMouse && !pressed) {   // a held button leaving the row is a drag starting, not a hover ending
 			resetDragState()
 		}
 	}
