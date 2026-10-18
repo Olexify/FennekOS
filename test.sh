@@ -189,6 +189,7 @@ for c in left_ptr pointer xterm watch left_ptr_watch sb_h_double_arrow; do [ "$(
 grep -q "^font=Inter,10" /etc/xdg/kdeglobals && grep -q "^fixed=Cascadia Mono" /etc/xdg/kdeglobals && [ -n "$(fc-list :family=Inter)" ] && [ -n "$(fc-list ':family=Cascadia Mono')" ] || fail "Inter + Cascadia Mono fonts"
 [ "$(kreadconfig6 --file /etc/xdg/kscreenlockerrc --group Daemon --key Timeout)" = 30 ] && [ "$(kreadconfig6 --file /etc/xdg/kdeglobals --group KDE --key AnimationDurationFactor)" = 0.5 ] || fail "auto-lock after 30 min / snappy animations"
 systemctl is-enabled -q flatpak-system-update.timer && systemctl is-enabled -q rpm-ostreed-automatic.timer || fail "automatic updates: system and Store apps (daily, in the background)"
+/usr/libexec/fennek-update-settings --selftest >/dev/null && /usr/libexec/fennek-update-settings get | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["auto"] and d["apps_auto"] and d["paused_until"] == ""' && grep -q '^ExecCondition=/usr/libexec/fennek-update-settings allowed' /usr/lib/systemd/system/rpm-ostreed-automatic.service.d/fennek-pause.conf /usr/lib/systemd/system/flatpak-system-update.service.d/fennek-pause.conf && [ -s /usr/share/polkit-1/actions/org.fennek.update-settings.policy ] && grep -q '^Exec=fennek-app updates' /usr/share/applications/fennek-updates.desktop || fail "Updates window: settings helper, pause, launcher"
 grep -q '^Theme=org.fennek.desktop' /etc/xdg/ksplashrc && [ -s /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/splash/Splash.qml ] && grep -q '^Theme=org.fennek.desktop' /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults || fail "Fennek splash after signing in"
 [ -f /usr/lib64/qt6/plugins/styles/libfennekstyle.so ] && grep -q '^widgetStyle=Fennek' /etc/xdg/kdeglobals && { rc=0; QT_QPA_PLATFORM=offscreen QT_STYLE_OVERRIDE=Fennek HOME=$(mktemp -d) timeout 5 kdialog --combobox Pick a b >/tmp/style.log 2>&1 || rc=$?; [ $rc -eq 124 ] && ! grep -qi "invalid style" /tmp/style.log; } || fail "Fennek widget style (wheel scrolls the page) loads"
 ! grep -rnE 'on(DragActive|ContainsMouse|Expanded|Checked|Visible)Changed: function\([a-z]' /usr/share/plasma/plasmoids/ /usr/share/fennek/apps/ || fail "QML: a property-change handler takes an argument (always undefined in Qt 6)"
@@ -338,7 +339,7 @@ PY
 # Fennek Settings: every page it links to exists (no dead buttons); Super+I belongs to it alone.
 # Fennek's own apps run as normal windows (system look, own taskbar icon) through fennek-app.
 rc=0; fennek-app ../etc 2>/dev/null || rc=$?; [ $rc -eq 2 ] && ! command -v g++ >/dev/null || fail "fennek-app launcher (rejects paths; no compiler left)"
-for a in settings firewall welcome apphistory backup live; do   # starts off-screen and keeps running = the QML loads
+for a in settings firewall welcome apphistory backup live updates; do   # starts off-screen and keeps running = the QML loads
     rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-app "$a" >/tmp/app-$a.log 2>&1 || rc=$?
     [ $rc -eq 124 ] || { tail -5 /tmp/app-$a.log; fail "app $a does not start (exit $rc)"; }
 done

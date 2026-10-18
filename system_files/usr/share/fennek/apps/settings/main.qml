@@ -201,7 +201,7 @@ QQC2.ApplicationWindow {
                                 model: [
                                     { icon: root.updateWaiting ? "system-reboot" : "update-none",
                                       text: root.updateWaiting ? "Restart to finish the update" : "Updates are automatic",
-                                      cmd: "plasma-discover --mode update" },
+                                      cmd: "fennek-app updates" },
                                     { icon: "security-high",
                                       text: root.netProfile === "public" ? "Firewall: public network" : "Firewall: home network",
                                       cmd: "fennek-app firewall" }

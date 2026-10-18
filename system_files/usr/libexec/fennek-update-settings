@@ -1,0 +1,156 @@
+#!/usr/bin/python3
+"""Fennek OS update settings (the Updates window uses this; changes run as root through pkexec).
+
+  fennek-update-settings get                         JSON: auto, schedule, paused_until, apps_auto (anyone)
+  fennek-update-settings set auto on|off             automatic system updates (download in the background)
+  fennek-update-settings set schedule daily HH:MM
+  fennek-update-settings set schedule weekly Mon|Tue|Wed|Thu|Fri|Sat|Sun HH:MM
+  fennek-update-settings set schedule default        back to "about once a day"
+  fennek-update-settings set pause 7|14|28           no automatic updates for that many days
+  fennek-update-settings set resume
+  fennek-update-settings set apps on|off             Store apps update themselves
+  fennek-update-settings allowed                     exit 0 unless paused (the update services' ExecCondition)
+  fennek-update-settings --selftest
+"""
+import datetime, json, os, re, subprocess, sys
+
+ROOT = os.environ.get("FENNEK_ROOT", "")   # tests only
+CONF = ROOT + "/etc/rpm-ostreed.conf"
+SCHEDULE = ROOT + "/etc/systemd/system/rpm-ostreed-automatic.timer.d/fennek-schedule.conf"
+PAUSE = ROOT + "/etc/fennek/updates-paused-until"
+DAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+SYSTEMCTL = os.environ.get("FENNEK_SYSTEMCTL", "systemctl")
+
+
+def read(path, default=""):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+    except OSError:
+        return default
+
+
+def write(path, text):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path + ".fennek-new", "w", encoding="utf-8") as f:
+        f.write(text)
+    os.replace(path + ".fennek-new", path)
+
+
+def systemctl(*args):
+    subprocess.run([SYSTEMCTL, *args], check=False, capture_output=True)
+
+
+def is_enabled(unit):
+    return subprocess.run([SYSTEMCTL, "is-enabled", "-q", unit], capture_output=True).returncode == 0
+
+
+def schedule_text(kind, day, time):
+    """Timer drop-in: replaces "about an hour after start, then daily" with a fixed time (missed runs catch up)."""
+    when = f"*-*-* {time}" if kind == "daily" else f"{day} *-*-* {time}"
+    return ("# Fennek OS update schedule (Updates window).\n[Timer]\nOnBootSec=\nOnUnitInactiveSec=\n"
+            f"OnCalendar=\nOnCalendar={when}\nPersistent=true\n")
+
+
+def parse_schedule(text):
+    m = re.search(r"^OnCalendar=(?:(\w{3}) )?\*-\*-\* (\d\d:\d\d)$", text, re.M)
+    if not m:
+        return {"kind": "default"}
+    return {"kind": "weekly", "day": m.group(1), "time": m.group(2)} if m.group(1) else {"kind": "daily", "time": m.group(2)}
+
+
+def paused_until(today=None):
+    """The pause end date (YYYY-MM-DD) while it lies in the future, else ""."""
+    d = read(PAUSE).strip()
+    today = today or datetime.date.today()
+    try:
+        return d if datetime.date.fromisoformat(d) > today else ""
+    except ValueError:
+        return ""
+
+
+def get():
+    auto = re.search(r"^AutomaticUpdatePolicy=(\w+)", read(CONF), re.M)
+    return {"auto": bool(auto) and auto.group(1) != "none",
+            "schedule": parse_schedule(read(SCHEDULE)),
+            "paused_until": paused_until(),
+            "apps_auto": is_enabled("flatpak-system-update.timer")}
+
+
+def set_policy(on):
+    text = read(CONF, "[Daemon]\n")
+    line = "AutomaticUpdatePolicy=" + ("stage" if on else "none")
+    text = re.sub(r"^AutomaticUpdatePolicy=.*$", line, text, flags=re.M) if "AutomaticUpdatePolicy=" in text \
+        else text.rstrip("\n") + "\n" + line + "\n"
+    write(CONF, text)
+
+
+def main(argv):
+    if argv == ["get"]:
+        print(json.dumps(get()))
+    elif argv == ["allowed"]:
+        return 1 if paused_until() else 0
+    elif argv[:2] == ["set", "auto"] and argv[2:] in (["on"], ["off"]):
+        on = argv[2] == "on"
+        set_policy(on)
+        systemctl("reload-or-restart", "rpm-ostreed.service")
+        systemctl("enable" if on else "disable", "--now", "rpm-ostreed-automatic.timer")
+    elif argv[:3] == ["set", "schedule", "default"] and len(argv) == 3:
+        if os.path.exists(SCHEDULE):
+            os.remove(SCHEDULE)
+        systemctl("daemon-reload"); systemctl("restart", "rpm-ostreed-automatic.timer")
+    elif argv[:3] == ["set", "schedule", "daily"] and len(argv) == 4 and re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", argv[3]):
+        write(SCHEDULE, schedule_text("daily", None, argv[3]))
+        systemctl("daemon-reload"); systemctl("restart", "rpm-ostreed-automatic.timer")
+    elif argv[:3] == ["set", "schedule", "weekly"] and len(argv) == 5 and argv[3] in DAYS \
+            and re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", argv[4]):
+        write(SCHEDULE, schedule_text("weekly", argv[3], argv[4]))
+        systemctl("daemon-reload"); systemctl("restart", "rpm-ostreed-automatic.timer")
+    elif argv[:2] == ["set", "pause"] and argv[2:] in (["7"], ["14"], ["28"]):
+        write(PAUSE, (datetime.date.today() + datetime.timedelta(days=int(argv[2]))).isoformat() + "\n")
+    elif argv == ["set", "resume"]:
+        if os.path.exists(PAUSE):
+            os.remove(PAUSE)
+    elif argv[:2] == ["set", "apps"] and argv[2:] in (["on"], ["off"]):
+        verb = "enable" if argv[2] == "on" else "disable"
+        systemctl(verb, "--now", "flatpak-system-update.timer")
+        systemctl("--global", verb, "flatpak-user-update.timer")
+    else:
+        sys.exit(__doc__)
+    return 0
+
+
+def selftest():
+    import tempfile
+    global ROOT, CONF, SCHEDULE, PAUSE, SYSTEMCTL
+    ROOT = tempfile.mkdtemp()
+    CONF, SCHEDULE, PAUSE = ROOT + "/etc/rpm-ostreed.conf", ROOT + "/etc/sched.conf", ROOT + "/etc/fennek/paused"
+    SYSTEMCTL = "true"
+    write(CONF, "[Daemon]\nAutomaticUpdatePolicy=stage\n")
+    assert get()["auto"] and get()["schedule"] == {"kind": "default"} and get()["paused_until"] == ""
+    main(["set", "auto", "off"]); assert not get()["auto"] and "AutomaticUpdatePolicy=none" in read(CONF)
+    main(["set", "auto", "on"]); assert get()["auto"] and read(CONF).count("AutomaticUpdatePolicy") == 1
+    main(["set", "schedule", "weekly", "Sun", "03:30"])
+    assert get()["schedule"] == {"kind": "weekly", "day": "Sun", "time": "03:30"}
+    assert "OnBootSec=\n" in read(SCHEDULE) and "Persistent=true" in read(SCHEDULE)
+    main(["set", "schedule", "daily", "21:05"]); assert get()["schedule"] == {"kind": "daily", "time": "21:05"}
+    main(["set", "schedule", "default"]); assert get()["schedule"] == {"kind": "default"}
+    main(["set", "pause", "7"]); assert get()["paused_until"] and main(["allowed"]) == 1
+    assert paused_until(datetime.date.today() + datetime.timedelta(days=8)) == "", "a pause ends by itself"
+    main(["set", "resume"]); assert main(["allowed"]) == 0
+    for bad in (["set", "schedule", "daily", "25:00"], ["set", "schedule", "weekly", "Funday", "03:00"],
+                ["set", "pause", "9999"], ["set", "auto", "maybe"], ["set", "schedule", "daily", "03:00;rm"]):
+        try:
+            main(bad)
+            raise AssertionError(f"accepted {bad}")
+        except SystemExit:
+            pass
+    subprocess.run(["rm", "-rf", ROOT])
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["--selftest"]:
+        selftest()
+    else:
+        sys.exit(main(sys.argv[1:]))

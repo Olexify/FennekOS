@@ -62,7 +62,8 @@ var categories = [
   ]},
  {"name": "Update & Recovery", "icon": "fennek-settings-update", "sub": "Updates, backup, previous versions",
   "items": [
-   {"name": "Updates", "cmd": "plasma-discover --mode update", "icon": "system-software-update", "desc": "Fennek OS and app updates"},
+   {"name": "Updates", "cmd": "fennek-app updates", "icon": "system-software-update", "desc": "Status, automatic updates, schedule, pause"},
+   {"name": "Store app updates", "cmd": "plasma-discover --mode update", "icon": "plasmadiscover", "desc": "Update Store apps now"},
    {"name": "Go back", "cmd": "fennek-go-back", "icon": "edit-undo", "desc": "Undo the last update, keep your files"},
    {"name": "Backup", "cmd": "fennek-app backup", "icon": "drive-removable-media", "desc": "Copy your folders to a USB drive"}
   ]}

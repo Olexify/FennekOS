@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Fennek OS</vendor>
+  <action id="org.fennek.update-settings">
+    <description>Change how Fennek OS updates (automatic, schedule, pause)</description>
+    <message>Changing update settings requires authentication</message>
+    <icon_name>system-software-update</icon_name>
+    <!-- The helper accepts only fixed choices (on/off, a time, a weekday, 7/14/28 days); no free text. -->
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/fennek-update-settings</annotate>
+  </action>
+</policyconfig>
