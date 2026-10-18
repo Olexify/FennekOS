@@ -84,6 +84,20 @@ if [ "$(cat "$dm_seen" 2>/dev/null)" != 2026-10-18b ]    && [ "$(kreadconfig6 --
     mkdir -p "${dm_seen%/*}" && echo 2026-10-18b >"$dm_seen"
 fi
 
+# Virtual machine, once: no 3D card there, so every frame is drawn by the processor. Blur behind panels and long
+# animations make it feel slow; switch them off (real PCs keep them). An own choice stays.
+vm_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/vm-speed-version
+if [ "$(cat "$vm_seen" 2>/dev/null)" != 2026-10-18 ]; then
+    if systemd-detect-virt --vm --quiet; then
+        cfg=${XDG_CONFIG_HOME:-$HOME/.config}   # the user's own files only (not the system defaults)
+        [ -z "$(kreadconfig6 --file "$cfg/kwinrc" --group Plugins --key blurEnabled)" ] && kwriteconfig6 --file kwinrc --group Plugins --key blurEnabled false
+        [ -z "$(kreadconfig6 --file "$cfg/kwinrc" --group Plugins --key contrastEnabled)" ] && kwriteconfig6 --file kwinrc --group Plugins --key contrastEnabled false
+        [ -z "$(kreadconfig6 --file "$cfg/kdeglobals" --group KDE --key AnimationDurationFactor)" ] \
+            && kwriteconfig6 --file kdeglobals --group KDE --key AnimationDurationFactor 0.25
+    fi
+    mkdir -p "${vm_seen%/*}" && echo 2026-10-18 >"$vm_seen"
+fi
+
 # Files, once: the classic menu bar on (KDE hid it at the first start).
 files_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/files-version
 if [ "$(cat "$files_seen" 2>/dev/null)" != 2026-10-17 ]; then
