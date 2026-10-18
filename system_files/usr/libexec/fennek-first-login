@@ -25,5 +25,7 @@ if [ -z "$(kreadconfig6 --file "$rc" --group General --key Version)" ]; then
     mkdir -p "${state%/*}" && kwriteconfig6 --file "$state" --group State --key State "$(cat /usr/share/fennek/files-first-window-state)"
 fi
 mkdir -p "${stamp%/*}" && touch "$stamp"
-# First login only: say hello (pick a look, what keeps you safe, tips).
-(sleep 2; fennek-app welcome) >/dev/null 2>&1 &
+# First login only: say hello (pick a look, what keeps you safe, tips). Started from the installer USB instead:
+# Install Fennek OS or try it first.
+app=welcome; grep -qw rd.live.image /proc/cmdline && command -v liveinst >/dev/null && app=live
+(sleep 2; fennek-app "$app") >/dev/null 2>&1 &
