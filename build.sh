@@ -596,6 +596,12 @@ while read -r name hx hy frames aliases; do
     for a in $aliases; do ln -sf "$name" "$ctheme/cursors/$a"; done
 done < "$csrc/cursors.txt"
 printf '[Icon Theme]\nName=Fennek\nComment=Fennek OS pointers: the classic shapes, sharp and clean\nInherits=Breeze_Light\n' > "$ctheme/index.theme"
+# Pointer settings list Fennek first and alone: the stock pointer themes stay installed (rare shapes and apps that
+# ask for them by name still find them) but are hidden from the list, which sorts alphabetically.
+for d in /usr/share/icons/*/cursors; do
+    t=${d%/cursors}; [ "$t" = "$ctheme" ] && continue
+    [ -f "$t/index.theme" ] && ! grep -q '^Hidden=' "$t/index.theme" && sed -i '/^\[Icon Theme\]/a Hidden=true' "$t/index.theme"
+done
 rm -rf /tmp/cur
 [ ${#missing[@]} -eq 0 ] || dnf -y remove "${missing[@]}"
 # This PC groups (Folders / Storage drives) are two MIME types.
