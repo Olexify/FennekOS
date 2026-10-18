@@ -52,7 +52,7 @@ public:
             QDBusConnection::sessionBus().asyncCall(QDBusMessage::createMethodCall(QStringLiteral("org.kde.krunner"), QStringLiteral("/App"),
                                                                                    QStringLiteral("org.kde.krunner.App"), QStringLiteral("display")));
         });
-        add("view-app-grid", QStringLiteral("Show task view"), [] { kwinShortcut(QStringLiteral("Overview")); });
+        add("view-grid", QStringLiteral("Show task view"), [] { kwinShortcut(QStringLiteral("Overview")); });
         add("user-desktop", QStringLiteral("Show the desktop"), [] { kwinShortcut(QStringLiteral("Show Desktop")); });
         separator();
         add("utilities-system-monitor", QStringLiteral("Task Manager"), [] { QProcess::startDetached(QStringLiteral("plasma-systemmonitor"), {}); });
