@@ -75,11 +75,11 @@ PlasmoidItem {
                 font.weight: Font.DemiBold
             }
             PC3.ToolButton {
-                contentItem: Kirigami.Icon { source: "go-up-symbolic"; isMask: true; color: "#f0eef5"; implicitWidth: Kirigami.Units.iconSizes.small; implicitHeight: implicitWidth }
+                contentItem: Kirigami.Icon { source: "go-up-symbolic"; isMask: true; color: Kirigami.Theme.textColor; implicitWidth: Kirigami.Units.iconSizes.small; implicitHeight: implicitWidth }
                 onClicked: root.shown = new Date(root.shown.getFullYear(), root.shown.getMonth() - 1, 1)
             }
             PC3.ToolButton {
-                contentItem: Kirigami.Icon { source: "go-down-symbolic"; isMask: true; color: "#f0eef5"; implicitWidth: Kirigami.Units.iconSizes.small; implicitHeight: implicitWidth }
+                contentItem: Kirigami.Icon { source: "go-down-symbolic"; isMask: true; color: Kirigami.Theme.textColor; implicitWidth: Kirigami.Units.iconSizes.small; implicitHeight: implicitWidth }
                 onClicked: root.shown = new Date(root.shown.getFullYear(), root.shown.getMonth() + 1, 1)
             }
         }

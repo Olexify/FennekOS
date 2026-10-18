@@ -123,7 +123,7 @@ kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key AccentColor 109,6
 printf '\n[kdeglobals][General]\nAccentColor=109,69,184\n' >> "$lnf/contents/defaults"
 printf '\n[kdeglobals][Icons]\nTheme=Fennek\n' >> "$lnf/contents/defaults"
 printf '\n[kcminputrc][Mouse]\ncursorTheme=Fennek-Cursors\n' >> "$lnf/contents/defaults"
-# Taskbar, Start and tray panels dark, apps light (the familiar default); the dark theme copies this.
+# Panels: the light look is fully light (Fennek Light panel theme), the dark look fully dark (Fennek Dark).
 # Panel theme "Fennek Dark": KDE's Breeze Dark plus Fennek's taskbar buttons (widgets/tasks.svg from
 # branding/make-taskbar-svg.py: line under running apps, soft background on the focused one).
 dt=/usr/share/plasma/desktoptheme
@@ -146,8 +146,30 @@ for g in Button Complementary Header View Window Tooltip Selection; do
     kwriteconfig6 --file "$c" --group "Colors:$g" --key DecorationHover 138,99,210
 done
 kwriteconfig6 --file "$c" --group Colors:Selection --key BackgroundNormal 109,69,184
-kwriteconfig6 --file "$lnf/contents/defaults" --group plasmarc --group Theme --key name fennek-dark
-kwriteconfig6 --file /etc/xdg/plasmarc --group Theme --key name fennek-dark
+# Panel theme "Fennek Light" for the light look (fully light: taskbar, Start, pop-ups): KDE's light Breeze panel
+# theme, the same Fennek taskbar buttons (they take their colours from the scheme) and the violet accent.
+lt=$dt/fennek-light
+base=$dt/breeze-light; [ -d "$base" ] || base=$dt/default
+cp -an "$base/." "$lt/"
+mkdir -p "$lt/widgets" && cp "$dt/fennek-dark/widgets/tasks.svg" "$lt/widgets/tasks.svg"
+python3 - "$lt" <<'EOF'
+import json, pathlib, sys
+d = pathlib.Path(sys.argv[1]); m = d / "metadata.json"
+assert m.exists(), "Breeze light panel theme has no metadata.json any more: revisit Fennek Light"
+j = json.loads(m.read_text())
+j["KPlugin"].update(Id="fennek-light", Name="Fennek Light", Description="Breeze (light) with Fennek taskbar buttons")
+j["KPlugin"] = {k: v for k, v in j["KPlugin"].items() if not k.startswith(("Name[", "Description["))}
+m.write_text(json.dumps(j, indent=2, ensure_ascii=False))
+EOF
+if [ -f "$lt/colors" ]; then   # its own colours (else it follows the Fennek Light scheme, violet already)
+    sed -i "s/61,174,233/109,69,184/g; s/29,153,243/109,69,184/g" "$lt/colors"
+    for g in Button Complementary Header View Window Tooltip Selection; do
+        kwriteconfig6 --file "$lt/colors" --group "Colors:$g" --key DecorationFocus 109,69,184
+        kwriteconfig6 --file "$lt/colors" --group "Colors:$g" --key DecorationHover 109,69,184
+    done
+fi
+kwriteconfig6 --file "$lnf/contents/defaults" --group plasmarc --group Theme --key name fennek-light
+kwriteconfig6 --file /etc/xdg/plasmarc --group Theme --key name fennek-light
 # Monochrome folder icons inside the Fennek set too: KDE's lookup shortens a missing "-symbolic" name within
 # Fennek first (giving the coloured folder) before it would look in Breeze.
 for n in folder folder-documents folder-download folder-pictures folder-videos folder-music user-home user-desktop; do
@@ -241,7 +263,7 @@ kwriteconfig6 --file /etc/xdg/kscreenlockerrc --group Daemon --key LockOnResume 
 # Fennek taskbar and Start menu with Fedora's layout (looks like the desktop got "erased").
 dark=/usr/share/plasma/look-and-feel/org.fennek.dark.desktop
 cp -a "$lnf/contents/." "$dark/contents/"
-{ sed -e '/^ColorScheme=/d' -e 's/^Theme=Fennek$/Theme=Fennek-Dark/' "$lnf/contents/defaults"; printf '\n[kdeglobals][General]\nColorScheme=FennekDark\n'; } \
+{ sed -e '/^ColorScheme=/d' -e 's/^Theme=Fennek$/Theme=Fennek-Dark/' -e 's/^name=fennek-light$/name=fennek-dark/' "$lnf/contents/defaults"; printf '\n[kdeglobals][General]\nColorScheme=FennekDark\n'; } \
     > "$dark/contents/defaults"
 # Icons for the dark theme: the same Fennek icons, with KDE's light-on-dark Breeze Dark behind them (plain
 # Breeze draws dark symbols, unreadable on dark windows and panels).

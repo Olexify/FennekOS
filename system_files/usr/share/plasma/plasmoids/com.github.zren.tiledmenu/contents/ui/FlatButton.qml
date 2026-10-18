@@ -37,10 +37,10 @@ QQC2.ToolButton {
 		spacing: Kirigami.Units.largeSpacing
 		Kirigami.Icon {
 			source: flatButton.icon.name || flatButton.icon.source
-			// Monochrome icons as a light mask: Plasma tints them from the light app scheme otherwise (dark on the
-			// dark menu). ponytail: assumes a dark Start (both Fennek themes); a light panel theme would need a check.
+			// Monochrome icons drawn in the menu's own text colour (Plasma would tint them from the app colour scheme,
+			// which can differ from the menu's: dark symbols on a dark menu).
 			isMask: String(source).indexOf("-symbolic") >= 0
-			color: isMask ? "#f0eef5" : "transparent"
+			color: isMask ? config.menuTextColor : "transparent"
 			Layout.preferredWidth: flatButton._iconSize
 			Layout.preferredHeight: flatButton._iconSize
 			Layout.alignment: flatButton.display === QQC2.AbstractButton.IconOnly ? Qt.AlignCenter : Qt.AlignVCenter

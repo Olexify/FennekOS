@@ -103,6 +103,17 @@ if [ "$(cat "$splash_seen" 2>/dev/null)" != 2026-10-18 ]; then
     mkdir -p "${splash_seen%/*}" && echo 2026-10-18 >"$splash_seen"
 fi
 
+# Light look, once: fully light (light taskbar, Start, pop-ups) instead of the earlier dark panels.
+panel_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/light-panel-version
+if [ "$(cat "$panel_seen" 2>/dev/null)" != 2026-10-18 ]; then
+    if [ "$(kreadconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage)" = org.fennek.desktop ]; then
+        case "$(kreadconfig6 --file "${XDG_CONFIG_HOME:-$HOME/.config}/plasmarc" --group Theme --key name)" in
+            ""|fennek-dark) kwriteconfig6 --file plasmarc --group Theme --key name fennek-light ;;
+        esac
+    fi
+    mkdir -p "${panel_seen%/*}" && echo 2026-10-18 >"$panel_seen"
+fi
+
 # Virtual machine, once: no 3D card there, so every frame is drawn by the processor. Blur behind panels and long
 # animations make it feel slow; switch them off (real PCs keep them). An own choice stays.
 vm_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/vm-speed-version

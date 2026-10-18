@@ -13,7 +13,7 @@ QQC2.ScrollBar {
 	background: null
 	contentItem: Rectangle {
 		radius: Math.min(width, height) / 2
-		color: "#f0eef5"   // light on the dark Start (see FlatButton)
+		color: config.menuTextColor   // the menu's text colour (light or dark Start)
 		opacity: bar.pressed ? 0.6 : bar.hovered ? 0.45 : bar.active ? 0.3 : 0
 		Behavior on opacity { NumberAnimation { duration: 250 } }
 	}

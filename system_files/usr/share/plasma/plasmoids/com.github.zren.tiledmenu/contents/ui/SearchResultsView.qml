@@ -66,7 +66,7 @@ GridLayout {
 				Kirigami.Icon {
 					source: "arrow-down-symbolic"
 					isMask: true
-					color: "#f0eef5"   // light on the dark menu (see FlatButton)
+					color: config.menuTextColor
 					rotation: searchResultsView.filterViewOpen ? 180 : 0
 					Layout.preferredHeight: config.flatButtonIconSize
 					Layout.preferredWidth: config.flatButtonIconSize
