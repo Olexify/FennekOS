@@ -107,6 +107,15 @@ if [ "$(cat "$vm_seen" 2>/dev/null)" != 2026-10-18 ]; then
     mkdir -p "${vm_seen%/*}" && echo 2026-10-18 >"$vm_seen"
 fi
 
+# Desktop Ctrl + mouse wheel = display size, once; only after the desktop made its own settings (as above).
+zoom_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/desktop-zoom-version
+if [ "$(cat "$zoom_seen" 2>/dev/null)" != 2026-10-18 ] \
+   && [ "$(kreadconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'RightButton;NoModifier')" = org.kde.contextmenu ]; then
+    [ -z "$(kreadconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'wheel:Vertical;ControlModifier')" ] \
+        && kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'wheel:Vertical;ControlModifier' org.fennek.uiscale
+    mkdir -p "${zoom_seen%/*}" && echo 2026-10-18 >"$zoom_seen"
+fi
+
 # Files, once: the classic menu bar on (KDE hid it at the first start).
 files_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/files-version
 if [ "$(cat "$files_seen" 2>/dev/null)" != 2026-10-17 ]; then

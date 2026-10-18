@@ -538,7 +538,7 @@ tools=(cmake extra-cmake-modules gcc-c++ libplasma-devel kf6-kcoreaddons-devel k
        rust cargo 'rust-zbus+default-devel' 'rust-inotify+default-devel' librsvg2-tools xcursorgen)
 missing=(); for p in "${tools[@]}"; do rpm -q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 dnf -y install "${missing[@]}"
-for plugin in taskbar-menu thispc fennek-app fennek-style; do
+for plugin in taskbar-menu ui-scale thispc fennek-app fennek-style; do
     cmake -S "$files/../src/$plugin" -B "/tmp/$plugin" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
     cmake --build "/tmp/$plugin" -j"$(nproc)"
     cmake --install "/tmp/$plugin"
@@ -569,13 +569,13 @@ for f in /usr/share/plasma/plasmoids/org.fennek.*/contents/ui/*.qml /usr/share/p
          /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/splash/Splash.qml; do
     "$qmlformat" "$f" >/dev/null || { echo "QML syntax error in $f"; exit 1; }
 done
-# Fennek pointers (branding/make-cursors.py): rendered at 24/32/48/64 px into the pointer theme Fennek-Cursors;
+# Fennek pointers (branding/make-cursors.py): rendered at 10 sizes (24 to 96 px, the size list in pointer settings) into the pointer theme Fennek-Cursors;
 # shapes it does not draw come from Breeze Light.
 csrc=/usr/share/fennek/cursor-src; ctheme=/usr/share/icons/Fennek-Cursors
 mkdir -p "$ctheme/cursors" /tmp/cur
 while read -r name hx hy frames aliases; do
     : > "/tmp/cur/$name.cfg"
-    for size in 24 32 48 64; do
+    for size in 24 28 32 36 40 48 56 64 72 96; do
         x=$(awk -v h="$hx" -v s="$size" 'BEGIN { printf "%d", h * s / 32 + 0.5 }')
         y=$(awk -v h="$hy" -v s="$size" 'BEGIN { printf "%d", h * s / 32 + 0.5 }')
         if [ "$frames" = 0 ]; then
@@ -603,7 +603,12 @@ import os, sys
 p = sys.argv[1]; s = open(p).read()
 old = "[Panel][ContainmentActions]\nRightButton;NoModifier=org.kde.contextmenu"
 assert old in s, "Plasma shell defaults changed: revisit the taskbar menu"
-open(p + ".fennek-new", "w").write(s.replace(old, "[Panel][ContainmentActions]\nRightButton;NoModifier=org.fennek.taskbarmenu"))
+s = s.replace(old, "[Panel][ContainmentActions]\nRightButton;NoModifier=org.fennek.taskbarmenu")
+# Desktop: Ctrl + mouse wheel = the whole display bigger / smaller (src/ui-scale).
+desk = "[Desktop][ContainmentActions]\n"
+assert desk in s, "Plasma shell defaults changed: revisit the desktop Ctrl+wheel"
+s = s.replace(desk, desk + "wheel:Vertical;ControlModifier=org.fennek.uiscale\n")
+open(p + ".fennek-new", "w").write(s)
 os.chmod(p + ".fennek-new", 0o644); os.replace(p + ".fennek-new", p)
 EOF
 

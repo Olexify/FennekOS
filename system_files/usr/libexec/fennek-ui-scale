@@ -1,0 +1,26 @@
+#!/usr/bin/bash
+# Ctrl + mouse wheel over the desktop: the whole display bigger or smaller. 25% steps, 100% to 300%, every screen.
+#   fennek-ui-scale up|down
+set -u
+case ${1:-} in up) step=0.25 ;; down) step=-0.25 ;; *) echo "usage: fennek-ui-scale up|down" >&2; exit 2 ;; esac
+# One step at a time: a fast wheel must not jump through every size while the screen is still switching.
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/fennek-ui-scale.lock"
+flock -n 9 || exit 0
+plan=$(kscreen-doctor -j 2>/dev/null | python3 -c '
+import json, sys
+step, args, shown = float(sys.argv[1]), [], ""
+for o in json.load(sys.stdin).get("outputs", []):
+    if not (o.get("enabled") and o.get("connected")):
+        continue
+    now = float(o.get("scale", 1))
+    new = min(3.0, max(1.0, round((now + step) * 4) / 4))
+    shown = shown or "{}%".format(round(new * 100))
+    if new != now:
+        args.append("output.{}.scale.{:g}".format(o["name"], new))
+print(shown); print(" ".join(args))' "$step") || exit 1
+shown=$(head -1 <<<"$plan"); args=$(sed -n 2p <<<"$plan")
+[ -n "$args" ] && kscreen-doctor $args >/dev/null 2>&1
+# The size on screen for a moment (Plasma's on-screen display).
+[ -n "$shown" ] && gdbus call --session --dest org.kde.plasmashell --object-path /org/kde/osdService \
+    --method org.kde.osdService.showText "zoom-in" "Display size $shown" >/dev/null 2>&1
+exit 0

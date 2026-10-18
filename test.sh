@@ -91,6 +91,17 @@ done
 for p in gio dolphin konsole fennek-app plasma-systemmonitor spectacle kinfocenter plasma-discover partitionmanager systemsettings; do
     command -v "$p" >/dev/null || fail "classic commands: $p missing"
 done
+# Desktop Ctrl+wheel = display size: stand-in screen tool (125% -> 150%, never past 300%), plugin + binding present.
+us=$(mktemp -d) && cat >"$us/kscreen-doctor" <<'SH' && chmod +x "$us/kscreen-doctor" && printf '#!/bin/sh\n' >"$us/gdbus" && chmod +x "$us/gdbus"
+#!/bin/sh
+if [ "$1" = -j ]; then echo "{\"outputs\":[{\"name\":\"Virtual-1\",\"enabled\":true,\"connected\":true,\"scale\":$SCALE}]}"; else echo "$*" >>"$OUT"; fi
+SH
+PATH="$us:$PATH" SCALE=1.25 OUT="$us/set" XDG_RUNTIME_DIR="$us" /usr/libexec/fennek-ui-scale up \
+  && PATH="$us:$PATH" SCALE=3 OUT="$us/set" XDG_RUNTIME_DIR="$us" /usr/libexec/fennek-ui-scale up \
+  && [ "$(cat "$us/set")" = "output.Virtual-1.scale.1.5" ] \
+  && ls /usr/lib64/qt6/plugins/plasma/containmentactions/org.fennek.uiscale.so >/dev/null \
+  && grep -q '^wheel:Vertical;ControlModifier=org.fennek.uiscale' /usr/share/plasma/shells/org.kde.plasma.desktop/contents/defaults \
+  || fail "desktop Ctrl+wheel display size"
 # Start "Open file location": stand-in Files, so only the lookup runs.
 ol=$(mktemp -d) && printf '#!/bin/sh\necho "$*"\n' >"$ol/dolphin" && chmod +x "$ol/dolphin" \
   && [ "$(PATH="$ol:$PATH" XDG_DATA_DIRS=/usr/share /usr/libexec/fennek-open-location org.kde.dolphin.desktop)" = "--select /usr/share/applications/org.kde.dolphin.desktop" ] \

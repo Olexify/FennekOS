@@ -1,0 +1,8 @@
+{
+    "KPlugin": {
+        "Authors": [{ "Name": "Fennek OS" }],
+        "Description": "Ctrl + mouse wheel on the desktop: the whole display bigger or smaller",
+        "License": "GPL-3.0-only",
+        "Name": "Display scale"
+    }
+}
