@@ -105,7 +105,7 @@ PlasmoidItem {
 
 	hideOnWindowDeactivate: !widget.userConfiguring
 	activationTogglesExpanded: true
-	onExpandedChanged: {   // Fennek OS: no argument in Qt 6 (it was always undefined: search was never reset on open)
+	onExpandedChanged: {
 		if (expanded) {
 			search.query = ""
 			search.applyDefaultFilters()
