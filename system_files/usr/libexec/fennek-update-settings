@@ -14,12 +14,14 @@
 """
 import datetime, json, os, re, subprocess, sys
 
-ROOT = os.environ.get("FENNEK_ROOT", "")   # tests only
+# Test overrides, never honoured as root (a root helper must not take a program or path from its environment).
+TESTING = os.geteuid() != 0
+ROOT = os.environ.get("FENNEK_ROOT", "") if TESTING else ""
 CONF = ROOT + "/etc/rpm-ostreed.conf"
 SCHEDULE = ROOT + "/etc/systemd/system/rpm-ostreed-automatic.timer.d/fennek-schedule.conf"
 PAUSE = ROOT + "/etc/fennek/updates-paused-until"
 DAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-SYSTEMCTL = os.environ.get("FENNEK_SYSTEMCTL", "systemctl")
+SYSTEMCTL = os.environ.get("FENNEK_SYSTEMCTL", "systemctl") if TESTING else "systemctl"
 
 
 def read(path, default=""):
