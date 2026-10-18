@@ -87,6 +87,8 @@ Item {
 			if (mouse.button == Qt.LeftButton) {
 				if (tileEditorView && tileEditorView.tile) {
 					openTileEditor()
+				} else if (modelData.tileType == "group") {
+					tileGrid.setGroupFolded(modelData, !modelData.folded)   // Fennek OS: click a group header to fold / unfold
 				} else if (modelData.url) {
 					appsModel.tileGridModel.runApp(modelData.url)
 				}
@@ -155,7 +157,13 @@ Item {
 		id: contextMenu
 		tileIndex: index
 		onPopulateMenu: function(menu) {
-			if (!plasmoid.configuration.tilesLocked) {
+			if (!plasmoid.configuration.tilesLocked && modelData.tileType == "group") {
+				var removeGroup = menu.newMenuItem()   // Fennek OS: the header only; its tiles stay
+				removeGroup.text = i18n("Remove group name")
+				removeGroup.icon = "list-remove"
+				removeGroup.clicked.connect(function() { tileGrid.setGroupFolded(modelData, false); tileGrid.removeIndex(index) })   // tucked tiles come back first
+				menu.addMenuItem(removeGroup)
+			} else if (!plasmoid.configuration.tilesLocked) {
 				menu.addPinToMenuAction(modelData.url)
 			}
 
@@ -180,6 +188,20 @@ Item {
 					menu.addMenuItem(sizeItem)
 				})
 				menu.addMenuItem(menu.newSeperator())
+			}
+
+			// Fennek OS: group header: fold / unfold, rename (the tile editor), all in plain words.
+			if (modelData.tileType == "group" && !plasmoid.configuration.tilesLocked) {
+				var foldItem = menu.newMenuItem()
+				foldItem.text = modelData.folded ? i18n("Unfold group") : i18n("Fold group")
+				foldItem.icon = modelData.folded ? "go-down" : "go-up"
+				foldItem.clicked.connect(function() { tileGrid.setGroupFolded(modelData, !modelData.folded) })
+				menu.addMenuItem(foldItem)
+				var renameItem = menu.newMenuItem()
+				renameItem.text = i18n("Rename group…")
+				renameItem.icon = "edit-rename"
+				renameItem.clicked.connect(function() { tileItem.openTileEditor() })
+				menu.addMenuItem(renameItem)
 			}
 
 			appObj.addActionList(menu)

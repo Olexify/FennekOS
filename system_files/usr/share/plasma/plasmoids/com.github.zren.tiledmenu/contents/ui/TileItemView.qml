@@ -83,7 +83,8 @@ Rectangle {
 	PlasmaComponents3.Label {
 		id: label
 		visible: appObj.showLabel
-		text: appObj.labelText
+		// Fennek OS: groups show whether they are folded (click the header to fold / unfold).
+		text: appObj.isGroup ? (modelData.folded ? "▸  " : "▾  ") + appObj.labelText : appObj.labelText
 		anchors.top: parent.top
 		anchors.bottom: parent.bottom
 		anchors.leftMargin: tilePadding

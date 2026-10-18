@@ -66,6 +66,10 @@ AppToolButton {
 		// console.log('    dragIcon', dragIcon)
 		if (dragIcon) {
 			dragHelper.startDrag(widget, model.url || model.favoriteId, dragIcon, "favoriteId", model.favoriteId)
+		} else {
+			// Fennek OS: only an icon name (most apps): drag the app's address without a picture instead of not
+			// dragging at all (apps could not be dragged onto the tiles). The tile board reads the address.
+			dragHelper.startDrag(widget, model.url || model.favoriteId)
 		}
 
 		resetDragState()

@@ -68,8 +68,9 @@ DropArea {
 			// Fennek OS: on a taken spot (shown red while dragging) the tile goes to the nearest free spot below in the
 			// same column, never on top of another tile; no free spot nearby: it goes back.
 			var freeY = dropHoverY
-			while (!canDrop && freeY < dropHoverY + 24 && hits(dropHoverX, freeY, dropWidth, dropHeight)) freeY++
-			if (canDrop || !hits(dropHoverX, freeY, dropWidth, dropHeight)) tileGrid.moveTile(draggedItem, dropHoverX, freeY)
+			var needH = footprintHeight()
+			while (!canDrop && freeY < dropHoverY + 24 && hits(dropHoverX, freeY, dropWidth, needH)) freeY++
+			if (canDrop || !hits(dropHoverX, freeY, dropWidth, needH)) tileGrid.moveTile(draggedItem, dropHoverX, freeY)
 			tileGrid.resetDrag()
 			// event.accept(Qt.MoveAction)
 		} else if (addedItem) {
@@ -150,6 +151,34 @@ DropArea {
 			w: x2 - x1 + 1,
 			h: y2 - y1 + 1,
 		}
+	}
+
+	// Fennek OS: rows a drop needs; a group needs its header plus the tiles under it.
+	function footprintHeight() {
+		return draggedItem && draggedItem.tileType == "group" ? dropHeight + getGroupAreaRect(draggedItem).h : dropHeight
+	}
+
+	// Fennek OS: fold a group (its tiles tucked away, the tiles below in its columns move up) and unfold it again.
+	// The folded tiles are kept in the group, at their place relative to the header.
+	function setGroupFolded(group, fold) {
+		if (!!group.folded === fold) return
+		var x1 = group.x, x2 = group.x + group.w - 1, top = group.y + group.h
+		var below = function (t, fromY) { return t !== group && t.y >= fromY && t.x <= x2 && t.x + t.w - 1 >= x1 }
+		if (fold) {
+			var area = getGroupAreaRect(group)
+			var inside = tileModel.filter(function (t) { return tileWithin(t, area.x1, area.y1, area.x2, area.y2) })
+			group.folded = inside.map(function (t) { var c = JSON.parse(JSON.stringify(t)); c.x -= group.x; c.y -= top; return c })
+			group.foldedH = area.h
+			for (var i = tileModel.length - 1; i >= 0; i--) if (inside.indexOf(tileModel[i]) >= 0) tileModel.splice(i, 1)   // in place: the list is bound to the saved settings
+			tileModel.forEach(function (t) { if (below(t, area.y2 + 1)) t.y -= area.h })
+		} else {
+			var h = group.foldedH || 0
+			tileModel.forEach(function (t) { if (below(t, top)) t.y += h })
+			group.folded.forEach(function (c) { c.x += group.x; c.y += top; tileModel.push(c) })
+			delete group.folded
+			delete group.foldedH
+		}
+		tileGrid.tileModelChanged()
 	}
 
 	function moveGroup(groupTile, deltaX, deltaY) {
@@ -233,7 +262,7 @@ DropArea {
 
 		dropHoverX = Math.max(0, Math.min(modelX, columns - dropWidth))
 		dropHoverY = Math.max(0, modelY)
-		canDrop = !hits(dropHoverX, dropHoverY, dropWidth, dropHeight)
+		canDrop = !hits(dropHoverX, dropHoverY, dropWidth, footprintHeight())
 	}
 
 	property var hitBox: [] // hitBox[y][x]
@@ -262,9 +291,11 @@ DropArea {
 		for (var i = 0; i < hbRows; i++) {
 			hb[i] = new Array(hbColumns)
 		}
+		// Fennek OS: a dragged group carries its tiles along, so they don't block it either.
+		var ownArea = draggedItem && draggedItem.tileType == "group" ? getGroupAreaRect(draggedItem) : null
 		for (var i = 0; i < tileModel.length; i++) {
 			var tile = tileModel[i]
-			if (i == draggedIndex) {
+			if (i == draggedIndex || (ownArea && tileWithin(tile, ownArea.x1, ownArea.y1, ownArea.x2, ownArea.y2))) {
 				continue;
 			}
 			for (var j = tile.y; j < tile.y + tile.h; j++) {
