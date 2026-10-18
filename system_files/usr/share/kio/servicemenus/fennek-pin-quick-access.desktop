@@ -1,10 +1,17 @@
 [Desktop Entry]
 Type=Service
-MimeType=inode/directory;
-Actions=pin
+# One compact "Pin to" entry (right-click in File Explorer and on the desktop): Start, Quick access.
+MimeType=all/all;
+Actions=start;quickaccess
+X-KDE-Submenu=Pin to
 X-KDE-Priority=TopLevel
 
-[Desktop Action pin]
-Name=Pin to Quick access
+[Desktop Action start]
+Name=Start
+Icon=fennek
+Exec=/usr/libexec/fennek-pin-start %F
+
+[Desktop Action quickaccess]
+Name=Quick access
 Icon=pin
 Exec=/usr/libexec/fennek-pin-quick-access %F
