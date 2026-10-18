@@ -76,6 +76,11 @@ Item {
 
 		// This MouseArea will spam "QQuickItem::ungrabMouse(): Item is not the mouse grabber."
 		// but there's no other way of having a clickable drag area.
+		// Fennek OS: a drag interrupted by the system (pointer grab lost) puts the tile back instead of freezing it.
+		onCanceled: {
+			Qt.callLater(tileGrid.resetDrag)
+			Qt.callLater(tileItem.fixCoordinateBindings)
+		}
 		onClicked: function(mouse) {
 			mouse.accepted = true
 			tileGrid.resetDrag()

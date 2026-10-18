@@ -78,9 +78,9 @@ DISPLAY=:99 xdotool mousemove 800 880 click 3; shot 21-taskbar-menu 2
 DISPLAY=:99 xdotool key Escape; sleep 1
 # Drag a Start tile (Firefox) to an empty spot: tiles must move.
 call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; sleep 3
-DISPLAY=:99 xdotool mousemove 470 222 mousedown 1 sleep 0.3 mousemove 520 260 sleep 0.2 mousemove 700 300 sleep 0.2 mousemove 850 380 sleep 0.5
-shot 22-tile-dragging 1
-DISPLAY=:99 xdotool mouseup 1; shot 23-tile-dropped 2
+# (no screenshot mid-drag: taking one grabs the screen and the tile never sees the release)
+DISPLAY=:99 xdotool mousemove 470 222 mousedown 1 sleep 0.3 mousemove 520 260 sleep 0.2 mousemove 700 300 sleep 0.2 mousemove 850 380 sleep 0.5 mouseup 1
+shot 23-tile-dropped 2
 # Drag an app from the list (Phone) onto empty tile space: it becomes a tile.
 DISPLAY=:99 xdotool mousemove 120 437 mousedown 1 sleep 0.3 mousemove 200 450 sleep 0.2 mousemove 600 700 sleep 0.2 mousemove 640 760 sleep 0.5 mouseup 1
 shot 27-app-to-tile 2
