@@ -65,8 +65,11 @@ DropArea {
 	onDropped: {
 		// console.log('onDropped', drop)
 		if (draggedItem) {
-			// Fennek OS: a taken spot (shown red while dragging) is not a drop target: the tile goes back.
-			if (canDrop) tileGrid.moveTile(draggedItem, dropHoverX, dropHoverY)
+			// Fennek OS: on a taken spot (shown red while dragging) the tile goes to the nearest free spot below in the
+			// same column, never on top of another tile; no free spot nearby: it goes back.
+			var freeY = dropHoverY
+			while (!canDrop && freeY < dropHoverY + 24 && hits(dropHoverX, freeY, dropWidth, dropHeight)) freeY++
+			if (canDrop || !hits(dropHoverX, freeY, dropWidth, dropHeight)) tileGrid.moveTile(draggedItem, dropHoverX, freeY)
 			tileGrid.resetDrag()
 			// event.accept(Qt.MoveAction)
 		} else if (addedItem) {
