@@ -107,9 +107,10 @@ QList<Item> items()
 
     const QLocale locale;
     const auto describe = [&](const QString &label, const QStorageInfo &s) {
-        // "Local Disk · 50.4 GB free": short enough for the icon view (one decimal, GB, base 1024).
+        // Like the classic This PC page: the name, then "50.4 GB free of 98.0 GB" on its own line (U+2028 is a
+        // line break inside one name; one decimal, GB, base 1024).
         const auto size = [&](qint64 b) { return locale.formattedDataSize(b, 1, QLocale::DataSizeTraditionalFormat); };
-        return QStringLiteral("%1 · %2 free").arg(label, size(s.bytesAvailable()));
+        return QStringLiteral("%1 %2 free of %3").arg(label, size(s.bytesAvailable()), size(s.bytesTotal()));
     };
     // Drive icon with a usage bar (like the classic This PC page): fennek-drive-used-0 ... -100 in steps of 10.
     const auto usageIcon = [](const QStorageInfo &s) {
