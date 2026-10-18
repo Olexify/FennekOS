@@ -1,0 +1,76 @@
+#!/usr/bin/python3
+"""Install an earlier signed Fennek OS build, or go back to the latest (Updates window, Advanced). Runs as root through
+pkexec under its own polkit action (org.fennek.switch-version): a fresh password every time, never a remembered one.
+
+  fennek-switch-version latest
+  fennek-switch-version YYYYMMDD        a nightly build at most MAX_AGE days old and not before the cutoff date
+  fennek-switch-version --selftest
+
+Refused: anything that isn't "latest" or a date, builds older than MAX_AGE days, and builds before the cutoff in
+/usr/share/fennek/oldest-allowed-build (set when an old build is known to be vulnerable; ships with every build).
+Only builds signed with Fennek's key install (--enforce-container-sigpolicy).
+"""
+import datetime, os, re, subprocess, sys
+
+IMAGE = "ghcr.io/olexify/fennekos"
+MAX_AGE = 45
+CUTOFF = "/usr/share/fennek/oldest-allowed-build"
+
+
+def cutoff_date(path=CUTOFF):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return datetime.date.fromisoformat(f.read().strip())
+    except (OSError, ValueError):
+        return datetime.date.min
+
+
+def allowed(tag, today, cutoff):
+    """None if the build may be installed, else the reason."""
+    if tag == "latest":
+        return None
+    if not re.fullmatch(r"20\d{6}", tag):
+        return "not a build date"
+    try:
+        built = datetime.date(int(tag[:4]), int(tag[4:6]), int(tag[6:]))
+    except ValueError:
+        return "not a build date"
+    if built > today:
+        return "a build from the future"
+    if (today - built).days > MAX_AGE:
+        return f"older than {MAX_AGE} days"
+    if built < cutoff:
+        return "known to be unsafe (before the cutoff date)"
+    return None
+
+
+def switch_cmd(tag, machine):
+    suffix = "-arm64" if machine == "aarch64" else ""
+    return ["bootc", "switch", "--enforce-container-sigpolicy", f"{IMAGE}:{tag}{suffix}"]
+
+
+def selftest():
+    today = datetime.date(2026, 11, 20)
+    assert allowed("latest", today, datetime.date.min) is None
+    assert allowed("20261110", today, datetime.date.min) is None
+    assert allowed("20260901", today, datetime.date.min) == f"older than {MAX_AGE} days"
+    assert allowed("20261105", today, datetime.date(2026, 11, 8)).startswith("known to be unsafe")
+    assert allowed("20261231", today, datetime.date.min) == "a build from the future"
+    for bad in ("2026101", "20261340", "../evil", "latest;reboot", "20261018-arm64"):
+        assert allowed(bad, today, datetime.date.min), bad
+    assert switch_cmd("20261018", "x86_64")[-1] == "ghcr.io/olexify/fennekos:20261018"
+    assert switch_cmd("latest", "aarch64")[-1] == "ghcr.io/olexify/fennekos:latest-arm64"
+    assert "--enforce-container-sigpolicy" in switch_cmd("latest", "x86_64"), "only signed builds"
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["--selftest"]:
+        selftest()
+    elif len(sys.argv) == 2:
+        why = allowed(sys.argv[1], datetime.date.today(), cutoff_date())
+        if why:
+            sys.exit(f"Not installing that build: {why}.")
+        sys.exit(subprocess.run(switch_cmd(sys.argv[1], os.uname().machine)).returncode)
+    else:
+        sys.exit(__doc__)

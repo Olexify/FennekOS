@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Fennek OS</vendor>
+  <action id="org.fennek.switch-version">
+    <description>Install an earlier Fennek OS build, or return to the latest</description>
+    <message>Changing the installed version of Fennek OS requires your password</message>
+    <icon_name>system-software-update</icon_name>
+    <!-- Downgrades are sensitive: a fresh password every time (auth_admin, never _keep). The helper accepts only "latest" or a recent, signed build date. -->
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/fennek-switch-version</annotate>
+  </action>
+</policyconfig>

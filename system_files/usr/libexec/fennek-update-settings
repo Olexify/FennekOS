@@ -9,7 +9,6 @@
   fennek-update-settings set pause 7|14|28           no automatic updates for that many days
   fennek-update-settings set resume
   fennek-update-settings set apps on|off             Store apps update themselves
-  fennek-update-settings set version YYYYMMDD|latest an earlier signed nightly build, or back to the latest
   fennek-update-settings allowed                     exit 0 unless paused (the update services' ExecCondition)
   fennek-update-settings --selftest
 """
@@ -88,16 +87,6 @@ def set_policy(on):
     write(CONF, text)
 
 
-IMAGE = "ghcr.io/olexify/fennekos"
-
-
-def switch_cmd(tag, machine):
-    """Earlier build (YYYYMMDD) or back to latest; ARM builds carry an -arm64 suffix. Signatures are enforced:
-    only builds signed with Fennek's key can be installed this way."""
-    suffix = "-arm64" if machine == "aarch64" else ""
-    return ["bootc", "switch", "--enforce-container-sigpolicy", f"{IMAGE}:{tag}{suffix}"]
-
-
 def main(argv):
     if argv == ["get"]:
         print(json.dumps(get()))
@@ -124,8 +113,6 @@ def main(argv):
     elif argv == ["set", "resume"]:
         if os.path.exists(PAUSE):
             os.remove(PAUSE)
-    elif argv[:2] == ["set", "version"] and len(argv) == 3 and re.fullmatch(r"latest|20\d{6}", argv[2]):
-        return subprocess.run(switch_cmd(argv[2], os.uname().machine)).returncode
     elif argv[:2] == ["set", "apps"] and argv[2:] in (["on"], ["off"]):
         verb = "enable" if argv[2] == "on" else "disable"
         systemctl(verb, "--now", "flatpak-system-update.timer")
@@ -153,12 +140,8 @@ def selftest():
     main(["set", "pause", "7"]); assert get()["paused_until"] and main(["allowed"]) == 1
     assert paused_until(datetime.date.today() + datetime.timedelta(days=8)) == "", "a pause ends by itself"
     main(["set", "resume"]); assert main(["allowed"]) == 0
-    assert switch_cmd("20261018", "x86_64")[-1] == "ghcr.io/olexify/fennekos:20261018"
-    assert switch_cmd("latest", "aarch64")[-1] == "ghcr.io/olexify/fennekos:latest-arm64"
-    assert "--enforce-container-sigpolicy" in switch_cmd("latest", "x86_64"), "only signed builds"
-    for bad in (["set", "version", "../evil"], ["set", "version", "2026101"], ["set", "version", "latest;reboot"],
-                ["set", "schedule", "daily", "25:00"], ["set", "schedule", "weekly", "Funday", "03:00"],
-                ["set", "pause", "9999"], ["set", "auto", "maybe"], ["set", "schedule", "daily", "03:00;rm"]):
+    for bad in (["set", "schedule", "daily", "25:00"], ["set", "schedule", "weekly", "Funday", "03:00"],
+                ["set", "pause", "9999"], ["set", "auto", "maybe"], ["set", "version", "latest"], ["set", "schedule", "daily", "03:00;rm"]):
         try:
             main(bad)
             raise AssertionError(f"accepted {bad}")

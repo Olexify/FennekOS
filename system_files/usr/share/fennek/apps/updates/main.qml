@@ -49,6 +49,19 @@ QQC2.ApplicationWindow {
         run.connectSource(settingsCmd); run.connectSource(statusCmd)
         run.connectSource(releaseCmd); run.connectSource(milestonesCmd)
     }
+    // Changing the installed version: a clear question first, then the separate helper (fresh password every time).
+    property string pendingTag: ""
+    function switchTo(tag) { pendingTag = tag; confirmSwitch.open() }
+    Kirigami.PromptDialog {
+        id: confirmSwitch
+        title: root.pendingTag === "latest" ? "Return to the latest version?" : "Install the build from " + root.tagDate(root.pendingTag) + "?"
+        subtitle: root.pendingTag === "latest"
+            ? "Fennek OS goes back to the newest version and gets updates again. It takes effect after a restart."
+            : "This earlier build misses newer security fixes and gets no updates until you return to the latest. "
+              + "Your files and apps are kept. It takes effect after a restart."
+        standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
+        onAccepted: run.connectSource("pkexec /usr/libexec/fennek-switch-version " + root.pendingTag)
+    }
     function tagDate(t) { return t.slice(0, 4) + "-" + t.slice(4, 6) + "-" + t.slice(6, 8) }
 
     P5Support.DataSource {
@@ -175,7 +188,7 @@ QQC2.ApplicationWindow {
                 visible: root.onEarlier
                 type: Kirigami.MessageType.Warning
                 text: "You're on an earlier build (" + root.tagDate(root.runningTag) + "). It gets no updates and misses newer security fixes."
-                actions: [ Kirigami.Action { text: "Return to the latest version"; onTriggered: root.set("version latest") } ]
+                actions: [ Kirigami.Action { text: "Return to the latest version"; onTriggered: root.switchTo("latest") } ]
             }
             Kirigami.InlineMessage {
                 Layout.fillWidth: true
@@ -363,7 +376,7 @@ QQC2.ApplicationWindow {
                             required property string modelData
                             text: root.tagDate(modelData)
                             enabled: modelData !== root.runningTag
-                            onClicked: root.set("version " + modelData.replace("-arm64", ""))
+                            onClicked: root.switchTo(modelData.replace("-arm64", ""))
                         }
                     }
                 }
