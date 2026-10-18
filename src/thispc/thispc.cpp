@@ -109,8 +109,9 @@ QList<Item> items()
     const auto describe = [&](const QString &label, const QStorageInfo &s) {
         // Like the classic This PC page: the name, then "50.4 GB free of 98.0 GB" on its own line (U+2028 is a
         // line break inside one name; one decimal, GB, base 1024).
-        const auto size = [&](qint64 b) { return locale.formattedDataSize(b, 1, QLocale::DataSizeTraditionalFormat); };
-        return QStringLiteral("%1 %2 free of %3").arg(label, size(s.bytesAvailable()), size(s.bytesTotal()));
+        // From 10 GB on, whole numbers ("99 GB free of 144 GB" fits one line under the icon).
+        const auto size = [&](qint64 b) { return locale.formattedDataSize(b, b >= (qint64(10) << 30) ? 0 : 1, QLocale::DataSizeTraditionalFormat); };
+        return QStringLiteral("%1\u2028%2 free of %3").arg(label, size(s.bytesAvailable()), size(s.bytesTotal()));
     };
     // Drive icon with a usage bar (like the classic This PC page): fennek-drive-used-0 ... -100 in steps of 10.
     const auto usageIcon = [](const QStorageInfo &s) {
