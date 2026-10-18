@@ -88,7 +88,11 @@ PlasmoidItem {
 
     // On the taskbar: one bright search icon, the size of an app icon. Click opens the search panel.
     compactRepresentation: MouseArea {
-        Layout.preferredWidth: height
+        id: button
+        // Taskbar app buttons carry padding around their icon; the same space before this one keeps the gaps even
+        // (Start | search | apps), instead of search sitting close to Start.
+        readonly property int gap: Kirigami.Units.largeSpacing
+        Layout.preferredWidth: height + gap
         Layout.fillHeight: true
         hoverEnabled: true
         onClicked: root.expanded = !root.expanded
@@ -96,6 +100,7 @@ PlasmoidItem {
         Rectangle {
             anchors.fill: parent
             anchors.margins: 2
+            anchors.leftMargin: button.gap + 2
             radius: 6
             color: Kirigami.Theme.textColor
             opacity: parent.containsMouse || root.expanded ? 0.12 : 0
@@ -103,8 +108,9 @@ PlasmoidItem {
         }
         // Same size and rounded-square style as the app icons next to it, centred.
         Kirigami.Icon {
-            anchors.centerIn: parent
-            width: Math.min(parent.width, parent.height)
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.right: parent.right
+            width: Math.min(parent.width - button.gap, parent.height)
             height: width
             source: "fennek-search"
             active: parent.containsMouse
