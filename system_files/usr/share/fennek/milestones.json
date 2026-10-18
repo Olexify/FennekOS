@@ -1,0 +1,17 @@
+[
+  {
+    "version": "1.0",
+    "name": "First Light",
+    "chapter": "The beginning",
+    "tagline": "The first stable release. Where the journey begins.",
+    "date": "2026-10-18",
+    "highlights": [
+      "A familiar desktop: Start with tiles, taskbar, This PC",
+      "Private by default: nothing reported home, a firewall that asks",
+      "Safe updates: download quietly, go back in one click",
+      "Windows programs run in a sandbox",
+      "Backup to a USB drive with earlier versions kept"
+    ],
+    "legacy": ""
+  }
+]

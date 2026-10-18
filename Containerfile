@@ -4,6 +4,11 @@
 ARG BASE_IMAGE=ghcr.io/ublue-os/kinoite-main:44
 FROM ${BASE_IMAGE}
 
+# Version (tools/fennek-version.py, from the milestones file) and an immutable build id (date + commit), set by CI.
+ARG FENNEK_VERSION=0.0.0
+ARG FENNEK_BUILD=local
+LABEL org.opencontainers.image.version="${FENNEK_VERSION}" \
+      org.fennek.build="${FENNEK_BUILD}"
 LABEL org.opencontainers.image.title="Fennek OS" \
       org.opencontainers.image.description="Linux desktop for people who want a familiar, classic desktop: familiar, private, secure." \
       org.opencontainers.image.source="https://github.com/Olexify/FennekOS" \
@@ -12,5 +17,5 @@ LABEL org.opencontainers.image.title="Fennek OS" \
 # One layer for everything we add: the build context is mounted, not copied.
 RUN --mount=type=bind,source=.,target=/ctx,ro \
     cp -a --no-preserve=ownership /ctx/system_files/. / && \
-    bash /ctx/build.sh /ctx/system_files && \
+    FENNEK_VERSION="${FENNEK_VERSION}" FENNEK_BUILD="${FENNEK_BUILD}" bash /ctx/build.sh /ctx/system_files && \
     bootc container lint

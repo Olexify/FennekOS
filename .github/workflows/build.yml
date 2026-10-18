@@ -43,7 +43,12 @@ jobs:
 
       # podman, not docker: the base has ~256 layers, docker's overlay limit is ~127.
       - name: Build image
-        run: sudo podman build --build-arg "BASE_IMAGE=$BASE_IMAGE" -f Containerfile -t fennek:ci .
+        run: |
+          # Version from the milestones file (1.0.12) + immutable build id (date.commit): Trails in the Updates window.
+          v=$(python3 tools/fennek-version.py)
+          b="$(date -u +%Y.%m.%d).${GITHUB_SHA::7}"
+          echo "Fennek OS $v (build $b)"
+          sudo podman build --build-arg "BASE_IMAGE=$BASE_IMAGE" --build-arg "FENNEK_VERSION=$v" --build-arg "FENNEK_BUILD=$b"             -f Containerfile -t fennek:ci .
 
       - name: Test image
         run: sudo podman run --rm -v "$PWD/test.sh:/t.sh:ro,z" fennek:ci bash /t.sh

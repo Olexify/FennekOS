@@ -85,6 +85,14 @@ sed -i -e 's/^NAME=.*/NAME="Fennek OS"/' \
        -e 's/^PRETTY_NAME=.*/PRETTY_NAME="Fennek OS (Fedora 44 base)"/' \
        -e 's/^LOGO=.*/LOGO=fennek/' \
        -e 's/^DEFAULT_HOSTNAME=.*/DEFAULT_HOSTNAME="fennek"/' /usr/lib/os-release
+# Fennek version (Trails): "Fennek OS 1.0 · First Light", version 1.0.12, build id. VERSION_ID stays Fedora's (44):
+# package tools read it. Milestone names come from /usr/share/fennek/milestones.json (newest first).
+fv=${FENNEK_VERSION:-0.0.0}; fb=${FENNEK_BUILD:-local}
+fname=$(python3 -c 'import json; print(json.load(open("/usr/share/fennek/milestones.json"))[0]["name"])')
+fmajor=${fv%.*}
+sed -i -e "s/^PRETTY_NAME=.*/PRETTY_NAME=\"Fennek OS $fmajor · $fname\"/" -e "s/^VERSION=.*/VERSION=\"$fv · $fname\"/" \
+       -e '/^IMAGE_ID=/d' -e '/^IMAGE_VERSION=/d' -e '/^BUILD_ID=/d' /usr/lib/os-release
+printf 'IMAGE_ID=fennek\nIMAGE_VERSION=%s\nBUILD_ID=%s\n' "$fv" "$fb" >> /usr/lib/os-release
 if rpm -q plasma-welcome-fedora >/dev/null; then dnf -y remove plasma-welcome-fedora; fi   # "Fedora loves KDE" pages
 # Wallpaper, generated at build time (no binaries in the repo).
 mkdir -p /usr/share/wallpapers/Fennek/contents/images

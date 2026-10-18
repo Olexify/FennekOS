@@ -21,6 +21,18 @@ QQC2.ApplicationWindow {
     readonly property string statusCmd: "rpm-ostree status --json"
     readonly property string checkCmd: "rpm-ostree upgrade --check"
     readonly property string installCmd: "rpm-ostree upgrade"
+    readonly property string releaseCmd: "cat /usr/lib/os-release"
+    readonly property string milestonesCmd: "cat /usr/share/fennek/milestones.json"
+    readonly property string tagsCmd: "skopeo list-tags docker://ghcr.io/olexify/fennekos"
+
+    property var release: ({})          // os-release: PRETTY_NAME, IMAGE_VERSION, BUILD_ID
+    property var milestones: []
+    property var earlier: []            // dated signed builds available (newest first)
+    property bool loadingEarlier: false
+    readonly property string imageRef: booted ? (booted["container-image-reference"] || "") : ""
+    readonly property bool arm: imageRef.indexOf("-arm64") >= 0
+    readonly property string runningTag: (imageRef.match(/:([^:/]+)$/) || ["", ""])[1]
+    readonly property bool onEarlier: runningTag !== "" && !runningTag.startsWith("latest")
 
     property var settings: ({ auto: true, schedule: { kind: "default" }, paused_until: "", apps_auto: true })
     property var booted: null          // the running version
@@ -33,7 +45,11 @@ QQC2.ApplicationWindow {
 
     function day(ts) { return new Date(ts * 1000).toLocaleDateString(Qt.locale(), Locale.LongFormat) }
     function set(args) { run.connectSource("pkexec " + helper + " set " + args) }
-    function refresh() { run.connectSource(settingsCmd); run.connectSource(statusCmd) }
+    function refresh() {
+        run.connectSource(settingsCmd); run.connectSource(statusCmd)
+        run.connectSource(releaseCmd); run.connectSource(milestonesCmd)
+    }
+    function tagDate(t) { return t.slice(0, 4) + "-" + t.slice(4, 6) + "-" + t.slice(6, 8) }
 
     P5Support.DataSource {
         id: run
@@ -48,6 +64,18 @@ QQC2.ApplicationWindow {
                     root.booted = d.find(x => x.booted) || null
                     root.staged = d.find(x => x.staged) || null
                 } catch (e) {}
+            } else if (source === root.releaseCmd) {
+                const r = {}
+                data.stdout.split("\n").forEach(l => { const m = l.match(/^(\w+)="?([^"]*)"?$/); if (m) r[m[1]] = m[2] })
+                root.release = r
+            } else if (source === root.milestonesCmd) {
+                try { root.milestones = JSON.parse(data.stdout) } catch (e) {}
+            } else if (source === root.tagsCmd) {
+                root.loadingEarlier = false
+                try {
+                    const want = root.arm ? /^20\d{6}-arm64$/ : /^20\d{6}$/
+                    root.earlier = JSON.parse(data.stdout).Tags.filter(t => want.test(t)).sort().reverse().slice(0, 30)
+                } catch (e) { root.earlier = [] }
             } else if (source === root.checkCmd) {
                 root.state = code === 0 ? "available" : code === 77 ? "uptodate" : "failed"
                 root.detail = code === 0 || code === 77 ? "" : (data.stderr || data.stdout).trim()
@@ -77,11 +105,12 @@ QQC2.ApplicationWindow {
                 Kirigami.Icon { source: "system-software-update"; Layout.preferredWidth: 48; Layout.preferredHeight: 48 }
                 ColumnLayout {
                     spacing: 2
-                    Kirigami.Heading { text: "Updates"; level: 1 }
+                    Kirigami.Heading { text: root.release.PRETTY_NAME || "Fennek OS"; level: 1 }
                     QQC2.Label {
                         opacity: 0.75
-                        text: root.booted ? "Fennek OS" + (root.booted.version ? " " + root.booted.version : "")
-                                            + " · installed " + root.day(root.booted.timestamp) : "Fennek OS"
+                        text: (root.release.IMAGE_VERSION ? "Version " + root.release.IMAGE_VERSION : "")
+                              + (root.release.BUILD_ID ? " · build " + root.release.BUILD_ID : "")
+                              + (root.booted ? " · installed " + root.day(root.booted.timestamp) : "")
                     }
                 }
             }
@@ -138,6 +167,15 @@ QQC2.ApplicationWindow {
                         }
                     }
                 }
+            }
+            Kirigami.InlineMessage {
+                Layout.fillWidth: true
+                Layout.leftMargin: Kirigami.Units.gridUnit * 2
+                Layout.rightMargin: Kirigami.Units.gridUnit * 2
+                visible: root.onEarlier
+                type: Kirigami.MessageType.Warning
+                text: "You're on an earlier build (" + root.tagDate(root.runningTag) + "). It gets no updates and misses newer security fixes."
+                actions: [ Kirigami.Action { text: "Return to the latest version"; onTriggered: root.set("version latest") } ]
             }
             Kirigami.InlineMessage {
                 Layout.fillWidth: true
@@ -237,6 +275,97 @@ QQC2.ApplicationWindow {
                     opacity: 0.7
                     font: Kirigami.Theme.smallFont
                     text: "An earlier version of one file: right-click it in Files, then Previous versions."
+                }
+            }
+            // Trails: the milestones of Fennek OS, yours highlighted.
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.leftMargin: Kirigami.Units.gridUnit * 2
+                Layout.rightMargin: Kirigami.Units.gridUnit * 2
+                spacing: Kirigami.Units.largeSpacing
+                Kirigami.Heading { text: "Your Fennek trail"; level: 2 }
+                QQC2.Label { text: "The milestones of Fennek OS, and what each one brought."; opacity: 0.7 }
+                Repeater {
+                    model: root.milestones
+                    delegate: Rectangle {
+                        id: stone
+                        required property var modelData
+                        required property int index
+                        readonly property bool current: index === 0
+                        Layout.fillWidth: true
+                        implicitHeight: card.implicitHeight + Kirigami.Units.gridUnit * 1.5
+                        radius: 10
+                        color: current ? Qt.rgba(Kirigami.Theme.highlightColor.r, Kirigami.Theme.highlightColor.g, Kirigami.Theme.highlightColor.b, 0.14)
+                                       : Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.05)
+                        border.width: current ? 1 : 0
+                        border.color: Kirigami.Theme.highlightColor
+                        ColumnLayout {
+                            id: card
+                            anchors { left: parent.left; right: parent.right; top: parent.top; margins: Kirigami.Units.gridUnit * 0.75 }
+                            spacing: 4
+                            QQC2.Label {
+                                text: (stone.modelData.chapter || "").toUpperCase() + (stone.current ? "  ·  YOU ARE HERE" : "")
+                                font: Kirigami.Theme.smallFont
+                                opacity: 0.6
+                            }
+                            Kirigami.Heading { level: 3; text: stone.modelData.version + " · " + stone.modelData.name }
+                            QQC2.Label { text: stone.modelData.tagline; Layout.fillWidth: true; wrapMode: Text.Wrap }
+                            QQC2.Label {
+                                visible: (stone.modelData.legacy || "") !== ""
+                                text: stone.modelData.legacy || ""
+                                font.italic: true
+                                Layout.fillWidth: true
+                                wrapMode: Text.Wrap
+                            }
+                            Repeater {
+                                model: stone.modelData.highlights || []
+                                QQC2.Label { required property string modelData; text: "•  " + modelData; opacity: 0.85; Layout.fillWidth: true; wrapMode: Text.Wrap }
+                            }
+                            QQC2.Label {
+                                text: new Date(stone.modelData.date).toLocaleDateString(Qt.locale(), "MMMM yyyy")
+                                font: Kirigami.Theme.smallFont
+                                opacity: 0.6
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Advanced: an earlier signed nightly build (last ~30 days). Going back to the latest always works.
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.leftMargin: Kirigami.Units.gridUnit * 2
+                Layout.rightMargin: Kirigami.Units.gridUnit * 2
+                spacing: Kirigami.Units.largeSpacing
+                Kirigami.Heading { text: "Advanced: install an earlier version"; level: 2 }
+                QQC2.Label {
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    opacity: 0.8
+                    text: "For when a recent change gets in your way. Earlier builds miss newer security fixes and get no "
+                        + "updates until you return to the latest version. Your files and apps are kept; usually "
+                        + "Go back to the previous version (above) is all you need."
+                }
+                RowLayout {
+                    QQC2.Button {
+                        text: root.earlier.length ? "Refresh the list" : "Show earlier versions"
+                        enabled: !root.loadingEarlier
+                        onClicked: { root.loadingEarlier = true; run.connectSource(root.tagsCmd) }
+                    }
+                    QQC2.BusyIndicator { visible: root.loadingEarlier; running: visible }
+                }
+                Flow {
+                    Layout.fillWidth: true
+                    spacing: Kirigami.Units.smallSpacing
+                    Repeater {
+                        model: root.earlier
+                        QQC2.Button {
+                            required property string modelData
+                            text: root.tagDate(modelData)
+                            enabled: modelData !== root.runningTag
+                            onClicked: root.set("version " + modelData.replace("-arm64", ""))
+                        }
+                    }
                 }
             }
             Item { Layout.preferredHeight: Kirigami.Units.gridUnit }
