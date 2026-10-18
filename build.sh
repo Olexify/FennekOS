@@ -90,6 +90,11 @@ if rpm -q plasma-welcome-fedora >/dev/null; then dnf -y remove plasma-welcome-fe
 mkdir -p /usr/share/wallpapers/Fennek/contents/images
 # Wallpaper: desert dusk (branding/wallpaper.py), rendered from its vector source to 4K.
 magick -background none /usr/share/fennek/wallpaper.svg -depth 8 /usr/share/wallpapers/Fennek/contents/images/3840x2160.png
+# Night version: the same dusk, darker and calmer. Plasma shows images_dark/ while the dark look is on and switches
+# right away with it; a wallpaper the user picked is never touched.
+mkdir -p /usr/share/wallpapers/Fennek/contents/images_dark
+magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.png -modulate 52,88,100 -depth 8 \
+    /usr/share/wallpapers/Fennek/contents/images_dark/3840x2160.png
 # Look-and-feel: Fedora's as base; our metadata + taskbar layout (from system_files) win.
 lnf=/usr/share/plasma/look-and-feel/org.fennek.desktop
 cp -an /usr/share/plasma/look-and-feel/org.fedoraproject.fedora.desktop/contents/. "$lnf/contents/"

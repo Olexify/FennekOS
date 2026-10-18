@@ -160,8 +160,11 @@ DropArea {
 
 	// Fennek OS: fold a group (its tiles tucked away, the tiles below in its columns move up) and unfold it again.
 	// The folded tiles are kept in the group, at their place relative to the header.
-	function setGroupFolded(group, fold) {
-		if (!!group.folded === fold) return
+	// Takes the group's index: the real entry in tileModel. (A delegate's modelData is a copy: folding that copy
+	// once kept the tucked tiles on the copy while removing the real ones, and they were lost.)
+	function setGroupFolded(groupIndex, fold) {
+		var group = tileModel[groupIndex]
+		if (!group || group.tileType != "group" || !!group.folded === fold) return
 		var x1 = group.x, x2 = group.x + group.w - 1, top = group.y + group.h
 		var below = function (t, fromY) { return t !== group && t.y >= fromY && t.x <= x2 && t.x + t.w - 1 >= x1 }
 		if (fold) {

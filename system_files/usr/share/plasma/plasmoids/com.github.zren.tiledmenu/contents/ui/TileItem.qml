@@ -88,7 +88,7 @@ Item {
 				if (tileEditorView && tileEditorView.tile) {
 					openTileEditor()
 				} else if (modelData.tileType == "group") {
-					tileGrid.setGroupFolded(modelData, !modelData.folded)   // Fennek OS: click a group header to fold / unfold
+					tileGrid.setGroupFolded(index, !tileGrid.tileModel[index].folded)   // Fennek OS: click a group header to fold / unfold
 				} else if (modelData.url) {
 					appsModel.tileGridModel.runApp(modelData.url)
 				}
@@ -161,7 +161,7 @@ Item {
 				var removeGroup = menu.newMenuItem()   // Fennek OS: the header only; its tiles stay
 				removeGroup.text = i18n("Remove group name")
 				removeGroup.icon = "list-remove"
-				removeGroup.clicked.connect(function() { tileGrid.setGroupFolded(modelData, false); tileGrid.removeIndex(index) })   // tucked tiles come back first
+				removeGroup.clicked.connect(function() { tileGrid.setGroupFolded(index, false); tileGrid.removeIndex(index) })   // tucked tiles come back first
 				menu.addMenuItem(removeGroup)
 			} else if (!plasmoid.configuration.tilesLocked) {
 				menu.addPinToMenuAction(modelData.url)
@@ -195,7 +195,7 @@ Item {
 				var foldItem = menu.newMenuItem()
 				foldItem.text = modelData.folded ? i18n("Unfold group") : i18n("Fold group")
 				foldItem.icon = modelData.folded ? "go-down" : "go-up"
-				foldItem.clicked.connect(function() { tileGrid.setGroupFolded(modelData, !modelData.folded) })
+				foldItem.clicked.connect(function() { tileGrid.setGroupFolded(index, !tileGrid.tileModel[index].folded) })
 				menu.addMenuItem(foldItem)
 				var renameItem = menu.newMenuItem()
 				renameItem.text = i18n("Rename group…")
