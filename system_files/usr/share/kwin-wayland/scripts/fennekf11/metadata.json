@@ -1,0 +1,12 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Id": "fennekf11",
+        "Name": "F11: full screen or a normal window",
+        "Description": "F11 makes any window full screen, and turns a full-screen or borderless one back into a normal window with borders that can be moved and resized.",
+        "License": "GPL-3.0-only",
+        "EnabledByDefault": true
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}
