@@ -9,10 +9,12 @@ for p in "$@"; do
     [ -e "$p" ] || continue
     dir=$(dirname -- "$p"); name=$(basename -- "$p")
     list=$dir/.hidden
-    [ -w "$dir" ] || continue
+    # Only your own folders (not shared ones like /tmp), never through a planted link.
+    [ -O "$dir" ] && [ -w "$dir" ] && [ ! -L "$list" ] || continue
     if [ $un = 1 ]; then
         [ -f "$list" ] || continue
-        grep -vxF -- "$name" "$list" >"$list.new"; mv -f -- "$list.new" "$list"
+        tmp=$(mktemp "$dir/.hidden.XXXXXX") || continue
+        grep -vxF -- "$name" "$list" >"$tmp"; mv -f -- "$tmp" "$list"
         [ -s "$list" ] || rm -f -- "$list"
     elif ! grep -qxF -- "$name" "$list" 2>/dev/null; then
         printf '%s\n' "$name" >>"$list"
