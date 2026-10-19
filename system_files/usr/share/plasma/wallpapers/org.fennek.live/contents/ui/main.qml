@@ -1,4 +1,4 @@
-// Fennek Live: a picture with gentle motion on top. Falling sakura petals (Sakura), or soft lights drifting upward
+// Fennek Live: a picture with gentle motion on top. Sakura petals on the wind (Sakura), or soft lights drifting upward
 // (Amber, Royal, Arcade, any other picture). Light on the computer: a few dozen GPU-drawn shapes, and on battery it
 // stands still unless "Keep moving on battery" is on. Also still when animations are turned off.
 import QtQuick
@@ -37,43 +37,41 @@ WallpaperItem {
         onStatusChanged: if (status === Image.Ready) root.accentColorChanged()
     }
 
-    // Falling petals: each drifts down on its own path, swaying and turning, then starts again from the top.
+    // Petals on the wind: real sakura petals (petal.svg) blown across from left to right, rising and dipping with
+    // the breeze, tumbling as they go; each starts again on the left when it leaves the screen.
     Repeater {
         model: root.effect === "petals" ? 26 : 0
-        delegate: Item {
+        delegate: Image {
             id: petal
-            readonly property real size: 10 + Math.random() * 14
-            readonly property int fall: 16000 + Math.random() * 16000
-            x: Math.random() * root.width
-            y: -40
-            width: size * 1.7
+            readonly property real size: 16 + Math.random() * 18
+            readonly property real lane: root.height * (0.1 + Math.random() * 0.75)
+            readonly property int cross: 18000 + Math.random() * 16000
+            source: "petal.svg"
+            sourceSize: Qt.size(64, 64)
+            width: size
             height: size
             opacity: 0.55 + Math.random() * 0.35
-            Rectangle {
-                anchors.fill: parent
-                radius: height / 2
-                color: ["#f2b3c7", "#e79ab4", "#ffd0dd"][index % 3]
-                rotation: 25
-            }
-            NumberAnimation on y {
+            x: -60
+            y: lane
+            NumberAnimation on x {
                 running: root.moving
                 loops: Animation.Infinite
-                from: -40 - Math.random() * root.height
-                to: root.height + 40
-                duration: petal.fall
+                from: -60 - Math.random() * root.width
+                to: root.width + 60
+                duration: petal.cross
             }
-            SequentialAnimation on x {
+            SequentialAnimation on y {   // the breeze lifts and drops them
                 running: root.moving
                 loops: Animation.Infinite
-                NumberAnimation { by: 90 + Math.random() * 90; duration: 3200 + Math.random() * 2000; easing.type: Easing.InOutSine }
-                NumberAnimation { by: -(90 + Math.random() * 90); duration: 3200 + Math.random() * 2000; easing.type: Easing.InOutSine }
+                NumberAnimation { to: petal.lane - 60 - Math.random() * 90; duration: 2600 + Math.random() * 2000; easing.type: Easing.InOutSine }
+                NumberAnimation { to: petal.lane + 40 + Math.random() * 70; duration: 2600 + Math.random() * 2000; easing.type: Easing.InOutSine }
             }
             RotationAnimation on rotation {
                 running: root.moving
                 loops: Animation.Infinite
                 from: 0
                 to: 360 * (index % 2 ? 1 : -1)
-                duration: 9000 + Math.random() * 9000
+                duration: 7000 + Math.random() * 7000
             }
         }
     }
