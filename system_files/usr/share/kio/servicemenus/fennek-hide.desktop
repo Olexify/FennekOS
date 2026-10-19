@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Service
+# The classic "Hidden" attribute: hide without renaming; Unhide brings it back.
+MimeType=all/all;
+Actions=hide;unhide
+
+[Desktop Action hide]
+Name=Hide
+Icon=view-hidden
+Exec=/usr/libexec/fennek-hide %F
+
+[Desktop Action unhide]
+Name=Unhide
+Icon=view-visible
+Exec=/usr/libexec/fennek-hide --unhide %F

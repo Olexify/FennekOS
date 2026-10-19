@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Service
+# Folders and shortcuts: their own icon, picked from the installed ones or your own picture.
+MimeType=inode/directory;application/x-desktop;
+Actions=change;reset
+X-KDE-Submenu=Icon
+X-KDE-Priority=TopLevel
+
+[Desktop Action change]
+Name=Change icon…
+Icon=preferences-desktop-icons
+Exec=/usr/libexec/fennek-change-icon %F
+
+[Desktop Action reset]
+Name=Restore default icon
+Icon=edit-undo
+Exec=/usr/libexec/fennek-change-icon --reset %F

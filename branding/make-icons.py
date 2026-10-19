@@ -125,9 +125,14 @@ svg = lambda b: f'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
 for n in ("folder", "inode-directory"):
     open(f"{base}/places/{n}.svg", "w", newline="\n").write(svg(BACK + FRONT))
 open(f"{base}/places/folder-open.svg", "w", newline="\n").write(svg(BACK + OPEN))
+# The main folders look the same everywhere (sidebar, file dialogs, the home folder) as on This PC.
+same = {"documents": "documents", "download": "downloads", "pictures": "pictures", "music": "music", "videos": "videos",
+        "desktop": "desktop"}
 for k, ns in fn.items():
     for n in ns:
-        open(f"{base}/places/{n}.svg", "w", newline="\n").write(svg(BACK + FRONT + f"<g {G}>{sym[k]}</g>"))
+        icon = (open(f"{base}/places/fennek-folder-{same[k]}.svg").read() if k in same
+                else svg(BACK + FRONT + f"<g {G}>{sym[k]}</g>"))
+        open(f"{base}/places/{n}.svg", "w", newline="\n").write(icon)
 print("ok")
 
 # Settings home categories (own names, so system-wide icons like the tray's Wi-Fi stay untouched).

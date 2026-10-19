@@ -1,0 +1,27 @@
+#!/usr/bin/bash
+# Right-click → "Change icon…" on folders and shortcuts (File Explorer, desktop): pick from every installed icon or
+# browse for your own picture. "Restore default icon" puts the standard one back.
+#   fennek-change-icon [--reset] PATH...
+set -u
+reset=0; [ "${1:-}" = --reset ] && { reset=1; shift; }
+[ $# -gt 0 ] || { echo "usage: fennek-change-icon [--reset] PATH..." >&2; exit 2; }
+if [ $reset = 0 ]; then
+    icon=$(kdialog --title "Change icon" --geticon Places 2>/dev/null) || exit 0
+    [ -n "$icon" ] || exit 0
+fi
+for p in "$@"; do
+    p=${p#file://}
+    if [ -d "$p" ] && [ -O "$p" ]; then
+        f=$p/.directory           # how folders keep their own icon
+    elif [[ $p == *.desktop ]] && [ -f "$p" ] && [ -w "$p" ]; then
+        f=$p                      # a shortcut: its own icon line
+    else
+        continue                  # someone else's folder, a system app: left alone
+    fi
+    if [ $reset = 1 ]; then
+        kwriteconfig6 --file "$f" --group "Desktop Entry" --key Icon --delete
+    else
+        kwriteconfig6 --file "$f" --group "Desktop Entry" --key Icon "$icon"
+    fi
+done
+exit 0

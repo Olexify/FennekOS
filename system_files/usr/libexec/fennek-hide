@@ -1,0 +1,21 @@
+#!/usr/bin/bash
+# Right-click → Hide / Unhide (the classic "Hidden" attribute): the name goes into its folder's .hidden list, so the
+# file keeps its name and place; it just isn't shown until "Show Hidden Files" is on.
+#   fennek-hide [--unhide] PATH...
+set -u
+un=0; [ "${1:-}" = --unhide ] && { un=1; shift; }
+for p in "$@"; do
+    p=${p#file://}; p=${p%/}
+    [ -e "$p" ] || continue
+    dir=$(dirname -- "$p"); name=$(basename -- "$p")
+    list=$dir/.hidden
+    [ -w "$dir" ] || continue
+    if [ $un = 1 ]; then
+        [ -f "$list" ] || continue
+        grep -vxF -- "$name" "$list" >"$list.new"; mv -f -- "$list.new" "$list"
+        [ -s "$list" ] || rm -f -- "$list"
+    elif ! grep -qxF -- "$name" "$list" 2>/dev/null; then
+        printf '%s\n' "$name" >>"$list"
+    fi
+done
+exit 0
