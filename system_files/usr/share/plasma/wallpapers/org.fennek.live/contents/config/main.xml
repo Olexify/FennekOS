@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+  <group name="General">
+    <entry name="Image" type="String">
+      <label>The picture underneath</label>
+      <default>file:///usr/share/wallpapers/Sakura/contents/images/3840x2160.png</default>
+    </entry>
+    <entry name="Effect" type="String">
+      <label>auto, petals, lights or none</label>
+      <default>auto</default>
+    </entry>
+    <entry name="OnBattery" type="Bool">
+      <label>Keep moving on battery</label>
+      <default>false</default>
+    </entry>
+  </group>
+</kcfg>

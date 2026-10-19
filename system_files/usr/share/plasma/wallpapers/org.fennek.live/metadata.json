@@ -1,0 +1,12 @@
+{
+    "KPackageStructure": "Plasma/Wallpaper",
+    "KPlugin": {
+        "Authors": [{ "Name": "Fennek OS" }],
+        "Description": "A picture with gentle motion: falling petals or drifting lights (pauses on battery)",
+        "Icon": "preferences-desktop-wallpaper",
+        "Id": "org.fennek.live",
+        "License": "GPL-3.0-only",
+        "Name": "Fennek Live"
+    },
+    "X-KDE-ParentApp": "org.kde.plasmashell"
+}

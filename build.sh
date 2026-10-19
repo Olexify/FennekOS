@@ -726,7 +726,7 @@ done
 rm -rf /tmp/cargo-home
 # Syntax check of every Fennek QML file while Qt's tools are here: a typo fails the build, not the desktop.
 qmlformat=$(command -v qmlformat || echo /usr/lib64/qt6/bin/qmlformat)
-for f in /usr/share/plasma/plasmoids/org.fennek.*/contents/ui/*.qml /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/*.qml /usr/share/fennek/apps/*/*.qml /usr/share/sddm/themes/fennek/*.qml \
+for f in /usr/share/plasma/plasmoids/org.fennek.*/contents/ui/*.qml /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/*.qml /usr/share/fennek/apps/*/*.qml /usr/share/plasma/wallpapers/org.fennek.live/contents/ui/*.qml /usr/share/sddm/themes/fennek/*.qml \
          /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/splash/Splash.qml; do
     "$qmlformat" "$f" >/dev/null || { echo "QML syntax error in $f"; exit 1; }
 done
