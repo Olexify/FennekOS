@@ -60,6 +60,86 @@
       "browser.tabs.tabMinWidth": {
         "Value": 50,
         "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.clocks.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.system.clocks.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.crossword.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.system.crossword.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.horoscopes.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.system.horoscopes.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.pictureOfTheDay.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.system.pictureOfTheDay.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.privacy.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.system.privacy.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.recentSearches.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.system.recentSearches.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.solitaire.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.system.solitaire.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.stocks.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.system.stocks.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.travel.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.system.travel.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.system.weatherForecast.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.feedback.enabled": {
+        "Value": false,
+        "Status": "default"
       }
     },
     "UserMessaging": {
@@ -110,7 +190,8 @@
       },
       "lexisubs@yourdomain.com": {
         "installation_mode": "normal_installed",
-        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/kitsumi/latest.xpi"
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/kitsumi/latest.xpi",
+        "default_area": "navbar"
       }
     }
   }
