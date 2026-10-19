@@ -1,0 +1,15 @@
+#!/usr/bin/bash
+# Watches for Shut down / Restart / Sign out (from Start, Alt+F4 or anywhere: they all go through Plasma's shutdown
+# service) and shows the dimmed "Shutting down…" screen right away; takes it away again if it gets cancelled
+# (an app refused to close and you chose to stay). Runs as a user service.
+set -u
+show() { pkill -u "$UID" -f '^fennek-app power' ; setsid -f fennek-app power "$1" >/dev/null 2>&1; }
+dbus-monitor --session "type='method_call',interface='org.kde.Shutdown'" "type='signal',interface='org.kde.Shutdown'" 2>/dev/null |
+while read -r line; do
+    case $line in
+        *member=logoutAndShutdown) show shutdown ;;
+        *member=logoutAndReboot) show restart ;;
+        *member=logout) show signout ;;
+        *member=logoutCancelled) pkill -u "$UID" -f '^fennek-app power' ;;
+    esac
+done

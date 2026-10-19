@@ -1,0 +1,12 @@
+[Unit]
+Description=Fennek OS: "Shutting down…" shown the moment you choose it
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/libexec/fennek-power-feedback
+Restart=on-failure
+MemoryMax=32M
+
+[Install]
+WantedBy=graphical-session.target

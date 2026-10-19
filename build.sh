@@ -41,7 +41,7 @@ dnf -y install \
     zsh zsh-autosuggestions zsh-syntax-highlighting \
     snapper \
     clamav clamav-freshclam inotify-tools \
-    rsync wl-clipboard \
+    rsync wl-clipboard dbus-tools \
     "${extra[@]}"
 # Printers page in Settings + print queue in the tray (KDE's printer manager; renamed in newer Plasma).
 dnf -y install plasma-print-manager || dnf -y install print-manager
@@ -527,7 +527,7 @@ EOF
 systemctl enable fennek-detect-windows.service fennek-essential-apps.service fennek-greeter-lang.service
 
 # Instant file search feeds the Start menu / KRunner.
-systemctl --global enable fennek-search.service fennek-usage.service fennek-update-ready.service fennek-update-ready.path fennek-shortcuts-update.service fennek-app-names.service fennek-backup.timer
+systemctl --global enable fennek-search.service fennek-usage.service fennek-update-ready.service fennek-update-ready.path fennek-shortcuts-update.service fennek-app-names.service fennek-backup.timer fennek-power-feedback.service
 
 # Classic command names (calc, notepad, control, taskmgr, ncpa.cpl...) for the Run box and the terminal.
 for c in $(sed -n 's/^    \([a-z0-9.| ]*\)) .*/\1/p' /usr/libexec/fennek-classic-command | tr -d ' ' | tr '|' ' '); do
