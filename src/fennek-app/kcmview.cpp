@@ -90,6 +90,12 @@ bool KcmView::has(const QString &id) const
     return findPage(id).isValid();
 }
 
+QString KcmView::keywords(const QString &id) const
+{
+    const KPluginMetaData md = findPage(id);
+    return md.isValid() ? md.description() + QLatin1Char(' ') + md.value(QStringLiteral("X-KDE-Keywords")) : QString();
+}
+
 int KcmView::depth() const
 {
     return m_module ? m_module->depth() : 0;

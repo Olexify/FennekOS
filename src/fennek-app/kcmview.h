@@ -31,6 +31,7 @@ public:
     Q_INVOKABLE void back();
     Q_INVOKABLE void saveNow();
     Q_INVOKABLE bool has(const QString &id) const;   // is this settings page installed?
+    Q_INVOKABLE QString keywords(const QString &id) const;   // the page's own search words, for Find a setting
 
 Q_SIGNALS:
     void kcmChanged();

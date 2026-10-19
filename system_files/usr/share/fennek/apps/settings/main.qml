@@ -66,12 +66,19 @@ QQC2.ApplicationWindow {
     }
     // Optional pages only where they are installed (KDE version, ARM).
     function shown(items) { return items.filter(i => !i.optional || pageView.has(i.kcm)) }
+    // The KDE page's own search words too ("dpi" finds Display, "wallpaper" finds Background); looked up once.
+    property var wordCache: ({})
+    function words(i) {
+        if (!i.kcm) return ""
+        if (wordCache[i.kcm] === undefined) wordCache[i.kcm] = pageView.keywords(i.kcm)
+        return wordCache[i.kcm]
+    }
     function matches() {
         const q = query.toLowerCase().trim()
         const out = []
         for (const c of Catalog.categories)
             for (const i of shown(c.items))
-                if ((i.name + " " + i.desc + " " + c.name).toLowerCase().includes(q)) out.push(i)
+                if ((i.name + " " + i.desc + " " + c.name + " " + words(i)).toLowerCase().includes(q)) out.push(i)
         return out
     }
     readonly property color cardColor: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.05)
