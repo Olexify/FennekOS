@@ -116,7 +116,8 @@ fi
 # Light look, once: fully light (light taskbar, Start, pop-ups) instead of the earlier dark panels.
 panel_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/light-panel-version
 if [ "$(cat "$panel_seen" 2>/dev/null)" != 2026-10-18 ]; then
-    if [ "$(kreadconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage)" = org.fennek.desktop ]; then
+    # the account's own choice, read from its file (kreadconfig6 would mix in the system-wide light default)
+    if grep -qs '^LookAndFeelPackage=org.fennek.desktop$' "${XDG_CONFIG_HOME:-$HOME/.config}/kdeglobals"; then
         case "$(kreadconfig6 --file "${XDG_CONFIG_HOME:-$HOME/.config}/plasmarc" --group Theme --key name)" in
             ""|fennek-dark) kwriteconfig6 --file plasmarc --group Theme --key name fennek-light ;;
         esac

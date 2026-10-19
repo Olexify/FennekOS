@@ -19,6 +19,8 @@ fi
 # (The file itself, read directly: kreadconfig6 would mix in the system-wide default and always find a look.)
 if ! grep -qs '^LookAndFeelPackage=' "${XDG_CONFIG_HOME:-$HOME/.config}/kdeglobals"; then
     plasma-apply-lookandfeel --apply org.fennek.dark.desktop || exit 1   # retried next login
+    # and record the choice in the account's own file, so later steps see dark, not the system-wide light default
+    kwriteconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage org.fennek.dark.desktop
 fi
 /usr/libexec/fennek-desktop-icons   # This PC and Recycle Bin on the desktop
 # Files: classic menu bar. On its own first start Files hides it; so new users start as "already set up": the
