@@ -64,6 +64,8 @@ fennek-app winx >/dev/null 2>&1 & shot 32-quick-links 5; DISPLAY=:99 xdotool key
 fennek-app run >/dev/null 2>&1 & sleep 4; DISPLAY=:99 xdotool type --delay 80 "c"; shot 34-run 2; DISPLAY=:99 xdotool key Escape; sleep 1
 # Settings with a page open inside (no Apply) and a category with the new icons.
 fennek-app settings kcm_mouse >/dev/null 2>&1 & shot 33-settings-page 8; close
+fennek-app settings personalize >/dev/null 2>&1 & shot 35-personalize 8; close
+fennek-app security >/dev/null 2>&1 & shot 36-ctrl-alt-del 5; DISPLAY=:99 xdotool key Escape; sleep 1
 # Start with a search typed in (results, not the list).
 call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; sleep 2
 DISPLAY=:99 xdotool type --delay 80 "fire"; shot 14-start-search 3
