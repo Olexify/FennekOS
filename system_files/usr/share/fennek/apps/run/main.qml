@@ -25,6 +25,7 @@ QQC2.ApplicationWindow {
         "msinfo32", "winver", "appwiz.cpl", "diskmgmt.msc", "firewall.cpl", "ncpa.cpl", "timedate.cpl", "mmsys.cpl",
         "powercfg.cpl", "main.cpl", "desk.cpl", "firefox", "dolphin", "konsole"]
     property var past: []
+    property var apps: []    // installed apps: [name, id, icon]
     property var files: []   // matching files and folders on this PC: [path, name, folder it is in, icon]
     property string error: ""
     readonly property var commands: {
@@ -38,8 +39,17 @@ QQC2.ApplicationWindow {
             return true
         }).slice(0, 5)
     }
-    // One list: commands first, then (under their own heading) files.
-    readonly property var suggestions: commands.map(c => ({ kind: "Run", text: c, sub: "", path: "" }))
+    // Installed apps whose name starts with (then contains) what you typed.
+    readonly property var appMatches: {
+        const q = field.text.trim().toLowerCase()
+        if (q.length < 2) return []
+        const starts = apps.filter(a => a[0].toLowerCase().startsWith(q))
+        const has = apps.filter(a => !a[0].toLowerCase().startsWith(q) && a[0].toLowerCase().indexOf(q) >= 0)
+        return starts.concat(has).slice(0, 4)
+    }
+    // One list: apps and commands first, then (under their own heading) files.
+    readonly property var suggestions: appMatches.map(a => ({ kind: "Run", text: a[0], sub: "", path: "", app: a[1], icon: a[2] }))
+        .concat(commands.map(c => ({ kind: "Run", text: c, sub: "", path: "" })))
         .concat(files.map(f => ({ kind: "On this PC", text: f[1], sub: f[2], path: f[0], icon: f[3] })))
     readonly property string findCmd: "busctl --user --json=short call org.fennek.Search /runner org.kde.krunner1 Match s "
     function find() {
@@ -49,6 +59,7 @@ QQC2.ApplicationWindow {
     }
     Timer { id: findLater; interval: 180; onTriggered: root.find() }
     function pick(s) {
+        if (s.app) { run.connectSource(helper + " --app " + q(s.app)); return }
         if (s.path) { root.visible = false; run.connectSource("setsid -f xdg-open " + q(s.path)); bye.start() }
         else { field.text = s.text; go() }
     }
@@ -76,6 +87,10 @@ QQC2.ApplicationWindow {
                 } catch (e) { root.files = [] }
                 return
             }
+            if (source === root.helper + " --apps") {
+                try { root.apps = JSON.parse(data.stdout) } catch (e) {}
+                return
+            }
             if (source === root.helper + " --history") {
                 try { root.past = JSON.parse(data.stdout) } catch (e) {}
                 if (root.past.length) { field.text = root.past[0]; field.selectAll() }   // like the classic box
@@ -85,7 +100,7 @@ QQC2.ApplicationWindow {
                 root.error = data.stdout.trim() || "That didn't open."
             }
         }
-        Component.onCompleted: connectSource(root.helper + " --history")
+        Component.onCompleted: { connectSource(root.helper + " --history"); connectSource(root.helper + " --apps") }
     }
 
     FileDialog {
@@ -177,7 +192,7 @@ QQC2.ApplicationWindow {
                     contentItem: RowLayout {
                         spacing: Kirigami.Units.largeSpacing
                         Kirigami.Icon {
-                            source: modelData.path ? modelData.icon
+                            source: modelData.path || modelData.app ? (modelData.icon || "application-x-executable")
                                 : (root.past.indexOf(modelData.text) >= 0 ? "document-open-recent" : "system-run")
                             Layout.preferredWidth: Kirigami.Units.iconSizes.small
                             Layout.preferredHeight: Kirigami.Units.iconSizes.small

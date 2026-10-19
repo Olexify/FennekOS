@@ -4,6 +4,8 @@
   fennek-run-command [--terminal] [--admin] [--] TEXT  open TEXT: a web address, a file or folder, or a command
                                                    (calc, notepad, ncpa.cpl, firefox, any program); remembered
   fennek-run-command --history                     what was run before (JSON, newest first)
+  fennek-run-command --apps                        installed apps (JSON: [name, id, icon]), for suggestions
+  fennek-run-command --app ID                      start the app ID (its .desktop name without .desktop)
   fennek-run-command --selftest
 
 --terminal: the command runs in a terminal that stays open. --admin: it runs with administrator rights (sudo, in a
@@ -60,6 +62,41 @@ def remember(text):
     os.replace(HIST + ".new", HIST)
 
 
+def apps(dirs=None):
+    """Installed apps people can start: [name, id, icon], by name. Later folders in the list do not override
+    earlier ones (the user's own entries come first)."""
+    if dirs is None:
+        data = [os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")]
+        data += (os.environ.get("XDG_DATA_DIRS") or "/usr/local/share:/usr/share").split(":")
+        dirs = [os.path.join(d, "applications") for d in data]
+    seen, out = set(), []
+    for d in dirs:
+        try:
+            names = sorted(os.listdir(d))
+        except OSError:
+            continue
+        for n in names:
+            if not n.endswith(".desktop") or n in seen:
+                continue
+            seen.add(n)
+            entry, section = {}, ""
+            try:
+                for line in open(os.path.join(d, n), encoding="utf-8", errors="replace"):
+                    line = line.strip()
+                    if line.startswith("["):
+                        section = line
+                    elif section == "[Desktop Entry]" and "=" in line:
+                        k, v = line.split("=", 1)
+                        entry.setdefault(k.strip(), v.strip())
+            except OSError:
+                continue
+            if entry.get("Type") != "Application" or entry.get("NoDisplay") == "true" or entry.get("Hidden") == "true":
+                continue
+            if entry.get("Name"):
+                out.append([entry["Name"], n[:-len(".desktop")], entry.get("Icon", "")])
+    return sorted(out, key=lambda a: a[0].lower())
+
+
 def selftest():
     assert classify("  ")[0] == "empty"
     assert classify("https://kitsumi.org") == ("url", "https://kitsumi.org")
@@ -70,6 +107,12 @@ def selftest():
     assert argv("command", "top", terminal=True)[:3] == ["konsole", "--hold", "-e"]
     assert "sudo" in argv("command", "dnf check", admin=True)
     assert argv("url", "https://a.b", admin=True) == ["xdg-open", "https://a.b"], "admin never applies to opening a page"
+    import tempfile
+    with tempfile.TemporaryDirectory() as t:
+        open(os.path.join(t, "a.desktop"), "w").write("[Desktop Entry]\nType=Application\nName=Alpha\nIcon=alpha\n[Desktop Action x]\nName=No\n")
+        open(os.path.join(t, "b.desktop"), "w").write("[Desktop Entry]\nType=Application\nName=Beta\nNoDisplay=true\n")
+        open(os.path.join(t, "c.desktop"), "w").write("[Desktop Entry]\nType=Link\nName=Gamma\n")
+        assert apps([t]) == [["Alpha", "a", "alpha"]], apps([t])
     print("selftest ok")
 
 
@@ -78,6 +121,15 @@ def main(args):
         return selftest()
     if args == ["--history"]:
         print(json.dumps(history()))
+        return
+    if args == ["--apps"]:
+        print(json.dumps(apps()))
+        return
+    if len(args) == 2 and args[0] == "--app":
+        if not args[1].replace(".", "").replace("-", "").replace("_", "").isalnum():
+            sys.exit(2)
+        launcher = ["kstart", "--application", args[1]] if shutil.which("kstart") else ["gtk-launch", args[1]]
+        subprocess.Popen(launcher, start_new_session=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return
     opts, text = args, ""
     if "--" in args:   # options, then -- and the text as typed
