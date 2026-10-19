@@ -5,7 +5,10 @@
     "DisableFeedbackCommands": true,
     "DisablePocket": true,
     "Preferences": {
-      "browser.tabs.inTitlebar": { "Value": 0, "Status": "default" }
+      "browser.tabs.inTitlebar": {
+        "Value": 0,
+        "Status": "default"
+      }
     },
     "UserMessaging": {
       "ExtensionRecommendations": false,
@@ -18,6 +21,26 @@
       "SponsoredTopSites": false,
       "SponsoredPocket": false,
       "Locked": false
-    }
+    },
+    "NoDefaultBookmarks": true,
+    "Homepage": {
+      "URL": "about:home",
+      "StartPage": "homepage",
+      "Locked": false
+    },
+    "OverrideFirstRunPage": "",
+    "OverridePostUpdatePage": "",
+    "Bookmarks": [
+      {
+        "Title": "Leonote",
+        "URL": "https://leonote.app",
+        "Placement": "toolbar"
+      },
+      {
+        "Title": "Rock Paper Scissors",
+        "URL": "https://rockpaperscissors.com",
+        "Placement": "toolbar"
+      }
+    ]
   }
 }
