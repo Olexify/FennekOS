@@ -40,6 +40,11 @@
         "Title": "Rock Paper Scissors",
         "URL": "https://rockpaperscissors.com",
         "Placement": "toolbar"
+      },
+      {
+        "Title": "Kitsumi: learn languages",
+        "URL": "https://addons.mozilla.org/firefox/addon/Kitsumi/",
+        "Placement": "toolbar"
       }
     ]
   }

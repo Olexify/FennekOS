@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Leonote
+GenericName=Popup notes (get it)
+Comment=Quick popup notes that keep you focused. Not installed yet: opens its download page.
+Exec=xdg-open https://github.com/Olexify/Leonote/releases/latest
+Icon=fennek-get-leonote
+Categories=Office;Utility;
+Keywords=notes;sticky;memo;todo;
