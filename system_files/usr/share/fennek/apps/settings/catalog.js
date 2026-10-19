@@ -1,5 +1,6 @@
 .pragma library
-// Fennek Settings catalog. Each item opens a KDE settings page inside Settings ("kcm") or runs a command.
+// Fennek Settings catalog. Each item opens a KDE settings page inside Settings ("kcm"), one of
+// Fennek's own pages ("page": /usr/share/fennek/apps/NAME/Page.qml) or runs a command.
 // "optional": shown only where that page is installed (KDE version, ARM). test.sh parses the JSON below and
 // checks every other kcm and command exists in the image: keep it strict JSON.
 var categories = [
@@ -92,7 +93,7 @@ var categories = [
   ]},
  {"name": "Update & Recovery", "icon": "fennek-settings-update", "sub": "Updates, backup, previous versions",
   "items": [
-   {"name": "Updates", "cmd": "fennek-app updates", "icon": "fennek-set-updates", "desc": "Status, automatic updates, schedule, pause"},
+   {"name": "Updates", "icon": "fennek-set-updates", "desc": "Status, automatic updates, schedule, pause", "page": "updates"},
    {"name": "Store app updates", "cmd": "plasma-discover --mode update", "icon": "fennek-set-storeupdates", "desc": "Update Store apps now"},
    {"name": "Go back", "cmd": "fennek-go-back", "icon": "fennek-set-goback", "desc": "Undo the last update, keep your files"},
    {"name": "Backup", "cmd": "fennek-app backup", "icon": "fennek-set-backup", "desc": "Copy your folders to a USB drive"}

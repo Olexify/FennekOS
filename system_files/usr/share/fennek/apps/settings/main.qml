@@ -30,7 +30,7 @@ QQC2.ApplicationWindow {
         const want = Qt.application.arguments[2] || ""
         for (const c of Catalog.categories)
             for (const i of c.items)
-                if (want !== "" && i.kcm === want) { category = c; page = i }
+                if (want !== "" && (i.kcm === want || i.page === want)) { category = c; page = i }
     }
 
     P5Support.DataSource {
@@ -56,8 +56,13 @@ QQC2.ApplicationWindow {
         }
     }
     function open(item) {
-        if (item.kcm) page = item        // shown on the right; saved by itself (no Apply)
+        if (item.kcm || item.page) page = item   // shown on the right (KDE page saved by itself, no Apply; or a Fennek page)
         else run.connectSource(item.cmd)
+    }
+    function openPage(name) {                    // a Fennek page by name (the Home status chips)
+        for (const c of Catalog.categories)
+            for (const i of c.items)
+                if (i.page === name) { category = c; page = i }
     }
     // Optional pages only where they are installed (KDE version, ARM).
     function shown(items) { return items.filter(i => !i.optional || pageView.has(i.kcm)) }
@@ -192,7 +197,7 @@ QQC2.ApplicationWindow {
                         icon.name: "go-previous"
                         QQC2.ToolTip.visible: hovered
                         QQC2.ToolTip.text: "Back"
-                        onClicked: pageView.depth > 1 ? pageView.back() : (root.page = null)
+                        onClicked: root.page && root.page.kcm && pageView.depth > 1 ? pageView.back() : (root.page = null)
                     }
                     Kirigami.Icon {
                         source: root.page ? root.page.icon : ""
@@ -202,11 +207,19 @@ QQC2.ApplicationWindow {
                     Kirigami.Heading { text: root.page ? root.page.name : ""; level: 2; Layout.fillWidth: true; elide: Text.ElideRight }
                 }
                 Kirigami.Separator { Layout.fillWidth: true }
+                // Fennek's own pages (Updates...): the same page its own window shows.
+                Loader {
+                    visible: !!(root.page && root.page.page)
+                    Layout.fillWidth: true
+                    Layout.fillHeight: visible
+                    source: root.page && root.page.page ? "file:///usr/share/fennek/apps/" + root.page.page + "/Page.qml" : ""
+                }
                 KcmView {
                     id: pageView
+                    visible: !!(root.page && root.page.kcm)
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    kcm: root.page ? root.page.kcm : ""
+                    Layout.fillHeight: visible
+                    kcm: root.page && root.page.kcm ? root.page.kcm : ""
                     // An old-style page can't be shown inside: its own window (also without Apply).
                     onKcmChanged: if (failed && kcm !== "") { run.connectSource("fennek-kcm " + kcm); root.page = null }
                 }
@@ -260,14 +273,14 @@ QQC2.ApplicationWindow {
                                 model: [
                                     { icon: root.updateWaiting ? "system-reboot" : "update-none",
                                       text: root.updateWaiting ? "Restart to finish the update" : "Updates are automatic",
-                                      cmd: "fennek-app updates" },
+                                      page: "updates" },
                                     { icon: "security-high",
                                       text: root.netProfile === "public" ? "Firewall: public network" : "Firewall: home network",
                                       cmd: "fennek-app firewall" }
                                 ]
                                 delegate: QQC2.ItemDelegate {
                                     required property var modelData
-                                    onClicked: run.connectSource(modelData.cmd)
+                                    onClicked: modelData.page ? root.openPage(modelData.page) : run.connectSource(modelData.cmd)
                                     background: Rectangle { radius: 8; color: parent.hovered ? root.cardHover : "transparent" }
                                     contentItem: ColumnLayout {
                                         spacing: Kirigami.Units.smallSpacing

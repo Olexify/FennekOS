@@ -384,6 +384,8 @@ rc=0; QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-kcm kcm_mouse
 [ $rc -eq 124 ] || { tail -5 /tmp/kcm.log; fail "Settings page in its own window without Apply (fennek-kcm, exit $rc)"; }
 rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 10 fennek-app settings kcm_mouse >/tmp/kcmview.log 2>&1 || rc=$?
 [ $rc -eq 124 ] && ! grep -q "can't be shown inside" /tmp/kcmview.log || { tail -5 /tmp/kcmview.log; fail "Settings shows its pages inside (KcmView, exit $rc)"; }
+rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 10 fennek-app settings updates >/tmp/setupd.log 2>&1 || rc=$?
+[ $rc -eq 124 ] && ! grep -q 'Page.qml.*\(Error\|error\|Cannot\|is not\)' /tmp/setupd.log || { tail -5 /tmp/setupd.log; fail "Updates opens inside Settings (exit $rc)"; }
 for a in settings firewall welcome apphistory backup live updates quarantine winx power; do   # starts off-screen and keeps running = the QML loads
     rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-app "$a" >/tmp/app-$a.log 2>&1 || rc=$?
     [ $rc -eq 124 ] || { tail -5 /tmp/app-$a.log; fail "app $a does not start (exit $rc)"; }
@@ -399,6 +401,7 @@ for c in cats:
         if "kcm" in i and i["kcm"] not in kcms and not i.get("optional"): bad.append(i["kcm"])
         if "cmd" in i and not shutil.which(i["cmd"].split()[0]): bad.append(i["cmd"])
         if i.get("icon", "").startswith("fennek-") and not glob.glob("/usr/share/icons/Fennek/scalable/*/" + i["icon"] + ".svg"): bad.append(i["icon"])
+        if "page" in i and not os.path.exists(f"/usr/share/fennek/apps/{i['page']}/Page.qml"): bad.append(i["page"])
 assert not bad, bad
 opt = [i["kcm"] for c in cats for i in c["items"] if i.get("optional")]
 print("Settings optional pages present:", sorted(k for k in opt if k in kcms), "missing:", sorted(k for k in opt if k not in kcms))
@@ -406,7 +409,7 @@ PY
 python3 - <<'PY' || fail "QML: a top-level property or handler is set twice (the widget would not load)"
 import glob, re, collections
 bad = []
-for f in glob.glob("/usr/share/plasma/plasmoids/org.fennek.*/contents/ui/main.qml") + glob.glob("/usr/share/fennek/apps/*/main.qml"):
+for f in glob.glob("/usr/share/plasma/plasmoids/org.fennek.*/contents/ui/main.qml") + glob.glob("/usr/share/fennek/apps/*/*.qml"):
     keys = collections.Counter(m.group(1) for m in re.finditer(r"^    ((?:on[A-Z]\w*|[a-z]\w*(?:\.\w+)*)):(?!:)", open(f).read(), re.M)
                                if not m.group(1).startswith(("property", "readonly", "function", "signal", "required")))
     bad += [f"{f}: {k}" for k, n in keys.items() if n > 1]
