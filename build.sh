@@ -297,6 +297,65 @@ dark=/usr/share/plasma/look-and-feel/org.fennek.dark.desktop
 cp -a "$lnf/contents/." "$dark/contents/"
 { sed -e '/^ColorScheme=/d' -e 's/^Theme=Fennek$/Theme=Fennek-Dark/' -e 's/^name=fennek-light$/name=fennek-dark/' "$lnf/contents/defaults"; printf '\n[kdeglobals][General]\nColorScheme=FennekDark\n'; } \
     > "$dark/contents/defaults"
+# Themes from Olexify's apps (Settings > Themes, next to Fennek OS and Fennek OS Dark): Leonote, Kitsumi, Olexify,
+# Rook, Paper, Scissors!. Each is Fennek OS Dark (same taskbar, Start, icons) with the app's own accent colour,
+# backgrounds tinted toward its colour and its wallpaper (branding/leonote-wallpapers.py, brand-wallpapers.py).
+for v in kitsumi:Kitsumi olexify:Olexify rps:RookPaperScissors; do
+    d=/usr/share/wallpapers/${v#*:}
+    mkdir -p "$d/contents/images"
+    magick -background none "/usr/share/fennek/theme-${v%%:*}.svg" -depth 8 "$d/contents/images/3840x2160.png"
+    python3 -c 'import json, sys; print(json.dumps({"KPlugin": {"Authors": [{"Name": "Olexify"}], "Id": sys.argv[1], "License": "CC-BY-SA-4.0", "Name": sys.argv[2]}}, indent=2))' \
+        "${v#*:}" "$(sed 's/RookPaperScissors/Rook, Paper, Scissors!/' <<<"${v#*:}")" >"$d/metadata.json"
+done
+python3 - <<'EOF'
+import json, pathlib, re, shutil, subprocess
+cs = pathlib.Path("/usr/share/color-schemes")
+lf = pathlib.Path("/usr/share/plasma/look-and-feel")
+dark = lf / "org.fennek.dark.desktop"
+# id, name, wallpaper, accent, lighter accent, deep accent, background tint
+THEMES = [("leonote", "Leonote", "Leonote-Night", "224,168,74", "240,192,104", "104,76,30", (34, 30, 28)),
+          ("kitsumi", "Kitsumi", "Kitsumi", "145,132,217", "176,168,236", "62,56,116", (26, 32, 74)),
+          ("olexify", "Olexify", "Olexify", "217,164,65", "236,192,104", "100,74,28", (38, 26, 58)),
+          ("rps", "Rook, Paper, Scissors!", "RookPaperScissors", "169,112,255", "196,160,255", "78,50,126", (30, 22, 50))]
+base = (cs / "BreezeDark.colors").read_text()
+assert "61,174,233" in base, "Breeze Dark lost its blue: revisit the app themes"
+
+
+def tint(m, target):
+    rgb = [int(x) for x in m.group(2).split(",")]
+    if max(rgb) > 90:          # only the dark backgrounds
+        return m.group(0)
+    mix = [round(c * .55 + t * .45) for c, t in zip(rgb, target)]
+    return f"{m.group(1)}{mix[0]},{mix[1]},{mix[2]}"
+
+
+for key, name, wall, accent, light, deep, bg in THEMES:
+    s = base.replace("61,174,233", accent).replace("29,153,243", light).replace("30,87,116", deep)
+    s = re.sub(r"^((?:BackgroundNormal|BackgroundAlternate|activeBackground|inactiveBackground)=)(\d+,\d+,\d+)",
+               lambda m: tint(m, bg), s, flags=re.M)
+    s = re.sub(r"^Name\[[^\]]+\]=.*\n", "", s, flags=re.M)
+    scheme = "Fennek" + re.sub(r"\W", "", name)
+    s = re.sub(r"^Name=.*$", f"Name=Fennek OS · {name}", s, count=1, flags=re.M)
+    (cs / f"{scheme}.colors").write_text(s)
+
+    pkg = lf / f"org.fennek.{key}.desktop"
+    shutil.copytree(dark, pkg, dirs_exist_ok=True, symlinks=True)
+    meta = json.loads((dark / "metadata.json").read_text())
+    meta["KPlugin"].update({"Id": f"org.fennek.{key}.desktop", "Name": f"Fennek OS · {name}",
+                            "Description": f"Fennek OS in {name}'s colours, with its wallpaper (same taskbar and Start menu)"})
+    (pkg / "metadata.json").write_text(json.dumps(meta, indent=4, ensure_ascii=False) + "\n")
+    d = (dark / "contents/defaults").read_text()
+    d = re.sub(r"^ColorScheme=.*$", f"ColorScheme={scheme}", d, flags=re.M)
+    d = re.sub(r"^Image=.*$", f"Image={wall}", d, flags=re.M)
+    (pkg / "contents/defaults").write_text(d)
+    # The Themes page shows the theme by its wallpaper.
+    prev = pkg / "contents/previews"
+    prev.mkdir(parents=True, exist_ok=True)
+    img = f"/usr/share/wallpapers/{wall}/contents/images/3840x2160.png"
+    subprocess.run(["magick", img, "-resize", "640x360", str(prev / "preview.png")], check=True)
+    subprocess.run(["magick", img, "-resize", "1920x1080", "-quality", "88", str(prev / "fullscreenpreview.jpg")], check=True)
+print("app themes ok")
+EOF
 # Icons for the dark theme: the same Fennek icons, with KDE's light-on-dark Breeze Dark behind them (plain
 # Breeze draws dark symbols, unreadable on dark windows and panels).
 fni=/usr/share/icons/Fennek; fdi=/usr/share/icons/Fennek-Dark
@@ -329,7 +388,8 @@ done
 sed -e 's/^ActiveTextColor=.*/ActiveTextColor=255,255,255,255/' "$fc/FennekClassicrc" > "$fcd/FennekClassicDarkrc"
 sed -e 's/^Name=.*/Name=Fennek Classic Dark/' -e 's/^X-KDE-PluginInfo-Name=.*/X-KDE-PluginInfo-Name=FennekClassicDark/' \
     "$fc/metadata.desktop" > "$fcd/metadata.desktop"
-for t in "$lnf:FennekClassic" "$dark:FennekClassicDark"; do
+lf=/usr/share/plasma/look-and-feel
+for t in "$lnf:FennekClassic" "$dark:FennekClassicDark" "$lf/org.fennek.leonote.desktop:FennekClassicDark"          "$lf/org.fennek.kitsumi.desktop:FennekClassicDark" "$lf/org.fennek.olexify.desktop:FennekClassicDark"          "$lf/org.fennek.rps.desktop:FennekClassicDark"; do   # the app themes are dark too
     printf '\n[kwinrc][org.kde.kdecoration2]\nlibrary=org.kde.kwin.aurorae.v2\ntheme=__aurorae__svg__%s\n' "${t#*:}" \
         >> "${t%%:*}/contents/defaults"
 done
