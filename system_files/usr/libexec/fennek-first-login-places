@@ -1,13 +1,13 @@
 #!/usr/bin/python3
-"""Write a new user's Files sidebar in the classic order (only when they have none yet):
-This PC, pinned folders, Network, Recycle Bin. Removable drives (USB sticks) appear on their own; KDE's
-"Devices" group (internal and system partitions) stays hidden: drives are on the This PC page.
+"""Write a new user's Files sidebar (only when they have none yet): Home, pinned folders, Network, Recycle Bin.
+Removable drives (USB sticks) appear on their own; KDE's "Devices" group (internal and system partitions) stays
+hidden: drives are on the Home page.
 
 Written with KDE's current places format version (4), so KDE doesn't add its own defaults on top.
 
   fennek-first-login-places FILE
-  fennek-first-login-places --ensure-thispc FILE   existing sidebar: This PC on top if missing, hide "Devices"
-                                                   and "Recent", the bin called Recycle Bin (English)
+  fennek-first-login-places --ensure-home FILE     existing sidebar: Home on top (an older "This PC" entry goes),
+                                                   hide "Devices" and "Recent", the bin called Recycle Bin (English)
   fennek-first-login-places --selftest
 """
 import os, re, subprocess, sys
@@ -23,9 +23,10 @@ def xdg(kind):
     return out if out and out != os.path.expanduser("~") and os.path.isdir(out) else None
 
 
-def places(folders):
+def places(folders, home=None):
     """folders: [(label, path, icon)] -> xbel text."""
-    items = [("This PC", "thispc:/", "computer")]   # on top: Files opens here
+    home = home or os.path.expanduser("~")
+    items = [("Home", "file://" + quote(home), "user-home")]   # on top: Files opens here
     items += [(label, "file://" + quote(path), icon) for label, path, icon in folders]
     items += [("Network", "remote:/", "folder-network"), ("Recycle Bin", "trash:/", "user-trash")]
     out = ['<?xml version="1.0" encoding="UTF-8"?>', "<!DOCTYPE xbel>",
@@ -44,18 +45,29 @@ HIDE_DEVICES = "<GroupState-Devices-IsHidden>true</GroupState-Devices-IsHidden>"
 HIDE_RECENT = "<GroupState-RecentlySaved-IsHidden>true</GroupState-RecentlySaved-IsHidden>"
 # KDE adds its "Recent" places (and shows that group again) the first time unless these say it already did.
 KDE_DONE = "<withRecentlyUsed>true</withRecentlyUsed><withBaloo>true</withBaloo>"
-THISPC = (' <bookmark href="thispc:/">\n  <title>This PC</title>\n  <info>\n'
-          '   <metadata owner="http://freedesktop.org"><bookmark:icon name="computer"/></metadata>\n'
-          '   <metadata owner="http://www.kde.org"><ID>fennek/thispc</ID></metadata>\n  </info>\n </bookmark>\n')
-
-
-def ensure_thispc(text):
-    """Existing sidebar (KDE's places file): This PC as the first place, if missing. Everything else stays."""
-    if 'href="thispc:/"' in text or "<bookmark" not in text:
+def ensure_home(text, home):
+    """Existing sidebar (KDE's places file): Home as the first place (shown again if an earlier Fennek hid it); an
+    older "This PC" entry goes (Home is that page now). Everything else stays."""
+    i = text.find('<bookmark href="thispc:/">')
+    if i >= 0:
+        j = text.index("</bookmark>", i) + len("</bookmark>")
+        i = text.rindex("\n", 0, i) + 1
+        if text[j:j + 1] == "\n":
+            j += 1
+        text = text[:i] + text[j:]
+    href = "href=" + quoteattr("file://" + quote(home))
+    k = text.find("<bookmark " + href + ">")
+    if k >= 0:
+        e = text.index("</bookmark>", k)
+        text = text[:k] + text[k:e].replace("<IsHidden>true</IsHidden>", "") + text[e:]
         return text
-    i = text.index("<bookmark")
-    i = text.rindex("\n", 0, i) + 1   # start of that line
-    return text[:i] + THISPC + text[i:]
+    if "<bookmark" not in text:
+        return text
+    k = text.rindex("\n", 0, text.index("<bookmark")) + 1
+    entry = (f" <bookmark {href}>\n  <title>Home</title>\n  <info>\n"
+             '   <metadata owner="http://freedesktop.org"><bookmark:icon name="user-home"/></metadata>\n'
+             '   <metadata owner="http://www.kde.org"><ID>fennek/home</ID></metadata>\n  </info>\n </bookmark>\n')
+    return text[:k] + entry + text[k:]
 
 
 def hide_group(text, tag):
@@ -72,21 +84,6 @@ def hide_group(text, tag):
 def hide_devices(text):
     """KDE's internal "Devices" group (boot/EFI/system partitions): drives are on This PC; USB sticks still show."""
     return hide_group(text, HIDE_DEVICES)
-
-
-def hide_home(text, home):
-    """Existing sidebar: KDE's "Home" entry hidden. This PC is the one start place (your folders, drives); Home is
-    still reachable (Alt+Home, the address bar, and the sidebar's "Show all entries")."""
-    href = 'href=' + quoteattr("file://" + quote(home))
-    i = text.find("<bookmark " + href + ">")
-    if i < 0:
-        return text
-    j = text.index("</bookmark>", i)
-    b = text[i:j]
-    if "<IsHidden>" in b:
-        return text
-    b = re.sub(r'(<metadata owner="http://www.kde.org">)', r"\1<IsHidden>true</IsHidden>", b, count=1)
-    return text[:i] + b + text[j:]
 
 
 def ui_language():
@@ -130,18 +127,23 @@ def main(path):
 
 def selftest():
     import xml.dom.minidom
-    x = places([("Документи", "/var/home/u/Документи", "folder-documents"), ("A & B", "/var/home/u/A & B", "folder")])
+    x = places([("Документи", "/var/home/u/Документи", "folder-documents"), ("A & B", "/var/home/u/A & B", "folder")], "/var/home/u")
     doc = xml.dom.minidom.parseString(x)
     hrefs = [b.getAttribute("href") for b in doc.getElementsByTagName("bookmark")]
-    assert hrefs[0] == "thispc:/" and hrefs[3:] == ["remote:/", "trash:/"]
+    assert hrefs[0] == "file:///var/home/u" and hrefs[3:] == ["remote:/", "trash:/"]
     assert hrefs[1] == "file:///var/home/u/%D0%94%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82%D0%B8", hrefs[1]
     assert hrefs[2] == "file:///var/home/u/A%20%26%20B"
     assert doc.getElementsByTagName("title")[2].firstChild.data == "A & B"
     assert doc.getElementsByTagName("kde_places_version")[0].firstChild.data == "4"
     old = '<xbel>\n <info/>\n <bookmark href="file:///home/u">\n  <title>Home</title>\n </bookmark>\n</xbel>\n'
-    new = ensure_thispc(old)
-    assert new.index('href="thispc:/"') < new.index('href="file:///home/u"') and ensure_thispc(new) == new
-    xml.dom.minidom.parseString(new.replace("<xbel>", '<xbel xmlns:bookmark="x">'))
+    pc = ('<xbel>\n <bookmark href="thispc:/">\n  <title>This PC</title>\n </bookmark>\n <bookmark href="file:///home/u">\n'
+          '  <title>Home</title>\n  <info><metadata owner="http://www.kde.org"><IsHidden>true</IsHidden></metadata></info>\n'
+          ' </bookmark>\n</xbel>\n')
+    new = ensure_home(pc, "/home/u")
+    assert "thispc:/" not in new and "IsHidden" not in new and ensure_home(new, "/home/u") == new, new
+    added = ensure_home('<xbel>\n <bookmark href="trash:/">\n  <title>Bin</title>\n </bookmark>\n</xbel>\n', "/home/u")
+    assert added.index('href="file:///home/u"') < added.index('href="trash:/"')
+    xml.dom.minidom.parseString(added.replace("<xbel>", '<xbel xmlns:bookmark="x">'))
     assert HIDE_DEVICES in x
     v4 = '<info>\n  <metadata owner="http://www.kde.org">\n   <kde_places_version>4</kde_places_version>\n  </metadata>\n</info>'
     assert hide_devices(v4).count(HIDE_DEVICES) == 1 and hide_devices(hide_devices(v4)) == hide_devices(v4)
@@ -155,20 +157,16 @@ def selftest():
     r = recycle_bin(kde)
     assert "<title>Recycle Bin</title>" in r and "<IsSystemItem>false</IsSystemItem>" in r and recycle_bin(r) == r
     assert recycle_bin(old) == old
-    kh = (' <bookmark href="file:///var/home/u">\n  <title>Home</title>\n  <info>\n   <metadata owner="http://www.kde.org">'
-          '<ID>1</ID></metadata>\n  </info>\n </bookmark>\n')
-    h = hide_home(kh, "/var/home/u")
-    assert "<IsHidden>true</IsHidden><ID>1</ID>" in h and hide_home(h, "/var/home/u") == h and hide_home(kh, "/home/x") == kh
     print("selftest ok")
 
 
 if __name__ == "__main__":
     if sys.argv[1:] == ["--selftest"]:
         selftest()
-    elif len(sys.argv) == 3 and sys.argv[1] == "--ensure-thispc":
+    elif len(sys.argv) == 3 and sys.argv[1] in ("--ensure-home", "--ensure-thispc"):
         p = sys.argv[2]
         t = open(p, encoding="utf-8").read()
-        new = hide_home(hide_group(hide_devices(ensure_thispc(t)), HIDE_RECENT), os.path.expanduser("~"))
+        new = hide_group(hide_devices(ensure_home(t, os.path.expanduser("~"))), HIDE_RECENT)
         if ui_language().startswith("en"):
             new = recycle_bin(new)
         if new != t:

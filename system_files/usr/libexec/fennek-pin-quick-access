@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Pin folders to Quick access (the top of the Files sidebar), right after the pinned ones, before This PC.
+"""Pin folders to Quick access (the top of the Files sidebar), right after the pinned ones, before Home.
 
   fennek-pin-quick-access FOLDER...
   fennek-pin-quick-access --selftest
@@ -19,11 +19,12 @@ def places_file():
 
 
 def pin(xml_text, folders):
-    """Return the places XML with FOLDERS added (once each), placed before This PC."""
+    """Return the places XML with FOLDERS added (once each), placed before Home."""
     root = ET.fromstring(xml_text)
     have = {b.get("href") for b in root.findall("bookmark")}
     kids = list(root)
-    pos = next((i for i, b in enumerate(kids) if b.tag == "bookmark" and b.get("href") == "thispc:/"), len(kids))
+    homes = {"thispc:/", "file://" + quote(os.path.expanduser("~"))}
+    pos = next((i for i, b in enumerate(kids) if b.tag == "bookmark" and b.get("href") in homes), len(kids))
     for folder in folders:
         href = "file://" + quote(os.path.abspath(folder))
         if href in have:

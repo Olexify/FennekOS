@@ -2,6 +2,10 @@
 """Fennek OS changes to Files (Dolphin), applied to Fedora's source during the image build (build.sh):
 
   1. No separator lines between groups (This PC: Folders / Frequent folders / Storage drives).
+  3. Home is the start page: when the folder shown is your home folder, the view lists the thispc:/ page instead
+     (src/thispc: everything in your home as big tiles, the main folders with their own icons, then frequent
+     folders and drives). The address stays your home folder; its entries are your real files and folders (rename,
+     delete, drag and drop work as anywhere), and the page refreshes when something in your home changes.
   2. Groups fold: a click on a group's name hides its items (▸), another click shows them again (▾).
      The arrow keys skip a folded group's items. Folded groups stay folded while Files runs (by name, so "Frequent folders" stays folded everywhere).
      How: the layout gives a folded group's items no height (the group's name keeps its place), and their
@@ -143,4 +147,71 @@ patch("kitemlistcontroller.cpp", """    if (m_selectionManager->currentItem() !=
     if (m_selectionManager->currentItem() != index) {
         switch (m_selectionBehavior) {
 """)
+# 3. Home shows the Home page (thispc:/), with the same view settings.
+views = pathlib.Path(sys.argv[1]) / "src" / "views"
+
+
+def patch_view(old, new):
+    p = views / "dolphinview.cpp"
+    t = p.read_text(encoding="utf-8")
+    assert t.count(old) == 1, f"views/dolphinview.cpp: expected 1 of: {old[:80]!r}"
+    p.write_text(t.replace(old, new), encoding="utf-8")
+
+
+patch_view("#include <QApplication>\n", """#include <QApplication>
+#include <KDirWatch>
+#include <QDir>
+#include <QTimer>
+
+namespace
+{
+// Fennek OS: the home folder is shown as the Home page (thispc:/).
+bool fennekIsHome(const QUrl &url)
+{
+    return url.isLocalFile() && QDir(url.toLocalFile()).canonicalPath() == QDir(QDir::homePath()).canonicalPath();
+}
+const QUrl fennekHomePage(QStringLiteral("thispc:/"));
+}
+""")
+patch_view("""    if (reload) {
+        m_model->refreshDirectory(url);
+    } else {
+        m_model->loadDirectory(url);
+    }
+}""", """    if (fennekIsHome(url)) { // Fennek OS: the Home page; refreshed when the home folder changes
+        if (!property("fennekWatch").toBool()) {
+            setProperty("fennekWatch", true);
+            static KDirWatch *watch = nullptr;
+            if (!watch) {
+                watch = new KDirWatch(qApp);
+                watch->addDir(QDir::homePath());
+            }
+            auto *later = new QTimer(this);
+            later->setSingleShot(true);
+            later->setInterval(400);
+            connect(later, &QTimer::timeout, this, [this] {
+                if (fennekIsHome(m_url)) {
+                    m_model->refreshDirectory(fennekHomePage);
+                }
+            });
+            connect(watch, &KDirWatch::dirty, later, qOverload<>(&QTimer::start));
+        }
+        if (reload) {
+            m_model->refreshDirectory(fennekHomePage);
+        } else {
+            m_model->loadDirectory(fennekHomePage);
+        }
+        return;
+    }
+    if (reload) {
+        m_model->refreshDirectory(url);
+    } else {
+        m_model->loadDirectory(url);
+    }
+}""")
+patch_view("""    if (m_viewPropertiesContext.isEmpty()) {
+        return m_url;
+    }""", """    if (m_viewPropertiesContext.isEmpty()) {
+        return fennekIsHome(m_url) ? fennekHomePage : m_url; // Fennek OS: Home keeps the Home page's view
+    }""")
 print("dolphin: Fennek changes applied")

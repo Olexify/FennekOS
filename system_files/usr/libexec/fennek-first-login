@@ -23,7 +23,7 @@ if ! grep -qs '^LookAndFeelPackage=' "${XDG_CONFIG_HOME:-$HOME/.config}/kdegloba
     kwriteconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage org.fennek.dark.desktop
     kwriteconfig6 --file plasmarc --group Theme --key name fennek-dark   # the dark taskbar and Start too
 fi
-/usr/libexec/fennek-desktop-icons   # This PC and Recycle Bin on the desktop
+/usr/libexec/fennek-desktop-icons   # Home and Recycle Bin on the desktop
 # Files: classic menu bar. On its own first start Files hides it; so new users start as "already set up": the
 # window layout Files makes on that first start (side panels closed), menu bar on.
 rc=${XDG_CONFIG_HOME:-$HOME/.config}/dolphinrc

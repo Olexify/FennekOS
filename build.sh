@@ -719,7 +719,7 @@ EOF
 fi
 systemctl enable flatpak-system-update.timer
 
-# Fennek's compiled plugins (src/): classic taskbar right-click menu, This PC page for Files.
+# Fennek's compiled plugins (src/): classic taskbar right-click menu, Home page for Files.
 # Compiled here; the build tools are removed again.
 tools=(cmake extra-cmake-modules gcc-c++ libplasma-devel kf6-kcoreaddons-devel kf6-kconfig-devel kf6-kwindowsystem-devel
        kf6-kpackage-devel kf6-kservice-devel kf6-kirigami-devel kf6-kio-devel kf6-kcmutils-devel qt6-qtbase-devel qt6-qtdeclarative-devel
@@ -816,7 +816,7 @@ for d in /usr/share/icons/*/cursors; do
 done
 rm -rf /tmp/cur
 [ ${#missing[@]} -eq 0 ] || dnf -y remove "${missing[@]}"
-# This PC groups (Folders / Storage drives) are two MIME types.
+# Home page groups (Folders / Frequent folders / Storage drives) are MIME types.
 update-mime-database /usr/share/mime
 # Panels use it instead of Plasma's own panel menu (new file + rename, see replace_file).
 shell=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/defaults

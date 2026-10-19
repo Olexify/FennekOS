@@ -243,8 +243,8 @@ grep -q "^theme=__aurorae__svg__FennekClassicDark" /usr/share/plasma/look-and-fe
 ! ls /usr/share/plasma/look-and-feel/org.kde.breeze*/contents/defaults 2>/dev/null || fail "KDE global themes still listed"
 grep -aq fennekCollapsedGroups "$(ls /usr/lib64/libdolphinprivate.so.*.* | head -1)" || fail "Files: Fennek's patched view (no group lines, groups fold)"
 grep -q '^ShowToolTips=false' /etc/xdg/dolphinrc && grep -q '^rating=false' /etc/xdg/baloofileinformationrc && /usr/libexec/fennek-files-info-panel --selftest >/dev/null || fail "Files: Information panel instead of hover pop-ups"
-grep -q '^HomeUrl=thispc:/' /etc/xdg/dolphinrc && grep -q 'GroupedSorting=true' /etc/skel/.local/share/dolphin/view_properties/remote/.directory \
-    && grep -q 'inode/x-fennek-drive' /usr/share/mime/types || fail "This PC page"
+! grep -q '^HomeUrl=' /etc/xdg/dolphinrc && grep -aq 'fennekWatch' "$(ls /usr/lib64/libdolphinprivate.so.*.* | head -1)" && grep -q 'GroupedSorting=true' /etc/skel/.local/share/dolphin/view_properties/remote/.directory \
+    && grep -q 'inode/x-fennek-drive' /usr/share/mime/types || fail "Home page (folders, frequent folders, drives) in Files"
 [ -s /usr/share/wallpapers/Fennek/contents/images_dark/3840x2160.png ] || fail "night version of the Fennek wallpaper"
 for k in desktop documents downloads music pictures videos; do [ -s /usr/share/icons/Fennek/scalable/places/fennek-folder-$k.svg ] && [ -e /usr/share/icons/Fennek-Dark/scalable/places/fennek-folder-$k.svg ] || fail "This PC folder icon $k"; done; [ -s /usr/share/icons/Fennek/scalable/devices/fennek-drive-used-90.svg ] && grep -q ff5a5a /usr/share/icons/Fennek/scalable/devices/fennek-drive-used-90.svg || fail "drive gauge red when nearly full"
 grep -q '^MenuBar=Enabled' /etc/xdg/dolphinrc                     || fail "Files menu bar"

@@ -11,8 +11,8 @@
         }
     },
     "KPlugin": {
-        "Description": "This PC: your folders and drives",
+        "Description": "Home: your files and folders, frequent folders and drives",
         "License": "GPL-3.0-only",
-        "Name": "This PC"
+        "Name": "Home"
     }
 }

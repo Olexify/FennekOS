@@ -3,10 +3,9 @@
 ShowStatusBar=FullWidth
 SortingChoice=NaturalSorting
 RememberOpenedTabs=false
-# Each folder remembers its own view (default: details); This PC keeps its grouped big-icon view.
+# Each folder remembers its own view (default: details); Home keeps its grouped big-icon view.
 GlobalViewProps=false
-# Files opens on This PC (folders + drives), like the classic file manager.
-HomeUrl=thispc:/
+# Files opens on your home folder (KDE's default), shown as the Home page: your folders, frequent folders, drives.
 # No pop-up on hover: the Information panel on the right shows what you click or point at.
 ShowToolTips=false
 # No "+" box popping up on every item under the pointer (select with Ctrl/Shift or a drag, like the classic one).
@@ -26,7 +25,7 @@ LeftPadding=0
 RightPadding=0
 
 [IconsMode]
-# Big icons where folders show as icons (This PC: folders and drives with their usage bar, like the classic page).
+# Big icons where folders show as icons (Home: folders and drives with their usage bar).
 IconSize=64
 PreviewSize=64
 

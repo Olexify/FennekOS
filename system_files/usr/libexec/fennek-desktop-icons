@@ -1,10 +1,12 @@
 #!/usr/bin/bash
-# Desktop icons for This PC and the Recycle Bin (in the user's language), if the desktop has none yet.
+# Desktop icons for Home and the Recycle Bin (in the user's language), if the desktop has none yet. An older
+# "This PC" icon becomes Home (Home is that page now).
 set -u
 desk=$(xdg-user-dir DESKTOP 2>/dev/null)
 [ -n "$desk" ] && [ "$desk" != "$HOME" ] && mkdir -p "$desk" || exit 0
-case "${LANG:-}" in uk*) pc="Цей ПК"; bin="Кошик" ;; *) pc="This PC"; bin="Recycle Bin" ;; esac
-grep -qs '^URL=thispc:/' "$desk"/*.desktop \
-    || printf '[Desktop Entry]\nType=Link\nName=%s\nIcon=computer\nURL=thispc:/\n' "$pc" > "$desk/this-pc.desktop"
+case "${LANG:-}" in uk*) home="Домівка"; bin="Кошик" ;; *) home="Home"; bin="Recycle Bin" ;; esac
+[ -f "$desk/this-pc.desktop" ] && grep -qs '^URL=thispc:/' "$desk/this-pc.desktop" && rm -f "$desk/this-pc.desktop"
+grep -qsx "URL=file://$HOME" "$desk"/*.desktop \
+    || printf '[Desktop Entry]\nType=Link\nName=%s\nIcon=user-home\nURL=file://%s\n' "$home" "$HOME" > "$desk/home.desktop"
 grep -qs '^URL=trash:/' "$desk"/*.desktop \
     || printf '[Desktop Entry]\nType=Link\nName=%s\nIcon=user-trash-full\nEmptyIcon=user-trash\nURL=trash:/\n' "$bin" > "$desk/recycle-bin.desktop"

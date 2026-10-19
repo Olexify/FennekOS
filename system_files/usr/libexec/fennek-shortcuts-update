@@ -15,8 +15,8 @@ fi
 
 # Look, once: back to a Fennek theme if a stock one took over (e.g. the Dark mode switch used to pick Breeze Dark,
 # which replaced Fennek's frames, icons and panels). The layout stays as it is. The light/dark switch then
-# alternates between the two Fennek themes. File Explorer opens on This PC (also first in its sidebar), and the
-# desktop gets the This PC and Recycle Bin icons if it has none.
+# alternates between the two Fennek themes. Files opens on Home (also first in its sidebar), and the desktop gets
+# the Home and Recycle Bin icons if it has none.
 theme_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/theme-version
 if [ "$(cat "$theme_seen" 2>/dev/null)" != 2026-10-17 ]; then
     k() { kreadconfig6 --file kdeglobals --group KDE --key "$1"; }
@@ -28,9 +28,8 @@ if [ "$(cat "$theme_seen" 2>/dev/null)" != 2026-10-17 ]; then
         *) timeout 60 plasma-apply-lookandfeel --apply org.fennek.desktop >/dev/null 2>&1 ;;
     esac
     places=${XDG_DATA_HOME:-$HOME/.local/share}/user-places.xbel
-    [ -f "$places" ] && /usr/libexec/fennek-first-login-places --ensure-thispc "$places"
-    /usr/libexec/fennek-desktop-icons                                   # This PC and Recycle Bin on the desktop
-    kwriteconfig6 --file dolphinrc --group General --key HomeUrl thispc:/   # Files opens on This PC
+    [ -f "$places" ] && /usr/libexec/fennek-first-login-places --ensure-home "$places"
+    /usr/libexec/fennek-desktop-icons                                   # Home and Recycle Bin on the desktop
     kwriteconfig6 --file dolphinrc --group General --key RememberOpenedTabs false
     mkdir -p "${theme_seen%/*}" && echo 2026-10-17 >"$theme_seen"
 fi
@@ -162,10 +161,12 @@ fi
 
 # Files sidebar, once: hide "Devices" (system partitions) and "Recent", the bin is Recycle Bin (English).
 pl_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/places-version
-if [ "$(cat "$pl_seen" 2>/dev/null)" != 2026-10-20 ]; then   # Home hidden (This PC is the start place); Recent hidden again
+if [ "$(cat "$pl_seen" 2>/dev/null)" != 2026-10-20b ]; then   # Home is the start place again (shown as the Home page); This PC goes; Recent hidden
     places=${XDG_DATA_HOME:-$HOME/.local/share}/user-places.xbel
-    [ -f "$places" ] && /usr/libexec/fennek-first-login-places --ensure-thispc "$places"
-    mkdir -p "${pl_seen%/*}" && echo 2026-10-20 >"$pl_seen"
+    [ -f "$places" ] && /usr/libexec/fennek-first-login-places --ensure-home "$places"
+    kwriteconfig6 --file dolphinrc --group General --key HomeUrl --delete   # Files opens on the home folder
+    /usr/libexec/fennek-desktop-icons                                       # This PC icon -> Home
+    mkdir -p "${pl_seen%/*}" && echo 2026-10-20b >"$pl_seen"
 fi
 
 version=2026-10-20
