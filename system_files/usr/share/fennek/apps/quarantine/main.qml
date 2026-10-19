@@ -151,12 +151,13 @@ QQC2.ApplicationWindow {
                         onToggled: { const s = Object.assign({}, root.selected); s[modelData.id] = checked; root.selected = s }
                         contentItem: ColumnLayout {
                             spacing: 2
-                            QQC2.Label { text: modelData.name; font.weight: Font.DemiBold; elide: Text.ElideMiddle; Layout.fillWidth: true }
+                            QQC2.Label { text: modelData.name; font.weight: Font.DemiBold; elide: Text.ElideMiddle; Layout.fillWidth: true; textFormat: Text.PlainText }
                             QQC2.Label {
                                 Layout.fillWidth: true
                                 elide: Text.ElideMiddle
                                 opacity: 0.75
                                 font: Kirigami.Theme.smallFont
+                                textFormat: Text.PlainText   // names come from downloads: never markup
                                 text: modelData.threat + " · " + new Date(modelData.when * 1000).toLocaleString(Qt.locale(), Locale.ShortFormat)
                                       + (modelData.origin ? " · from " + modelData.origin : "")
                             }
@@ -183,6 +184,7 @@ QQC2.ApplicationWindow {
                     visible: root.restoredTo !== ""
                     type: Kirigami.MessageType.Information
                     text: "Restored to: " + root.restoredTo
+                    // (InlineMessage shows plain text for its text)
                 }
             }
 
@@ -217,6 +219,7 @@ QQC2.ApplicationWindow {
                     Layout.fillWidth: true
                     visible: root.scanResult !== ""
                     text: root.scanResult
+                    textFormat: Text.PlainText   // file names from the scan: never markup
                     wrapMode: Text.Wrap
                 }
             }

@@ -122,7 +122,9 @@ def exe_of(pid):
 
 
 def active(ss_out, exe=exe_of):
-    """`ss -tunpH` → apps with connections to other computers, one entry per program."""
+    """`ss -tunpH` → apps with connections to other computers, one entry per program: how many, its processes and
+    each connection (protocol, state, the other side's address; at most 30 listed). Addresses stay numbers: looking
+    names up would itself send data out."""
     apps = {}
     for line in ss_out.splitlines():
         f = line.split()
@@ -137,9 +139,19 @@ def active(ss_out, exe=exe_of):
         prog = exe(int(pids[-1])) if pids else None
         if not prog:
             continue                                       # another user's process: not visible to us
-        e = apps.setdefault(prog, {"name": Path(prog).name, "program": prog, "connections": 0})
+        e = apps.setdefault(prog, {"name": Path(prog).name, "program": prog, "connections": 0, "pids": [], "details": []})
         e["connections"] += 1
+        if int(pids[-1]) not in e["pids"]:
+            e["pids"].append(int(pids[-1]))
+        if len(e["details"]) < 30:
+            e["details"].append({"proto": f[0].upper(), "state": STATES.get(f[1], f[1].lower()), "peer": f[5]})
+    for e in apps.values():
+        e["pids"].sort()
     return sorted(apps.values(), key=lambda a: a["name"].lower())
+
+
+STATES = {"ESTAB": "connected", "SYN-SENT": "connecting", "CLOSE-WAIT": "closing", "TIME-WAIT": "closing",
+          "FIN-WAIT-1": "closing", "FIN-WAIT-2": "closing", "LAST-ACK": "closing", "UNCONN": "sending"}
 
 
 PROFILES = {"home": "FennekOS", "public": "FennekOS-Public"}
@@ -224,10 +236,12 @@ def selftest():
           'tcp ESTAB 0 0 10.0.2.15:41005 9.9.9.9:443 users:(("x\\",pid=10,fd=1)",pid=15,fd=3))\n'
           'tcp ESTAB 0 0 10.0.2.15:41006 9.9.9.9:443 users:(("someone",pid=16,fd=3))\n')
     paths = {10: "/usr/lib64/firefox/firefox", 11: "/usr/lib64/firefox/firefox", 14: "Game.exe", 15: "/tmp/sneaky"}
-    assert active(ss, paths.get) == [
-        {"name": "firefox", "program": "/usr/lib64/firefox/firefox", "connections": 2},
-        {"name": "Game.exe", "program": "Game.exe", "connections": 1},
-        {"name": "sneaky", "program": "/tmp/sneaky", "connections": 1}]
+    got = active(ss, paths.get)
+    assert [(a["name"], a["program"], a["connections"]) for a in got] == [
+        ("firefox", "/usr/lib64/firefox/firefox", 2), ("Game.exe", "Game.exe", 1), ("sneaky", "/tmp/sneaky", 1)]
+    assert got[0]["pids"] == [10, 11], "processes of the app"
+    assert got[0]["details"][0] == {"proto": "TCP", "state": "connected", "peer": "93.184.216.34:443"}
+    assert got[0]["details"][1]["peer"] == "[2606:4700::1]:443"
     print("selftest ok")
 
 
