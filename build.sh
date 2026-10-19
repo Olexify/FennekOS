@@ -473,6 +473,12 @@ assert n == 1, "Spectacle region action changed: revisit Super+Shift+S"
 t, n = re.subn(r"(^\[Desktop Action RectangularRegionScreenShot\]\n(?:(?!\[Desktop ).*\n)*?)Exec=.*$",
                lambda m: m.group(1) + "Exec=/usr/libexec/fennek-snip", t, count=1, flags=re.M)
 assert n == 1, "Spectacle region action has no Exec line: revisit fennek-snip"
+# PrtSc / Alt+PrtSc / Super+PrtSc go to fennek-printscreen (copy the screen / the window, save the screen).
+for section, key in (("Desktop Entry", "Print"), ("Desktop Action ActiveWindowScreenShot", "Meta+Print")):
+    t, n = re.subn(r"(^\[" + re.escape(section) + r"\]\n(?:(?!\[Desktop ).*\n)*?X-KDE-Shortcuts=)(.*)$",
+                   lambda m: m.group(1) + ",".join(k for k in m.group(2).split(",") if k and k != key),
+                   t, count=1, flags=re.M)
+    assert n == 1, f"Spectacle {section} shortcut changed: revisit fennek-printscreen"
 replace_file(p, t)
 # Super+I opens Fennek Settings (fennek-settings.desktop) instead of KDE's System Settings.
 for name in ("systemsettings.desktop",):

@@ -1,0 +1,28 @@
+#!/usr/bin/bash
+# The classic Print Screen keys: PrtSc copies the whole screen, Alt+PrtSc the active window (paste anywhere);
+# Super+PrtSc saves the whole screen to Pictures/Screenshots. Usage: fennek-printscreen copy|window|save
+set -u
+case ${1:-} in
+    copy) what=--fullscreen ;;
+    window) what=--activewindow ;;
+    save) what=--fullscreen ;;
+    *) echo "usage: fennek-printscreen copy|window|save" >&2; exit 2 ;;
+esac
+tmp=$(mktemp --suffix=.png); trap 'rm -f "$tmp"' EXIT
+spectacle --background --nonotify "$what" --output "$tmp" >/dev/null 2>&1
+[ -s "$tmp" ] || exit 1
+if [ "$1" != save ]; then
+    wl-copy --type image/png <"$tmp"
+    notify-send -a "Screenshot" -i "$tmp" -t 3000 "Screenshot copied" "Paste it anywhere."
+    sleep 1   # the notice reads the picture before it goes
+    exit 0
+fi
+dir=$(kreadconfig6 --file spectaclerc --group ImageSave --key imageSaveLocation)
+dir=${dir#file://}; [ -n "$dir" ] || dir=$(xdg-user-dir PICTURES)/Screenshots
+mkdir -p -- "$dir"
+dest=$dir/Screenshot_$(date +%Y%m%d_%H%M%S).png
+cp -- "$tmp" "$dest"
+a=$(notify-send -a "Screenshot" -i "$dest" -h "string:image-path:$dest" --action=folder="Show in folder" \
+    --wait "Screenshot saved" "In ${dir##*/}.")
+[ "$a" = folder ] && exec dolphin --select "$dest"
+exit 0

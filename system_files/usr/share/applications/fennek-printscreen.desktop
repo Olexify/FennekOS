@@ -1,0 +1,19 @@
+[Desktop Entry]
+Type=Application
+Name=Print Screen
+Comment=PrtSc copies the screen, Alt+PrtSc the window, Super+PrtSc saves the screen
+Exec=/usr/libexec/fennek-printscreen copy
+Icon=org.kde.spectacle
+NoDisplay=true
+X-KDE-Shortcuts=Print
+Actions=Window;Save;
+
+[Desktop Action Window]
+Name=Copy the active window
+Exec=/usr/libexec/fennek-printscreen window
+X-KDE-Shortcuts=Alt+Print
+
+[Desktop Action Save]
+Name=Save the screen to Screenshots
+Exec=/usr/libexec/fennek-printscreen save
+X-KDE-Shortcuts=Meta+Print
