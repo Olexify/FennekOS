@@ -612,11 +612,11 @@ systemctl enable flatpak-system-update.timer
 # Fennek's compiled plugins (src/): classic taskbar right-click menu, This PC page for Files.
 # Compiled here; the build tools are removed again.
 tools=(cmake extra-cmake-modules gcc-c++ libplasma-devel kf6-kcoreaddons-devel kf6-kconfig-devel kf6-kwindowsystem-devel
-       kf6-kpackage-devel kf6-kservice-devel kf6-kirigami-devel kf6-kio-devel qt6-qtbase-devel qt6-qtdeclarative-devel
+       kf6-kpackage-devel kf6-kservice-devel kf6-kirigami-devel kf6-kio-devel kf6-kcmutils-devel qt6-qtbase-devel qt6-qtdeclarative-devel
        rust cargo 'rust-zbus+default-devel' 'rust-inotify+default-devel' librsvg2-tools xcursorgen)
 missing=(); for p in "${tools[@]}"; do rpm -q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 dnf -y install "${missing[@]}"
-for plugin in taskbar-menu ui-scale thispc fennek-app fennek-style; do
+for plugin in taskbar-menu ui-scale thispc fennek-app fennek-style fennek-kcm; do
     cmake -S "$files/../src/$plugin" -B "/tmp/$plugin" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
     cmake --build "/tmp/$plugin" -j"$(nproc)"
     cmake --install "/tmp/$plugin"

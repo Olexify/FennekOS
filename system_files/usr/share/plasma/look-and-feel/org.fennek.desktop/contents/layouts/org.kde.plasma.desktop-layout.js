@@ -39,12 +39,13 @@ if (tray) {
     var shown = ["org.kde.plasma.networkmanagement", "org.kde.plasma.volume", "org.kde.plasma.battery"]
     var hidden = ["org.kde.plasma.notifications", "org.kde.plasma.clipboard", "org.kde.plasma.devicenotifier", "org.kde.kdeconnect",
                   "org.kde.plasma.bluetooth", "org.kde.plasma.printmanager", "org.kde.plasma.vault",
-                  "org.kde.plasma.mediacontroller", "org.kde.kscreen", "org.kde.plasma.brightness",
+                  "org.kde.plasma.mediacontroller", "org.kde.kscreen",
                   "org.kde.plasma.cameraindicator", "org.kde.plasma.manage-inputmethod",
                   "org.kde.plasma.keyboardindicator", "org.kde.plasma.weather"]
     tray.writeConfig("shownItems", shown)
     tray.writeConfig("hiddenItems", hidden)
-    // Exactly these tray items exist: the stock language indicator never loads (Fennek's sits next to the clock).
+    // Exactly these tray items exist: the stock language indicator never loads (Fennek's sits next to the clock),
+    // nor Brightness & Color (brightness, Night light and Dark mode are in the action center).
     tray.writeConfig("extraItems", shown.concat(hidden))
 }
 // Input language (ENG, УКР) next to the clock, like the classic taskbar; hidden with only one language.

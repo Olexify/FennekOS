@@ -45,7 +45,7 @@ QQC2.ApplicationWindow {
         }
     }
     function open(item) {
-        run.connectSource(item.kcm ? "systemsettings " + item.kcm : item.cmd)
+        run.connectSource(item.kcm ? "fennek-kcm " + item.kcm : item.cmd)   // pages save by themselves (no Apply)
     }
     function matches() {
         const q = query.toLowerCase().trim()

@@ -1,6 +1,6 @@
 // Fennek action center: a button at the end of the taskbar. Two tabs: your notifications (newest first, clear one
 // or all; snips with a preview) and your clipboard (copy again, remove, clear). Below, a grid of quick tiles: Wi-Fi, Bluetooth, Airplane mode, Do not disturb, Battery saver,
-// Night light, Screenshot, All settings. Notification history is Plasma's own (pop-ups work as before).
+// Night light, Dark mode, Screenshot, All settings. Notification history is Plasma's own (pop-ups work as before).
 import QtQuick
 import QtQuick.Layouts
 import org.kde.plasma.plasmoid
@@ -54,6 +54,8 @@ PlasmoidItem {
         onNewData: (source, data) => {
             if (source === root.profileCmd)
                 root.batterySaver = data.stdout.indexOf("power-saver") >= 0
+            else if (source === root.lookCmd)
+                root.darkMode = data.stdout.trim() === "org.fennek.dark.desktop"
             else if (source === root.nightCmd)
                 root.nightLight = data.stdout.trim() === "true"
             else if (source === "/usr/libexec/fennek-brightness get")
@@ -75,11 +77,18 @@ PlasmoidItem {
         run.connectSource(on ? w + "Mode Constant && " + w + "Active true" : w + "Active false")
         nightLight = on
     }
+    // Dark mode = the Fennek OS Dark look (the same switch as in Settings > Appearance > Themes).
+    readonly property string lookCmd: "kreadconfig6 --group KDE --key LookAndFeelPackage"
+    property bool darkMode: false
+    function setDarkMode(on) {
+        run.connectSource("plasma-apply-lookandfeel --apply " + (on ? "org.fennek.dark.desktop" : "org.fennek.desktop"))
+        darkMode = on
+    }
     // Screen brightness (laptops, monitors with brightness control); -1 = none, slider hidden.
     property int brightness: -1
     Timer { id: setBrightness; interval: 120; onTriggered: run.connectSource("/usr/libexec/fennek-brightness set " + root.brightness) }
     onExpandedChanged: if (!expanded) page = "notifications"; else {   // closed: back to Notifications next time
-        run.connectSource(profileCmd); run.connectSource(nightCmd); run.connectSource("/usr/libexec/fennek-brightness get")
+        run.connectSource(profileCmd); run.connectSource(nightCmd); run.connectSource(lookCmd); run.connectSource("/usr/libexec/fennek-brightness get")
     }
     function setProfile(name) {
         run.connectSource("busctl --system set-property org.freedesktop.UPower.PowerProfiles /org/freedesktop/UPower/PowerProfiles "
@@ -285,6 +294,8 @@ PlasmoidItem {
                       on: () => root.batterySaver, act: () => root.setProfile(root.batterySaver ? "balanced" : "power-saver") },
                     { label: "Night light", settings: "kcm_nightlight", icon: "redshift-status-on", show: true, checkable: true,
                       on: () => root.nightLight, act: () => root.setNightLight(!root.nightLight) },
+                    { label: "Dark mode", settings: "kcm_lookandfeel", icon: "weather-clear-night", show: true, checkable: true,
+                      on: () => root.darkMode, act: () => root.setDarkMode(!root.darkMode) },
                     { label: "Screenshot", icon: "camera-photo", show: true, checkable: false,
                       on: () => false, act: () => { root.expanded = false; run.connectSource("spectacle --region") } },
                     { label: "All settings", icon: "configure", show: true, checkable: false,
@@ -341,7 +352,7 @@ PlasmoidItem {
                         onClicked: mouse => {
                             if (mouse.button === Qt.RightButton && modelData.settings) {
                                 root.expanded = false
-                                run.connectSource("systemsettings " + modelData.settings)
+                                run.connectSource("fennek-kcm " + modelData.settings)
                             } else if (mouse.button === Qt.LeftButton) {
                                 modelData.act()
                             }

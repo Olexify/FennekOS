@@ -215,6 +215,7 @@ grep -q '^Bouncing=false' /etc/xdg/klaunchrc || fail "Starting an app: classic b
 python3 -c "import json; p=json.load(open('/etc/firefox/policies/policies.json'))['policies']; assert p['NoDefaultBookmarks'] and p['Homepage']['URL'] == 'about:home' and len(p['Bookmarks']) == 2" || fail "Firefox: no Fedora start page or bookmarks; our two bookmarks"
 [ -f /usr/share/fennek/apps/winx/main.qml ] && grep -q '^X-KDE-Shortcuts=Meta+X' /usr/share/applications/fennek-winx.desktop && grep -q '^fennekwinxEnabled=true' /etc/xdg/kwinrc || fail "Super+X quick links"
 grep -q 'Mode Constant' /usr/share/plasma/plasmoids/org.fennek.actioncenter/contents/ui/main.qml && ls /usr/lib64/qt6/plugins/plasma/kcms/systemsettings/kcm_nightlight.so >/dev/null || fail "Night light tile: on means on now; right-click opens its settings"
+! grep -q 'org.kde.plasma.brightness' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js && grep -q 'setDarkMode' /usr/share/plasma/plasmoids/org.fennek.actioncenter/contents/ui/main.qml || fail "Brightness & Color: in the action center (with Dark mode), not the tray"
 grep -q 'function resizeTile' /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/TileGrid.qml && grep -q 'SizeFDiagCursor' /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/TileItem.qml && grep -q 'previewRow' /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/TileItem.qml || fail "Start tiles: corner grip resizes; folded groups show their apps as small tiles"
 grep -q 'url = String(url)' /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/Utils.js || fail "Start tiles: a dropped app's address is read as text (Qt 6 hands over an object)"
 { rpm -q plasma-print-manager || rpm -q print-manager; } >/dev/null && rpm -q cups sane-backends >/dev/null || fail "printing (Printers page, print queue) and scanning"
@@ -378,6 +379,9 @@ PY
 # Fennek Settings: every page it links to exists (no dead buttons); Super+I belongs to it alone.
 # Fennek's own apps run as normal windows (system look, own taskbar icon) through fennek-app.
 rc=0; fennek-app ../etc 2>/dev/null || rc=$?; [ $rc -eq 2 ] && ! command -v g++ >/dev/null || fail "fennek-app launcher (rejects paths; no compiler left)"
+rc=0; fennek-kcm ../x 2>/dev/null || rc=$?; [ $rc -eq 2 ] || fail "fennek-kcm rejects anything but a page id"
+rc=0; QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-kcm kcm_mouse >/tmp/kcm.log 2>&1 || rc=$?
+[ $rc -eq 124 ] && grep -q 'fennek-kcm " + item.kcm' /usr/share/fennek/apps/settings/main.qml || { tail -5 /tmp/kcm.log; fail "Settings pages open without Apply (fennek-kcm, exit $rc)"; }
 for a in settings firewall welcome apphistory backup live updates quarantine winx power; do   # starts off-screen and keeps running = the QML loads
     rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-app "$a" >/tmp/app-$a.log 2>&1 || rc=$?
     [ $rc -eq 124 ] || { tail -5 /tmp/app-$a.log; fail "app $a does not start (exit $rc)"; }
