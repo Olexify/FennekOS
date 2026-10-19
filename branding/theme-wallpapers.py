@@ -119,6 +119,17 @@ for i in range(-28, 29):
 for k in range(1, 18):
     y = hy + (H - hy) * (k / 17) ** 2.2
     grid += f'<line x1="0" y1="{y:.0f}" x2="{W}" y2="{y:.0f}" stroke="#ff8a4c" stroke-width="{2 + k * .25:.1f}" opacity="{.25 + k * .03:.2f}"/>'
+# Googly-eyed pieces from Rook, Paper, Scissors! (branding/arcade-pieces.json), retro neon: dark bodies, glowing
+# outlines, standing on the grid at different depths with a soft light under each.
+import json, os
+PIECES = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "arcade-pieces.json")))
+crew = ""
+for k, x, y, sc, col in (("o", 520, 1990, 11.5, "#ff7ad9"), ("z", 960, 1660, 8.6, "#58d6ff"), ("u", 1420, 1470, 6.2, "#a970ff"),
+                         ("S", 2060, 1930, 9.4, "#ffd166"), ("g", 2620, 1560, 7.2, "#58d6ff"), ("d", 3190, 1830, 10.4, "#ff7ad9")):
+    tx, ty = x - 22.5 * sc, y - 39 * sc
+    crew += (f'<ellipse cx="{x}" cy="{y + 4}" rx="{17 * sc:.0f}" ry="{3.2 * sc:.0f}" fill="{col}" opacity=".35" filter="url(#glow2)"/>'
+             f'<g transform="translate({tx:.0f} {ty:.0f}) scale({sc})" fill="none" stroke="{col}" stroke-width="2.4" opacity=".6" filter="url(#soft)">{PIECES[k]}</g>'
+             f'<g transform="translate({tx:.0f} {ty:.0f}) scale({sc})" fill="#1b1030" stroke="{col}" stroke-width="1.1" stroke-linejoin="round">{PIECES[k]}</g>')
 stripes = "".join(f'<rect x="{W / 2 - 700}" y="{hy - 380 + k * 70 + k * k * 2}" width="1400" height="{6 + k * 3}" fill="#140c24"/>' for k in range(2, 9))
 arcade = svg('''<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c0a14"/><stop offset=".55" stop-color="#26123f"/><stop offset="1" stop-color="#4a1d4f"/></linearGradient>
 <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd166"/><stop offset=".55" stop-color="#ff8a4c"/><stop offset="1" stop-color="#d43f8d"/></linearGradient>
@@ -131,7 +142,8 @@ arcade = svg('''<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offse
 <rect x="0" y="{hy}" width="{W}" height="{H - hy}" fill="url(#floor)"/>
 <g>{grid}</g>
 <rect x="0" y="{hy - 6}" width="{W}" height="12" fill="#ff9ad5" opacity=".75" filter="url(#soft)"/>
-<rect x="0" y="{hy - 2}" width="{W}" height="4" fill="#ffd6ef"/>''')
+<rect x="0" y="{hy - 2}" width="{W}" height="4" fill="#ffd6ef"/>
+{crew}''')
 
 for name, s in (("amber", amber), ("sakura", sakura), ("royal", royal), ("arcade", arcade)):
     open(f"{out}/theme-{name}.svg", "w", encoding="utf-8", newline="\n").write(s)
