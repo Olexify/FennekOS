@@ -129,8 +129,49 @@ for _ in range(14):
 PETAL = "M-.2 -.95L0 -.78L.2 -.95C.62 -.86 .82 -.05 0 1C-.82 -.05 -.62 -.86 -.2 -.95Z"
 petal = lambda x, y, z, rot, o, f="": (f'<path d="{PETAL}" fill="url(#petalg)" opacity="{o:.2f}" '
                                     f'transform="translate({x:.0f} {y:.0f}) rotate({rot:.0f}) scale({z:.1f})"{f}/>')
-far_petals = "".join(petal(r.uniform(0, W), r.uniform(150, H - 60), r.uniform(15, 28), r.uniform(0, 360), r.uniform(.55, .9))
-                     for _ in range(46))
+# Petals carried by the wind: a few sweeping currents across the sky; along each, petals turned the way they fly,
+# thick in the middle of the gust and thinning out at its ends, with faint streaks of the wind itself. A few strays.
+def gust(x0, y0, x1, y1, bend, phase, n, seed):
+    g = random.Random(seed)
+    path, out = [], ""
+    for k in range(61):
+        t = k / 60
+        x = x0 + (x1 - x0) * t
+        y = y0 + (y1 - y0) * t + bend * math.sin(math.pi * t) + 70 * math.sin(t * 9 + phase)
+        path.append((x, y))
+    d = "M" + " L".join(f"{x:.0f} {y:.0f}" for x, y in path)
+    out += (f'<path d="{d}" fill="none" stroke="#f6e6ff" stroke-width="3" opacity=".07" filter="url(#b1)"/>'
+            f'<path d="{d}" fill="none" stroke="#f6e6ff" stroke-width="1.2" opacity=".06" transform="translate(0 46)" filter="url(#b1)"/>')
+    for _ in range(n):
+        t = g.betavariate(2.2, 2.2)                       # more in the middle of the gust
+        k = min(59, int(t * 60))
+        (ax, ay), (bx, by) = path[k], path[k + 1]
+        ang = math.degrees(math.atan2(by - ay, bx - ax))
+        spread = 40 + 120 * (1 - abs(t - .5) * 2)
+        out += petal(ax + g.uniform(-30, 30), ay + g.gauss(0, spread * .45), g.uniform(13, 26),
+                     ang + 90 + g.uniform(-35, 35), g.uniform(.5, .9))
+    return out
+
+
+def whirl(cx, cy, r0, turns, n, seed):
+    """An eddy: the wind curls in on itself and the petals spin along the spiral, sparser toward the middle."""
+    g = random.Random(seed)
+    pts = [(cx + r0 * (1 - .78 * t) * math.cos(t * turns * 2 * math.pi), cy + r0 * .62 * (1 - .78 * t) * math.sin(t * turns * 2 * math.pi))
+           for t in [k / 120 for k in range(121)]]
+    d = "M" + " L".join(f"{x:.0f} {y:.0f}" for x, y in pts)
+    out = f'<path d="{d}" fill="none" stroke="#f6e6ff" stroke-width="3" opacity=".08" filter="url(#b1)"/>'
+    for _ in range(n):
+        k = min(119, int(g.random() ** 1.4 * 120))
+        (ax, ay), (bx, by) = pts[k], pts[k + 1]
+        ang = math.degrees(math.atan2(by - ay, bx - ax))
+        out += petal(ax + g.gauss(0, 16), ay + g.gauss(0, 16), g.uniform(13, 24) * (1 - .4 * k / 120), ang + 90 + g.uniform(-30, 30), g.uniform(.55, .9))
+    return out
+
+
+far_petals = whirl(700, 520, 360, 1.6, 30, 34) + (gust(-200, 1500, 4000, 380, -420, .4, 26, 31) + gust(-200, 1900, 4000, 900, -300, 2.1, 20, 32)
+              + gust(600, 2300, 4000, 1500, -250, 4.0, 12, 33)
+              + "".join(petal(r.uniform(0, W), r.uniform(150, H - 60), r.uniform(12, 22), r.uniform(0, 360), r.uniform(.4, .7))
+                        for _ in range(10)))
 near_petals = "".join(petal(x, y, r.uniform(38, 56), r.uniform(0, 360), r.uniform(.35, .5), ' filter="url(#b1)"')
                       for x, y in ((260, 1720), (3560, 520), (3380, 1880)))
 sakura = svg('''<linearGradient id="sbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#090c26"/><stop offset=".45" stop-color="#18205a"/><stop offset=".74" stop-color="#4d3c80"/><stop offset="1" stop-color="#2a2152"/></linearGradient>
