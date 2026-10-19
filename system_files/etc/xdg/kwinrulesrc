@@ -1,0 +1,15 @@
+# Fennek OS window rules (defaults; rules you make in Settings > Window rules replace this list).
+[General]
+count=1
+rules=fennek-resizable-games
+
+# Windows programs and games (they often fix their window size): resizable, so they get a maximize button and
+# can be maximized by dragging to the top of the screen, also after F11 gave them a window.
+[fennek-resizable-games]
+Description=Windows programs and games can be resized and maximized
+wmclass=[.]exe$|^steam_app_
+wmclassmatch=3
+minsize=1,1
+minsizerule=2
+maxsize=32767,32767
+maxsizerule=2

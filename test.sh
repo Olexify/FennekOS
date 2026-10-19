@@ -207,6 +207,7 @@ grep -q '^Exec=/usr/libexec/fennek-update-notify' /etc/xdg/autostart/fennek-upda
 grep -q '^ShowSelectionToggle=false' /etc/xdg/dolphinrc || fail "File Explorer: no + box on hover"
 /usr/libexec/fennek-greeter-lang --selftest >/dev/null && systemctl is-enabled -q fennek-greeter-lang.service || fail "Sign-in screen in the last user's language"
 grep -q '^Switch to Next Keyboard Layout=Meta+Space' /etc/xdg/kglobalshortcutsrc || fail "Super+Space switches the input language"
+grep -q '^maxsizerule=2' /etc/xdg/kwinrulesrc && grep -q '^wmclass=' /etc/xdg/kwinrulesrc || fail "Windows programs and games can be maximized (button, drag to top)"
 grep -q 'function resizeTile' /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/TileGrid.qml && grep -q 'SizeFDiagCursor' /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/TileItem.qml && grep -q 'previewRow' /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/TileItem.qml || fail "Start tiles: corner grip resizes; folded groups show their apps as small tiles"
 grep -q 'url = String(url)' /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/Utils.js || fail "Start tiles: a dropped app's address is read as text (Qt 6 hands over an object)"
 { rpm -q plasma-print-manager || rpm -q print-manager; } >/dev/null && rpm -q cups sane-backends >/dev/null || fail "printing (Printers page, print queue) and scanning"
