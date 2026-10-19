@@ -103,6 +103,23 @@ magick -background none /usr/share/fennek/wallpaper.svg -depth 8 /usr/share/wall
 mkdir -p /usr/share/wallpapers/Fennek/contents/images_dark
 magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.png -modulate 52,88,100 -depth 8 \
     /usr/share/wallpapers/Fennek/contents/images_dark/3840x2160.png
+# Leonote wallpapers (branding/leonote-wallpapers.py): a friendly promo, offered in Settings > Background.
+# The headline is a serif face (Noto Serif; DejaVu Serif if that package is missing).
+dnf -y install google-noto-serif-vf-fonts || echo "Noto Serif missing: Leonote wallpapers fall back to DejaVu Serif"
+for v in night:Night graph:Graph paper:Paper; do
+    d=/usr/share/wallpapers/Leonote-${v#*:}
+    mkdir -p "$d/contents/images"
+    magick -background none "/usr/share/fennek/leonote-${v%%:*}.svg" -depth 8 "$d/contents/images/3840x2160.png"
+    printf '{
+  "KPlugin": {
+    "Authors": [{ "Name": "Leonote" }],
+    "Id": "Leonote-%s",
+    "License": "CC-BY-SA-4.0",
+    "Name": "Leonote %s"
+  }
+}
+' "${v#*:}" "${v#*:}" >"$d/metadata.json"
+done
 # Look-and-feel: Fedora's as base; our metadata + taskbar layout (from system_files) win.
 lnf=/usr/share/plasma/look-and-feel/org.fennek.desktop
 cp -an /usr/share/plasma/look-and-feel/org.fedoraproject.fedora.desktop/contents/. "$lnf/contents/"

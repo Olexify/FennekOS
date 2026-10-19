@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3840" height="2160" viewBox="0 0 3840 2160"><defs>
+  <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="36"/></filter>
+  <filter id="blur6" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6"/></filter>
+  <filter id="glowBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="140"/></filter>
+  <linearGradient id="sheet" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#fbe3a2"/><stop offset=".55" stop-color="#ecbd62"/><stop offset="1" stop-color="#d49a3e"/>
+  </linearGradient>
+  <linearGradient id="curl" x1="1" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#f6cf7c"/><stop offset=".5" stop-color="#c88a2e"/><stop offset="1" stop-color="#8f5c18"/>
+  </linearGradient>
+  <linearGradient id="tileShine" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ffffff" stop-opacity=".07"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+  </linearGradient>
+</defs>
+<linearGradient id="bgN" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#121119"/><stop offset=".55" stop-color="#0e0e10"/><stop offset="1" stop-color="#1a1309"/></linearGradient>
+<rect width="3840" height="2160" fill="url(#bgN)"/>
+<circle cx="2900" cy="1080" r="1050" fill="#e0a84a" opacity=".22" filter="url(#glowBlur)"/>
+<circle cx="3500" cy="1900" r="700" fill="#8a5a14" opacity=".25" filter="url(#glowBlur)"/>
+<text x="300" y="640" font-family="Inter, 'Noto Sans', sans-serif" font-size="64" font-weight="600" fill="#e0a84a" letter-spacing="2">LeoNote</text>
+<text font-family="Georgia, 'Noto Serif', 'DejaVu Serif', serif" font-size="190" fill="#ececef">
+  <tspan x="292" y="920">Everything you</tspan>
+  <tspan x="292" y="1140">think, in one</tspan>
+  <tspan x="292" y="1360"><tspan fill="#e0a84a" font-style="italic">instant</tspan> app.</tspan>
+</text>
+<text x="300" y="1560" font-family="Inter, 'Noto Sans', sans-serif" font-size="62" fill="#b9b6bf">Notes · research graph · tasks · video &amp; audio player</text>
+<text x="300" y="1680" font-family="'Cascadia Mono', 'DejaVu Sans Mono', monospace" font-size="46" fill="#77737d">leonote.app   ·   plain Markdown   ·   pay once</text>
+<g transform="translate(2380 560) scale(1.8571)">
+  <rect x="0" y="24" width="560" height="560" rx="132" fill="#000" opacity="0.55" filter="url(#soft)"/>
+  <rect x="0" y="0" width="560" height="560" rx="132" fill="#141215" stroke="#2a2420" stroke-width="3"/>
+  <rect x="0" y="0" width="560" height="280" rx="132" fill="url(#tileShine)" opacity="0.9"/>
+  <g transform="translate(130 120)">
+    <path d="M30 0H226a78 78 0 0 1 78 78V200C304 250 270 296 226 304L150 318H30A30 30 0 0 1 0 288V30A30 30 0 0 1 30 0z"
+          fill="url(#sheet)"/>
+    <path d="M0 230V288A30 30 0 0 0 30 318H150" fill="none" stroke="#b9842f" stroke-width="5" opacity=".45"/>
+    <path d="M304 168C304 252 252 306 150 318C214 298 256 262 266 226C276 194 292 178 304 168z" fill="#7a5216" opacity=".35"
+          filter="url(#blur6)" transform="translate(-6 10)"/>
+    <path d="M304 168C304 252 252 306 150 318C214 298 256 262 266 226C276 194 292 178 304 168z" fill="url(#curl)"/>
+    <path d="M30 4H226a74 74 0 0 1 74 74" fill="none" stroke="#fff6dc" stroke-width="5" opacity=".6"/>
+  </g>
+</g></svg>
