@@ -1,5 +1,5 @@
 # Fennek OS: starting an app shows the classic busy pointer (arrow + spinner), not a bouncing icon.
-# Settings > Appearance > App launch feedback changes it.
+# Settings > Appearance > Pointers & launch feedback changes it.
 [BusyCursorSettings]
 Bouncing=false
 Blinking=false
