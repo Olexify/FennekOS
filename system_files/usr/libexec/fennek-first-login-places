@@ -32,7 +32,7 @@ def places(folders):
            '<xbel xmlns:bookmark="http://www.freedesktop.org/standards/desktop-bookmarks" '
            'xmlns:mime="http://www.freedesktop.org/standards/shared-mime-info" xmlns:kdepriv="http://www.kde.org/kdepriv">',
            ' <info>', '  <metadata owner="http://www.kde.org">', '   <kde_places_version>4</kde_places_version>',
-           '   ' + HIDE_DEVICES, '   ' + HIDE_RECENT, '  </metadata>', ' </info>']
+           '   ' + HIDE_DEVICES, '   ' + HIDE_RECENT, '   ' + KDE_DONE, '  </metadata>', ' </info>']
     for n, (label, href, icon) in enumerate(items):
         out += [f" <bookmark href={quoteattr(href)}>", f"  <title>{escape(label)}</title>", "  <info>",
                 f'   <metadata owner="http://freedesktop.org"><bookmark:icon name={quoteattr(icon)}/></metadata>',
@@ -42,6 +42,8 @@ def places(folders):
 
 HIDE_DEVICES = "<GroupState-Devices-IsHidden>true</GroupState-Devices-IsHidden>"
 HIDE_RECENT = "<GroupState-RecentlySaved-IsHidden>true</GroupState-RecentlySaved-IsHidden>"
+# KDE adds its "Recent" places (and shows that group again) the first time unless these say it already did.
+KDE_DONE = "<withRecentlyUsed>true</withRecentlyUsed><withBaloo>true</withBaloo>"
 THISPC = (' <bookmark href="thispc:/">\n  <title>This PC</title>\n  <info>\n'
           '   <metadata owner="http://freedesktop.org"><bookmark:icon name="computer"/></metadata>\n'
           '   <metadata owner="http://www.kde.org"><ID>fennek/thispc</ID></metadata>\n  </info>\n </bookmark>\n')
@@ -59,6 +61,8 @@ def ensure_thispc(text):
 def hide_group(text, tag):
     """Existing sidebar: hide one of KDE's groups (tag = HIDE_DEVICES / HIDE_RECENT), once."""
     name = tag[1:tag.index(">")]
+    if f"<{name}>false</{name}>" in text:   # KDE set it shown when it added its own entries
+        return text.replace(f"<{name}>false</{name}>", tag, 1)
     if name in text or "</kde_places_version>" not in text:
         return text
     i = text.index("</kde_places_version>") + len("</kde_places_version>")
@@ -143,6 +147,9 @@ def selftest():
     assert hide_devices(v4).count(HIDE_DEVICES) == 1 and hide_devices(hide_devices(v4)) == hide_devices(v4)
     both = hide_group(hide_devices(v4), HIDE_RECENT)
     assert both.count(HIDE_RECENT) == 1 and both.count(HIDE_DEVICES) == 1
+    shown = v4.replace("</kde_places_version>", "</kde_places_version><GroupState-RecentlySaved-IsHidden>false</GroupState-RecentlySaved-IsHidden>")
+    assert hide_group(shown, HIDE_RECENT).count(HIDE_RECENT) == 1 and "IsHidden>false" not in hide_group(shown, HIDE_RECENT)
+    assert "<withRecentlyUsed>true</withRecentlyUsed>" in x
     kde = (' <bookmark href="trash:/">\n  <title>Trash</title>\n  <info>\n   <metadata owner="http://www.kde.org">'
            '<IsSystemItem>true</IsSystemItem></metadata>\n  </info>\n </bookmark>\n')
     r = recycle_bin(kde)
