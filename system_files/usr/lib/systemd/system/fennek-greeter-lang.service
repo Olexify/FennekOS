@@ -5,6 +5,11 @@ Before=display-manager.service
 [Service]
 Type=oneshot
 ExecStart=/usr/libexec/fennek-greeter-lang
+# Never holds up the sign-in screen; only reads homes, only writes its one sddm setting.
+TimeoutStartSec=5s
+ProtectHome=read-only
+ProtectSystem=strict
+ReadWritePaths=/etc/sddm.conf.d
 
 [Install]
 WantedBy=multi-user.target
