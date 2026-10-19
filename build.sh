@@ -580,6 +580,34 @@ sed -i 's/^countme=1/countme=0/' /etc/yum.repos.d/*.repo
 
 # Updates download + stage in background, apply on next normal reboot. Never forced.
 systemctl enable rpm-ostreed-automatic.timer
+# Store apps update daily too. The x86 base brings this timer; the plain Fedora base (ARM) doesn't: same name here,
+# so the pause / metered drop-in (flatpak-system-update.service.d) applies on both.
+if [ ! -e /usr/lib/systemd/system/flatpak-system-update.timer ]; then
+    cat >/usr/lib/systemd/system/flatpak-system-update.service <<'EOF'
+[Unit]
+Description=Update Store apps (system-wide Flatpaks)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/flatpak --system update --noninteractive --assumeyes
+EOF
+    cat >/usr/lib/systemd/system/flatpak-system-update.timer <<'EOF'
+[Unit]
+Description=Update Store apps daily
+
+[Timer]
+OnBootSec=15min
+OnUnitInactiveSec=1d
+RandomizedDelaySec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+fi
+systemctl enable flatpak-system-update.timer
 
 # Fennek's compiled plugins (src/): classic taskbar right-click menu, This PC page for Files.
 # Compiled here; the build tools are removed again.
