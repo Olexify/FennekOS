@@ -1,7 +1,7 @@
 // Fennek Updates: everything about updates in one calm window. Status (up to date / update ready / behind), check
 // and install now, automatic updates on or off, when they run, pausing, Store apps, and going back.
-// The page itself: shown inside Settings (Update & Recovery > Updates) and in its own window (main.qml, fennek-app
-// updates). Settings change through /usr/libexec/fennek-update-settings (pkexec).
+// The page itself: shown inside Settings (Update & Recovery > Updates; fennek-app updates opens it there).
+// Settings change through /usr/libexec/fennek-update-settings (pkexec).
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2

@@ -1,6 +1,6 @@
 // Personalize: the whole look in one place, as big picture cards: the theme (wallpaper, colours, taskbar), the text
 // size with a live sample, and the typeface. Everything applies the moment you pick it (no Apply button).
-// Shown inside Settings and in its own window (main.qml, fennek-app personalize).
+// Shown inside Settings (fennek-app personalize opens Settings on it).
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2

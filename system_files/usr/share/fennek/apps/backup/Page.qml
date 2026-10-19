@@ -1,6 +1,6 @@
 // Fennek Backup: your folders on a USB drive, refreshed every hour while it is connected, older versions kept
 // for a year. A window over fennek-backup (status / drives / use / off / run). Runs as fennek-app backup.
-// The page itself: shown inside Settings and in its own window (main.qml, fennek-app backup).
+// The page itself, shown inside Settings (fennek-app backup opens Settings on it).
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2

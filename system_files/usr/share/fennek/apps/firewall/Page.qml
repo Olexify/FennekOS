@@ -1,7 +1,7 @@
 // Fennek Firewall: which apps may use the internet, and what they're doing right now. A window over fennek-firewall
 // (block / allow / list --json / active --json / profile); blocking and allowing ask for the admin password (pkexec).
 // Apps online can be opened up: where the program lives, its processes, each connection. Runs as fennek-app firewall.
-// The page itself: shown inside Settings and in its own window (main.qml, fennek-app firewall).
+// The page itself, shown inside Settings (fennek-app firewall opens Settings on it).
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Dialogs

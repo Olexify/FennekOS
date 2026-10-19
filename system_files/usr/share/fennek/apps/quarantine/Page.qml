@@ -1,7 +1,7 @@
 // Fennek Quarantine: what the download guard blocked, and the tools around it. Opens also when nothing is blocked.
 // Status (guard on, virus definitions), the blocked files (delete, or restore a false alarm), and checks: scan a folder
 // with the built-in scanner, check a file with VirusTotal. Runs as fennek-app quarantine over fennek-quarantine.
-// The page itself: shown inside Settings and in its own window (main.qml, fennek-app quarantine).
+// The page itself, shown inside Settings (fennek-app quarantine opens Settings on it).
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2

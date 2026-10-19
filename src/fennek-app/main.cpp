@@ -1,9 +1,11 @@
 // fennek-app NAME: runs one of Fennek's own apps (Settings, Firewall, Welcome, App history) as a normal window:
 // system look (light or dark like other apps), its own icon in the taskbar, its own size.
 // The apps are QML files in /usr/share/fennek/apps/NAME/main.qml. They can show KDE settings pages inside
-// (import Fennek; KcmView), saved without Apply.
+// (import Fennek; KcmView), saved without Apply. A page with no window of its own (Updates, Firewall, Quarantine,
+// Backup, App history: only Page.qml) opens in Settings: fennek-app firewall = fennek-app settings firewall.
 #include "kcmview.h"
 #include <QApplication>
+#include <QFile>
 #include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
@@ -11,10 +13,18 @@
 
 int main(int argc, char *argv[])
 {
-    const QString name = argc > 1 ? QString::fromLocal8Bit(argv[1]) : QString();
+    QString name = argc > 1 ? QString::fromLocal8Bit(argv[1]) : QString();
     if (!QRegularExpression(QStringLiteral("^[a-z]+$")).match(name).hasMatch()) {   // a name, never a path
         qWarning("usage: fennek-app settings|firewall|welcome|apphistory");
         return 2;
+    }
+    const QString dir = QStringLiteral("/usr/share/fennek/apps/%1/").arg(name);
+    QByteArray settingsArg("settings"), pageArg = name.toLatin1();
+    char *redirected[] = {argv[0], settingsArg.data(), pageArg.data(), nullptr};
+    if (!QFile::exists(dir + QStringLiteral("main.qml")) && QFile::exists(dir + QStringLiteral("Page.qml"))) {
+        argc = 3;   // a page of Settings: Settings, opened on it
+        argv = redirected;
+        name = QStringLiteral("settings");
     }
     QApplication app(argc, argv);
     const QString id = QStringLiteral("fennek-") + name;   // = the app's .desktop file: taskbar icon + grouping

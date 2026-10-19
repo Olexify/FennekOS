@@ -83,7 +83,7 @@ grep -q '^BorderlessMaximizedWindows=false' /etc/xdg/kwinrc       || fail "title
 r=/usr/share/kxmlgui5/dolphin/dolphinui.rc
 grep -q 'name="go_up"' "$r" && grep -q 'version="10[0-9][0-9]"' "$r" && grep -q '<Menu' "$r" || fail "Files toolbar (Back/Forward/Up)"
 python3 -c "import sys, xml.dom.minidom as x; x.parse(sys.argv[1])" "$r"   || fail "Files toolbar file is not valid XML"
-[ -s /usr/share/fennek/apps/firewall/main.qml ] && grep -q '^Exec=fennek-app settings firewall' /usr/share/applications/fennek-firewall.desktop || fail "Firewall window"
+[ -s /usr/share/fennek/apps/firewall/Page.qml ] && [ ! -e /usr/share/fennek/apps/firewall/main.qml ] && grep -q '^Exec=fennek-app settings firewall' /usr/share/applications/fennek-firewall.desktop || fail "Firewall window"
 fennek-firewall list --json | python3 -c 'import json,sys; assert json.load(sys.stdin) == []' || fail "firewall list --json"
 # Dark theme icons: Fennek's own icons over Breeze Dark (light symbols), used by the dark look.
 grep -q '^Inherits=breeze-dark' /usr/share/icons/Fennek-Dark/index.theme && [ -e /usr/share/icons/Fennek-Dark/scalable/apps/fennek-settings.svg ] \
@@ -274,7 +274,7 @@ wm=usr/share/plymouth/themes/spinner/watermark.png; img=$(ls /usr/lib/modules/*/
 { rpm -V fedora-logos 2>/dev/null || true; } | grep -q "/$wm$" || fail "watermark still Fedora's"
 /usr/libexec/fennek-download-guard --selftest >/dev/null    || fail "download guard selftest"
 fennek-usage --selftest >/dev/null && [ -L /etc/systemd/user/default.target.wants/fennek-usage.service ] || fail "usage history"
-grep -q "^Exec=fennek-app settings apphistory" /usr/share/applications/fennek-apphistory.desktop && [ -s /usr/share/fennek/apps/apphistory/main.qml ] || fail "App history window"
+grep -q "^Exec=fennek-app settings apphistory" /usr/share/applications/fennek-apphistory.desktop && [ -s /usr/share/fennek/apps/apphistory/Page.qml ] || fail "App history window"
 bash -n /usr/libexec/fennek-brightness && [ -x /usr/libexec/fennek-brightness ] || fail "brightness helper"
 # Download guard: a sample matching a custom signature goes to quarantine, a clean file stays.
 t=$(mktemp -d); mkdir -p "$t/db"

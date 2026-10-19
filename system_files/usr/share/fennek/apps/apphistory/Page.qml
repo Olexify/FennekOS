@@ -1,7 +1,7 @@
 // Fennek App history: which apps used the processor (and so the battery) and how much memory, over the last
 // hour / 8 hours / day / week. Data from fennek-usage (sampled once a minute, kept 7 days, never leaves the PC).
 // Runs as fennek-app apphistory (see fennek-apphistory.desktop).
-// The page itself: shown inside Settings and in its own window (main.qml, fennek-app apphistory).
+// The page itself, shown inside Settings (fennek-app apphistory opens Settings on it).
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
