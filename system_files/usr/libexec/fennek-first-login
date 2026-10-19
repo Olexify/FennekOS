@@ -12,7 +12,13 @@ stamp="${XDG_CONFIG_HOME:-$HOME/.config}/fennek/first-login-done"
 lnf=$(kreadconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage)
 if [ "${lnf#org.fennek.}" = "$lnf" ]; then   # not a Fennek look (light or dark)
     sleep 3   # let the desktop finish starting, so the layout reset reaches the running taskbar
-    plasma-apply-lookandfeel --apply org.fennek.desktop --resetLayout || exit 1   # retried next login
+    plasma-apply-lookandfeel --apply org.fennek.dark.desktop --resetLayout || exit 1   # retried next login
+fi
+# Dark by default: a new account (no look of its own yet) starts in Fennek OS Dark. Welcome, Settings and the action
+# center's Dark mode tile switch it any time. (The system-wide default stays the light one underneath.)
+own=$(kreadconfig6 --file "${XDG_CONFIG_HOME:-$HOME/.config}/kdeglobals" --group KDE --key LookAndFeelPackage)
+if [ -z "$own" ]; then
+    plasma-apply-lookandfeel --apply org.fennek.dark.desktop || exit 1   # retried next login
 fi
 /usr/libexec/fennek-desktop-icons   # This PC and Recycle Bin on the desktop
 # Files: classic menu bar. On its own first start Files hides it; so new users start as "already set up": the

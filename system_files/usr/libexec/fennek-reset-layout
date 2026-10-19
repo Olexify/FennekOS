@@ -12,5 +12,5 @@ cfg=${XDG_CONFIG_HOME:-$HOME/.config}
 bak=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/layout-backups/$(date +%Y%m%d-%H%M%S)
 mkdir -p -- "$bak" && cp -a -- "$cfg"/plasma-org.kde.plasma.desktop-appletsrc "$cfg"/plasmashellrc "$bak"/ 2>/dev/null
 lnf=$(kreadconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage)
-case $lnf in org.fennek.*) ;; *) lnf=org.fennek.desktop ;; esac   # keeps the light or dark Fennek look
+case $lnf in org.fennek.*) ;; *) lnf=org.fennek.dark.desktop ;; esac   # keeps the light or dark Fennek look (dark if none)
 plasma-apply-lookandfeel --apply "$lnf" --resetLayout

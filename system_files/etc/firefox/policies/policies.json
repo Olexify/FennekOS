@@ -25,7 +25,7 @@
     "NoDefaultBookmarks": true,
     "Homepage": {
       "URL": "about:home",
-      "StartPage": "homepage",
+      "StartPage": "previous-session",
       "Locked": false
     },
     "OverrideFirstRunPage": "",
@@ -39,6 +39,11 @@
       {
         "Title": "Rook Paper Scissors (chess)",
         "URL": "https://rookpaperscissors.com",
+        "Placement": "toolbar"
+      },
+      {
+        "Title": "Kitsumi",
+        "URL": "https://kitsumi.org",
         "Placement": "toolbar"
       },
       {
