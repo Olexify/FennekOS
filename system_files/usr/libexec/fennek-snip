@@ -1,29 +1,4 @@
 #!/usr/bin/bash
-# Super+Shift+S: snip a region, like the classic Snip tool. Drag a box: exactly that box is copied to the clipboard
-# and saved with your screenshots; a notice offers to mark it up. A plain click (no box) or Escape: nothing happens.
-# (On its own the snipping tool takes the whole screen on a click.)
-set -u
-tmp=$(mktemp --suffix=.png); trap 'rm -f "$tmp"' EXIT
-spectacle --background --nonotify --region --output "$tmp" >/dev/null 2>&1
-[ -s "$tmp" ] || exit 0                                   # cancelled
-size=$(magick identify -format '%wx%h' "$tmp" 2>/dev/null)
-screens=$(kscreen-doctor -j 2>/dev/null | python3 -c '
-import json, sys
-for o in json.load(sys.stdin).get("outputs", []):
-    m = next((m for m in o.get("modes", []) if m.get("id") == o.get("currentModeId")), None)
-    if o.get("enabled") and m:
-        print("{}x{}".format(m["size"]["width"], m["size"]["height"]))')
-grep -qxF -- "$size" <<<"$screens" && exit 0              # a click, not a box: same as cancel
-dir=$(kreadconfig6 --file spectaclerc --group ImageSave --key imageSaveLocation)
-dir=${dir#file://}; [ -n "$dir" ] || dir=$(xdg-user-dir PICTURES)/Screenshots
-mkdir -p -- "$dir"
-dest=$dir/Screenshot_$(date +%Y%m%d_%H%M%S).png
-cp -- "$tmp" "$dest"
-wl-copy --type image/png <"$dest"
-a=$(notify-send -a "Snip" -i "$dest" -h "string:image-path:$dest" --action=edit=Annotate --action=folder="Show in folder" \
-    --wait "Snip copied" "Paste it anywhere. Also saved in ${dir##*/}.")
-case $a in
-    edit) exec spectacle --edit-existing "$dest" ;;
-    folder) exec dolphin --select "$dest" ;;
-esac
-exit 0
+# Super+Shift+S: snip a region, like the classic Snip tool: the box goes to the clipboard; the notice offers Save and
+# Annotate. A plain click (no box) or Escape: nothing happens. See fennek-printscreen.
+exec /usr/libexec/fennek-printscreen region

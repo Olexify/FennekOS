@@ -55,18 +55,27 @@ QList<Item> items()
 {
     QList<Item> out;
     const QString home = QDir::homePath();
+    // Names in the language you use now, like the sidebar (the folders keep the names they were made with: switching
+    // the language later does not rename them). Other languages: the folder's own name.
+    const QString lang = QLocale::system().uiLanguages().value(0).left(2);
     const struct {
         QStandardPaths::StandardLocation where;
-        const char *icon;
-    } folders[] = {{QStandardPaths::DesktopLocation, "fennek-folder-desktop"},     {QStandardPaths::DocumentsLocation, "fennek-folder-documents"},
-                   {QStandardPaths::DownloadLocation, "fennek-folder-downloads"}, {QStandardPaths::MusicLocation, "fennek-folder-music"},
-                   {QStandardPaths::PicturesLocation, "fennek-folder-pictures"}, {QStandardPaths::MoviesLocation, "fennek-folder-videos"}};
+        const char *icon, *en, *uk;
+    } folders[] = {{QStandardPaths::DesktopLocation, "fennek-folder-desktop", "Desktop", "Стільниця"},
+                   {QStandardPaths::DocumentsLocation, "fennek-folder-documents", "Documents", "Документи"},
+                   {QStandardPaths::DownloadLocation, "fennek-folder-downloads", "Downloads", "Завантаження"},
+                   {QStandardPaths::MusicLocation, "fennek-folder-music", "Music", "Музика"},
+                   {QStandardPaths::PicturesLocation, "fennek-folder-pictures", "Pictures", "Зображення"},
+                   {QStandardPaths::MoviesLocation, "fennek-folder-videos", "Videos", "Відео"}};
     for (const auto &f : folders) {
         const QString path = QStandardPaths::writableLocation(f.where);
         if (path.isEmpty() || path == home || !QDir(path).exists())
             continue;
-        const QString name = QDir(path).dirName(); // already in the user's language (xdg-user-dirs)
-        out.append({name, name, QString::fromLatin1(f.icon), QStringLiteral("inode/x-fennek-folder"), path});
+        const QString key = QDir(path).dirName();
+        const QString label = lang == QLatin1String("en") ? QString::fromUtf8(f.en)
+            : lang == QLatin1String("uk")                  ? QString::fromUtf8(f.uk)
+                                                            : key;
+        out.append({key, label, QString::fromLatin1(f.icon), QStringLiteral("inode/x-fennek-folder"), path});
     }
     QStringList shown{home};
     for (const Item &i : std::as_const(out))

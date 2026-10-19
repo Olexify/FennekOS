@@ -1,28 +1,53 @@
 #!/usr/bin/bash
-# The classic Print Screen keys: PrtSc copies the whole screen, Alt+PrtSc the active window (paste anywhere);
-# Super+PrtSc saves the whole screen to Pictures/Screenshots. Usage: fennek-printscreen copy|window|save
+# Screenshots, the classic keys. A picture goes to the clipboard only (paste it anywhere); the notice offers Save
+# (to Pictures/Screenshots) and Annotate. Nothing piles up on the disk unless you ask.
+#   copy    PrtSc: the whole screen        window  Alt+PrtSc: the active window
+#   region  Super+Shift+S: drag a box (a plain click or Escape: nothing happens)
+#   save    Super+PrtSc: the whole screen, saved straight away
 set -u
 case ${1:-} in
-    copy) what=--fullscreen ;;
+    copy | save) what=--fullscreen ;;
     window) what=--activewindow ;;
-    save) what=--fullscreen ;;
-    *) echo "usage: fennek-printscreen copy|window|save" >&2; exit 2 ;;
+    region) what=--region ;;
+    *) echo "usage: fennek-printscreen copy|window|region|save" >&2; exit 2 ;;
 esac
 tmp=$(mktemp --suffix=.png); trap 'rm -f "$tmp"' EXIT
 spectacle --background --nonotify "$what" --output "$tmp" >/dev/null 2>&1
-[ -s "$tmp" ] || exit 1
-if [ "$1" != save ]; then
-    wl-copy --type image/png <"$tmp"
-    notify-send -a "Screenshot" -i "$tmp" -t 3000 "Screenshot copied" "Paste it anywhere."
-    sleep 1   # the notice reads the picture before it goes
-    exit 0
+[ -s "$tmp" ] || exit 0                                   # cancelled
+if [ "$1" = region ]; then                                # a click, not a box: the snipping tool took the whole screen
+    size=$(magick identify -format '%wx%h' "$tmp" 2>/dev/null)
+    screens=$(kscreen-doctor -j 2>/dev/null | python3 -c '
+import json, sys
+for o in json.load(sys.stdin).get("outputs", []):
+    m = next((m for m in o.get("modes", []) if m.get("id") == o.get("currentModeId")), None)
+    if o.get("enabled") and m:
+        print("{}x{}".format(m["size"]["width"], m["size"]["height"]))')
+    grep -qxF -- "$size" <<<"$screens" && exit 0
 fi
+
 dir=$(kreadconfig6 --file spectaclerc --group ImageSave --key imageSaveLocation)
 dir=${dir#file://}; [ -n "$dir" ] || dir=$(xdg-user-dir PICTURES)/Screenshots
-mkdir -p -- "$dir"
-dest=$dir/Screenshot_$(date +%Y%m%d_%H%M%S).png
-cp -- "$tmp" "$dest"
-a=$(notify-send -a "Screenshot" -i "$dest" -h "string:image-path:$dest" --action=folder="Show in folder" \
-    --wait "Screenshot saved" "In ${dir##*/}.")
-[ "$a" = folder ] && exec dolphin --select "$dest"
+save() {
+    mkdir -p -- "$dir"
+    dest=$dir/Screenshot_$(date +%Y%m%d_%H%M%S).png
+    cp -- "$tmp" "$dest"
+}
+if [ "$1" = save ]; then
+    save
+    a=$(notify-send -a "Screenshot" -i "$dest" -h "string:image-path:$dest" --action=folder="Show in folder" \
+        --wait "Screenshot saved" "In ${dir##*/}.")
+    [ "$a" = folder ] && exec dolphin --select "$dest"
+    exit 0
+fi
+
+# The latest one, for the notice's picture and its buttons: in memory (/run), replaced by the next one.
+latest=${XDG_RUNTIME_DIR:-/tmp}/fennek-screenshot-$$.png
+cp -- "$tmp" "$latest"; trap 'rm -f "$tmp" "$latest"' EXIT
+wl-copy --type image/png <"$latest"
+a=$(notify-send -a "Screenshot" -i "$latest" -h "string:image-path:$latest" --action=save=Save --action=edit=Annotate \
+    --wait "Screenshot copied" "Paste it anywhere.")
+case $a in
+    save) save; notify-send -a "Screenshot" -i "$dest" -t 4000 "Screenshot saved" "In ${dir##*/}." ;;
+    edit) save; exec spectacle --edit-existing "$dest" ;;
+esac
 exit 0

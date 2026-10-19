@@ -3,6 +3,8 @@
 // (Breeze's own behaviour changes the value of whatever happens to be under the pointer while scrolling.)
 // And: an Apply button with changes waiting is filled with the accent colour and pulses twice when it becomes
 // available, so nobody misses that a setting still has to be applied.
+// Files: no focus box on the first item when a folder opens (only once you move with the keyboard), and the back /
+// forward / up buttons without the tiny history arrow under them (hold or right-click still shows the history).
 #include <QAbstractSlider>
 #include <QDialogButtonBox>
 #include <QPushButton>
@@ -14,6 +16,32 @@
 #include <QProxyStyle>
 #include <QStyleFactory>
 #include <QStylePlugin>
+#include <QKeyEvent>
+#include <QStyleOption>
+
+// Whether the last thing you did was moving with the keyboard (arrows, Tab...) or a click.
+class KeyNavWatcher : public QObject
+{
+public:
+    static bool keyboard;
+    bool eventFilter(QObject *, QEvent *e) override
+    {
+        if (e->type() == QEvent::KeyPress) {
+            switch (static_cast<QKeyEvent *>(e)->key()) {
+            case Qt::Key_Left: case Qt::Key_Right: case Qt::Key_Up: case Qt::Key_Down: case Qt::Key_Tab: case Qt::Key_Backtab:
+            case Qt::Key_Home: case Qt::Key_End: case Qt::Key_PageUp: case Qt::Key_PageDown:
+                keyboard = true;
+                break;
+            default:
+                break;
+            }
+        } else if (e->type() == QEvent::MouseButtonPress) {
+            keyboard = false;
+        }
+        return false;
+    }
+};
+bool KeyNavWatcher::keyboard = false;
 
 class FennekStyle : public QProxyStyle
 {
@@ -32,6 +60,54 @@ public:
                 w->setFocusPolicy(Qt::StrongFocus);   // the wheel no longer gives them focus
             w->installEventFilter(this);
         }
+    }
+    void polish(QApplication *app) override
+    {
+        QProxyStyle::polish(app);
+        static KeyNavWatcher *watcher = nullptr;
+        if (!watcher) {
+            watcher = new KeyNavWatcher;
+            app->installEventFilter(watcher);
+        }
+    }
+    void drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPainter *p, const QWidget *w) const override
+    {
+        if (inFileView(w) && !KeyNavWatcher::keyboard && opt && !(opt->state & State_Selected)) {
+            if (pe == PE_FrameFocusRect)
+                return;   // the "current" item: no box until you use the keyboard
+            if (pe == PE_PanelItemViewItem && (opt->state & State_HasFocus) && !(opt->state & State_MouseOver)) {
+                if (const auto *v = qstyleoption_cast<const QStyleOptionViewItem *>(opt)) {
+                    QStyleOptionViewItem o(*v);
+                    o.state &= ~State_HasFocus;
+                    QProxyStyle::drawPrimitive(pe, &o, p, w);
+                    return;
+                }
+            }
+        }
+        QProxyStyle::drawPrimitive(pe, opt, p, w);
+    }
+    void drawComplexControl(ComplexControl cc, const QStyleOptionComplex *opt, QPainter *p, const QWidget *w) const override
+    {
+        if (cc == CC_ToolButton) {
+            if (const auto *t = qstyleoption_cast<const QStyleOptionToolButton *>(opt)) {
+                QStyleOptionToolButton o(*t);
+                o.features &= ~QStyleOptionToolButton::PopupDelay;   // back / forward: no tiny arrow
+                QProxyStyle::drawComplexControl(cc, &o, p, w);
+                return;
+            }
+        }
+        QProxyStyle::drawComplexControl(cc, opt, p, w);
+    }
+    QSize sizeFromContents(ContentsType ct, const QStyleOption *opt, const QSize &size, const QWidget *w) const override
+    {
+        if (ct == CT_ToolButton) {
+            if (const auto *t = qstyleoption_cast<const QStyleOptionToolButton *>(opt)) {
+                QStyleOptionToolButton o(*t);
+                o.features &= ~QStyleOptionToolButton::PopupDelay;
+                return QProxyStyle::sizeFromContents(ct, &o, size, w);
+            }
+        }
+        return QProxyStyle::sizeFromContents(ct, opt, size, w);
     }
     void unpolish(QWidget *w) override
     {
@@ -54,6 +130,14 @@ public:
     }
 
 private:
+    // Files' file view (its items are painted on a graphics view inside KItemListContainer).
+    static bool inFileView(const QWidget *w)
+    {
+        for (int i = 0; w && i < 3; ++i, w = w->parentWidget())
+            if (w->inherits("KItemListContainer"))
+                return true;
+        return false;
+    }
     static bool isApplyButton(QWidget *w)
     {
         auto *b = qobject_cast<QPushButton *>(w);
