@@ -8,6 +8,34 @@
       "browser.tabs.inTitlebar": {
         "Value": 0,
         "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.lists.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.focusTimer.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.weather.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.widgets.weatherForecast.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.showWeather": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.newtabpage.activity-stream.newtabWallpapers.wallpaper": {
+        "Value": "lunar-eclipse",
+        "Status": "default"
       }
     },
     "UserMessaging": {
