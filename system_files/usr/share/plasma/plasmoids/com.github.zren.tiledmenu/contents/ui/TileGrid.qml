@@ -50,11 +50,11 @@ DropArea {
 
 	//--- Drag and Drop events
 	// onContainsDragChanged: console.log('containsDrag', containsDrag)
-	onEntered: {
+	onEntered: function (drag) {   // the event (with the dropped app's address), not the DropArea's own drag property
 		// console.log('onEntered', drag)
 		dragTick(drag)
 	}
-	onPositionChanged: {
+	onPositionChanged: function (drag) {
 		// console.log('onPositionChanged', drag)
 		dragTick(drag)
 	}
@@ -62,7 +62,7 @@ DropArea {
 		// console.log('onExited')
 		resetDragHover()
 	}
-	onDropped: {
+	onDropped: function (drop) {
 		// console.log('onDropped', drop)
 		if (draggedItem) {
 			// Fennek OS: on a taken spot (shown red while dragging) the tile goes to the nearest free spot below in the
@@ -248,7 +248,7 @@ DropArea {
 			dropHoverY = modelY
 
 			// Firefox/Chromium url dropped
-			if (event.keys.indexOf('_NETSCAPE_URL')) {
+			if (event.keys.indexOf('_NETSCAPE_URL') >= 0) {
 				var netscapeUrl = event.getDataAsString('_NETSCAPE_URL')
 				var tokens = netscapeUrl.split('\n')
 				if (tokens.length >= 2) {
