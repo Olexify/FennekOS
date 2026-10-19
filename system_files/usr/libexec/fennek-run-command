@@ -1,0 +1,101 @@
+#!/usr/bin/python3
+"""The Run box (Super+R) behind the scenes: opens what was typed, the classic way.
+
+  fennek-run-command [--terminal] [--admin] [--] TEXT  open TEXT: a web address, a file or folder, or a command
+                                                   (calc, notepad, ncpa.cpl, firefox, any program); remembered
+  fennek-run-command --history                     what was run before (JSON, newest first)
+  fennek-run-command --selftest
+
+--terminal: the command runs in a terminal that stays open. --admin: it runs with administrator rights (sudo, in a
+terminal, which asks for the password). Exit 1 with a message when nothing by that name exists.
+"""
+import json, os, shlex, shutil, subprocess, sys
+
+HIST = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state"), "fennek", "run-history")
+KEEP = 40
+
+
+def classify(text):
+    """-> ("url"|"path"|"command"|"missing"|"empty", value)"""
+    t = text.strip()
+    if not t:
+        return "empty", ""
+    low = t.lower()
+    if "://" in t.split()[0] or low.startswith(("www.", "mailto:")):
+        return "url", t if "://" in t or low.startswith("mailto:") else "https://" + t
+    p = os.path.expanduser(t)
+    if os.path.isabs(p) and os.path.exists(p):
+        return "path", p
+    try:
+        first = shlex.split(t)[0]
+    except ValueError:
+        return "missing", t
+    if shutil.which(os.path.expanduser(first)):
+        return "command", t
+    return "missing", t
+
+
+def argv(kind, value, terminal=False, admin=False):
+    if kind in ("url", "path"):
+        return ["xdg-open", value]
+    if admin:
+        return ["konsole", "--hold", "-e", "sudo", "sh", "-c", value]
+    if terminal:
+        return ["konsole", "--hold", "-e", "sh", "-c", value]
+    return ["sh", "-c", value]
+
+
+def history():
+    try:
+        return [l for l in open(HIST, encoding="utf-8").read().splitlines() if l]
+    except OSError:
+        return []
+
+
+def remember(text):
+    h = [text] + [l for l in history() if l != text]
+    os.makedirs(os.path.dirname(HIST), exist_ok=True)
+    with open(HIST + ".new", "w", encoding="utf-8") as f:
+        f.write("\n".join(h[:KEEP]) + "\n")
+    os.replace(HIST + ".new", HIST)
+
+
+def selftest():
+    assert classify("  ")[0] == "empty"
+    assert classify("https://kitsumi.org") == ("url", "https://kitsumi.org")
+    assert classify("www.example.com") == ("url", "https://www.example.com")
+    assert classify("/") == ("path", "/")
+    assert classify("sh -c true") == ("command", "sh -c true")
+    assert classify("surely-not-a-program-xyz")[0] == "missing"
+    assert argv("command", "top", terminal=True)[:3] == ["konsole", "--hold", "-e"]
+    assert "sudo" in argv("command", "dnf check", admin=True)
+    assert argv("url", "https://a.b", admin=True) == ["xdg-open", "https://a.b"], "admin never applies to opening a page"
+    print("selftest ok")
+
+
+def main(args):
+    if args == ["--selftest"]:
+        return selftest()
+    if args == ["--history"]:
+        print(json.dumps(history()))
+        return
+    opts, text = args, ""
+    if "--" in args:   # options, then -- and the text as typed
+        i = args.index("--")
+        opts, text = args[:i], " ".join(args[i + 1:])
+    else:
+        text = " ".join(a for a in args if a not in ("--terminal", "--admin"))
+    terminal, admin = "--terminal" in opts, "--admin" in opts
+    kind, value = classify(text)
+    if kind == "empty":
+        sys.exit(1)
+    if kind == "missing":
+        print(f"Fennek OS can't find '{text.strip()}'. Check the name and try again.")
+        sys.exit(1)
+    subprocess.Popen(argv(kind, value, terminal, admin), start_new_session=True,
+                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    remember(text.strip())
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

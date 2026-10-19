@@ -455,7 +455,6 @@ def _add(p, shortcut, rename):
         head = re.sub(r"^Name=.*$", f"Name={rename}", head, count=1, flags=re.M)
     replace_file(p, head + sep + rest)
 add_shortcut("org.kde.plasma-systemmonitor.desktop", "Ctrl+Shift+Esc", rename="Task Manager")
-add_shortcut("org.kde.krunner.desktop", "Meta+R")
 add_shortcut("org.kde.dolphin.desktop", "Meta+E")
 # Super+Shift+S = snip a screen region (Spectacle's region action; its own Meta+Shift+Print stays).
 p = pathlib.Path("/usr/share/applications/org.kde.spectacle.desktop")

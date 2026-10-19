@@ -27,7 +27,7 @@ QQC2.ApplicationWindow {
         ["Task Manager", "utilities-system-monitor", "plasma-systemmonitor"],
         ["Settings", "fennek-settings", "fennek-app settings"],
         ["File Explorer", "system-file-manager", "dolphin"],
-        ["Run", "system-run", "krunner"],
+        ["Run", "system-run", "fennek-app run"],
         [],
         ["Shut down or sign out", "system-shutdown", "dbus-send --session --dest=org.kde.LogoutPrompt --type=method_call /LogoutPrompt org.kde.LogoutPrompt.promptAll"],
         ["Desktop", "user-desktop", "dbus-send --session --dest=org.kde.kglobalaccel --type=method_call /component/kwin org.kde.kglobalaccel.Component.invokeShortcut string:'Show Desktop'"]

@@ -326,7 +326,7 @@ rpm -q firefox >/dev/null && grep -q '"DisableTelemetry": true' /etc/firefox/pol
 grep -q '^Name=Files$' /usr/share/applications/org.kde.dolphin.desktop || fail "Files name"
 grep -q '^Name=Task Manager$' /usr/share/applications/org.kde.plasma-systemmonitor.desktop || fail "Task Manager name"
 grep -q '^X-KDE-Shortcuts=.*Ctrl+Shift+Esc' /usr/share/applications/org.kde.plasma-systemmonitor.desktop || fail "Ctrl+Shift+Esc"
-grep -qs '^X-KDE-Shortcuts=.*Meta+R' /usr/share/kglobalaccel/org.kde.krunner.desktop /usr/share/applications/org.kde.krunner.desktop || fail "Win+R"
+grep -q '^X-KDE-Shortcuts=Meta+R' /usr/share/applications/fennek-run.desktop && /usr/libexec/fennek-run-command --selftest >/dev/null     && ! grep -q 'Meta+R' /usr/share/applications/org.kde.krunner.desktop || fail "Win+R: the centred Run box"
 grep -q '^X-KDE-Shortcuts=.*Meta+E' /usr/share/kglobalaccel/org.kde.dolphin.desktop || fail "Super+E opens File Explorer"
 grep -q '^X-KDE-Shortcuts=Meta+Shift+S,' /usr/share/applications/org.kde.spectacle.desktop || fail "Super+Shift+S snips a region"
 [ "$(kreadconfig6 --file /etc/xdg/kglobalshortcutsrc --group kwin --key Overview | cut -f1)" = Meta+Tab ] || fail "Super+Tab task view"
@@ -392,7 +392,7 @@ for pg in updates firewall quarantine backup apphistory; do   # Fennek's own pag
     rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 10 fennek-app settings $pg >/tmp/setpage.log 2>&1 || rc=$?
     [ $rc -eq 124 ] && ! grep -q 'Page.qml.*\(Error\|error\|Cannot\|is not\)' /tmp/setpage.log || { tail -5 /tmp/setpage.log; fail "$pg opens inside Settings (exit $rc)"; }
 done
-for a in settings firewall welcome apphistory backup live updates quarantine winx power; do   # starts off-screen and keeps running = the QML loads
+for a in settings firewall welcome apphistory backup live updates quarantine winx power run; do   # starts off-screen and keeps running = the QML loads
     rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-app "$a" >/tmp/app-$a.log 2>&1 || rc=$?
     [ $rc -eq 124 ] || { tail -5 /tmp/app-$a.log; fail "app $a does not start (exit $rc)"; }
 done

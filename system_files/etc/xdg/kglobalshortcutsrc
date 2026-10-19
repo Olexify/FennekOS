@@ -11,8 +11,12 @@ Fennek Close or Shut Down=Alt+F4,Alt+F4,Close the window, or shut down from the 
 next activity=none,Meta+Tab,Walk through activities
 
 [services][org.kde.krunner.desktop]
-# Super+R: the Run box (type an app, a command, a file or a sum), like the classic Run dialog.
-_launch=Meta+R	Alt+Space	Alt+F2	Search
+# Search everything (apps, files, sums): Alt+Space / Alt+F2. Super+R belongs to the Run box below.
+_launch=Alt+Space	Alt+F2	Search
+
+# Super+R: the Run box (fennek-app run), a centred card like the classic Run dialog.
+[services][fennek-run.desktop]
+_launch=Meta+R
 
 # Super+I: Settings. Ctrl+Shift+Esc: Task Manager (Ctrl+Esc keeps working).
 [services][fennek-settings.desktop]
