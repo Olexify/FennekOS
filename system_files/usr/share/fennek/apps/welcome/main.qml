@@ -184,7 +184,8 @@ QQC2.ApplicationWindow {
                                 ["GIMP", "gimp", "org.gimp.GIMP"],
                                 ["VS Code", "vscode", "com.visualstudio.code"],
                                 ["Leonote", "fennek-get-leonote", "", "xdg-open https://github.com/Olexify/Leonote/releases/latest"],
-                                ["MPV Player", "multimedia-video-player", "", "/usr/libexec/fennek-get-mpv"]
+                                ["MPV Player", "multimedia-video-player", "", "/usr/libexec/fennek-get-mpv"],
+                                ["LibreOffice", "x-office-document", "", "/usr/libexec/fennek-get-app org.libreoffice.LibreOffice LibreOffice fennek-get-libreoffice"]
                             ]
                             delegate: QQC2.ItemDelegate {
                                 required property var modelData

@@ -121,8 +121,8 @@ rm -rf "$gb"
 ea=$(/usr/libexec/fennek-essential-apps --list) && echo "everyday apps to fetch: $ea" | tr '\n' ' ' && echo \
   && [ -L /etc/systemd/system/multi-user.target.wants/fennek-essential-apps.service ] \
   && grep -q '^ConditionKernelCommandLine=!rd.live.image' /usr/lib/systemd/system/fennek-essential-apps.service \
-  && [ -z "$(grep -vxE 'org\.kde\.[a-z]*|org\.libreoffice\.LibreOffice' <<<"$ea")" ] \
-  && grep -q '^application/msword=org.libreoffice' /etc/xdg/mimeapps.list || fail "everyday apps installer (incl. office)"
+  && [ -z "$(grep -vxE 'org\.kde\.[a-z]*' <<<"$ea")" ] && [ -x /usr/libexec/fennek-get-app ]   && grep -q 'fennek-get-app org.libreoffice.LibreOffice' /usr/share/applications/fennek-get-libreoffice.desktop \
+  && grep -q '^application/msword=org.libreoffice' /etc/xdg/mimeapps.list || fail "everyday apps installer; office on request"
 # Alt+F4 script (desktop: Shut down) + shortcut update for existing users (runs before the window manager).
 # It must sit where KWin's own scripts are, or Alt+F4 would do nothing at all.
 kd=$(ls -d /usr/share/kwin*/scripts/minimizeall 2>/dev/null | head -1)

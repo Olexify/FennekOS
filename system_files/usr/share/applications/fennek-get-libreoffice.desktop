@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=LibreOffice
+GenericName=Office: documents, spreadsheets, presentations (get it)
+Comment=Documents, spreadsheets and presentations, in the classic office formats too. Not installed yet: one click installs it.
+Exec=/usr/libexec/fennek-get-app org.libreoffice.LibreOffice LibreOffice fennek-get-libreoffice
+Icon=x-office-document
+Categories=Office;
+Keywords=office;word;excel;powerpoint;docx;xlsx;pptx;document;spreadsheet;presentation;
