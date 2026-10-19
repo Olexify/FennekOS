@@ -3,7 +3,7 @@
 
   1. No separator lines between groups (This PC: Folders / Frequent folders / Storage drives).
   2. Groups fold: a click on a group's name hides its items (▸), another click shows them again (▾).
-     Folded groups stay folded while Files runs (by name, so "Frequent folders" stays folded everywhere).
+     The arrow keys skip a folded group's items. Folded groups stay folded while Files runs (by name, so "Frequent folders" stays folded everywhere).
      How: the layout gives a folded group's items no height (the group's name keeps its place), and their
      widgets paint nothing; the name is drawn by the first item's widget, which stays.
 
@@ -119,5 +119,27 @@ patch("kitemlistcontroller.cpp", """    const QPointF pressedMousePos = transfor
             }
         }
     }
+""")
+# 2d. The arrow keys skip the items of a folded group.
+patch("kitemlistcontroller.cpp", """    if (m_selectionManager->currentItem() != index) {
+        switch (m_selectionBehavior) {
+""", """    if (index >= 0 && index < itemCount && m_view->m_layouter->fennekIsHidden(index)) { // Fennek OS: folded group
+        const int old = m_selectionManager->currentItem();
+        const int step = index >= old ? 1 : -1;
+        int i = index;
+        while (i >= 0 && i < itemCount && m_view->m_layouter->fennekIsHidden(i)) {
+            i += step;
+        }
+        if (i < 0 || i >= itemCount) {
+            i = index;
+            while (i >= 0 && i < itemCount && m_view->m_layouter->fennekIsHidden(i)) {
+                i -= step;
+            }
+        }
+        index = (i >= 0 && i < itemCount) ? i : old;
+    }
+
+    if (m_selectionManager->currentItem() != index) {
+        switch (m_selectionBehavior) {
 """)
 print("dolphin: Fennek changes applied")
