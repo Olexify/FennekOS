@@ -70,6 +70,21 @@ def hide_devices(text):
     return hide_group(text, HIDE_DEVICES)
 
 
+def hide_home(text, home):
+    """Existing sidebar: KDE's "Home" entry hidden. This PC is the one start place (your folders, drives); Home is
+    still reachable (Alt+Home, the address bar, and the sidebar's "Show all entries")."""
+    href = 'href=' + quoteattr("file://" + quote(home))
+    i = text.find("<bookmark " + href + ">")
+    if i < 0:
+        return text
+    j = text.index("</bookmark>", i)
+    b = text[i:j]
+    if "<IsHidden>" in b:
+        return text
+    b = re.sub(r'(<metadata owner="http://www.kde.org">)', r"\1<IsHidden>true</IsHidden>", b, count=1)
+    return text[:i] + b + text[j:]
+
+
 def ui_language():
     """The display language picked in Settings (Plasma's own setting), else the session's."""
     import configparser
@@ -133,6 +148,10 @@ def selftest():
     r = recycle_bin(kde)
     assert "<title>Recycle Bin</title>" in r and "<IsSystemItem>false</IsSystemItem>" in r and recycle_bin(r) == r
     assert recycle_bin(old) == old
+    kh = (' <bookmark href="file:///var/home/u">\n  <title>Home</title>\n  <info>\n   <metadata owner="http://www.kde.org">'
+          '<ID>1</ID></metadata>\n  </info>\n </bookmark>\n')
+    h = hide_home(kh, "/var/home/u")
+    assert "<IsHidden>true</IsHidden><ID>1</ID>" in h and hide_home(h, "/var/home/u") == h and hide_home(kh, "/home/x") == kh
     print("selftest ok")
 
 
@@ -142,7 +161,7 @@ if __name__ == "__main__":
     elif len(sys.argv) == 3 and sys.argv[1] == "--ensure-thispc":
         p = sys.argv[2]
         t = open(p, encoding="utf-8").read()
-        new = hide_group(hide_devices(ensure_thispc(t)), HIDE_RECENT)
+        new = hide_home(hide_group(hide_devices(ensure_thispc(t)), HIDE_RECENT), os.path.expanduser("~"))
         if ui_language().startswith("en"):
             new = recycle_bin(new)
         if new != t:

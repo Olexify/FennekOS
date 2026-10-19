@@ -159,10 +159,10 @@ fi
 
 # Files sidebar, once: hide "Devices" (system partitions) and "Recent", the bin is Recycle Bin (English).
 pl_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/places-version
-if [ "$(cat "$pl_seen" 2>/dev/null)" != 2026-10-19 ]; then
+if [ "$(cat "$pl_seen" 2>/dev/null)" != 2026-10-19b ]; then   # b: Home hidden (This PC is the start place)
     places=${XDG_DATA_HOME:-$HOME/.local/share}/user-places.xbel
     [ -f "$places" ] && /usr/libexec/fennek-first-login-places --ensure-thispc "$places"
-    mkdir -p "${pl_seen%/*}" && echo 2026-10-19 >"$pl_seen"
+    mkdir -p "${pl_seen%/*}" && echo 2026-10-19b >"$pl_seen"
 fi
 
 version=2026-10-19g
