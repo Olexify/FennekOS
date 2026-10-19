@@ -239,8 +239,8 @@ Item {
 			id: groupOutline
 			readonly property bool hot: groupHover.hovered || tileMouseArea.containsMouse || grip.pressed
 			color: "transparent"   // above the tiles (so the grip is reachable): an outline only
-			border.width: Math.max(1, Math.round(1.5 * Screen.devicePixelRatio))
-			border.color: Qt.rgba(config.menuTextColor.r, config.menuTextColor.g, config.menuTextColor.b, hot ? 0.45 : 0.22)
+			border.width: Math.max(1, Math.round(1 * Screen.devicePixelRatio))   // a hint of the walls; clearer on hover
+			border.color: Qt.rgba(config.menuTextColor.r, config.menuTextColor.g, config.menuTextColor.b, hot ? 0.28 : 0.09)
 			radius: 12
 			x: 1
 			y: 1   // wraps the name too
@@ -275,7 +275,7 @@ Item {
 				Canvas {
 					anchors.fill: parent
 					anchors.margins: 3
-					opacity: parent.containsMouse || parent.pressed ? 0.95 : (groupOutline.hot ? 0.6 : 0.3)
+					opacity: parent.containsMouse || parent.pressed ? 0.95 : (groupOutline.hot ? 0.55 : 0)   // only when the group is hovered
 					onPaint: {
 						var c = getContext("2d")
 						c.reset()
