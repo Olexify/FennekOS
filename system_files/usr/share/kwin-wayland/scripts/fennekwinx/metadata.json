@@ -1,0 +1,12 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Id": "fennekwinx",
+        "Name": "Super+X quick links placement",
+        "Description": "Puts the Super+X quick-link menu at the bottom-left, above Start.",
+        "License": "GPL-3.0-only",
+        "EnabledByDefault": true
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Quick links
+Comment=The quick-link menu (Super+X)
+Exec=fennek-app winx
+Icon=fennek
+NoDisplay=true
+X-KDE-Shortcuts=Meta+X

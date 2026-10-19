@@ -23,4 +23,6 @@ LayoutName=thumbnail_grid
 fennekaltf4Enabled=true
 # F11: any window full screen, or back to a normal window with borders (/usr/share/kwin-wayland/scripts/fennekf11).
 fennekf11Enabled=true
+# Super+X quick links at the bottom-left (/usr/share/kwin-wayland/scripts/fennekwinx).
+fennekwinxEnabled=true
 fenneksnapassistEnabled=true

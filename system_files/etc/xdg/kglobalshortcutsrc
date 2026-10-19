@@ -18,6 +18,10 @@ _launch=Meta+R	Alt+Space	Alt+F2	Search
 [services][fennek-settings.desktop]
 _launch=Meta+I
 
+# Super+X: quick links (Task Manager, Settings, File Explorer, Run, Shut down...).
+[services][fennek-winx.desktop]
+_launch=Meta+X
+
 [services][org.kde.plasma-systemmonitor.desktop]
 _launch=Ctrl+Shift+Esc	Ctrl+Esc
 
