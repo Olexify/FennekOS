@@ -3,10 +3,14 @@
 # Oleks's setup for it (github.com/Olexify/MPV_Player_OleksEdition: modern controls, thumbnails, resume, smart
 # keys). Not part of Fennek OS itself; nothing happens until you choose it. Run again: the setup is refreshed (the
 # previous one is kept as mpv.bak-DATE).
+# The setup includes scripts the player runs, so it is pinned: one reviewed commit, checked by its SHA-256 (a newer
+# setup = update COMMIT and SHA256 here). Links inside it are dropped.
 # The setup is made for another system's graphics; its video output lines get the Linux equivalents.
 set -euo pipefail
 app=io.mpv.Mpv
-repo=https://codeload.github.com/Olexify/MPV_Player_OleksEdition/tar.gz/refs/heads/master
+COMMIT=4c388cb26acd601b7cf9fb405aaa22d0b038bd27
+SHA256=1e744df2ce9b735bf32fc34eac3b0c7c932d53ca28924654cff782fee24741af
+repo=https://codeload.github.com/Olexify/MPV_Player_OleksEdition/tar.gz/$COMMIT
 note() { notify-send -a "MPV Player" -i multimedia-video-player "$@" || true; }
 
 note "Installing MPV Player" "Oleks Edition: the player, then its setup. This takes a minute."
@@ -18,11 +22,13 @@ fi
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 curl -fsSL --max-time 120 --max-filesize 50000000 "$repo" -o "$tmp/setup.tar.gz" \
     || { note "MPV Player is installed" "Its Oleks Edition setup couldn't be downloaded; the player works with its own look."; exit 1; }
+echo "$SHA256  $tmp/setup.tar.gz" | sha256sum -c --quiet -     || { note "MPV Player is installed" "The setup download didn't match the checked version; nothing was changed."; exit 1; }
 mkdir "$tmp/src"
 tar -xzf "$tmp/setup.tar.gz" -C "$tmp/src" --strip-components=1 --no-same-owner --no-same-permissions
 src=$tmp/src
 [ -f "$src/mpv.conf" ] || { note "MPV Player is installed" "The setup download looked wrong; nothing was changed."; exit 1; }
 rm -rf "$src/.git" "$src/.github" "$src/README.md" "$src/.gitignore"
+find "$src" -type l -delete   # plain files only
 # Linux graphics: the same idea (fast GPU output, hardware decoding) with this system's names.
 sed -i -e 's/^gpu-api=d3d11$/gpu-api=auto/' -e 's/^hwdec=d3d11va\(-copy\)\?$/hwdec=auto-safe/' \
     -e '/^d3d11va-zero-copy=/d' -e '/^d3d11-exclusive-fs=/d' "$src/mpv.conf"
