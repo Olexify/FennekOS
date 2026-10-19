@@ -168,7 +168,7 @@ if [ "$(cat "$pl_seen" 2>/dev/null)" != 2026-10-20 ]; then   # Home hidden (This
     mkdir -p "${pl_seen%/*}" && echo 2026-10-20 >"$pl_seen"
 fi
 
-version=2026-10-19g
+version=2026-10-20
 seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/shortcuts-version
 [ "$(cat "$seen" 2>/dev/null)" = "$version" ] && exit 0
 f=${XDG_CONFIG_HOME:-$HOME/.config}/kglobalshortcutsrc
@@ -193,6 +193,28 @@ if [ -f "$f" ]; then
     kwriteconfig6 --file "$f" --group services --group fennek-security.desktop --key _launch Ctrl+Alt+Del
     kwriteconfig6 --file "$f" --group services --group org.kde.spectacle.desktop --key _launch none          # PrtSc keys: fennek-printscreen
     kwriteconfig6 --file "$f" --group services --group org.kde.spectacle.desktop --key ActiveWindowScreenShot none
+    python3 - "$f" <<'PYEOF'   # Super+R: only the Run box (KDE's screenshot app records the screen with it)
+import re, sys
+p = sys.argv[1]
+t = open(p, encoding="utf-8").read()
+out, group = [], ""
+for line in t.split("\n"):
+    if line.startswith("["):
+        group = line
+    elif "=" in line and group != "[services][fennek-run.desktop]":
+        key, val = line.split("=", 1)
+        parts = val.split(",")
+        active = [k for k in parts[0].split("\t") if k != "Meta+R"]
+        if len(active) != len(parts[0].split("\t")):
+            parts[0] = "\t".join(active) or "none"
+            line = key + "=" + ",".join(parts)
+    out.append(line)
+n = "\n".join(out)
+if n != t:
+    open(p + ".fennek-new", "w", encoding="utf-8").write(n)
+    import os; os.replace(p + ".fennek-new", p)
+PYEOF
+    kwriteconfig6 --file "$f" --group services --group fennek-run.desktop --key _launch Meta+R
     kw "KDE Keyboard Layout Switcher" "Switch to Next Keyboard Layout" $'Meta+Space\tMeta+Alt+K,Meta+Alt+K,Switch to Next Keyboard Layout'   # Super+Space: next language
 fi
 mkdir -p "${seen%/*}" && echo "$version" >"$seen"

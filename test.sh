@@ -403,6 +403,7 @@ for pg in updates firewall quarantine backup apphistory; do   # Fennek's own pag
     [ $rc -eq 124 ] && ! grep -q 'Page.qml.*\(Error\|error\|Cannot\|is not\)' /tmp/setpage.log || { tail -5 /tmp/setpage.log; fail "$pg opens inside Settings (exit $rc)"; }
 done
 grep -q '^X-KDE-Shortcuts=Print$' /usr/share/applications/fennek-printscreen.desktop && ! grep -A30 '^\[Desktop Entry\]' /usr/share/applications/org.kde.spectacle.desktop | grep -m1 '^X-KDE-Shortcuts=' | cut -d= -f2 | tr , '\n' | grep -qx 'Print' && [ -x /usr/libexec/fennek-printscreen ] || fail "PrtSc copies the screen, Alt+PrtSc the window, Super+PrtSc saves"
+! grep -l '^X-KDE-Shortcuts=.*Meta+R\(,\|$\)' /usr/share/applications/*.desktop | grep -v fennek-run.desktop | grep -q . || fail "Super+R is the Run box only"
 grep -q '^_launch=Ctrl+Alt+Del' /etc/xdg/kglobalshortcutsrc && grep -q '^Log Out=none,Ctrl+Alt+Del' /etc/xdg/kglobalshortcutsrc && grep -q 'fennek-security' /usr/share/kwin-wayland/scripts/fennekwinx/contents/code/main.js || fail "Ctrl+Alt+Del: security options screen"
 t=$(mktemp -d); HOME=$t /usr/libexec/fennek-text set 13 Inter && [ "$(HOME=$t /usr/libexec/fennek-text get)" = "13 Inter" ] && ! HOME=$t /usr/libexec/fennek-text set 13 'Inter;rm' 2>/dev/null || fail "Personalize: text size and typeface (fennek-text)"; rm -rf "$t"
 grep -q 'Inter,11,' /etc/xdg/kdeglobals && grep -q '"page": "personalize"' /usr/share/fennek/apps/settings/catalog.js || fail "Text 11 points by default; Personalize in Settings"

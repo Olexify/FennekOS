@@ -481,6 +481,19 @@ for section, key in (("Desktop Entry", "Print"), ("Desktop Action ActiveWindowSc
                    t, count=1, flags=re.M)
     assert n == 1, f"Spectacle {section} shortcut changed: revisit fennek-printscreen"
 replace_file(p, t)
+# Super+R belongs to the Run box (fennek-run.desktop) only: any other app's claim on it goes (KDE's screenshot app
+# uses it for screen recording; whichever registers first would win).
+for p in pathlib.Path("/usr/share/applications").glob("*.desktop"):
+    if p.name == "fennek-run.desktop" or p.is_symlink():
+        continue
+    t = p.read_text(errors="replace")
+    def drop(m):
+        keys = [k for k in m.group(2).split(",") if k and k != "Meta+R"]
+        return m.group(1) + ",".join(keys)
+    n = re.sub(r"^(X-KDE-Shortcuts=)(.*)$", drop, t, flags=re.M)
+    if n != t:
+        print("Super+R taken back from", p.name)
+        replace_file(p, n)
 # Super+I opens Fennek Settings (fennek-settings.desktop) instead of KDE's System Settings.
 for name in ("systemsettings.desktop",):
     for d in ("/usr/share/kglobalaccel", "/usr/share/applications"):
