@@ -41,7 +41,7 @@ dnf -y install \
     zsh zsh-autosuggestions zsh-syntax-highlighting \
     snapper \
     clamav clamav-freshclam inotify-tools \
-    rsync wl-clipboard dbus-tools \
+    rsync wl-clipboard dbus-tools util-linux-script \
     "${extra[@]}"
 # Printers page in Settings + print queue in the tray (KDE's printer manager; renamed in newer Plasma).
 dnf -y install plasma-print-manager || dnf -y install print-manager
