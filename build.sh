@@ -756,9 +756,9 @@ rm -rf /tmp/cargo-home
 # checked); only its view library is replaced. Its build tools go again right after.
 (
     set -e
-    dv=$(rpm -q --qf '%{VERSION}-%{RELEASE}' dolphin)
-    lib=$(rpm -ql dolphin | grep -E '/libdolphinprivate\.so\.[0-9.]+$' | head -1)
+    lib=$(ls /usr/lib64/libdolphinprivate.so.*.* 2>/dev/null | head -1 || true)   # the real file (not the .so.N link)
     [ -n "$lib" ] || { echo "Dolphin's view library moved: revisit src/dolphin-fennek"; exit 1; }
+    dv=$(rpm -qf --qf '%{VERSION}-%{RELEASE}' "$lib")   # from dolphin-libs; the source package is dolphin
     rpm -qa | sort > /tmp/rpms-before
     mkdir -p /tmp/dolphin && cd /tmp/dolphin
     dnf -y download --srpm "dolphin-$dv"
