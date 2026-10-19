@@ -1,0 +1,23 @@
+#!/usr/bin/bash
+# Text size and typeface for the whole desktop (Settings > Personalize > Text).
+#   fennek-text get                -> "SIZE FAMILY"  (points; the interface font)
+#   fennek-text set SIZE FAMILY    -> interface, menus, toolbars, title bars; small print two points below
+# Apps and the desktop pick it up at once (--notify).
+set -u
+font() { printf '%s,%s,-1,5,%s,0,0,0,0,0,0,0,0,0,0,1' "$1" "$2" "${3:-400}"; }
+case ${1:-} in
+    get)
+        f=$(kreadconfig6 --file kdeglobals --group General --key font)
+        IFS=, read -r fam size _ <<<"${f:-Inter,11}"
+        echo "${size%%.*} $fam" ;;
+    set)
+        size=${2:-}; fam=${3:-}
+        [[ $size =~ ^[0-9]+$ ]] && (( size >= 8 && size <= 24 )) || { echo "size: 8 to 24" >&2; exit 2; }
+        [[ $fam =~ ^[A-Za-z0-9\ ]{1,64}$ ]] || { echo "family: letters, digits, spaces" >&2; exit 2; }
+        fc-list : family | tr , '\n' | grep -qxF -- "$fam" || { echo "no such font: $fam" >&2; exit 1; }
+        w() { kwriteconfig6 --notify --file kdeglobals --group "$1" --key "$2" "$3"; }
+        for k in font menuFont toolBarFont; do w General "$k" "$(font "$fam" "$size")"; done
+        w General smallestReadableFont "$(font "$fam" $(( size > 9 ? size - 2 : 8 )))"
+        w WM activeFont "$(font "$fam" "$size" 500)" ;;
+    *) echo "usage: fennek-text get | set SIZE FAMILY" >&2; exit 2 ;;
+esac

@@ -62,6 +62,12 @@ QQC2.ApplicationWindow {
         if (item.kcm || item.page) page = item   // shown on the right (KDE page saved by itself, no Apply; or a Fennek page)
         else run.connectSource(item.cmd)
     }
+    function openKcm(kcm) {                      // a KDE page, by its module name
+        for (const c of Catalog.categories)
+            for (const i of c.items)
+                if (i.kcm === kcm) { category = c; page = i; return }
+        if (pageView.has(kcm)) page = { name: "", kcm: kcm, icon: "" }
+    }
     function openPage(name) {                    // a Fennek page by name (the Home status chips)
         for (const c of Catalog.categories)
             for (const i of c.items)
@@ -223,6 +229,7 @@ QQC2.ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: visible
                     source: root.page && root.page.page ? "file:///usr/share/fennek/apps/" + root.page.page + "/Page.qml" : ""
+                    onLoaded: if (item.openSetting) item.openSetting.connect(root.openKcm)   // a page's "More …" links
                 }
                 KcmView {
                     id: pageView

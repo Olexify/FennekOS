@@ -145,10 +145,13 @@ sed -i 's/^LookAndFeelPackage=.*/LookAndFeelPackage=org.fennek.desktop/' \
 kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key LookAndFeelPackage org.fennek.desktop
 # Fennek icons (classic folders, own app icons; the rest inherits Breeze), also set by both Fennek themes.
 kwriteconfig6 --file /etc/xdg/kdeglobals --group Icons --key Theme Fennek
-# Fonts: Inter for the interface (crisp, modern), Cascadia Mono for the Terminal and code. Both OFL.
+# Fonts: Inter for the interface (crisp, modern), Cascadia Mono for the Terminal and code. Both OFL. 11 points:
+# easy to read (Settings > Personalize changes size and typeface; fennek-text writes the same keys).
 for key in font menuFont toolBarFont; do
-    kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key "$key" "Inter,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+    kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key "$key" "Inter,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
 done
+kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key smallestReadableFont "Inter,9,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+kwriteconfig6 --file /etc/xdg/kdeglobals --group WM --key activeFont "Inter,11,-1,5,500,0,0,0,0,0,0,0,0,0,0,1"
 # Snappy: every animation (menus, pop-ups, windows) at half its length.
 kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key AnimationDurationFactor 0.5
 # Widget style "Fennek" (src/fennek-style): Breeze as it is, but the wheel scrolls the page instead of changing a
@@ -159,9 +162,7 @@ kwriteconfig6 --file /etc/xdg/ksplashrc --group KSplash --key Engine KSplashQML
 kwriteconfig6 --file /etc/xdg/ksplashrc --group KSplash --key Theme org.fennek.desktop
 printf '\n[ksplashrc][KSplash]\nEngine=KSplashQML\nTheme=org.fennek.desktop\n' >> "$lnf/contents/defaults"
 printf '\n[kdeglobals][KDE]\nwidgetStyle=Fennek\n' >> "$lnf/contents/defaults"
-kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key smallestReadableFont "Inter,8,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
-kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key fixed "Cascadia Mono,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
-kwriteconfig6 --file /etc/xdg/kdeglobals --group WM --key activeFont "Inter,10,-1,5,500,0,0,0,0,0,0,0,0,0,0,1"
+kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key fixed "Cascadia Mono,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
 # Sizes like the classic file manager: KB, MB, GB (powers of 1024) instead of KiB, MiB.
 kwriteconfig6 --file /etc/xdg/kdeglobals --group Locale --key BinaryUnitDialect 1
 # Fennek accent colour (highlights, selection, Start tiles): deep violet, from the wallpaper and the logo.

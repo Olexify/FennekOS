@@ -45,6 +45,7 @@ var categories = [
   ]},
  {"name": "Appearance", "icon": "fennek-settings-appearance", "sub": "Background, colors, themes, fonts",
   "items": [
+   {"name": "Personalize", "icon": "fennek-set-themes", "desc": "Theme, text size and typeface", "page": "personalize"},
    {"name": "Background", "kcm": "kcm_wallpaper", "icon": "fennek-set-background", "desc": "Desktop picture"},
    {"name": "Themes", "kcm": "kcm_lookandfeel", "icon": "fennek-set-themes", "desc": "Whole look of Fennek OS"},
    {"name": "Colors", "kcm": "kcm_colors", "icon": "fennek-set-colors", "desc": "Light, dark, accent color"},
@@ -85,6 +86,7 @@ var categories = [
   ]},
  {"name": "Accessibility", "icon": "fennek-settings-accessibility", "sub": "Assistive features, keyboard shortcuts",
   "items": [
+   {"name": "Make text bigger", "icon": "fennek-set-fonts", "desc": "Text size for everything on the screen", "page": "personalize"},
    {"name": "Assistive features", "kcm": "kcm_access", "icon": "fennek-set-access", "desc": "Sticky keys, visual bell"},
    {"name": "On-screen keyboard", "kcm": "kcm_virtualkeyboard", "icon": "fennek-set-keyboard", "desc": "A keyboard on the screen", "optional": true},
    {"name": "Keyboard shortcuts", "kcm": "kcm_keys", "icon": "fennek-set-shortcuts", "desc": "Change shortcuts"},
