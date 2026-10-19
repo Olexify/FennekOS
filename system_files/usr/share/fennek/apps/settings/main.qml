@@ -276,7 +276,7 @@ QQC2.ApplicationWindow {
                                       page: "updates" },
                                     { icon: "security-high",
                                       text: root.netProfile === "public" ? "Firewall: public network" : "Firewall: home network",
-                                      cmd: "fennek-app firewall" }
+                                      page: "firewall" }
                                 ]
                                 delegate: QQC2.ItemDelegate {
                                     required property var modelData

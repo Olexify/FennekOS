@@ -15,7 +15,7 @@ var categories = [
    {"name": "Task switcher", "kcm": "kcm_kwintabbox", "icon": "fennek-set-switcher", "desc": "Alt+Tab", "optional": true},
    {"name": "Screen edges", "kcm": "kcm_kwinscreenedges", "icon": "fennek-set-edges", "desc": "Corners and edges, touch gestures", "optional": true},
    {"name": "Power & battery", "kcm": "kcm_powerdevilprofilesconfig", "icon": "fennek-set-power", "desc": "Sleep, screen off, battery saving"},
-   {"name": "Battery & app usage", "cmd": "fennek-app apphistory", "icon": "fennek-set-apphistory", "desc": "Which apps used the battery"},
+   {"name": "Battery & app usage", "icon": "fennek-set-apphistory", "desc": "Which apps used the battery", "page": "apphistory"},
    {"name": "Storage", "cmd": "filelight", "icon": "fennek-set-storage", "desc": "What uses space on your disks"},
    {"name": "Removable drives", "kcm": "kcm_device_automounter", "icon": "fennek-set-removable", "desc": "What happens when you plug in a drive", "optional": true},
    {"name": "About this computer", "kcm": "kcm_about-distro", "icon": "fennek-set-about", "desc": "Version, hardware"}
@@ -84,8 +84,8 @@ var categories = [
   ]},
  {"name": "Privacy & Security", "icon": "fennek-settings-privacy", "sub": "Firewall, quarantine, permissions",
   "items": [
-   {"name": "Firewall", "cmd": "fennek-app firewall", "icon": "fennek-set-firewall", "desc": "Choose which apps may use the internet"},
-   {"name": "Quarantine", "cmd": "fennek-quarantine", "icon": "fennek-set-quarantine", "desc": "Downloads the antivirus blocked"},
+   {"name": "Firewall", "icon": "fennek-set-firewall", "desc": "Choose which apps may use the internet", "page": "firewall"},
+   {"name": "Quarantine", "icon": "fennek-set-quarantine", "desc": "Downloads the antivirus blocked", "page": "quarantine"},
    {"name": "App permissions", "kcm": "kcm_app-permissions", "icon": "fennek-set-permissions", "desc": "What store apps may access"},
    {"name": "Recent files", "kcm": "kcm_recentFiles", "icon": "fennek-set-recent", "desc": "What Fennek remembers you opened", "optional": true},
    {"name": "Sign out and restart", "kcm": "kcm_smserver", "icon": "fennek-set-signout", "desc": "What happens when you sign out", "optional": true},
@@ -96,6 +96,6 @@ var categories = [
    {"name": "Updates", "icon": "fennek-set-updates", "desc": "Status, automatic updates, schedule, pause", "page": "updates"},
    {"name": "Store app updates", "cmd": "plasma-discover --mode update", "icon": "fennek-set-storeupdates", "desc": "Update Store apps now"},
    {"name": "Go back", "cmd": "fennek-go-back", "icon": "fennek-set-goback", "desc": "Undo the last update, keep your files"},
-   {"name": "Backup", "cmd": "fennek-app backup", "icon": "fennek-set-backup", "desc": "Copy your folders to a USB drive"}
+   {"name": "Backup", "icon": "fennek-set-backup", "desc": "Copy your folders to a USB drive", "page": "backup"}
   ]}
 ]

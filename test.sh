@@ -384,8 +384,10 @@ rc=0; QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-kcm kcm_mouse
 [ $rc -eq 124 ] || { tail -5 /tmp/kcm.log; fail "Settings page in its own window without Apply (fennek-kcm, exit $rc)"; }
 rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 10 fennek-app settings kcm_mouse >/tmp/kcmview.log 2>&1 || rc=$?
 [ $rc -eq 124 ] && ! grep -q "can't be shown inside" /tmp/kcmview.log || { tail -5 /tmp/kcmview.log; fail "Settings shows its pages inside (KcmView, exit $rc)"; }
-rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 10 fennek-app settings updates >/tmp/setupd.log 2>&1 || rc=$?
-[ $rc -eq 124 ] && ! grep -q 'Page.qml.*\(Error\|error\|Cannot\|is not\)' /tmp/setupd.log || { tail -5 /tmp/setupd.log; fail "Updates opens inside Settings (exit $rc)"; }
+for pg in updates firewall quarantine backup apphistory; do   # Fennek's own pages open inside Settings too
+    rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 10 fennek-app settings $pg >/tmp/setpage.log 2>&1 || rc=$?
+    [ $rc -eq 124 ] && ! grep -q 'Page.qml.*\(Error\|error\|Cannot\|is not\)' /tmp/setpage.log || { tail -5 /tmp/setpage.log; fail "$pg opens inside Settings (exit $rc)"; }
+done
 for a in settings firewall welcome apphistory backup live updates quarantine winx power; do   # starts off-screen and keeps running = the QML loads
     rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-app "$a" >/tmp/app-$a.log 2>&1 || rc=$?
     [ $rc -eq 124 ] || { tail -5 /tmp/app-$a.log; fail "app $a does not start (exit $rc)"; }
