@@ -63,6 +63,11 @@ for p in org.fennek.searchbox org.fennek.showdesktop org.fennek.clock org.fennek
         || fail "taskbar widget $p"
 done
 [ -f /usr/lib64/qt6/qml/org/kde/plasma/workspace/keyboardlayout/qmldir ] || fail "language list: keyboard layout module missing"
+grep -q 'panel.addWidget("org.fennek.keyboard")' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js \
+    && ! grep -q NotificationArea /usr/share/plasma/plasmoids/org.fennek.keyboard/metadata.json \
+    && ! grep -q '"org.kde.plasma.keyboardlayout"' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js \
+    && [ -f /usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/fennek-2026-10-19-language-by-clock.js ] \
+    || fail "language: one indicator, next to the clock (its panel fits its rows), stock one never loads"
 grep -q 'panel.hiding = "none"' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "taskbar always visible"
 grep -q 'panel.height = 40' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "40 px taskbar"
 grep -q '^ButtonsOnRight=IAX' /etc/xdg/kwinrc && grep -q '^LayoutName=thumbnail_grid' /etc/xdg/kwinrc || fail "classic window buttons / Alt+Tab"

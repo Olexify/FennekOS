@@ -1,4 +1,5 @@
-// Fennek input language: the current language on the taskbar (ENG, УКР...). Click: a fixed-size panel like the classic
+// Fennek input language: the current language on the taskbar next to the clock (ENG, УКР...), outside the tray so its
+// panel fits its rows exactly. Click: a fixed-size panel like the classic
 // one: each language as a two-line row (code, language, keyboard), then "Language preferences". Right-click: your
 // languages to switch to, and keyboard layout settings. Mouse wheel over it switches too; Alt+Shift etc. as before.
 import QtQuick
@@ -28,7 +29,7 @@ PlasmoidItem {
     toolTipMainText: layouts[kb.layout] ? layouts[kb.layout].longName : ""
     toolTipSubText: "Click to choose a language"
 
-    // Right-click menu: one entry per language (flag, name; the current one ticked), then the settings.
+    // Right-click menu: one entry per language (flag, name; the current one in bold, no tick boxes), then the settings.
     property var layoutActions: []
     Instantiator {
         model: root.layouts
@@ -36,8 +37,7 @@ PlasmoidItem {
             required property var modelData
             required property int index
             text: (root.flag(modelData) ? root.flag(modelData) + "  " : "") + modelData.longName
-            checkable: true
-            checked: index === kb.layout
+            font.bold: index === kb.layout
             onTriggered: kb.layout = index
         }
         onObjectAdded: (i, o) => { const a = root.layoutActions.slice(); a.splice(i, 0, o); root.layoutActions = a }
@@ -64,8 +64,8 @@ PlasmoidItem {
             anchors.centerIn: parent
             text: root.current
             // As large as the clock's time: readable at a glance (it was the small font).
-            font.pixelSize: Math.max(Kirigami.Theme.defaultFont.pixelSize, Math.round(parent.height * 0.36))
-            font.weight: Font.Medium
+            font.pixelSize: Math.max(Kirigami.Theme.defaultFont.pixelSize * 1.15, Math.round(parent.height * 0.42))
+            font.weight: Font.DemiBold
         }
     }
 
