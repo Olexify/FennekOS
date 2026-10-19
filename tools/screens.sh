@@ -53,6 +53,8 @@ click 1447 880; shot 18-hidden-icons; click 1447 880; sleep 1
 dolphin >/dev/null 2>&1 & sleep 7; DISPLAY=:99 xdotool key ctrl+q; sleep 3
 cp ~/.local/state/dolphinstaterc /out/dolphinstaterc-firstrun 2>/dev/null; cp ~/.config/dolphinrc /out/dolphinrc-firstrun 2>/dev/null
 dolphin thispc:/ >/dev/null 2>&1 & shot 08-file-explorer 6; close
+# Files: a click on the "Folders" group name folds it (patched Files): the drives move up.
+dolphin thispc:/ >/dev/null 2>&1 & sleep 6; eval "$(DISPLAY=:99 xdotool getactivewindow getwindowgeometry --shell)"; DISPLAY=:99 xdotool mousemove $((X + 184)) $((Y + 92)) click 1; shot 37-files-folded 2; close
 fennek-app settings >/dev/null 2>&1 & shot 09-settings 6; close
 fennek-app firewall >/dev/null 2>&1 & shot 10-firewall 6; close
 konsole >/dev/null 2>&1 & shot 11-terminal 5; close
