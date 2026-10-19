@@ -54,7 +54,11 @@ PlasmoidItem {
     P5Support.DataSource { id: run; engine: "executable"; onNewData: source => disconnectSource(source) }
 
     compactRepresentation: MouseArea {
-        Layout.minimumWidth: lbl.implicitWidth + Kirigami.Units.largeSpacing * 2
+        // Snug around the label (it sat in a wide empty box).
+        readonly property real snug: lbl.implicitWidth + Kirigami.Units.smallSpacing * 3
+        Layout.minimumWidth: snug
+        Layout.preferredWidth: snug
+        Layout.maximumWidth: snug
         hoverEnabled: true
         onClicked: root.expanded = !root.expanded
         onWheel: wheel => { kb.layout = (kb.layout + (wheel.angleDelta.y < 0 ? 1 : root.layouts.length - 1)) % root.layouts.length }
