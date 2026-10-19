@@ -710,7 +710,7 @@ systemctl enable flatpak-system-update.timer
 # Compiled here; the build tools are removed again.
 tools=(cmake extra-cmake-modules gcc-c++ libplasma-devel kf6-kcoreaddons-devel kf6-kconfig-devel kf6-kwindowsystem-devel
        kf6-kpackage-devel kf6-kservice-devel kf6-kirigami-devel kf6-kio-devel kf6-kcmutils-devel qt6-qtbase-devel qt6-qtdeclarative-devel
-       rust cargo 'rust-zbus+default-devel' 'rust-inotify+default-devel' librsvg2-tools xcursorgen)
+       rust cargo 'rust-zbus+default-devel' 'rust-inotify+default-devel' librsvg2-tools xcursorgen cpio dnf5-plugins)
 missing=(); for p in "${tools[@]}"; do rpm -q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 dnf -y install "${missing[@]}"
 for plugin in taskbar-menu ui-scale thispc fennek-app fennek-style fennek-kcm; do
@@ -738,6 +738,34 @@ for prog in fennek-search fennek-download-guard fennek-usage; do
     rm -rf "/tmp/$prog"
 done
 rm -rf /tmp/cargo-home
+# Files (Dolphin) with Fennek's changes (src/dolphin-fennek/patch.py): no separator lines between groups, and a
+# click on a group's name folds it. Built from Fedora's own source package of the installed version (signature
+# checked); only its view library is replaced. Its build tools go again right after.
+(
+    set -e
+    dv=$(rpm -q --qf '%{VERSION}-%{RELEASE}' dolphin)
+    lib=$(rpm -ql dolphin | grep -E '/libdolphinprivate\.so\.[0-9.]+$' | head -1)
+    [ -n "$lib" ] || { echo "Dolphin's view library moved: revisit src/dolphin-fennek"; exit 1; }
+    rpm -qa | sort > /tmp/rpms-before
+    mkdir -p /tmp/dolphin && cd /tmp/dolphin
+    dnf -y download --srpm "dolphin-$dv"
+    srpm=$(ls dolphin-*.src.rpm)
+    rpm -K "$srpm" | grep -q 'signatures OK' || { echo "Dolphin source package: signature not OK"; exit 1; }
+    dnf -y builddep "./$srpm"
+    rpm2cpio "$srpm" | cpio -idm --quiet
+    tar xf dolphin-*.tar.xz
+    srcdir=$(find . -maxdepth 1 -type d -name 'dolphin-*' | head -1)
+    python3 "$files/../src/dolphin-fennek/patch.py" "$srcdir"
+    cmake -S "$srcdir" -B build -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+    cmake --build build -j"$(nproc)" --target dolphinprivate
+    built=$(find build -name "${lib##*/}" -type f | head -1)
+    [ -n "$built" ] || { echo "Patched Dolphin library not built"; exit 1; }
+    install -m 755 "$built" "$lib"
+    rpm -qa | sort > /tmp/rpms-after
+    added=$(comm -13 /tmp/rpms-before /tmp/rpms-after)
+    [ -z "$added" ] || dnf -y remove $added
+    cd / && rm -rf /tmp/dolphin /tmp/rpms-before /tmp/rpms-after
+)
 # Syntax check of every Fennek QML file while Qt's tools are here: a typo fails the build, not the desktop.
 qmlformat=$(command -v qmlformat || echo /usr/lib64/qt6/bin/qmlformat)
 for f in /usr/share/plasma/plasmoids/org.fennek.*/contents/ui/*.qml /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/*.qml /usr/share/fennek/apps/*/*.qml /usr/share/plasma/wallpapers/org.fennek.live/contents/ui/*.qml /usr/share/sddm/themes/fennek/*.qml \

@@ -7,7 +7,8 @@ RememberOpenedTabs=false
 GlobalViewProps=false
 # Files opens on This PC (folders + drives), like the classic file manager.
 HomeUrl=thispc:/
-ShowToolTips=true
+# No pop-up on hover: the Information panel on the right shows what you click or point at.
+ShowToolTips=false
 # No "+" box popping up on every item under the pointer (select with Ctrl/Shift or a drag, like the classic one).
 ShowSelectionToggle=false
 
@@ -30,5 +31,7 @@ IconSize=64
 PreviewSize=64
 
 [ContentDisplay]
+# Folders show the size of what they hold (counted in the background, ten levels deep).
+DirectorySizeMode=ContentSize
 # Real dates (18.10.2026 21:02) instead of "Yesterday at 21:02", like the classic file manager.
 UseShortRelativeDates=false

@@ -1,0 +1,58 @@
+#!/usr/bin/python3
+"""Files (Dolphin) window layout: the Information panel shown on the right (what you click or point at: size, type,
+dates, picture size, length; folders: how many items and their size). Reads the window layout (base64, as
+dolphinstaterc keeps it) on stdin, writes it back with the panel on. Unknown layouts come back unchanged.
+
+  fennek-files-info-panel < STATE > NEW_STATE
+  fennek-files-info-panel --selftest
+"""
+import base64, struct, sys
+
+NAME = "infoDock".encode("utf-16-be")
+WIDTH = 260
+
+
+def with_info_panel(b64):
+    try:
+        b = bytearray(base64.b64decode(b64.strip(), validate=True))
+    except ValueError:
+        return b64
+    tag = struct.pack(">I", len(NAME)) + NAME
+    i = b.find(tag)
+    if i < 0:
+        return b64
+    flag = i + len(tag)
+    if b[flag] & 1:
+        return b64                       # already shown
+    # The right dock area: id 1, width, height, then its list (0xfc) holding the panel.
+    a = next((p for p in range(i - 13, -1, -1) if b[p:p + 4] == struct.pack(">I", 1) and b[p + 12] == 0xFC), -1)
+    if a < 0:
+        return b64
+    b[flag] |= 1
+    if struct.unpack(">I", b[a + 4:a + 8])[0] == 0:
+        b[a + 4:a + 8] = struct.pack(">I", WIDTH)
+    return base64.b64encode(bytes(b)).decode()
+
+
+def selftest():
+    import os
+    tpl = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../share/fennek/files-first-window-state")
+    src = open(tpl).read().strip() if os.path.exists(tpl) else None
+    fake = base64.b64encode(struct.pack(">III", 1, 0, 504) + b"\xfc\x02" + struct.pack(">I", 1) + b"\xfb"
+                            + struct.pack(">I", len(NAME)) + NAME + b"\x00" + b"\xff" * 4).decode()
+    out = base64.b64decode(with_info_panel(fake))
+    assert out[out.find(NAME) + len(NAME)] == 1 and struct.unpack(">I", out[4:8])[0] == WIDTH
+    assert with_info_panel(with_info_panel(fake)) == with_info_panel(fake)
+    assert with_info_panel("not base64!") == "not base64!"
+    if src:
+        assert with_info_panel(src) == src, "template should have the panel on already"
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["--selftest"]:
+        selftest()
+    elif len(sys.argv) == 1:
+        sys.stdout.write(with_info_panel(sys.stdin.read()) + "\n")
+    else:
+        sys.exit(__doc__)

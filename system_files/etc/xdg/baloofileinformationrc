@@ -1,0 +1,6 @@
+# Fennek OS: the Information panel in Files shows what matters (size, type, dates, picture size, length),
+# not stars, tags and comments.
+[Show]
+rating=false
+tags=false
+userComment=false

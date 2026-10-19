@@ -241,6 +241,8 @@ grep -q "^ColorScheme=FennekDark" /usr/share/plasma/look-and-feel/org.fennek.dar
 grep -q "^theme=__aurorae__svg__FennekClassicDark" /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults && grep -q "^theme=__aurorae__svg__FennekClassic$" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults && grep -q "fill=\"#202020\"" /usr/share/aurorae/themes/FennekClassicDark/decoration.svg && [ -s /usr/share/aurorae/themes/FennekClassicDark/FennekClassicDarkrc ] || fail "window frame follows light/dark theme"
 ! ls -d /usr/share/plasma/look-and-feel/org.fedoraproject.* 2>/dev/null || fail "Fedora global themes still listed"
 ! ls /usr/share/plasma/look-and-feel/org.kde.breeze*/contents/defaults 2>/dev/null || fail "KDE global themes still listed"
+grep -aq fennekCollapsedGroups "$(rpm -ql dolphin | grep -E '/libdolphinprivate\.so\.[0-9.]+$' | head -1)" || fail "Files: Fennek's patched view (no group lines, groups fold)"
+grep -q '^ShowToolTips=false' /etc/xdg/dolphinrc && grep -q '^rating=false' /etc/xdg/baloofileinformationrc && /usr/libexec/fennek-files-info-panel --selftest >/dev/null || fail "Files: Information panel instead of hover pop-ups"
 grep -q '^HomeUrl=thispc:/' /etc/xdg/dolphinrc && grep -q 'GroupedSorting=true' /etc/skel/.local/share/dolphin/view_properties/remote/.directory \
     && grep -q 'inode/x-fennek-drive' /usr/share/mime/types || fail "This PC page"
 [ -s /usr/share/wallpapers/Fennek/contents/images_dark/3840x2160.png ] || fail "night version of the Fennek wallpaper"
