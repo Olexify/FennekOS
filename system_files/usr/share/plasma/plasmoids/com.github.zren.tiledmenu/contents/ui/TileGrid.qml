@@ -351,31 +351,45 @@ DropArea {
 		return changed
 	}
 
-	// Drag a group's corner: its walls move (in whole cells). Never smaller than the tiles inside, never over
-	// another group.
-	function resizeGroup(index, w, rows) {
+	// Drag a group's walls: they move in whole cells. Never smaller than the tiles inside, never over another group.
+	// A folded group changes only its width (how many small tiles its row shows).
+	// fitGroup: the size it may have (clamped), or null when that would overlap another group.
+	function fitGroup(index, w, rows) {
 		var g = tileModel[index]
-		if (!g || g.tileType != "group" || g.folded) return
-		var area = getGroupAreaRect(g)
+		if (!g || g.tileType != "group") return null
 		var minW = 1, minRows = 1
-		getTilesInArea(area).forEach(function (t) {
-			if (t === g) return
-			minW = Math.max(minW, t.x + t.w - g.x)
-			minRows = Math.max(minRows, t.y + t.h - (g.y + g.h))
-		})
+		if (g.folded) {
+			rows = g.previewRow || 0
+		} else {
+			getTilesInArea(getGroupAreaRect(g)).forEach(function (t) {
+				if (t === g) return
+				minW = Math.max(minW, t.x + t.w - g.x)
+				minRows = Math.max(minRows, t.y + t.h - (g.y + g.h))
+			})
+			rows = limit(minRows, rows, 40)
+		}
 		w = limit(Math.max(1, minW), w, columns - g.x)
-		rows = limit(minRows, rows, 40)
-		if (w == g.w && rows == g.rows) return
-		var top = g.y, bottom = g.y + g.h + rows - 1, left = g.x, right = g.x + w - 1
+		var top = g.y, bottom = g.y + g.h + Math.max(rows, 1) - 1, left = g.x, right = g.x + w - 1
 		for (var i = 0; i < tileModel.length; i++) {
 			var o = tileModel[i]
 			if (i == index || o.tileType != "group") continue
 			var oa = getGroupAreaRect(o)
 			var oTop = o.y, oBottom = Math.max(o.y + o.h - 1, oa.y2), oLeft = o.x, oRight = o.x + o.w - 1
-			if (left <= oRight && oLeft <= right && top <= oBottom && oTop <= bottom) return
+			if (left <= oRight && oLeft <= right && top <= oBottom && oTop <= bottom) return null
 		}
-		g.w = w
-		g.rows = rows
+		if (g.folded) {   // its row of small tiles must not run over plain tiles either
+			for (var j = 0; j < tileModel.length; j++) {
+				var p = tileModel[j]
+				if (j != index && p.tileType != "group" && tileWithin(p, g.x + g.w, g.y, right, bottom)) return null
+			}
+		}
+		return { w: w, rows: rows }
+	}
+	function resizeGroup(index, w, rows) {
+		var g = tileModel[index], f = fitGroup(index, w, rows)
+		if (!f || (f.w == g.w && (g.folded || f.rows == g.rows))) return
+		g.w = f.w
+		if (!g.folded) g.rows = f.rows
 		tileModelChanged()
 	}
 
@@ -815,19 +829,24 @@ DropArea {
 	}
 
 	// Fennek OS: resize by the corner grip. Only into free cells, never over another tile or past the edge.
-	function resizeTile(index, w, h) {
+	// fitTile: the size a tile may have (clamped), or null when it would cover another tile.
+	function fitTile(index, w, h) {
 		var tile = tileModel[index]
 		w = limit(1, w, columns - tile.x)
 		h = limit(1, h, 8)
-		if (w == tile.w && h == tile.h) return
 		for (var i = 0; i < tileModel.length; i++) {
 			var t = tileModel[i]
 			if (i == index) continue
 			var t2 = { x: t.x, y: t.y, w: t.w, h: t.h + (t.previewRow || 0) }   // a folded group's small tiles count
-			if (tileWithin(t2, tile.x, tile.y, tile.x + w - 1, tile.y + h - 1)) return
+			if (tileWithin(t2, tile.x, tile.y, tile.x + w - 1, tile.y + h - 1)) return null
 		}
-		tile.w = w
-		tile.h = h
+		return { w: w, h: h }
+	}
+	function resizeTile(index, w, h) {
+		var tile = tileModel[index], f = fitTile(index, w, h)
+		if (!f || (f.w == tile.w && f.h == tile.h)) return
+		tile.w = f.w
+		tile.h = f.h
 		tileModelChanged()
 	}
 

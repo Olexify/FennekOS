@@ -164,7 +164,7 @@ Item {
 		id: resizeGrip
 		visible: !appObj.isGroup && !plasmoid.configuration.tilesLocked && !dragActive
 			&& (tileMouseArea.containsMouse || containsMouse || pressed)
-		width: Math.round(cellSize * 0.3)
+		width: Math.max(16, Math.round(cellSize * 0.3))
 		height: width
 		anchors.right: parent.right
 		anchors.bottom: parent.bottom
@@ -175,15 +175,24 @@ Item {
 		property point start
 		property int startW
 		property int startH
+		property int previewW
+		property int previewH
+		// The size follows the pointer the whole way (an outline) and is saved when you let go. (Saving rebuilds
+		// every tile, so saving on each step ended the drag after the first one.)
 		onPressed: function(mouse) {
 			start = mapToItem(tileGrid, mouse.x, mouse.y)
-			startW = modelData.w
-			startH = modelData.h
+			startW = previewW = modelData.w
+			startH = previewH = modelData.h
 		}
 		onPositionChanged: function(mouse) {
 			if (!pressed) return
 			var p = mapToItem(tileGrid, mouse.x, mouse.y)
-			tileGrid.resizeTile(index, startW + Math.round((p.x - start.x) / cellBoxSize), startH + Math.round((p.y - start.y) / cellBoxSize))
+			var f = tileGrid.fitTile(index, startW + Math.round((p.x - start.x) / cellBoxSize), startH + Math.round((p.y - start.y) / cellBoxSize))
+			if (f) { previewW = f.w; previewH = f.h }
+		}
+		onReleased: {
+			var i = index, w = previewW, h = previewH
+			Qt.callLater(function () { tileGrid.resizeTile(i, w, h) })
 		}
 		Canvas {
 			anchors.fill: parent
@@ -200,6 +209,20 @@ Item {
 				}
 			}
 		}
+	}
+
+	// Fennek OS: the new size while a tile's corner is dragged.
+	Rectangle {
+		visible: resizeGrip.pressed
+		z: 3
+		x: cellMargin
+		y: cellMargin
+		width: resizeGrip.previewW * cellBoxSize - cellMargin * 2
+		height: resizeGrip.previewH * cellBoxSize - cellMargin * 2
+		radius: 8
+		color: Qt.rgba(Kirigami.Theme.highlightColor.r, Kirigami.Theme.highlightColor.g, Kirigami.Theme.highlightColor.b, 0.18)
+		border.width: 2
+		border.color: Kirigami.Theme.highlightColor
 	}
 
 	// Fennek OS: a folded group shows its apps as small tiles in the row under its name (click one to open it).
@@ -244,6 +267,14 @@ Item {
 					id: miniMouse
 					anchors.fill: parent
 					hoverEnabled: true
+					property point down
+					onPressed: function(mouse) { down = Qt.point(mouse.x, mouse.y) }
+					onPositionChanged: function(mouse) {   // dragging a small tile opens the group: its tiles move from there
+						if (pressed && Math.abs(mouse.x - down.x) + Math.abs(mouse.y - down.y) > Qt.styleHints.startDragDistance) {
+							var g = preview.groupIndex
+							Qt.callLater(function () { tileGrid.setGroupFolded(g, false) })
+						}
+					}
 					onClicked: moreLabel.visible ? tileGrid.setGroupFolded(preview.groupIndex, false) : appsModel.tileGridModel.runApp(mini.modelData.url)
 					QQC2.ToolTip.visible: containsMouse
 					QQC2.ToolTip.text: moreLabel.visible ? i18n("Show all") : (mini.modelData.label || (mini.app ? mini.app.display : ""))
@@ -264,10 +295,12 @@ Item {
 	// Fennek OS: a group's walls, always shown (clearer on hover), with handles on the right wall, the bottom wall and the corner to move them.
 	Loader {
 		id: groupEffectLoader
-		active: appObj.isGroup && !modelData.folded && appObj.groupRect && appObj.groupRect.h > 0
+		active: appObj.isGroup && appObj.groupRect && appObj.groupRect.h > 0   // folded: around its row of small tiles
 		sourceComponent: Rectangle {
 			id: groupOutline
 			property bool dragging: false
+			property int previewW
+			property int previewRows
 			readonly property bool hot: groupHover.hovered || tileMouseArea.containsMouse || dragging
 			color: "transparent"   // above the tiles (so the grip is reachable): an outline only
 			border.width: Math.max(1, Math.round(1 * Screen.devicePixelRatio))   // a hint of the walls; clearer on hover
@@ -275,14 +308,14 @@ Item {
 			radius: 12
 			x: 1
 			y: 1   // wraps the name too
-			width: appObj.groupRect.w * cellBoxSize - 2
-			height: (modelData.h + appObj.groupRect.h) * cellBoxSize - 2
+			width: (dragging ? previewW : appObj.groupRect.w) * cellBoxSize - 2
+			height: (modelData.h + (dragging ? previewRows : appObj.groupRect.h)) * cellBoxSize - 2
 			Behavior on border.color { ColorAnimation { duration: 120 } }
 			HoverHandler { id: groupHover }
 			// Handles: the right wall (width), the bottom wall (rows), the corner (both). Wide grab strips that
 			// straddle the wall, snapping at half a cell.
 			Repeater {
-				model: plasmoid.configuration.tilesLocked ? [] : [[1, 0], [0, 1], [1, 1]]
+				model: plasmoid.configuration.tilesLocked ? [] : (modelData.folded ? [[1, 0]] : [[1, 0], [0, 1], [1, 1]])
 				MouseArea {
 					id: handle
 					required property var modelData
@@ -303,17 +336,23 @@ Item {
 					property int startRows
 					onPressed: function(mouse) {
 						start = mapToItem(tileGrid, mouse.x, mouse.y)
-						startW = appObj.groupRect.w
-						startRows = appObj.groupRect.h
+						startW = groupOutline.previewW = appObj.groupRect.w
+						startRows = groupOutline.previewRows = appObj.groupRect.h
 						groupOutline.dragging = true
 					}
-					onReleased: groupOutline.dragging = false
+					// The walls follow the pointer the whole way; the size is saved when you let go.
+					onReleased: {
+						var i = index, w = groupOutline.previewW, r = groupOutline.previewRows
+						groupOutline.dragging = false
+						Qt.callLater(function () { tileGrid.resizeGroup(i, w, r) })
+					}
 					onCanceled: groupOutline.dragging = false
 					onPositionChanged: function(mouse) {
 						if (!pressed) return
 						var p = mapToItem(tileGrid, mouse.x, mouse.y)
-						tileGrid.resizeGroup(index, startW + sx * Math.round((p.x - start.x) / cellBoxSize),
+						var f = tileGrid.fitGroup(index, startW + sx * Math.round((p.x - start.x) / cellBoxSize),
 							startRows + sy * Math.round((p.y - start.y) / cellBoxSize))
+						if (f) { groupOutline.previewW = f.w; groupOutline.previewRows = f.rows }   // folded: fitGroup keeps its one row
 					}
 					// the wall being grabbed lights up
 					Rectangle {
