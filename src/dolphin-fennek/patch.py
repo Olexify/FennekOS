@@ -91,7 +91,8 @@ patch("kitemlistview.cpp", "        Q_ASSERT(widget->index() == i);\n        wid
 
 # 2c. A click on a group's name folds / unfolds it.
 patch("kitemlistcontroller.cpp", '#include "kitemlistcontroller.h"\n',
-      '#include "kitemlistcontroller.h"\n#include "fennekcollapse.h"\n#include "kitemlistgroupheader.h"\n')
+      '#include "kitemlistcontroller.h"\n#include "fennekcollapse.h"\n#include "kitemlistgroupheader.h"\n'
+      '#include "private/kitemlistviewlayouter.h"\n')
 patch("kitemlistcontroller.cpp", """    const QPointF pressedMousePos = transform.map(event->pos());
     m_pressedIndex = m_view->itemAt(pressedMousePos);
 """, """    const QPointF pressedMousePos = transform.map(event->pos());
