@@ -11,9 +11,12 @@ def app(top, bottom, glyph):
             f'<linearGradient id="t" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{top}"/><stop offset="1" stop-color="{bottom}"/></linearGradient>'
             '<linearGradient id="hl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>'
             '<filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1.2" stdDeviation="1.2" flood-opacity=".28"/></filter>'
+            '<filter id="gs" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation=".9" flood-color="#000" flood-opacity=".22"/></filter>'
+            '<linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/></linearGradient>'
             '</defs>'
             f'<path d="{SQ}" fill="url(#t)" filter="url(#sh)"/><path d="{SQ}" fill="url(#hl)"/>'
-            f'<g fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">{glyph}</g></svg>\n')
+            f'<path d="{SQ}" fill="none" stroke="url(#rim)" stroke-width="1"/>'
+            f'<g fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" filter="url(#gs)">{glyph}</g></svg>\n')
 
 
 shield = '<path d="M32 17l12 4.5v9c0 8-5.2 13.6-12 16.5-6.8-2.9-12-8.5-12-16.5v-9z"/>'
@@ -148,7 +151,7 @@ settings = {
     "time": ("#4ad07f", "#15985a", '<circle cx="32" cy="32" r="13"/><path d="M32 24v8l5 4"/>'),
     "accessibility": ("#5aa9f8", "#1f6fd6", '<circle cx="32" cy="20" r="2.5" fill="#fff" stroke="none"/><path d="M21 26l11 2 11-2M32 28v8l-5 9M32 36l5 9"/>'),
     "privacy": ("#a77bf3", "#6a35c9", '<path d="M32 17l12 4.5v9c0 8-5.2 13.6-12 16.5-6.8-2.9-12-8.5-12-16.5v-9z"/><path d="M27 32l4 4 7-8"/>'),
-    "update": ("#4fc3f7", "#1e88e5", '<path d="M44 30a12 12 0 0 0-22-5M20 34a12 12 0 0 0 22 5"/><path d="M22 19v6h6M42 45v-6h-6"/>'),
+    "update": ("#5cc8ff", "#1f78e0", '<path d="M44.6 27.5A13.5 13.5 0 1 0 45 36"/><path d="M45.5 19.5v8.2h-8.2"/><path d="M32 25.5v11.5M27.2 32.6l4.8 4.8 4.8-4.8"/>'),
     # Settings' own Home row: a house in the Fennek violet, with a lit window.
     "home": ("#b39bff", "#6d3fe0", '<path d="M18 31.5L32 20l14 11.5"/><path d="M22.5 28.5V44h19V28.5"/><path d="M29 44v-7.5h6V44"/><circle cx="32" cy="29.5" r="1.7" fill="#fff" stroke="none"/>'),
 }
@@ -217,7 +220,7 @@ setting_icons = {
     "recent": ("#46c6d3", "#1d8a9c", '<path d="M20 32a12 12 0 1 0 4-9"/><path d="M19 20v6h6M32 25v7l5 3"/>'),
     "signout": ("#ff8a80", "#e04848", '<path d="M30 20h-8a3 3 0 0 0-3 3v18a3 3 0 0 0 3 3h8"/><path d="M28 32h18M40 26l6 6-6 6"/>'),
     "privacypolicy": ("#b38af7", "#7543d6", '<path d="M24 16h11l7 7v22a3 3 0 0 1-3 3H24a3 3 0 0 1-3-3V19a3 3 0 0 1 3-3z"/><path d="M35 16v7h7M26 32h12M26 37h12M26 42h7"/>'),
-    "updates": ("#5aa9f8", "#1f6fd6", '<path d="M44 30a12 12 0 0 0-22-5M20 34a12 12 0 0 0 22 5"/><path d="M22 19v6h6M42 45v-6h-6"/>'),
+    "updates": ("#5cc8ff", "#1f78e0", '<path d="M44.6 27.5A13.5 13.5 0 1 0 45 36"/><path d="M45.5 19.5v8.2h-8.2"/><path d="M32 25.5v11.5M27.2 32.6l4.8 4.8 4.8-4.8"/>'),
     "storeupdates": ("#b38af7", "#7543d6", '<path d="M22 26h20l-2 18H24z"/><path d="M27 26a5 5 0 0 1 10 0M32 32v7M29 36l3 3 3-3"/>'),
     "goback": ("#ffb84d", "#f08a16", '<path d="M24 26h13a8 8 0 0 1 0 16h-9"/><path d="M29 20l-6 6 6 6"/>'),
     "backup": ("#4ad07f", "#15985a", '<rect x="17" y="30" width="30" height="14" rx="4"/><path d="M32 16v12M27 23l5 5 5-5M23 37h6"/>'),
