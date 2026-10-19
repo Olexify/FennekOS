@@ -1,0 +1,16 @@
+#!/usr/bin/bash
+# Settings → Appearance → Restore taskbar & Start: puts the taskbar, Start and the desktop back to how Fennek OS
+# ships them, when something got moved or removed by accident. Asks first; the old layout is kept as a backup in
+# ~/.local/state/fennek/layout-backups. Light/dark stays as chosen.
+set -u
+kdialog --title "Restore taskbar & Start" --warningcontinuecancel \
+    "Put the taskbar, Start and the desktop widgets back to how Fennek OS sets them up?
+
+Your pinned apps and Start tiles go back to the defaults. Your files, apps and settings stay.
+The current layout is saved as a backup first." --continue-label "Restore" || exit 0
+cfg=${XDG_CONFIG_HOME:-$HOME/.config}
+bak=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/layout-backups/$(date +%Y%m%d-%H%M%S)
+mkdir -p -- "$bak" && cp -a -- "$cfg"/plasma-org.kde.plasma.desktop-appletsrc "$cfg"/plasmashellrc "$bak"/ 2>/dev/null
+lnf=$(kreadconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage)
+case $lnf in org.fennek.*) ;; *) lnf=org.fennek.desktop ;; esac   # keeps the light or dark Fennek look
+plasma-apply-lookandfeel --apply "$lnf" --resetLayout

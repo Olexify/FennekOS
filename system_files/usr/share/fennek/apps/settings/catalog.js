@@ -31,7 +31,8 @@ var categories = [
    {"name": "Themes", "kcm": "kcm_lookandfeel", "icon": "preferences-desktop-theme-global", "desc": "Whole look of Fennek OS"},
    {"name": "Colors", "kcm": "kcm_colors", "icon": "preferences-desktop-color", "desc": "Light, dark, accent color"},
    {"name": "Fonts", "kcm": "kcm_fonts", "icon": "preferences-desktop-font", "desc": "Size and style of text"},
-   {"name": "Lock screen", "kcm": "kcm_screenlocker", "icon": "preferences-desktop-user-password", "desc": "When and how the screen locks"}
+   {"name": "Lock screen", "kcm": "kcm_screenlocker", "icon": "preferences-desktop-user-password", "desc": "When and how the screen locks"},
+   {"name": "Restore taskbar & Start", "cmd": "/usr/libexec/fennek-reset-layout", "icon": "edit-undo", "desc": "Back to the default layout if something got moved or removed"}
   ]},
  {"name": "Apps", "icon": "fennek-settings-apps", "sub": "Default apps, startup apps",
   "items": [
