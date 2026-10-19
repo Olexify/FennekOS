@@ -17,8 +17,12 @@ var categories = [
    {"name": "Power & battery", "kcm": "kcm_powerdevilprofilesconfig", "icon": "fennek-set-power", "desc": "Sleep, screen off, battery saving"},
    {"name": "Battery & app usage", "icon": "fennek-set-apphistory", "desc": "Which apps used the battery", "page": "apphistory"},
    {"name": "Storage", "cmd": "filelight", "icon": "fennek-set-storage", "desc": "What uses space on your disks"},
+   {"name": "Recycle Bin", "kcm": "kcm_trash", "icon": "fennek-set-storage", "desc": "How big it may get, emptying it by itself", "optional": true},
+   {"name": "Folders", "kcm": "kcm_desktoppaths", "icon": "fennek-set-filetypes", "desc": "Where Desktop, Documents, Downloads… are", "optional": true},
    {"name": "Removable drives", "kcm": "kcm_device_automounter", "icon": "fennek-set-removable", "desc": "What happens when you plug in a drive", "optional": true},
-   {"name": "About this computer", "kcm": "kcm_about-distro", "icon": "fennek-set-about", "desc": "Version, hardware"}
+   {"name": "About this computer", "kcm": "kcm_about-distro", "icon": "fennek-set-about", "desc": "Version, hardware"},
+   {"name": "Boot screen", "kcm": "kcm_plymouth", "icon": "fennek-set-splash", "desc": "The picture while the computer starts", "optional": true},
+   {"name": "Background services", "kcm": "kcm_kded", "icon": "fennek-set-multitasking", "desc": "Services that run behind the desktop", "optional": true}
   ]},
  {"name": "Devices", "icon": "fennek-settings-devices", "sub": "Bluetooth, printers, mouse, keyboard",
   "items": [
@@ -30,7 +34,8 @@ var categories = [
    {"name": "Game controllers", "kcm": "kcm_gamecontroller", "icon": "fennek-set-gamepad", "desc": "Test and set up gamepads", "optional": true},
    {"name": "Drawing tablet", "kcm": "kcm_tablet", "icon": "fennek-set-tablet", "desc": "Pen buttons, screen area", "optional": true},
    {"name": "Touchscreen", "kcm": "kcm_touchscreen", "icon": "fennek-set-touchscreen", "desc": "Touch input", "optional": true},
-   {"name": "Thunderbolt", "kcm": "kcm_bolt", "icon": "fennek-set-thunderbolt", "desc": "Allow Thunderbolt devices", "optional": true}
+   {"name": "Thunderbolt", "kcm": "kcm_bolt", "icon": "fennek-set-thunderbolt", "desc": "Allow Thunderbolt devices", "optional": true},
+   {"name": "Device actions", "kcm": "kcm_solid_actions", "icon": "fennek-set-removable", "desc": "What happens when you plug something in", "optional": true}
   ]},
  {"name": "Network & Internet", "icon": "fennek-settings-network", "sub": "Wi-Fi, VPN, firewall",
   "items": [
@@ -61,8 +66,10 @@ var categories = [
    {"name": "File types", "kcm": "kcm_filetypes", "icon": "fennek-set-filetypes", "desc": "Which app opens which file", "optional": true},
    {"name": "Startup apps", "kcm": "kcm_autostart", "icon": "fennek-set-startup", "desc": "Apps that start when you sign in"},
    {"name": "Window rules", "kcm": "kcm_kwinrules", "icon": "fennek-set-windowrules", "desc": "Special settings for certain windows", "optional": true},
+   {"name": "Older apps", "kcm": "kcm_kwinxwayland", "icon": "fennek-set-windowrules", "desc": "How apps made for the old display system behave", "optional": true},
    {"name": "Spell check", "kcm": "kcm_spellchecking", "icon": "fennek-set-spellcheck", "desc": "Languages, autocorrect", "optional": true},
    {"name": "Search", "kcm": "kcm_plasmasearch", "icon": "fennek-set-search", "desc": "What Start and the Run box find", "optional": true},
+   {"name": "Web search shortcuts", "kcm": "kcm_webshortcuts", "icon": "fennek-set-search", "desc": "Type gg:fennek to search the web from Start", "optional": true},
    {"name": "Install or remove apps", "cmd": "plasma-discover", "icon": "plasmadiscover", "desc": "Store"}
   ]},
  {"name": "Accounts", "icon": "fennek-settings-accounts", "sub": "Your account, other people",
@@ -79,6 +86,7 @@ var categories = [
  {"name": "Accessibility", "icon": "fennek-settings-accessibility", "sub": "Assistive features, keyboard shortcuts",
   "items": [
    {"name": "Assistive features", "kcm": "kcm_access", "icon": "fennek-set-access", "desc": "Sticky keys, visual bell"},
+   {"name": "On-screen keyboard", "kcm": "kcm_virtualkeyboard", "icon": "fennek-set-keyboard", "desc": "A keyboard on the screen", "optional": true},
    {"name": "Keyboard shortcuts", "kcm": "kcm_keys", "icon": "fennek-set-shortcuts", "desc": "Change shortcuts"},
    {"name": "Activities", "kcm": "kcm_activities", "icon": "fennek-set-activities", "desc": "Separate sets of windows for work and play", "optional": true}
   ]},

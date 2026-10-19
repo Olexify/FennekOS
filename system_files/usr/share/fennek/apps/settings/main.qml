@@ -185,7 +185,7 @@ QQC2.ApplicationWindow {
                     Item { Layout.fillHeight: true }
                     QQC2.ItemDelegate {
                         Layout.fillWidth: true
-                        text: "All settings (advanced)"
+                        text: "All KDE settings"   // everything else, in KDE's own window
                         icon.name: "preferences-system"
                         onClicked: run.connectSource("systemsettings")
                         background: Rectangle { radius: 8; color: parent.hovered ? root.cardColor : "transparent" }
