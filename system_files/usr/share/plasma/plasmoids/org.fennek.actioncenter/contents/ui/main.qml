@@ -55,7 +55,7 @@ PlasmoidItem {
             if (source === root.profileCmd)
                 root.batterySaver = data.stdout.indexOf("power-saver") >= 0
             else if (source === root.lookCmd)
-                root.darkMode = data.stdout.trim() === "org.fennek.dark.desktop"
+                root.darkMode = /^org\.fennek\.(?!desktop$)/.test(data.stdout.trim())   // Dark and the colour themes are all dark
             else if (source === root.nightCmd)
                 root.nightLight = data.stdout.trim() === "true"
             else if (source === "/usr/libexec/fennek-brightness get")
@@ -294,7 +294,7 @@ PlasmoidItem {
                       on: () => root.batterySaver, act: () => root.setProfile(root.batterySaver ? "balanced" : "power-saver") },
                     { label: "Night light", settings: "kcm_nightlight", icon: "redshift-status-on", show: true, checkable: true,
                       on: () => root.nightLight, act: () => root.setNightLight(!root.nightLight) },
-                    { label: "Dark mode", settings: "kcm_lookandfeel", icon: "weather-clear-night", show: true, checkable: true,
+                    { label: "Dark mode", settings: "personalize", icon: "fennek-dark-mode-symbolic", show: true, checkable: true,
                       on: () => root.darkMode, act: () => root.setDarkMode(!root.darkMode) },
                     { label: "Screenshot", icon: "camera-photo", show: true, checkable: false,
                       on: () => false, act: () => { root.expanded = false; run.connectSource("spectacle --region") } },
