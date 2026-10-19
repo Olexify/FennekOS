@@ -16,8 +16,8 @@ if [ "${lnf#org.fennek.}" = "$lnf" ]; then   # not a Fennek look (light or dark)
 fi
 # Dark by default: a new account (no look of its own yet) starts in Fennek OS Dark. Welcome, Settings and the action
 # center's Dark mode tile switch it any time. (The system-wide default stays the light one underneath.)
-own=$(kreadconfig6 --file "${XDG_CONFIG_HOME:-$HOME/.config}/kdeglobals" --group KDE --key LookAndFeelPackage)
-if [ -z "$own" ]; then
+# (The file itself, read directly: kreadconfig6 would mix in the system-wide default and always find a look.)
+if ! grep -qs '^LookAndFeelPackage=' "${XDG_CONFIG_HOME:-$HOME/.config}/kdeglobals"; then
     plasma-apply-lookandfeel --apply org.fennek.dark.desktop || exit 1   # retried next login
 fi
 /usr/libexec/fennek-desktop-icons   # This PC and Recycle Bin on the desktop
