@@ -2,7 +2,7 @@
 Type=Application
 Name=Updates
 Comment=Update Fennek OS: status, automatic updates, schedule, pause, going back
-Icon=system-software-update
+Icon=fennek-set-updates
 Exec=fennek-app settings updates
 Keywords=update;upgrade;security;schedule;pause;rollback;
 Categories=Settings;System;
