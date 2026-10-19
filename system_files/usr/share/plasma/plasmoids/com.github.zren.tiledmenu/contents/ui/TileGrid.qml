@@ -172,14 +172,16 @@ DropArea {
 			var inside = tileModel.filter(function (t) { return tileWithin(t, area.x1, area.y1, area.x2, area.y2) })
 			group.folded = inside.map(function (t) { var c = JSON.parse(JSON.stringify(t)); c.x -= group.x; c.y -= top; return c })
 			group.foldedH = area.h
+			group.previewRow = inside.length ? 1 : 0   // one row stays: the group's apps as small tiles
 			for (var i = tileModel.length - 1; i >= 0; i--) if (inside.indexOf(tileModel[i]) >= 0) tileModel.splice(i, 1)   // in place: the list is bound to the saved settings
-			tileModel.forEach(function (t) { if (below(t, area.y2 + 1)) t.y -= area.h })
+			tileModel.forEach(function (t) { if (below(t, area.y2 + 1)) t.y -= area.h - group.previewRow })
 		} else {
-			var h = group.foldedH || 0
-			tileModel.forEach(function (t) { if (below(t, top)) t.y += h })
+			var h = (group.foldedH || 0) - (group.previewRow || 0)
+			tileModel.forEach(function (t) { if (below(t, top + (group.previewRow || 0))) t.y += h })
 			group.folded.forEach(function (c) { c.x += group.x; c.y += top; tileModel.push(c) })
 			delete group.folded
 			delete group.foldedH
+			delete group.previewRow
 		}
 		tileGrid.tileModelChanged()
 	}
@@ -277,7 +279,7 @@ DropArea {
 		for (var i = 0; i < tileModel.length; i++) {
 			var tile = tileModel[i]
 			c = Math.max(c, tile.x + tile.w)
-			r = Math.max(r, tile.y + tile.h)
+			r = Math.max(r, tile.y + tile.h + (tile.previewRow || 0))
 			w = Math.max(w, tile.w)
 			h = Math.max(h, tile.h)
 		}
@@ -301,7 +303,7 @@ DropArea {
 			if (i == draggedIndex || (ownArea && tileWithin(tile, ownArea.x1, ownArea.y1, ownArea.x2, ownArea.y2))) {
 				continue;
 			}
-			for (var j = tile.y; j < tile.y + tile.h; j++) {
+			for (var j = tile.y; j < tile.y + tile.h + (tile.previewRow || 0); j++) {   // a folded group's small tiles too
 				for (var k = tile.x; k < tile.x + tile.w; k++) {
 					hb[j][k] = true
 				}
@@ -322,6 +324,7 @@ DropArea {
 			if (tile.url) {
 				urlList.push(tile.url)
 			}
+			;(tile.folded || []).forEach(function (t) { if (t.url) urlList.push(t.url) })   // folded: shown as small tiles
 		}
 		appsModel.tileGridModel.favorites = urlList
 		updateSize()
@@ -743,6 +746,23 @@ DropArea {
 
 	function limit(minValue, value, maxValue) {
 		return Math.max(minValue, Math.min(value, maxValue))
+	}
+
+	// Fennek OS: resize by the corner grip. Only into free cells, never over another tile or past the edge.
+	function resizeTile(index, w, h) {
+		var tile = tileModel[index]
+		w = limit(1, w, columns - tile.x)
+		h = limit(1, h, 8)
+		if (w == tile.w && h == tile.h) return
+		for (var i = 0; i < tileModel.length; i++) {
+			var t = tileModel[i]
+			if (i == index) continue
+			var t2 = { x: t.x, y: t.y, w: t.w, h: t.h + (t.previewRow || 0) }   // a folded group's small tiles count
+			if (tileWithin(t2, tile.x, tile.y, tile.x + w - 1, tile.y + h - 1)) return
+		}
+		tile.w = w
+		tile.h = h
+		tileModelChanged()
 	}
 
 	function addTile(x, y, props) {

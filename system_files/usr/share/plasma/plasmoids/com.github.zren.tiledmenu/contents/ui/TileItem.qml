@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls as QQC2
 import org.kde.plasma.core as PlasmaCore
+import org.kde.kirigami as Kirigami
 
 Item {
 	id: tileItem
@@ -124,6 +125,99 @@ Item {
 			Qt.callLater(tileItem.fixCoordinateBindings)
 			Drag.drop() // Breaks QML context.
 			// We need to use callLater to call functions after Drag.drop().
+		}
+	}
+
+	// Fennek OS: resize by dragging the bottom-right corner (shown on hover), in whole cells.
+	MouseArea {
+		id: resizeGrip
+		visible: !appObj.isGroup && !plasmoid.configuration.tilesLocked && !dragActive
+			&& (tileMouseArea.containsMouse || containsMouse || pressed)
+		width: Math.round(cellSize * 0.3)
+		height: width
+		anchors.right: parent.right
+		anchors.bottom: parent.bottom
+		anchors.margins: cellMargin
+		hoverEnabled: true
+		preventStealing: true
+		cursorShape: Qt.SizeFDiagCursor
+		property point start
+		property int startW
+		property int startH
+		onPressed: function(mouse) {
+			start = mapToItem(tileGrid, mouse.x, mouse.y)
+			startW = modelData.w
+			startH = modelData.h
+		}
+		onPositionChanged: function(mouse) {
+			if (!pressed) return
+			var p = mapToItem(tileGrid, mouse.x, mouse.y)
+			tileGrid.resizeTile(index, startW + Math.round((p.x - start.x) / cellBoxSize), startH + Math.round((p.y - start.y) / cellBoxSize))
+		}
+		Canvas {
+			anchors.fill: parent
+			opacity: parent.containsMouse || parent.pressed ? 0.9 : 0.55
+			onPaint: {
+				var c = getContext("2d")
+				c.reset()
+				c.strokeStyle = "white"
+				c.lineWidth = 1.6
+				c.lineCap = "round"
+				for (var i = 1; i <= 2; i++) {
+					var o = width * i / 3
+					c.beginPath(); c.moveTo(width - 2, o); c.lineTo(o, height - 2); c.stroke()
+				}
+			}
+		}
+	}
+
+	// Fennek OS: a folded group shows its apps as small tiles in the row under its name (click one to open it).
+	Row {
+		id: preview
+		readonly property var group: modelData
+		readonly property int groupIndex: index
+		visible: appObj.isGroup && !!modelData.folded && !!modelData.previewRow
+		y: modelData.h * cellBoxSize
+		Repeater {
+			model: parent.visible ? modelData.folded.slice(0, modelData.w) : []
+			delegate: Item {
+				id: mini
+				required property var modelData
+				required property int index
+				readonly property var app: modelData.url ? appsModel.tileGridModel.getApp(modelData.url) : null
+				readonly property int more: preview.group.folded.length - preview.group.w + 1
+				width: cellBoxSize
+				height: cellBoxSize
+				Rectangle {
+					anchors.fill: parent
+					anchors.margins: cellMargin
+					radius: 8
+					color: config.defaultTileColor
+					opacity: miniMouse.containsMouse ? 1 : 0.85
+				}
+				Kirigami.Icon {
+					anchors.centerIn: parent
+					width: Math.round(cellSize * 0.55)
+					height: width
+					visible: !moreLabel.visible
+					source: mini.modelData.icon || (mini.app ? mini.app.decoration : "") || mini.modelData.url.replace(/\.desktop$/, "")
+				}
+				QQC2.Label {
+					id: moreLabel
+					anchors.centerIn: parent
+					visible: mini.index == preview.group.w - 1 && mini.more > 1
+					text: "+" + mini.more
+					font.weight: Font.DemiBold
+				}
+				MouseArea {
+					id: miniMouse
+					anchors.fill: parent
+					hoverEnabled: true
+					onClicked: moreLabel.visible ? tileGrid.setGroupFolded(preview.groupIndex, false) : appsModel.tileGridModel.runApp(mini.modelData.url)
+					QQC2.ToolTip.visible: containsMouse
+					QQC2.ToolTip.text: moreLabel.visible ? i18n("Show all") : (mini.modelData.label || (mini.app ? mini.app.display : ""))
+				}
+			}
 		}
 	}
 
