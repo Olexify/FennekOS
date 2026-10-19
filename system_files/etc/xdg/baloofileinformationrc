@@ -1,6 +1,40 @@
 # Fennek OS: the Information panel in Files shows what matters (size, type, dates, picture size, length),
-# not stars, tags and comments.
+# not stars, tags and comments. [Misc] version = KDE's own (baloo-widgets): without it, KDE resets [Show] at the
+# first use and our choices are lost. Its own default hidden list is repeated here for that reason.
+[Misc]
+version=13
+
 [Show]
+width=false
+height=false
+comment=false
+contentSize=false
+depends=false
+lastModified=false
+created=false
+contentCreated=false
+mimeType=false
+url=false
+channels=false
+fileName=false
+fileSize=false
+kfileitem#owner=false
+kfileitem#group=false
+kfileitem#permissions=false
+replayGainAlbumPeak=false
+replayGainAlbumGain=false
+replayGainTrackPeak=false
+replayGainTrackGain=false
+embeddedRating=false
+lyrics=false
+photoWhiteBalance=false
+photoMeteringMode=false
+photoSharpness=false
+photoSaturation=false
+photoPixelXDimension=false
+photoPixelYDimension=false
+photoGpsLongitude=false
+photoGpsLatitude=false
 rating=false
 tags=false
 userComment=false

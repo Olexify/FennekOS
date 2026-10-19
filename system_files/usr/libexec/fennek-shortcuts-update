@@ -149,14 +149,15 @@ fi
 
 # Files, once: the classic menu bar on (KDE hid it at the first start).
 files_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/files-version
-if [ "$(cat "$files_seen" 2>/dev/null)" != 2026-10-20 ]; then   # 10-20: Information panel on, no hover pop-ups
+if [ "$(cat "$files_seen" 2>/dev/null)" != 2026-10-20b ]; then   # 10-20: Information panel on, no hover pop-ups, no stars
     kwriteconfig6 --file dolphinrc --group MainWindow --key MenuBar Enabled
     state=${XDG_STATE_HOME:-$HOME/.local/state}/dolphinstaterc
     mkdir -p "${state%/*}" && kwriteconfig6 --file "$state" --group MainWindow --key MenuBar Enabled
     kwriteconfig6 --file dolphinrc --group General --key ShowToolTips false
     old=$(kreadconfig6 --file "$state" --group State --key State)
     [ -n "$old" ] && kwriteconfig6 --file "$state" --group State --key State "$(printf '%s' "$old" | /usr/libexec/fennek-files-info-panel)"
-    mkdir -p "${files_seen%/*}" && echo 2026-10-20 >"$files_seen"
+    for k in rating tags userComment; do kwriteconfig6 --file baloofileinformationrc --group Show --key "$k" false; done
+    mkdir -p "${files_seen%/*}" && echo 2026-10-20b >"$files_seen"
 fi
 
 # Files sidebar, once: hide "Devices" (system partitions) and "Recent", the bin is Recycle Bin (English).
