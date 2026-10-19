@@ -174,6 +174,15 @@ DropArea {
 	// The folded tiles are kept in the group, at their place relative to the header.
 	// Takes the group's index: the real entry in tileModel. (A delegate's modelData is a copy: folding that copy
 	// once kept the tucked tiles on the copy while removing the real ones, and they were lost.)
+	// Fennek OS: a group's name, changed in place (double-click the header).
+	function renameGroup(index, name) {
+		var g = tileModel[index]
+		name = String(name).trim()
+		if (!g || g.tileType != "group" || !name || g.label === name) return
+		g.label = name
+		tileModelChanged()
+	}
+
 	function setGroupFolded(groupIndex, fold) {
 		var group = tileModel[groupIndex]
 		if (!group || group.tileType != "group" || !!group.folded === fold) return

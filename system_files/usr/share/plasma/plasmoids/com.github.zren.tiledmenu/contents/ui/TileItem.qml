@@ -90,13 +90,43 @@ Item {
 				if (tileEditorView && tileEditorView.tile) {
 					openTileEditor()
 				} else if (modelData.tileType == "group") {
-					tileGrid.setGroupFolded(index, !tileGrid.tileModel[index].folded)   // Fennek OS: click a group header to fold / unfold
+					foldLater.restart()   // Fennek OS: click a group header to fold / unfold (unless it was a double-click: rename)
 				} else if (modelData.url) {
 					appsModel.tileGridModel.runApp(modelData.url)
 				}
 			} else if (mouse.button == Qt.RightButton) {
 				contextMenu.open(mouse.x, mouse.y)
 			}
+		}
+		onDoubleClicked: function(mouse) {
+			if (mouse.button != Qt.LeftButton || modelData.tileType != "group" || plasmoid.configuration.tilesLocked) return
+			foldLater.stop()
+			renameLoader.active = true
+		}
+	}
+
+	Timer {
+		id: foldLater
+		interval: Qt.styleHints.mouseDoubleClickInterval
+		onTriggered: tileGrid.setGroupFolded(index, !tileGrid.tileModel[index].folded)
+	}
+
+	// Fennek OS: rename a group in place: double-click its name, type, Enter (Escape or clicking away keeps the old one).
+	Loader {
+		id: renameLoader
+		active: false
+		z: 2
+		x: 1
+		y: 1
+		width: tileItem.width - 2
+		height: Math.min(tileItem.height - 2, cellSize * 0.5)
+		sourceComponent: QQC2.TextField {
+			text: appObj.labelText
+			font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.1
+			Component.onCompleted: { forceActiveFocus(); selectAll() }
+			onAccepted: { tileGrid.renameGroup(index, text); renameLoader.active = false }
+			Keys.onEscapePressed: renameLoader.active = false
+			onActiveFocusChanged: if (!activeFocus) renameLoader.active = false
 		}
 	}
 
