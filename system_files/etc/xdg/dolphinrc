@@ -8,6 +8,8 @@ GlobalViewProps=false
 # Files opens on This PC (folders + drives), like the classic file manager.
 HomeUrl=thispc:/
 ShowToolTips=true
+# No "+" box popping up on every item under the pointer (select with Ctrl/Shift or a drag, like the classic one).
+ShowSelectionToggle=false
 
 [MainWindow]
 # Classic menu bar (File, Edit, View, Go...) shown from the first start; Ctrl+M hides it.

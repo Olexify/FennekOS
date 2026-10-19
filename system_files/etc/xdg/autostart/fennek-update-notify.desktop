@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Fennek update notice
+Exec=/usr/libexec/fennek-update-notify
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=2

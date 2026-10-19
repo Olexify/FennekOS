@@ -20,7 +20,8 @@ QQC2.ApplicationWindow {
     readonly property string settingsCmd: helper + " get"
     readonly property string statusCmd: "rpm-ostree status --json"
     readonly property string checkCmd: "rpm-ostree upgrade --check"
-    readonly property string installCmd: "rpm-ostree upgrade"
+    readonly property string installCmd: "/usr/libexec/fennek-update-run run"
+    readonly property string progressCmd: "/usr/libexec/fennek-update-run progress"
     readonly property string releaseCmd: "cat /usr/lib/os-release"
     readonly property string milestonesCmd: "cat /usr/share/fennek/milestones.json"
     readonly property string tagsCmd: "skopeo list-tags docker://ghcr.io/olexify/fennekos"
@@ -39,6 +40,17 @@ QQC2.ApplicationWindow {
     property var staged: null          // a downloaded update waiting for restart
     property string state: "idle"      // idle | checking | available | uptodate | installing | failed
     property string detail: ""
+    // Where an install is: stage (checking | downloading | installing | ready), parts done of total, size in MB.
+    property var prog: ({ stage: "checking", done: 0, total: 0, size: 0 })
+    property bool background: false    // an automatic update is running (started by the system, not this window)
+    readonly property int step: root.staged ? 3 : ({ checking: 0, idle: 0, downloading: 1, installing: 2, ready: 3 })[prog.stage] ?? 0
+    function size(mb) { return mb >= 1000 ? (mb / 1000).toFixed(1) + " GB" : Math.round(mb) + " MB" }
+    Timer {
+        interval: 1000
+        repeat: true
+        running: root.state === "installing"
+        onTriggered: run.connectSource(root.background ? root.statusCmd : root.progressCmd)
+    }
     readonly property int daysOld: booted && booted.timestamp ? Math.floor((Date.now() / 1000 - booted.timestamp) / 86400) : 0
     readonly property var weekdays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     readonly property var weekdayNames: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -76,6 +88,10 @@ QQC2.ApplicationWindow {
                     const d = JSON.parse(data.stdout).deployments
                     root.booted = d.find(x => x.booted) || null
                     root.staged = d.find(x => x.staged) || null
+                    // An automatic update already running: show it instead of offering another one.
+                    const busy = !!JSON.parse(data.stdout).transaction
+                    if (busy && root.state !== "installing") { root.background = true; root.state = "installing" }
+                    else if (!busy && root.background) { root.background = false; root.state = "idle" }
                 } catch (e) {}
             } else if (source === root.releaseCmd) {
                 const r = {}
@@ -92,6 +108,8 @@ QQC2.ApplicationWindow {
             } else if (source === root.checkCmd) {
                 root.state = code === 0 ? "available" : code === 77 ? "uptodate" : "failed"
                 root.detail = code === 0 || code === 77 ? "" : (data.stderr || data.stdout).trim()
+            } else if (source === root.progressCmd) {
+                try { root.prog = JSON.parse(data.stdout) } catch (e) {}
             } else if (source === root.installCmd) {
                 root.state = code === 0 ? "idle" : "failed"
                 root.detail = code === 0 ? "" : (data.stderr || data.stdout).trim()
@@ -143,6 +161,7 @@ QQC2.ApplicationWindow {
                     Kirigami.Icon {
                         Layout.preferredWidth: 40; Layout.preferredHeight: 40
                         source: root.staged ? "system-reboot" : root.state === "available" ? "update-high"
+                              : root.state === "installing" ? "download" : root.state === "checking" ? "view-refresh"
                               : root.state === "failed" ? "dialog-warning" : "checkmark"
                     }
                     ColumnLayout {
@@ -152,7 +171,8 @@ QQC2.ApplicationWindow {
                             level: 3
                             text: root.staged ? "An update is ready"
                                 : root.state === "checking" ? "Checking for updates…"
-                                : root.state === "installing" ? "Downloading and installing…"
+                                : root.state === "installing" ? (root.background ? "Updating in the background…"
+                                    : ["Getting ready…", "Downloading the update…", "Installing…", "Finishing…"][root.step])
                                 : root.state === "available" ? "An update is available"
                                 : root.state === "failed" ? "That didn't work"
                                 : "You're up to date"
@@ -164,10 +184,63 @@ QQC2.ApplicationWindow {
                             text: root.staged ? "Restart to finish. Your files and apps stay as they are."
                                 : root.state === "available" ? "It downloads in the background; you finish it with a restart."
                                 : root.state === "failed" ? (root.detail || "Check your internet connection and try again.")
+                                : root.state === "installing" ? (root.prog.stage === "downloading" && root.prog.total
+                                    ? "Part " + Math.min(root.prog.done + 1, root.prog.total) + " of " + root.prog.total
+                                      + (root.prog.size ? " · " + root.size(root.prog.size) + " in total" : "")
+                                    : "You can keep working; this window can stay open or be closed.")
                                 : root.state === "uptodate" ? "Checked just now."
                                 : root.state === "idle" ? (root.settings.metered_now && !root.settings.on_metered
                                         ? "You're on a metered connection: automatic updates wait. You can still update now."
                                         : "Updates arrive by themselves; you can also check now.") : ""
+                        }
+                        QQC2.ProgressBar {
+                            Layout.fillWidth: true
+                            Layout.topMargin: Kirigami.Units.smallSpacing
+                            visible: root.state === "installing"
+                            indeterminate: root.prog.stage !== "downloading" || !root.prog.total
+                            from: 0
+                            to: Math.max(1, root.prog.total)
+                            value: root.prog.done
+                        }
+                        // The steps: check, download, install, restart (done ones ticked, the current one bold).
+                        RowLayout {
+                            Layout.topMargin: Kirigami.Units.smallSpacing
+                            visible: root.state === "installing" || !!root.staged
+                            spacing: Kirigami.Units.smallSpacing
+                            Repeater {
+                                model: ["Check", "Download", "Install", "Restart"]
+                                RowLayout {
+                                    required property string modelData
+                                    required property int index
+                                    spacing: Kirigami.Units.smallSpacing
+                                    Rectangle {
+                                        implicitWidth: Kirigami.Units.gridUnit
+                                        implicitHeight: implicitWidth
+                                        radius: width / 2
+                                        color: index < root.step ? Kirigami.Theme.positiveTextColor
+                                             : index === root.step ? Kirigami.Theme.highlightColor
+                                             : Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.2)
+                                        QQC2.Label {
+                                            anchors.centerIn: parent
+                                            text: index < root.step ? "✓" : index + 1
+                                            color: "white"
+                                            font: Kirigami.Theme.smallFont
+                                        }
+                                    }
+                                    QQC2.Label {
+                                        text: modelData
+                                        font.weight: index === root.step ? Font.DemiBold : Font.Normal
+                                        opacity: index <= root.step ? 1 : 0.6
+                                    }
+                                    Rectangle {
+                                        visible: index < 3
+                                        implicitWidth: Kirigami.Units.gridUnit * 1.5
+                                        implicitHeight: 2
+                                        color: Kirigami.Theme.textColor
+                                        opacity: index < root.step ? 0.6 : 0.2
+                                    }
+                                }
+                            }
                         }
                     }
                     QQC2.BusyIndicator { visible: root.state === "checking" || root.state === "installing"; running: visible }
@@ -181,7 +254,11 @@ QQC2.ApplicationWindow {
                                            : root.state === "available" ? "sudo bootc upgrade" : "sudo bootc upgrade --check")
                         onClicked: {
                             if (root.staged) run.connectSource("systemctl reboot")
-                            else if (root.state === "available") { root.state = "installing"; run.connectSource(root.installCmd) }
+                            else if (root.state === "available") {
+                                root.prog = { stage: "checking", done: 0, total: 0, size: 0 }
+                                root.state = "installing"
+                                run.connectSource(root.installCmd)
+                            }
                             else { root.state = "checking"; run.connectSource(root.checkCmd) }
                         }
                     }

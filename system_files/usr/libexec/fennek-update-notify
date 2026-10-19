@@ -1,0 +1,14 @@
+#!/usr/bin/bash
+# At sign-in after an update: "Fennek OS was updated" with the new version, once per new build (button: Updates).
+set -u
+. /usr/lib/os-release
+seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/last-build
+last=$(cat "$seen" 2>/dev/null)
+mkdir -p "${seen%/*}" && printf '%s\n' "${BUILD_ID:-}" >"$seen"
+# First sign-in ever (nothing seen yet) or the same build: nothing to say.
+[ -n "$last" ] && [ "$last" != "${BUILD_ID:-}" ] || exit 0
+sleep 8   # after the desktop is up
+a=$(notify-send -a "Fennek OS" -i system-software-update --action=open="See what's new" --wait \
+    "Fennek OS was updated" "Now on ${PRETTY_NAME:-Fennek OS} (version ${IMAGE_VERSION:-?}). Everything is installed.")
+[ "$a" = open ] && exec fennek-app updates
+exit 0

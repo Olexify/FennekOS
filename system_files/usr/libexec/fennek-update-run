@@ -1,0 +1,76 @@
+#!/usr/bin/python3
+"""The Updates window's install, with progress it can follow.
+
+  fennek-update-run run         install the update now (rpm-ostree upgrade), logging as it goes
+  fennek-update-run progress    JSON: {"stage", "done", "total", "size"} from that log
+                                stage: idle | checking | downloading | installing | ready | failed
+  fennek-update-run --selftest
+"""
+import json, os, re, subprocess, sys
+
+LOG = os.path.join(os.environ.get("XDG_RUNTIME_DIR") or "/tmp", "fennek-update.log")
+MB = {"kB": 1e-3, "MB": 1, "GB": 1e3}
+
+
+def parse(text):
+    """rpm-ostree's output so far -> where the update is."""
+    if not text.strip():
+        return {"stage": "idle", "done": 0, "total": 0, "size": 0}
+    total, size = 0, 0.0
+    for n, amount, unit in re.findall(r"layers needed: (\d+)(?: \(([\d.]+) ([kMG]B)\))?", text):
+        total += int(n)
+        size += float(amount or 0) * MB.get(unit, 0)
+    done = len(re.findall(r"Fetching (?:ostree chunk|layer) \S+.*?done", text))
+    m = re.search(r"fennek-exit=(\d+)", text)
+    if m:
+        stage = "ready" if m.group(1) == "0" else "failed"
+    elif re.search(r"Staging deployment|Writing objects|Checking out tree|Running pre-finalize", text):
+        stage = "installing"
+    elif total or "Fetching" in text:
+        stage = "downloading"
+    else:
+        stage = "checking"
+    out = {"stage": stage, "done": min(done, total) if total else done, "total": total, "size": round(size)}
+    if stage == "failed":
+        lines = [l.strip() for l in text.splitlines() if l.strip() and not l.startswith("fennek-exit")]
+        out["error"] = lines[-1] if lines else ""
+    return out
+
+
+def run():
+    os.makedirs(os.path.dirname(LOG), exist_ok=True)
+    with open(LOG, "w") as log:
+        # Through a pseudo-terminal: rpm-ostree reports each part as it arrives only to a terminal.
+        code = subprocess.run(["script", "-qefc", "rpm-ostree upgrade", "/dev/null"], stdout=log, stderr=log).returncode
+        log.write(f"\nfennek-exit={code}\n")
+    return code
+
+
+def selftest():
+    assert parse("")["stage"] == "idle"
+    assert parse("Pulling manifest: ostree-image-signed:docker://x")["stage"] == "checking"
+    t = ("Importing: x\nostree chunk layers already present: 50\nostree chunk layers needed: 10 (500.5 MB)\n"
+         "custom layers needed: 1 (1.2 GB)\nFetching ostree chunk sha256:2a4c (52.3 MB)...done\n"
+         "Fetching ostree chunk sha256:9f1e (12 MB)... 40%")
+    p = parse(t)
+    assert p == {"stage": "downloading", "done": 1, "total": 11, "size": 1700}, p
+    assert parse(t + "...done\nStaging deployment...")["stage"] == "installing"
+    assert parse(t + "\nStaging deployment...done\nfennek-exit=0\n")["stage"] == "ready"
+    f = parse("Pulling manifest\nerror: Transaction in progress\nfennek-exit=1\n")
+    assert f["stage"] == "failed" and f["error"] == "error: Transaction in progress", f
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    a = sys.argv[1:]
+    if a == ["--selftest"]:
+        selftest()
+    elif a == ["run"]:
+        sys.exit(run())
+    elif a == ["progress"]:
+        try:
+            print(json.dumps(parse(open(LOG, errors="replace").read())))
+        except FileNotFoundError:
+            print(json.dumps(parse("")))
+    else:
+        sys.exit(__doc__)
