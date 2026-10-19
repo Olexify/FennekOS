@@ -26,7 +26,7 @@ PlasmoidItem {
         Layout.fillHeight: true
         hoverEnabled: true
         onClicked: run.connectSource("dbus-send --session --dest=org.kde.kglobalaccel --type=method_call "
-                                     + "/component/kwin org.kde.kglobalaccel.Component.invokeShortcut string:'Show Desktop'")
+                                     + "/component/kwin org.kde.kglobalaccel.Component.invokeShortcut string:'Fennek Show Desktop'")
         Rectangle {
             anchors.fill: parent
             color: Kirigami.Theme.textColor

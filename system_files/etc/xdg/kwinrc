@@ -26,3 +26,5 @@ fennekf11Enabled=true
 # Super+X quick links at the bottom-left (/usr/share/kwin-wayland/scripts/fennekwinx).
 fennekwinxEnabled=true
 fenneksnapassistEnabled=true
+# Super+D shows the desktop and brings the same windows back on the second press (scripts/fennekshowdesktop).
+fennekshowdesktopEnabled=true

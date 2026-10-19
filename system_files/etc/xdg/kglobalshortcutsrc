@@ -5,6 +5,9 @@ Overview=Meta+Tab	Meta+W,Meta+W,Toggle Overview
 # Alt+F4 goes to the fennekaltf4 script: closes the window, or opens Shut down on the desktop.
 Window Close=none,Alt+F4,Close Window
 Fennek Close or Shut Down=Alt+F4,Alt+F4,Close the window, or shut down from the desktop
+# Super+D goes to the fennekshowdesktop script (classic show desktop / bring back), not KWin's own peek.
+Show Desktop=none,Meta+D,Peek at Desktop
+Fennek Show Desktop=Meta+D,Meta+D,Show the desktop; press again to bring the windows back
 
 [plasmashell]
 # Super+Tab belongs to the task view above, not to switching activities.

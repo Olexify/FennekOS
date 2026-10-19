@@ -30,7 +30,7 @@ QQC2.ApplicationWindow {
         ["Run", "system-run", "fennek-app run"],
         [],
         ["Shut down or sign out", "system-shutdown", "dbus-send --session --dest=org.kde.LogoutPrompt --type=method_call /LogoutPrompt org.kde.LogoutPrompt.promptAll"],
-        ["Desktop", "user-desktop", "dbus-send --session --dest=org.kde.kglobalaccel --type=method_call /component/kwin org.kde.kglobalaccel.Component.invokeShortcut string:'Show Desktop'"]
+        ["Desktop", "user-desktop", "dbus-send --session --dest=org.kde.kglobalaccel --type=method_call /component/kwin org.kde.kglobalaccel.Component.invokeShortcut string:'Fennek Show Desktop'"]
     ]
 
     // Started detached, so it keeps running after this menu closes.

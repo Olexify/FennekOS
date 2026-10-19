@@ -164,7 +164,7 @@ if [ "$(cat "$pl_seen" 2>/dev/null)" != 2026-10-19 ]; then
     mkdir -p "${pl_seen%/*}" && echo 2026-10-19 >"$pl_seen"
 fi
 
-version=2026-10-19c
+version=2026-10-19d
 seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/shortcuts-version
 [ "$(cat "$seen" 2>/dev/null)" = "$version" ] && exit 0
 f=${XDG_CONFIG_HOME:-$HOME/.config}/kglobalshortcutsrc
@@ -174,6 +174,8 @@ if [ -f "$f" ]; then
     kw plasmashell "next activity" "none,Meta+Tab,Walk through activities"
     kw kwin "Window Close" "none,Alt+F4,Close Window"                            # Alt+F4: see fennekaltf4
     kw kwin "Fennek Close or Shut Down" "Alt+F4,Alt+F4,Close the window, or shut down from the desktop"
+    kw kwin "Show Desktop" "none,Meta+D,Peek at Desktop"                                   # Super+D: see fennekshowdesktop
+    kw kwin "Fennek Show Desktop" "Meta+D,Meta+D,Show the desktop; press again to bring the windows back"
     kwriteconfig6 --file "$f" --group services --group org.kde.krunner.desktop --key _launch $'Alt+Space	Alt+F2	Search'   # search
     kwriteconfig6 --file "$f" --group services --group fennek-run.desktop --key _launch Meta+R                            # Super+R: Run box
     kwriteconfig6 --file "$f" --group services --group fennek-settings.desktop --key _launch Meta+I                    # Super+I: Settings

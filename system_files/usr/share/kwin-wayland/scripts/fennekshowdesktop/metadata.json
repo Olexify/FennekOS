@@ -1,0 +1,12 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Id": "fennekshowdesktop",
+        "Name": "Super+D: show the desktop, press again to bring the windows back",
+        "Description": "Puts every window away and shows the desktop; the second press restores exactly those windows in the same order.",
+        "License": "GPL-3.0-only",
+        "EnabledByDefault": true
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}

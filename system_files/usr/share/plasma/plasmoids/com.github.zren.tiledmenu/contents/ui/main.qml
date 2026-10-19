@@ -249,7 +249,7 @@ PlasmoidItem {
 		PlasmaCore.Action { text: i18n("Run"); icon.name: "system-run"; onTriggered: widget.run("fennek-app run") },
 		PlasmaCore.Action { isSeparator: true },
 		PlasmaCore.Action { text: i18n("Shut down or sign out"); icon.name: "system-shutdown"; onTriggered: widget.run("dbus-send --session --dest=org.kde.LogoutPrompt --type=method_call /LogoutPrompt org.kde.LogoutPrompt.promptAll") },
-		PlasmaCore.Action { text: i18n("Desktop"); icon.name: "user-desktop"; onTriggered: widget.run("dbus-send --session --dest=org.kde.kglobalaccel --type=method_call /component/kwin org.kde.kglobalaccel.Component.invokeShortcut string:'Show Desktop'") }
+		PlasmaCore.Action { text: i18n("Desktop"); icon.name: "user-desktop"; onTriggered: widget.run("dbus-send --session --dest=org.kde.kglobalaccel --type=method_call /component/kwin org.kde.kglobalaccel.Component.invokeShortcut string:'Fennek Show Desktop'") }
 	]
 
 	Component.onCompleted: {
