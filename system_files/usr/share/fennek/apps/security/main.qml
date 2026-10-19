@@ -57,6 +57,7 @@ QQC2.ApplicationWindow {
                     text: action.modelData[0]
                     color: "white"
                     font.pixelSize: 22
+                    renderType: Text.QtRendering   // smooth on the see-through screen (no colour fringes)
                     leftPadding: Kirigami.Units.largeSpacing * 2
                     verticalAlignment: Text.AlignVCenter
                 }
