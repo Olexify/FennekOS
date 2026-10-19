@@ -1,6 +1,7 @@
 .pragma library
 
 function parseDropUrl(url) {
+	url = String(url) // Fennek OS: Qt 6 hands over a url object (no indexOf): drops from the app list failed
 	var startsWithAppsScheme = url.indexOf('applications:') === 0 // Search Results add this prefix
 	if (startsWithAppsScheme) {
 		// console.log('parseDropUrl', 'startsWithAppsScheme', url)
