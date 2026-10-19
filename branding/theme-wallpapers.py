@@ -142,22 +142,24 @@ def ridge(xs, seed, top):
 mountains = ridge((-60, 1240), 4, 420) + ridge((2600, 3900), 8, 460)
 
 
-# An elegant rook drawn as neon tubes: a classic silhouette (base, collar, slim body, three crenels) in one bright line
-# with a coloured glow, and two googly eyes. In a 45-unit box, standing on y=40.
-ROOK = ("M8.5 40h28M10 40c0-2 1-3 2.6-3h19.8c1.6 0 2.6 1 2.6 3M13.4 37l1.4-3h15.4l1.4 3M15.2 34l1.6-15.4h11.4L29.8 34"
-        "M13.6 18.6h17.8M13.6 18.6V10h3.6v3.4h3.6V10h3.4v3.4h3.6V10h3.6v8.6")
+# The rook from Rook, Paper, Scissors! (its own shape: crenellated crown, tapered body, rounded base) given googly eyes,
+# lit as neon: a dark body, a coloured glow and a bright core line. In a 45-unit box, standing on y=39.
+ROOK = ("M10.4 8.8h5.4v3.6h4.2V8.8h4.8v3.6h4.2V8.8h5.6v8.6l-3.2 2.8h-17.8l-3.2-2.8z"
+        "M14.2 20.6h16.6l1.2 10.4H13z"
+        "M11.4 31.4h22.2c1.6 0 2.9 1.3 2.9 2.9v1.8c0 1.6-1.3 2.9-2.9 2.9H11.4c-1.6 0-2.9-1.3-2.9-2.9v-1.8c0-1.6 1.3-2.9 2.9-2.9z")
 
 
 def neon(cast):
     out = ""
     for x, y, sc, col, look in cast:
-        tx, ty = x - 22.5 * sc, y - 40 * sc
+        tx, ty = x - 22.5 * sc, y - 39 * sc
         g = f'transform="translate({tx:.0f} {ty:.0f}) scale({sc})" fill="none" stroke-linecap="round" stroke-linejoin="round"'
         eyes = ""
-        for ex, (dx, dy) in ((19.6, look[0]), (25.4, look[1])):
-            eyes += (f'<circle cx="{ex}" cy="25.4" r="2.5" fill="#fffaf2" stroke="{col}" stroke-width=".6"/>'
-                     f'<circle cx="{ex + dx:.2f}" cy="{25.4 + dy:.2f}" r="1.2" fill="#140a22"/>')
+        for ex, (dx, dy) in ((19.2, look[0]), (25.8, look[1])):
+            eyes += (f'<circle cx="{ex}" cy="25.6" r="2.7" fill="#fffaf2" stroke="{col}" stroke-width=".6"/>'
+                     f'<circle cx="{ex + dx:.2f}" cy="{25.6 + dy:.2f}" r="1.3" fill="#140a22"/>')
         out += (f'<ellipse cx="{x}" cy="{y + 4}" rx="{19 * sc:.0f}" ry="{3 * sc:.0f}" fill="{col}" opacity=".28" filter="url(#glow2)"/>'
+                f'<path d="{ROOK}" {g.replace("fill=\"none\"", "fill=\"#170c28\"")} stroke="none" opacity=".92"/>'
                 f'<path d="{ROOK}" {g} stroke="{col}" stroke-width="3.6" opacity=".55" filter="url(#ng1)"/>'
                 f'<path d="{ROOK}" {g} stroke="{col}" stroke-width="1.8" opacity=".9" filter="url(#ng2)"/>'
                 f'<path d="{ROOK}" {g} stroke="#fff4ff" stroke-width=".75"/>'
@@ -176,8 +178,7 @@ def cast_neon(cast):
 
 
 # Arcade: just rooks (the one-eyed rook), a few at different depths. Arcade Crew: the whole googly-eyed cast.
-rooks = neon(((760, 1900, 10.5, "#ff5fd2", ((.9, .6), (-.4, .9))), (1500, 1500, 6.4, "#4fd8ff", ((.7, -.5), (.9, .2))),
-              (2480, 1640, 7.8, "#b07bff", ((-.8, .5), (.3, .9))), (3150, 1960, 11.2, "#ffc65c", ((.5, .9), (-.9, .3)))))
+rooks = neon(((1020, 1880, 12.5, "#ff5fd2", ((1.1, .4), (1.2, .7))), (2820, 1880, 12.5, "#4fd8ff", ((-1.2, .6), (-1.0, .3)))))
 crew = cast_neon((("o", 520, 1990, 11.5, "#ff7ad9"), ("z", 960, 1660, 8.6, "#58d6ff"), ("u", 1420, 1470, 6.2, "#a970ff"),
              ("S", 2060, 1930, 9.4, "#ffd166"), ("g", 2620, 1560, 7.2, "#58d6ff"), ("d", 3190, 1830, 10.4, "#ff7ad9")))
 stripes = "".join(f'<rect x="{W / 2 - 700}" y="{hy - 380 + k * 70 + k * k * 2}" width="1400" height="{6 + k * 3}" fill="#140c24"/>' for k in range(2, 9))
