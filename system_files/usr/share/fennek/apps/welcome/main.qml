@@ -1,5 +1,5 @@
-// Fennek welcome: opens once at a new user's first login (and from Start any time). Four calm pages:
-// greeting, pick your look (applied right away), what keeps you safe, a few tips. Runs as
+// Fennek welcome: opens once at a new user's first login (and from Start any time). Five calm pages:
+// greeting, pick your look (applied right away), what keeps you safe, get your apps, a few tips. Runs as
 // fennek-app welcome (see fennek-welcome.desktop).
 import QtQuick
 import QtQuick.Layouts
@@ -157,7 +157,58 @@ QQC2.ApplicationWindow {
                     Item { Layout.fillHeight: true }
                 }
 
-                // 4. Tips
+                // 4. Your apps: the ones people bring with them, one click to their Store page (Install is there).
+                ColumnLayout {
+                    spacing: Kirigami.Units.largeSpacing
+                    Kirigami.Heading { text: root.t("Get your apps", "Ваші застосунки"); level: 2 }
+                    QQC2.Label {
+                        text: root.t("Opens the app in the Store; click Install there. More apps: Store in Start.",
+                                     "Відкриває застосунок у Крамниці; там натисніть Встановити. Більше: Крамниця в меню Пуск.")
+                        opacity: 0.7
+                    }
+                    GridLayout {
+                        columns: 3
+                        columnSpacing: Kirigami.Units.largeSpacing
+                        rowSpacing: Kirigami.Units.smallSpacing
+                        Layout.fillWidth: true
+                        Repeater {
+                            model: [
+                                ["Steam", "steam", "com.valvesoftware.Steam"],
+                                ["Discord", "discord", "com.discordapp.Discord"],
+                                ["Spotify", "spotify-client", "com.spotify.Client"],
+                                ["Google Chrome", "google-chrome", "com.google.Chrome"],
+                                ["VLC", "vlc", "org.videolan.VLC"],
+                                ["OBS Studio", "com.obsproject.Studio", "com.obsproject.Studio"],
+                                ["Telegram", "telegram", "org.telegram.desktop"],
+                                ["Zoom", "Zoom", "us.zoom.Zoom"],
+                                ["GIMP", "gimp", "org.gimp.GIMP"],
+                                ["VS Code", "vscode", "com.visualstudio.code"],
+                                ["Leonote", "fennek-get-leonote", ""]
+                            ]
+                            delegate: QQC2.ItemDelegate {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                onClicked: run.connectSource(modelData[2]
+                                    ? "plasma-discover --application appstream://" + modelData[2]
+                                    : "xdg-open https://github.com/Olexify/Leonote/releases/latest")
+                                contentItem: RowLayout {
+                                    spacing: Kirigami.Units.largeSpacing
+                                    Kirigami.Icon {
+                                        source: modelData[1]
+                                        fallback: "application-x-executable"
+                                        Layout.preferredWidth: Kirigami.Units.iconSizes.medium
+                                        Layout.preferredHeight: Layout.preferredWidth
+                                    }
+                                    QQC2.Label { text: modelData[0]; Layout.fillWidth: true; elide: Text.ElideRight }
+                                    QQC2.Label { text: root.t("Get", "Отримати"); color: Kirigami.Theme.linkColor }
+                                }
+                            }
+                        }
+                    }
+                    Item { Layout.fillHeight: true }
+                }
+
+                // 5. Tips
                 ColumnLayout {
                     spacing: Kirigami.Units.largeSpacing
                     Kirigami.Heading { text: root.t("You're all set", "Усе готово"); level: 2 }
@@ -192,7 +243,7 @@ QQC2.ApplicationWindow {
                 Row {
                     spacing: 8
                     Repeater {
-                        model: 4
+                        model: 5
                         Rectangle {
                             width: 8; height: 8; radius: 4
                             color: Kirigami.Theme.highlightColor
@@ -208,8 +259,8 @@ QQC2.ApplicationWindow {
                 }
                 QQC2.Button {
                     highlighted: true
-                    text: root.page < 3 ? root.t("Next", "Далі") : root.t("Start using Fennek OS", "Почати роботу")
-                    onClicked: root.page < 3 ? root.page++ : Qt.quit()
+                    text: root.page < 4 ? root.t("Next", "Далі") : root.t("Start using Fennek OS", "Почати роботу")
+                    onClicked: root.page < 4 ? root.page++ : Qt.quit()
                 }
             }
         }
