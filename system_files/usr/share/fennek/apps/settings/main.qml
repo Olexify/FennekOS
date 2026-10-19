@@ -1,6 +1,6 @@
 // Fennek Settings: a sidebar ("Find a setting" + categories with their icons) and, on the right, the chosen
-// category's settings as rounded cards. Home shows the categories as large cards. Each setting opens the
-// matching KDE settings page (so everything stays in sync) or runs a tool.
+// category's settings as rounded cards. Home shows the categories as large cards. A setting opens its KDE settings
+// page right here, on the right (saved by itself, no Apply; back arrow to return), or runs a tool.
 // Runs as a normal window: fennek-app settings (see fennek-settings.desktop).
 import QtQuick
 import QtQuick.Layouts
@@ -8,6 +8,7 @@ import QtQuick.Controls as QQC2
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
 import org.kde.coreaddons as KCoreAddons
+import Fennek
 import "catalog.js" as Catalog
 
 QQC2.ApplicationWindow {
@@ -21,6 +22,16 @@ QQC2.ApplicationWindow {
 
     property var category: null          // open category, or null for Home
     property string query: ""
+    property var page: null              // the setting whose page is open on the right, or null
+    onCategoryChanged: page = null
+    onQueryChanged: if (query !== "") page = null
+    // fennek-app settings kcm_NAME: open right on that page (the action center's right-click, links elsewhere).
+    Component.onCompleted: {
+        const want = Qt.application.arguments[2] || ""
+        for (const c of Catalog.categories)
+            for (const i of c.items)
+                if (want !== "" && i.kcm === want) { category = c; page = i }
+    }
 
     P5Support.DataSource {
         id: run
@@ -45,13 +56,16 @@ QQC2.ApplicationWindow {
         }
     }
     function open(item) {
-        run.connectSource(item.kcm ? "fennek-kcm " + item.kcm : item.cmd)   // pages save by themselves (no Apply)
+        if (item.kcm) page = item        // shown on the right; saved by itself (no Apply)
+        else run.connectSource(item.cmd)
     }
+    // Optional pages only where they are installed (KDE version, ARM).
+    function shown(items) { return items.filter(i => !i.optional || pageView.has(i.kcm)) }
     function matches() {
         const q = query.toLowerCase().trim()
         const out = []
         for (const c of Catalog.categories)
-            for (const i of c.items)
+            for (const i of shown(c.items))
                 if ((i.name + " " + i.desc + " " + c.name).toLowerCase().includes(q)) out.push(i)
         return out
     }
@@ -112,7 +126,7 @@ QQC2.ApplicationWindow {
                     QQC2.ItemDelegate {
                         readonly property bool current: root.category === null && root.query === ""
                         Layout.fillWidth: true
-                        onClicked: { root.category = null; search.text = "" }
+                        onClicked: { root.category = null; root.page = null; search.text = "" }
                         background: Rectangle {
                             radius: 8
                             color: parent.current ? root.cardHover : parent.hovered ? root.cardColor : "transparent"
@@ -135,7 +149,7 @@ QQC2.ApplicationWindow {
                             required property var modelData
                             readonly property bool current: root.category === modelData && root.query === ""
                             Layout.fillWidth: true
-                            onClicked: { root.category = modelData; search.text = "" }
+                            onClicked: { root.category = modelData; root.page = null; search.text = "" }
                             background: Rectangle {
                                 radius: 8
                                 color: parent.current ? root.cardHover : parent.hovered ? root.cardColor : "transparent"
@@ -164,8 +178,43 @@ QQC2.ApplicationWindow {
                 }
             }
 
+            // ---- An open settings page ----
+            ColumnLayout {
+                visible: root.page !== null
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                spacing: 0
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.margins: Kirigami.Units.largeSpacing
+                    spacing: Kirigami.Units.largeSpacing
+                    QQC2.ToolButton {
+                        icon.name: "go-previous"
+                        QQC2.ToolTip.visible: hovered
+                        QQC2.ToolTip.text: "Back"
+                        onClicked: pageView.depth > 1 ? pageView.back() : (root.page = null)
+                    }
+                    Kirigami.Icon {
+                        source: root.page ? root.page.icon : ""
+                        Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
+                        Layout.preferredHeight: Layout.preferredWidth
+                    }
+                    Kirigami.Heading { text: root.page ? root.page.name : ""; level: 2; Layout.fillWidth: true; elide: Text.ElideRight }
+                }
+                Kirigami.Separator { Layout.fillWidth: true }
+                KcmView {
+                    id: pageView
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    kcm: root.page ? root.page.kcm : ""
+                    // An old-style page can't be shown inside: its own window (also without Apply).
+                    onKcmChanged: if (failed && kcm !== "") { run.connectSource("fennek-kcm " + kcm); root.page = null }
+                }
+            }
+
             // ---- Content ----
             QQC2.ScrollView {
+                visible: root.page === null
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 contentWidth: availableWidth
@@ -274,7 +323,7 @@ QQC2.ApplicationWindow {
                         Layout.rightMargin: Kirigami.Units.gridUnit * 2
                         spacing: Kirigami.Units.smallSpacing
                         Repeater {
-                            model: root.query !== "" ? root.matches() : (root.category ? root.category.items : [])
+                            model: root.query !== "" ? root.matches() : (root.category ? root.shown(root.category.items) : [])
                             delegate: SettingCard { required property var modelData; item: modelData }
                         }
                         QQC2.Label {

@@ -352,7 +352,7 @@ PlasmoidItem {
                         onClicked: mouse => {
                             if (mouse.button === Qt.RightButton && modelData.settings) {
                                 root.expanded = false
-                                run.connectSource("fennek-kcm " + modelData.settings)
+                                run.connectSource("fennek-app settings " + modelData.settings)
                             } else if (mouse.button === Qt.LeftButton) {
                                 modelData.act()
                             }

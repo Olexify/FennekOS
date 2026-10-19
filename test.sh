@@ -381,7 +381,9 @@ PY
 rc=0; fennek-app ../etc 2>/dev/null || rc=$?; [ $rc -eq 2 ] && ! command -v g++ >/dev/null || fail "fennek-app launcher (rejects paths; no compiler left)"
 rc=0; fennek-kcm ../x 2>/dev/null || rc=$?; [ $rc -eq 2 ] || fail "fennek-kcm rejects anything but a page id"
 rc=0; QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-kcm kcm_mouse >/tmp/kcm.log 2>&1 || rc=$?
-[ $rc -eq 124 ] && grep -q 'fennek-kcm " + item.kcm' /usr/share/fennek/apps/settings/main.qml || { tail -5 /tmp/kcm.log; fail "Settings pages open without Apply (fennek-kcm, exit $rc)"; }
+[ $rc -eq 124 ] || { tail -5 /tmp/kcm.log; fail "Settings page in its own window without Apply (fennek-kcm, exit $rc)"; }
+rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 10 fennek-app settings kcm_mouse >/tmp/kcmview.log 2>&1 || rc=$?
+[ $rc -eq 124 ] && ! grep -q "can't be shown inside" /tmp/kcmview.log || { tail -5 /tmp/kcmview.log; fail "Settings shows its pages inside (KcmView, exit $rc)"; }
 for a in settings firewall welcome apphistory backup live updates quarantine winx power; do   # starts off-screen and keeps running = the QML loads
     rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-app "$a" >/tmp/app-$a.log 2>&1 || rc=$?
     [ $rc -eq 124 ] || { tail -5 /tmp/app-$a.log; fail "app $a does not start (exit $rc)"; }
@@ -394,9 +396,11 @@ kcms = {os.path.basename(p)[:-3] for p in glob.glob("/usr/lib64/qt6/plugins/plas
 bad = []
 for c in cats:
     for i in c["items"]:
-        if "kcm" in i and i["kcm"] not in kcms: bad.append(i["kcm"])
+        if "kcm" in i and i["kcm"] not in kcms and not i.get("optional"): bad.append(i["kcm"])
         if "cmd" in i and not shutil.which(i["cmd"].split()[0]): bad.append(i["cmd"])
 assert not bad, bad
+opt = [i["kcm"] for c in cats for i in c["items"] if i.get("optional")]
+print("Settings optional pages present:", sorted(k for k in opt if k in kcms), "missing:", sorted(k for k in opt if k not in kcms))
 PY
 python3 - <<'PY' || fail "QML: a top-level property or handler is set twice (the widget would not load)"
 import glob, re, collections
