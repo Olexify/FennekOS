@@ -124,13 +124,17 @@ for _ in range(14):
     fires += (f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{rr * 4:.0f}" fill="{c}" opacity=".18" filter="url(#glow2)"/>'
               f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{rr:.0f}" fill="{c}" opacity=".55" filter="url(#soft)"/>'
               f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{rr * .4:.0f}" fill="#ffffff" opacity=".85"/>')
-petal = lambda x, y, z, rot, c, o, f="": (f'<ellipse cx="0" cy="0" rx="{z * 1.7:.0f}" ry="{z:.0f}" fill="{c}" opacity="{o:.2f}" '
-                                       f'transform="translate({x:.0f} {y:.0f}) rotate({rot:.0f})"{f}/>')
-far_petals = "".join(petal(r.uniform(0, W), r.uniform(200, H - 80), r.uniform(6, 14), r.uniform(-70, 70),
-                           r.choice(("#f2b3c7", "#e79ab4", "#ffd0dd")), r.uniform(.5, .9)) for _ in range(55))
-near_petals = "".join(petal(r.choice((r.uniform(-50, 700), r.uniform(3200, W + 50))), r.uniform(150, H), r.uniform(40, 70),
-                            r.uniform(-70, 70), "#f7bcd0", r.uniform(.22, .38), ' filter="url(#b2)"') for _ in range(4))
+# Sakura petals: the real shape (rounded, with the little notch at the tip), pale in the middle and translucent pink
+# at the edge; far ones small and crisp, a few near ones large and only slightly out of focus.
+PETAL = "M-.2 -.95L0 -.78L.2 -.95C.62 -.86 .82 -.05 0 1C-.82 -.05 -.62 -.86 -.2 -.95Z"
+petal = lambda x, y, z, rot, o, f="": (f'<path d="{PETAL}" fill="url(#petalg)" opacity="{o:.2f}" '
+                                    f'transform="translate({x:.0f} {y:.0f}) rotate({rot:.0f}) scale({z:.1f})"{f}/>')
+far_petals = "".join(petal(r.uniform(0, W), r.uniform(150, H - 60), r.uniform(15, 28), r.uniform(0, 360), r.uniform(.55, .9))
+                     for _ in range(46))
+near_petals = "".join(petal(x, y, r.uniform(38, 56), r.uniform(0, 360), r.uniform(.35, .5), ' filter="url(#b1)"')
+                      for x, y in ((260, 1720), (3560, 520), (3380, 1880)))
 sakura = svg('''<linearGradient id="sbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#090c26"/><stop offset=".45" stop-color="#18205a"/><stop offset=".74" stop-color="#4d3c80"/><stop offset="1" stop-color="#2a2152"/></linearGradient>
+<radialGradient id="petalg" cx=".5" cy=".6" r=".6"><stop offset="0" stop-color="#fff2f6" stop-opacity=".95"/><stop offset=".6" stop-color="#f8c6d6" stop-opacity=".8"/><stop offset="1" stop-color="#e98fae" stop-opacity=".45"/></radialGradient>
 <radialGradient id="moon" cx=".42" cy=".38" r=".62"><stop offset="0" stop-color="#fffbf5"/><stop offset=".7" stop-color="#ffe9db"/><stop offset="1" stop-color="#f3cdc6"/></radialGradient>
 <linearGradient id="peak" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6f60a8"/><stop offset="1" stop-color="#3a3170"/></linearGradient>''',
              f'''<rect width="{W}" height="{H}" fill="url(#sbg)"/>{stars}{twinkles}
@@ -140,7 +144,6 @@ sakura = svg('''<linearGradient id="sbg" x1="0" y1="0" x2="0" y2="1"><stop offse
 <circle cx="2380" cy="860" r="430" fill="url(#moon)"/>
 <circle cx="2240" cy="780" r="60" fill="#f1d3cb" opacity=".16" filter="url(#soft)"/><circle cx="2520" cy="980" r="90" fill="#f1d3cb" opacity=".12" filter="url(#soft)"/>
 <path d="M3000 1330L3380 1010Q3420 980 3460 1010L3840 1300V1400H2900Z" fill="url(#peak)" opacity=".55"/>
-<path d="M3340 1040Q3420 975 3500 1040L3470 1050Q3420 1020 3370 1052Z" fill="#e9e1ff" opacity=".35"/>
 {mist(1220, 200, .10)}
 {hills(1300, 120, .4, "#2f2a66", .85)}
 {mist(1380, 180, .12)}
