@@ -164,7 +164,7 @@ if [ "$(cat "$pl_seen" 2>/dev/null)" != 2026-10-19 ]; then
     mkdir -p "${pl_seen%/*}" && echo 2026-10-19 >"$pl_seen"
 fi
 
-version=2026-10-19d
+version=2026-10-19e
 seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/shortcuts-version
 [ "$(cat "$seen" 2>/dev/null)" = "$version" ] && exit 0
 f=${XDG_CONFIG_HOME:-$HOME/.config}/kglobalshortcutsrc
@@ -176,6 +176,10 @@ if [ -f "$f" ]; then
     kw kwin "Fennek Close or Shut Down" "Alt+F4,Alt+F4,Close the window, or shut down from the desktop"
     kw kwin "Show Desktop" "none,Meta+D,Peek at Desktop"                                   # Super+D: see fennekshowdesktop
     kw kwin "Fennek Show Desktop" "Meta+D,Meta+D,Show the desktop; press again to bring the windows back"
+    kw kwin "Window Quick Tile Top" "none,Meta+Up,Quick Tile Window to the Top"               # Super+Up / Down: fennekarrows
+    kw kwin "Window Quick Tile Bottom" "none,Meta+Down,Quick Tile Window to the Bottom"
+    kw kwin "Fennek Maximize" "Meta+Up,Meta+Up,Maximize the window"
+    kw kwin "Fennek Restore or Minimize" "Meta+Down,Meta+Down,Restore a maximized window, or minimize it"
     kwriteconfig6 --file "$f" --group services --group org.kde.krunner.desktop --key _launch $'Alt+Space	Alt+F2	Search'   # search
     kwriteconfig6 --file "$f" --group services --group fennek-run.desktop --key _launch Meta+R                            # Super+R: Run box
     kwriteconfig6 --file "$f" --group services --group fennek-settings.desktop --key _launch Meta+I                    # Super+I: Settings

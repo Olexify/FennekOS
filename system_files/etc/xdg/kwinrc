@@ -28,3 +28,5 @@ fennekwinxEnabled=true
 fenneksnapassistEnabled=true
 # Super+D shows the desktop and brings the same windows back on the second press (scripts/fennekshowdesktop).
 fennekshowdesktopEnabled=true
+# Super+Up maximizes, Super+Down restores or minimizes (scripts/fennekarrows).
+fennekarrowsEnabled=true

@@ -1,0 +1,12 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Id": "fennekarrows",
+        "Name": "Super+Up maximizes, Super+Down restores or minimizes",
+        "Description": "The classic window keys: Super+Up maximizes; Super+Down restores a maximized window or minimizes it.",
+        "License": "GPL-3.0-only",
+        "EnabledByDefault": true
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}

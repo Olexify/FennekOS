@@ -8,6 +8,11 @@ Fennek Close or Shut Down=Alt+F4,Alt+F4,Close the window, or shut down from the 
 # Super+D goes to the fennekshowdesktop script (classic show desktop / bring back), not KWin's own peek.
 Show Desktop=none,Meta+D,Peek at Desktop
 Fennek Show Desktop=Meta+D,Meta+D,Show the desktop; press again to bring the windows back
+# Super+Up / Super+Down: maximize / restore or minimize (fennekarrows), not KWin's top / bottom half.
+Window Quick Tile Top=none,Meta+Up,Quick Tile Window to the Top
+Window Quick Tile Bottom=none,Meta+Down,Quick Tile Window to the Bottom
+Fennek Maximize=Meta+Up,Meta+Up,Maximize the window
+Fennek Restore or Minimize=Meta+Down,Meta+Down,Restore a maximized window, or minimize it
 
 [plasmashell]
 # Super+Tab belongs to the task view above, not to switching activities.
