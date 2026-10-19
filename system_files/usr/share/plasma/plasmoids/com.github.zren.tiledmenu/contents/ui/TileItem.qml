@@ -241,7 +241,7 @@ Item {
 			readonly property bool hot: groupHover.hovered || tileMouseArea.containsMouse || dragging
 			color: "transparent"   // above the tiles (so the grip is reachable): an outline only
 			border.width: Math.max(1, Math.round(1 * Screen.devicePixelRatio))   // a hint of the walls; clearer on hover
-			border.color: Qt.rgba(config.menuTextColor.r, config.menuTextColor.g, config.menuTextColor.b, hot ? 0.28 : 0.09)
+			border.color: Qt.rgba(config.menuTextColor.r, config.menuTextColor.g, config.menuTextColor.b, hot ? 0.16 : 0.04)
 			radius: 12
 			x: 1
 			y: 1   // wraps the name too
