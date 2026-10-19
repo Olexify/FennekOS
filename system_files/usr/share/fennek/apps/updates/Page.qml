@@ -129,7 +129,7 @@ Item {
             RowLayout {
                 Layout.leftMargin: Kirigami.Units.gridUnit * 2
                 spacing: Kirigami.Units.largeSpacing * 2
-                Kirigami.Icon { source: "system-software-update"; Layout.preferredWidth: 48; Layout.preferredHeight: 48 }
+                Kirigami.Icon { source: "fennek-set-updates"; Layout.preferredWidth: 48; Layout.preferredHeight: 48 }
                 ColumnLayout {
                     spacing: 2
                     Kirigami.Heading { text: root.release.PRETTY_NAME || "Fennek OS"; level: 1 }
