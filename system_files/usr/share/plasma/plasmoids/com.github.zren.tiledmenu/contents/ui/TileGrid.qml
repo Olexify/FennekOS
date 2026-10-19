@@ -70,14 +70,20 @@ DropArea {
 			var freeY = dropHoverY
 			var needH = footprintHeight()
 			while (!canDrop && freeY < dropHoverY + 24 && hits(dropHoverX, freeY, dropWidth, needH)) freeY++
-			if (canDrop || !hits(dropHoverX, freeY, dropWidth, needH)) tileGrid.moveTile(draggedItem, dropHoverX, freeY)
+			var moved = draggedItem
+			if (canDrop || !hits(dropHoverX, freeY, dropWidth, needH)) {
+				tileGrid.moveTile(moved, dropHoverX, freeY)
+				tileGrid.growGroupsFor(moved)
+			}
 			tileGrid.resetDrag()
 			// event.accept(Qt.MoveAction)
 		} else if (addedItem) {
 			addedItem.x = dropHoverX
 			addedItem.y = dropHoverY
-			tileGrid.tileModel.push(addedItem)
+			var added = addedItem
+			tileGrid.tileModel.push(added)
 			tileGrid.tileModelChanged()
+			tileGrid.growGroupsFor(added)
 			tileGrid.resetDrag()
 		}
 	}
@@ -351,24 +357,19 @@ DropArea {
 		return changed
 	}
 
-	// Drag a group's walls: they move in whole cells. Never smaller than the tiles inside, never over another group.
+	// Drag a group's walls: they move in whole cells, never over another group. Smaller than its tiles: the tiles
+	// left outside are no longer in the group (one the new wall cuts through moves just outside it).
 	// A folded group changes only its width (how many small tiles its row shows).
 	// fitGroup: the size it may have (clamped), or null when that would overlap another group.
 	function fitGroup(index, w, rows) {
 		var g = tileModel[index]
 		if (!g || g.tileType != "group") return null
-		var minW = 1, minRows = 1
 		if (g.folded) {
 			rows = g.previewRow || 0
 		} else {
-			getTilesInArea(getGroupAreaRect(g)).forEach(function (t) {
-				if (t === g) return
-				minW = Math.max(minW, t.x + t.w - g.x)
-				minRows = Math.max(minRows, t.y + t.h - (g.y + g.h))
-			})
-			rows = limit(minRows, rows, 40)
+			rows = limit(1, rows, 40)
 		}
-		w = limit(Math.max(1, minW), w, columns - g.x)
+		w = limit(1, w, columns - g.x)
 		var top = g.y, bottom = g.y + g.h + Math.max(rows, 1) - 1, left = g.x, right = g.x + w - 1
 		for (var i = 0; i < tileModel.length; i++) {
 			var o = tileModel[i]
@@ -388,9 +389,67 @@ DropArea {
 	function resizeGroup(index, w, rows) {
 		var g = tileModel[index], f = fitGroup(index, w, rows)
 		if (!f || (f.w == g.w && (g.folded || f.rows == g.rows))) return
+		var before = g.folded ? [] : getTilesInArea(getGroupAreaRect(g)).filter(function (t) { return t !== g })
 		g.w = f.w
 		if (!g.folded) g.rows = f.rows
+		var x2 = g.x + g.w - 1, y1 = g.y + g.h, y2 = y1 + (g.rows || 0) - 1
+		before.forEach(function (t) {   // cut by the new wall: just outside it (right, else below), on a free spot
+			var inside = t.x >= g.x && t.x + t.w - 1 <= x2 && t.y >= y1 && t.y + t.h - 1 <= y2
+			if (inside || !tileWithin(t, g.x, y1, x2, y2)) return
+			if (x2 + 1 + t.w <= columns && !occupied(x2 + 1, t.y, t.w, t.h, t)) {
+				t.x = x2 + 1
+				return
+			}
+			var y = y2 + 1
+			while (y < y2 + 40 && occupied(t.x, y, t.w, t.h, t)) y++
+			t.y = y
+		})
 		tileModelChanged()
+	}
+	// Whether another tile (a folded group's small tiles included) covers any of these cells.
+	function occupied(x, y, w, h, except) {
+		for (var i = 0; i < tileModel.length; i++) {
+			var o = tileModel[i]
+			if (o === except) continue
+			if (tileWithin({ x: o.x, y: o.y, w: o.w, h: o.h + (o.previewRow || 0) }, x, y, x + w - 1, y + h - 1)) return true
+		}
+		return false
+	}
+	// A tile put on a group's right or bottom wall (or just past it) joins the group: the walls grow around it.
+	function growGroupsFor(tile) {
+		if (!tile || tile.tileType == "group") return
+		for (var i = 0; i < tileModel.length; i++) {
+			var g = tileModel[i]
+			if (g.tileType != "group" || g.folded || typeof g.rows !== "number") continue
+			var x2 = g.x + g.w - 1, y1 = g.y + g.h, y2 = y1 + g.rows - 1
+			var inside = tile.x >= g.x && tile.x + tile.w - 1 <= x2 && tile.y >= y1 && tile.y + tile.h - 1 <= y2
+			if (inside || tile.x < g.x || tile.y < y1 || !tileWithin(tile, g.x, y1, x2 + 1, y2 + 1)) continue
+			var f = fitGroup(i, Math.max(g.w, tile.x + tile.w - g.x), Math.max(g.rows, tile.y + tile.h - y1))
+			if (f) {
+				g.w = f.w
+				g.rows = f.rows
+				tileModelChanged()
+			}
+			return
+		}
+	}
+
+	// A click on a group's name folds / unfolds it at once; a second click on the same name right after it is a
+	// double-click: the fold is undone and the name opens for renaming. (Here, not in the tile: folding rebuilds the
+	// tiles, so the tile that saw the first click is gone by the second.)
+	property int renamingIndex: -1
+	property var lastHeaderClick: ({ group: null, time: 0 })
+	function headerClicked(index) {
+		var g = tileModel[index], now = Date.now()
+		if (!g) return
+		var again = lastHeaderClick.group === g && now - lastHeaderClick.time < Qt.styleHints.mouseDoubleClickInterval
+		setGroupFolded(index, !tileModel[index].folded)
+		if (again && !plasmoid.configuration.tilesLocked) {
+			lastHeaderClick = { group: null, time: 0 }
+			renamingIndex = tileModel.indexOf(g)
+		} else {
+			lastHeaderClick = { group: g, time: now }
+		}
 	}
 
 	function update() {

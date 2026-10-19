@@ -131,6 +131,8 @@ same = {"documents": "documents", "download": "downloads", "pictures": "pictures
 for k, ns in fn.items():
     for n in ns:
         icon = (open(f"{base}/places/fennek-folder-{same[k]}.svg").read() if k in same
+                # Home is the page with your folders and drives: the computer icon (it was This PC's).
+                else open(f"{base}/places/computer.svg").read() if k == "home"
                 else svg(BACK + FRONT + f"<g {G}>{sym[k]}</g>"))
         open(f"{base}/places/{n}.svg", "w", newline="\n").write(icon)
 print("ok")
