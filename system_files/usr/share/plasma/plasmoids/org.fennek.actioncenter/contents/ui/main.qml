@@ -68,9 +68,11 @@ PlasmoidItem {
     // Night light = KWin's night colour (warmer screen in the evening), on/off like the settings page.
     readonly property string nightCmd: "kreadconfig6 --file kwinrc --group NightColor --key Active --default false"
     property bool nightLight: false
+    // On = warm right now and until switched off (like the classic toggle; KDE's own default only warms the screen
+    // from sunset, so "on" did nothing in the daytime). --notify: KWin applies it at once.
     function setNightLight(on) {
-        run.connectSource("kwriteconfig6 --file kwinrc --group NightColor --key Active " + (on ? "true" : "false")
-                          + " && dbus-send --session --dest=org.kde.KWin --type=method_call /KWin org.kde.KWin.reconfigure")
+        const w = "kwriteconfig6 --notify --file kwinrc --group NightColor --key "
+        run.connectSource(on ? w + "Mode Constant && " + w + "Active true" : w + "Active false")
         nightLight = on
     }
     // Screen brightness (laptops, monitors with brightness control); -1 = none, slider hidden.
@@ -270,18 +272,18 @@ PlasmoidItem {
             columnSpacing: Kirigami.Units.smallSpacing
             Repeater {
                 model: [
-                    { label: "Wi-Fi", icon: "network-wireless", show: nmDevices.wirelessDeviceAvailable, checkable: true,
+                    { label: "Wi-Fi", settings: "kcm_networkmanagement", icon: "network-wireless", show: nmDevices.wirelessDeviceAvailable, checkable: true,
                       on: () => nmEnabled.wirelessEnabled, act: () => nm.enableWireless(!nmEnabled.wirelessEnabled) },
-                    { label: "Bluetooth", icon: "network-bluetooth", show: BluezQt.Manager.adapters.length > 0, checkable: true,
+                    { label: "Bluetooth", settings: "kcm_bluetooth", icon: "network-bluetooth", show: BluezQt.Manager.adapters.length > 0, checkable: true,
                       on: () => !BluezQt.Manager.bluetoothBlocked, act: () => BluezQt.Manager.bluetoothBlocked = !BluezQt.Manager.bluetoothBlocked },
-                    { label: "Airplane mode", icon: "network-flightmode-on", show: true, checkable: true,
+                    { label: "Airplane mode", settings: "kcm_networkmanagement", icon: "network-flightmode-on", show: true, checkable: true,
                       on: () => PlasmaNM.Configuration.airplaneModeEnabled,
                       act: () => { const v = !PlasmaNM.Configuration.airplaneModeEnabled; nm.enableAirplaneMode(v); PlasmaNM.Configuration.airplaneModeEnabled = v } },
-                    { label: "Do not disturb", icon: "notifications-disabled", show: true, checkable: true,
+                    { label: "Do not disturb", settings: "kcm_notifications", icon: "notifications-disabled", show: true, checkable: true,
                       on: () => root.dndOn, act: () => root.setDnd(!root.dndOn) },
-                    { label: "Battery saver", icon: "battery-profile-powersave", show: true, checkable: true,
+                    { label: "Battery saver", settings: "kcm_powerdevilprofilesconfig", icon: "battery-profile-powersave", show: true, checkable: true,
                       on: () => root.batterySaver, act: () => root.setProfile(root.batterySaver ? "balanced" : "power-saver") },
-                    { label: "Night light", icon: "redshift-status-on", show: true, checkable: true,
+                    { label: "Night light", settings: "kcm_nightlight", icon: "redshift-status-on", show: true, checkable: true,
                       on: () => root.nightLight, act: () => root.setNightLight(!root.nightLight) },
                     { label: "Screenshot", icon: "camera-photo", show: true, checkable: false,
                       on: () => false, act: () => { root.expanded = false; run.connectSource("spectacle --region") } },
@@ -334,7 +336,16 @@ PlasmoidItem {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: modelData.act()
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        // Right-click: straight to the settings behind the tile (like the classic quick actions).
+                        onClicked: mouse => {
+                            if (mouse.button === Qt.RightButton && modelData.settings) {
+                                root.expanded = false
+                                run.connectSource("systemsettings " + modelData.settings)
+                            } else if (mouse.button === Qt.LeftButton) {
+                                modelData.act()
+                            }
+                        }
                     }
                 }
             }
