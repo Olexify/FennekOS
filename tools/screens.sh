@@ -33,6 +33,7 @@ export QT_QPA_PLATFORM=wayland WAYLAND_DISPLAY=wayland-fennek
 xdg-user-dirs-update >/dev/null 2>&1
 /usr/libexec/fennek-first-login >/out/first-login.log 2>&1   # what a new user's first sign-in does
 /usr/libexec/fennek-shortcuts-update >>/out/first-login.log 2>&1   # what every sign-in does before the desktop
+{ echo "look saved for the new account: $(grep '^LookAndFeelPackage=' "$HOME/.config/kdeglobals" 2>/dev/null)"; echo "colour scheme: $(grep '^ColorScheme=' "$HOME/.config/kdeglobals" 2>/dev/null)"; } >>/out/first-login.log
 # Normally started by systemd (not in a container): activities (plasmashell refuses to start without), kded.
 /usr/libexec/kactivitymanagerd >/out/kactivitymanagerd.log 2>&1 &
 kded6 >/out/kded.log 2>&1 &
