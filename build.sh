@@ -297,9 +297,16 @@ dark=/usr/share/plasma/look-and-feel/org.fennek.dark.desktop
 cp -a "$lnf/contents/." "$dark/contents/"
 { sed -e '/^ColorScheme=/d' -e 's/^Theme=Fennek$/Theme=Fennek-Dark/' -e 's/^name=fennek-light$/name=fennek-dark/' "$lnf/contents/defaults"; printf '\n[kdeglobals][General]\nColorScheme=FennekDark\n'; } \
     > "$dark/contents/defaults"
-# Themes from Olexify's apps (Settings > Themes, next to Fennek OS and Fennek OS Dark): Leonote, Kitsumi, Olexify,
-# Rook, Paper, Scissors!. Each is Fennek OS Dark (same taskbar, Start, icons) with the app's own accent colour,
-# backgrounds tinted toward its colour and its wallpaper (branding/leonote-wallpapers.py, brand-wallpapers.py).
+# Colour themes (Settings > Themes, next to Fennek OS and Fennek OS Dark): Amber, Sakura, Royal, Arcade, each borrowing
+# a palette from one of Olexify's apps (Leonote, Kitsumi, Olexify, Rook Paper Scissors). Each is Fennek OS Dark (same
+# taskbar, Start, icons) with its own accent colour, tinted backgrounds and a wallpaper of pure art
+# (branding/theme-wallpapers.py). The apps' own wallpapers (brand-wallpapers.py) stay as extra choices.
+for v in amber:Amber sakura:Sakura royal:Royal arcade:Arcade; do
+    d=/usr/share/wallpapers/${v#*:}
+    mkdir -p "$d/contents/images"
+    magick -background none "/usr/share/fennek/theme-${v%%:*}.svg" -depth 8 "$d/contents/images/3840x2160.png"
+    python3 -c 'import json, sys; print(json.dumps({"KPlugin": {"Authors": [{"Name": "Fennek OS"}], "Id": sys.argv[1], "License": "CC-BY-SA-4.0", "Name": sys.argv[1]}}, indent=2))'         "${v#*:}" >"$d/metadata.json"
+done
 for v in kitsumi:Kitsumi olexify:Olexify rps:RookPaperScissors; do
     d=/usr/share/wallpapers/${v#*:}
     mkdir -p "$d/contents/images"
@@ -313,10 +320,10 @@ cs = pathlib.Path("/usr/share/color-schemes")
 lf = pathlib.Path("/usr/share/plasma/look-and-feel")
 dark = lf / "org.fennek.dark.desktop"
 # id, name, wallpaper, accent, lighter accent, deep accent, background tint
-THEMES = [("leonote", "Leonote", "Leonote-Night", "224,168,74", "240,192,104", "104,76,30", (34, 30, 28)),
-          ("kitsumi", "Kitsumi", "Kitsumi", "145,132,217", "176,168,236", "62,56,116", (26, 32, 74)),
-          ("olexify", "Olexify", "Olexify", "217,164,65", "236,192,104", "100,74,28", (38, 26, 58)),
-          ("rps", "Rook, Paper, Scissors!", "RookPaperScissors", "169,112,255", "196,160,255", "78,50,126", (30, 22, 50))]
+THEMES = [("amber", "Amber", "Amber", "224,168,74", "240,192,104", "104,76,30", (34, 30, 28), "Leonote's"),
+          ("sakura", "Sakura", "Sakura", "240,150,180", "250,190,210", "110,60,90", (26, 32, 74), "Kitsumi's"),
+          ("royal", "Royal", "Royal", "217,164,65", "236,192,104", "100,74,28", (38, 26, 58), "Olexify's"),
+          ("arcade", "Arcade", "Arcade", "169,112,255", "196,160,255", "78,50,126", (30, 22, 50), "Rook Paper Scissors'")]
 base = (cs / "BreezeDark.colors").read_text()
 assert "61,174,233" in base, "Breeze Dark lost its blue: revisit the app themes"
 
@@ -329,7 +336,7 @@ def tint(m, target):
     return f"{m.group(1)}{mix[0]},{mix[1]},{mix[2]}"
 
 
-for key, name, wall, accent, light, deep, bg in THEMES:
+for key, name, wall, accent, light, deep, bg, muse in THEMES:
     s = base.replace("61,174,233", accent).replace("29,153,243", light).replace("30,87,116", deep)
     s = re.sub(r"^((?:BackgroundNormal|BackgroundAlternate|activeBackground|inactiveBackground)=)(\d+,\d+,\d+)",
                lambda m: tint(m, bg), s, flags=re.M)
@@ -342,7 +349,7 @@ for key, name, wall, accent, light, deep, bg in THEMES:
     shutil.copytree(dark, pkg, dirs_exist_ok=True, symlinks=True)
     meta = json.loads((dark / "metadata.json").read_text())
     meta["KPlugin"].update({"Id": f"org.fennek.{key}.desktop", "Name": f"Fennek OS · {name}",
-                            "Description": f"Fennek OS in {name}'s colours, with its wallpaper (same taskbar and Start menu)"})
+                            "Description": f"Dark, with {muse} colours and its own wallpaper (same taskbar and Start menu)"})
     (pkg / "metadata.json").write_text(json.dumps(meta, indent=4, ensure_ascii=False) + "\n")
     d = (dark / "contents/defaults").read_text()
     d = re.sub(r"^ColorScheme=.*$", f"ColorScheme={scheme}", d, flags=re.M)
@@ -389,7 +396,7 @@ sed -e 's/^ActiveTextColor=.*/ActiveTextColor=255,255,255,255/' "$fc/FennekClass
 sed -e 's/^Name=.*/Name=Fennek Classic Dark/' -e 's/^X-KDE-PluginInfo-Name=.*/X-KDE-PluginInfo-Name=FennekClassicDark/' \
     "$fc/metadata.desktop" > "$fcd/metadata.desktop"
 lf=/usr/share/plasma/look-and-feel
-for t in "$lnf:FennekClassic" "$dark:FennekClassicDark" "$lf/org.fennek.leonote.desktop:FennekClassicDark"          "$lf/org.fennek.kitsumi.desktop:FennekClassicDark" "$lf/org.fennek.olexify.desktop:FennekClassicDark"          "$lf/org.fennek.rps.desktop:FennekClassicDark"; do   # the app themes are dark too
+for t in "$lnf:FennekClassic" "$dark:FennekClassicDark" "$lf/org.fennek.amber.desktop:FennekClassicDark"          "$lf/org.fennek.sakura.desktop:FennekClassicDark" "$lf/org.fennek.royal.desktop:FennekClassicDark"          "$lf/org.fennek.arcade.desktop:FennekClassicDark"; do   # the app themes are dark too
     printf '\n[kwinrc][org.kde.kdecoration2]\nlibrary=org.kde.kwin.aurorae.v2\ntheme=__aurorae__svg__%s\n' "${t#*:}" \
         >> "${t%%:*}/contents/defaults"
 done
