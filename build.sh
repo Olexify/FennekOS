@@ -96,13 +96,25 @@ printf 'IMAGE_ID=fennek\nIMAGE_VERSION=%s\nBUILD_ID=%s\n' "$fv" "$fb" >> /usr/li
 if rpm -q plasma-welcome-fedora >/dev/null; then dnf -y remove plasma-welcome-fedora; fi   # "Fedora loves KDE" pages
 # Wallpaper, generated at build time (no binaries in the repo).
 mkdir -p /usr/share/wallpapers/Fennek/contents/images
-# Wallpaper: desert dusk (branding/wallpaper.py), rendered from its vector source to 4K.
+# Wallpaper: the desert at dusk under a crescent moon (branding/wallpaper.py), rendered from its vector source to 4K.
 magick -background none /usr/share/fennek/wallpaper.svg -depth 8 /usr/share/wallpapers/Fennek/contents/images/3840x2160.png
 # Night version: the same dusk, darker and calmer. Plasma shows images_dark/ while the dark look is on and switches
 # right away with it; a wallpaper the user picked is never touched.
 mkdir -p /usr/share/wallpapers/Fennek/contents/images_dark
 magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.png -modulate 52,88,100 -depth 8 \
     /usr/share/wallpapers/Fennek/contents/images_dark/3840x2160.png
+# The first signature (branding/wallpaper-classic.py), kept as an extra choice: Fennek Classic.
+mkdir -p /usr/share/wallpapers/Fennek-Classic/contents/images
+magick -background none /usr/share/fennek/wallpaper-classic.svg -depth 8 /usr/share/wallpapers/Fennek-Classic/contents/images/3840x2160.png
+printf '{
+  "KPlugin": {
+    "Authors": [{ "Name": "Fennek OS" }],
+    "Id": "Fennek-Classic",
+    "License": "CC-BY-SA-4.0",
+    "Name": "Fennek Classic"
+  }
+}
+'     > /usr/share/wallpapers/Fennek-Classic/metadata.json
 # Leonote wallpapers (branding/leonote-wallpapers.py): a friendly promo, offered in Settings > Background.
 # The headline is a serif face (Noto Serif; DejaVu Serif if that package is missing).
 dnf -y install google-noto-serif-vf-fonts || echo "Noto Serif missing: Leonote wallpapers fall back to DejaVu Serif"

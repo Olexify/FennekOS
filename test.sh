@@ -23,7 +23,7 @@ grep -q '^ID=fedora' /usr/lib/os-release                      || fail "os-releas
 ! grep -q "Fennek image build" /etc/dnf/dnf.conf                || fail "build-time dnf settings left in the image"
 [ -s /usr/share/wallpapers/Fennek/contents/images/3840x2160.png ] || fail "wallpaper"
 [ "$(magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.png -crop 1x1+1920+1290 -format '%[fx:r>b && r>0.6]' info:)" = 1 ] \
-                                                              || fail "wallpaper isn't the desert dusk (warm horizon)"
+                                                              || fail "wallpaper isn't the desert at dusk (warm horizon)"
 grep -q '^Image=Fennek' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults || fail "lnf wallpaper"
 [ "$(kreadconfig6 --file /usr/share/plasma/desktoptheme/fennek-dark/colors --group Colors:Selection --key BackgroundNormal)" = 109,69,184 ] && ! grep -q "29,153,243" /usr/share/plasma/desktoptheme/fennek-dark/colors || fail "panel accent is Fennek violet"
 # Desktop update scripts run once and silently: at least check they are well-formed (brackets, quotes).
@@ -222,6 +222,7 @@ for v in Night Graph Paper; do [ -s /usr/share/wallpapers/Leonote-$v/contents/im
 for t in amber sakura royal arcade; do [ -s /usr/share/plasma/look-and-feel/org.fennek.$t.desktop/contents/previews/preview.png ] && grep -q "^ColorScheme=Fennek" /usr/share/plasma/look-and-feel/org.fennek.$t.desktop/contents/defaults && grep -q "FennekClassicDark" /usr/share/plasma/look-and-feel/org.fennek.$t.desktop/contents/defaults || fail "colour theme $t (Settings > Themes)"; done
 grep -q '"Id": "org.fennek.live"' /usr/share/plasma/wallpapers/org.fennek.live/metadata.json && grep -q 'OnBattery' /usr/share/plasma/wallpapers/org.fennek.live/contents/ui/main.qml || fail "Fennek Live wallpaper (moving petals / lights, still on battery)"
 grep -q '^fennekshowdesktopEnabled=true' /etc/xdg/kwinrc && grep -q '^Fennek Show Desktop=Meta+D' /etc/xdg/kglobalshortcutsrc && grep -q '^Show Desktop=none' /etc/xdg/kglobalshortcutsrc || fail "Super+D: classic show desktop, second press brings the windows back"
+[ -s /usr/share/wallpapers/Fennek-Classic/contents/images/3840x2160.png ] || fail "Fennek Classic wallpaper (the first signature)"
 grep -q 'function resizeTile' /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/TileGrid.qml && grep -q 'SizeFDiagCursor' /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/TileItem.qml && grep -q 'previewRow' /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/TileItem.qml || fail "Start tiles: corner grip resizes; folded groups show their apps as small tiles"
 grep -q 'url = String(url)' /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/Utils.js || fail "Start tiles: a dropped app's address is read as text (Qt 6 hands over an object)"
 { rpm -q plasma-print-manager || rpm -q print-manager; } >/dev/null && rpm -q cups sane-backends >/dev/null || fail "printing (Printers page, print queue) and scanning"

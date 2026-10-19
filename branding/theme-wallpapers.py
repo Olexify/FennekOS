@@ -102,7 +102,7 @@ amber = svg('''<radialGradient id="abg" cx=".7" cy=".42" r=".9"><stop offset="0"
 {dof(14, 17, ["#ffcf7a", "#ffe6b3"], (0, 1500, W, H), 50, 120)}''')
 
 # Sakura: a kitsune night in Kitsumi's palette: a huge moon with a halo, a faint far peak, misty hills in layers, a
-# torii and a fox on the near hill rimmed by moonlight, fox-fire, petals near (soft) and far (crisp).
+# torii on the near hill rimmed by moonlight, fox-fire lights, petals near (soft) and far (crisp).
 r = random.Random(21)
 stars = "".join(f'<circle cx="{r.uniform(0, W):.0f}" cy="{r.uniform(0, H * .62):.0f}" r="{r.choice((1.2, 1.6, 2.2, 2.8)):.1f}" fill="#f3f5fe" opacity="{r.uniform(.2, .8):.2f}"/>' for _ in range(300))
 twinkles = "".join(glint(r.uniform(0, W), r.uniform(0, H * .5), r.uniform(10, 18), "#eef0ff", r.uniform(.5, .9)) for _ in range(9))
@@ -117,9 +117,6 @@ def mist(y, h, op):
     return f'<rect x="-200" y="{y}" width="{W + 400}" height="{h}" fill="#c9bcff" opacity="{op}" filter="url(#glow2)"/>'
 
 
-FOX = ("M32 96C29 82 31 69 38 60C34 54 34 47 37 42L34 23L43 33C46 32 49 32 52 33L60 20L59 36C64 38 71 37 80 36"
-       "C75 43 67 46 59 46C58 52 56 56 53 60C60 68 62 82 60 96Z"
-       "M58 94C80 97 97 86 98 69C99 54 88 45 77 48C86 56 87 69 80 78C73 86 63 89 50 91Z")
 TORII = ("M-260 -20Q0 -70 260 -20L250 10Q0 -30 -250 10Z"     # kasagi, the curved top beam
          "M-200 40H200V68H-200Z"                              # nuki
          "M-150 -6H-112V420H-150ZM112 -6H150V420H112Z"        # pillars
@@ -155,7 +152,6 @@ sakura = svg('''<linearGradient id="sbg" x1="0" y1="0" x2="0" y2="1"><stop offse
 {mist(1560, 140, .10)}
 {hills(1640, 90, 4.2, "#18153c")}
 <g transform="translate(1180 1260)"><path d="{TORII}" fill="#120e2c"/><path d="{TORII}" fill="none" stroke="#ffd9e8" stroke-width="3" opacity=".25"/></g>
-<g transform="translate(1440 1286) scale(4.2)"><path d="{FOX}" fill="#120e2c"/><path d="{FOX}" fill="none" stroke="#ffe3ec" stroke-width=".5" opacity=".22"/></g>
 <path d="M600 {H}C900 1700 1500 1640 2100 1700S3300 1900 3840 1820V{H}Z" fill="#0e0b22"/>
 {fires}{far_petals}{near_petals}''')
 
