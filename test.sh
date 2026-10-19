@@ -398,6 +398,7 @@ for c in cats:
     for i in c["items"]:
         if "kcm" in i and i["kcm"] not in kcms and not i.get("optional"): bad.append(i["kcm"])
         if "cmd" in i and not shutil.which(i["cmd"].split()[0]): bad.append(i["cmd"])
+        if i.get("icon", "").startswith("fennek-") and not glob.glob("/usr/share/icons/Fennek/scalable/*/" + i["icon"] + ".svg"): bad.append(i["icon"])
 assert not bad, bad
 opt = [i["kcm"] for c in cats for i in c["items"] if i.get("optional")]
 print("Settings optional pages present:", sorted(k for k in opt if k in kcms), "missing:", sorted(k for k in opt if k not in kcms))
