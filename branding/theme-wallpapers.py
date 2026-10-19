@@ -128,11 +128,12 @@ PIECES = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 def ridge(xs, seed, top):
     """A neon-edged mountain range along the horizon (left or right of the sun)."""
     r = random.Random(seed)
-    pts, x = [], xs[0]
-    while x < xs[1]:
+    pts, x = [], xs[0] + 140
+    while x < xs[1] - 260:
         pts.append((x, hy - r.uniform(top * .35, top)))
         x += r.uniform(120, 260)
-    pts.append((xs[1], hy - r.uniform(40, 120)))
+    # the range rises from the horizon and settles back into it (no cliffs beside the sun)
+    pts = [(xs[0], hy - (0 if xs[0] > 0 else r.uniform(top * .3, top * .6)))] + pts + [(xs[1], hy - (0 if xs[1] < W else top * .4))]
     d = f"M{xs[0]} {hy} " + " ".join(f"L{px:.0f} {py:.0f}" for px, py in pts) + f" L{xs[1]} {hy} Z"
     edge = "M" + " L".join(f"{px:.0f} {py:.0f}" for px, py in pts)
     return (f'<path d="{d}" fill="#170c2a"/><path d="{edge}" fill="none" stroke="#c18cff" stroke-width="5" opacity=".7" filter="url(#soft)"/>'
