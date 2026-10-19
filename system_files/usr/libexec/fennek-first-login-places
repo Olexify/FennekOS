@@ -7,9 +7,10 @@ Written with KDE's current places format version (4), so KDE doesn't add its own
 
   fennek-first-login-places FILE
   fennek-first-login-places --ensure-thispc FILE   existing sidebar: This PC on top if missing, hide "Devices"
+                                                   and "Recent", the bin called Recycle Bin (English)
   fennek-first-login-places --selftest
 """
-import os, subprocess, sys
+import os, re, subprocess, sys
 from xml.sax.saxutils import escape, quoteattr
 from urllib.parse import quote
 
@@ -31,7 +32,7 @@ def places(folders):
            '<xbel xmlns:bookmark="http://www.freedesktop.org/standards/desktop-bookmarks" '
            'xmlns:mime="http://www.freedesktop.org/standards/shared-mime-info" xmlns:kdepriv="http://www.kde.org/kdepriv">',
            ' <info>', '  <metadata owner="http://www.kde.org">', '   <kde_places_version>4</kde_places_version>',
-           '   ' + HIDE_DEVICES, '  </metadata>', ' </info>']
+           '   ' + HIDE_DEVICES, '   ' + HIDE_RECENT, '  </metadata>', ' </info>']
     for n, (label, href, icon) in enumerate(items):
         out += [f" <bookmark href={quoteattr(href)}>", f"  <title>{escape(label)}</title>", "  <info>",
                 f'   <metadata owner="http://freedesktop.org"><bookmark:icon name={quoteattr(icon)}/></metadata>',
@@ -40,6 +41,7 @@ def places(folders):
 
 
 HIDE_DEVICES = "<GroupState-Devices-IsHidden>true</GroupState-Devices-IsHidden>"
+HIDE_RECENT = "<GroupState-RecentlySaved-IsHidden>true</GroupState-RecentlySaved-IsHidden>"
 THISPC = (' <bookmark href="thispc:/">\n  <title>This PC</title>\n  <info>\n'
           '   <metadata owner="http://freedesktop.org"><bookmark:icon name="computer"/></metadata>\n'
           '   <metadata owner="http://www.kde.org"><ID>fennek/thispc</ID></metadata>\n  </info>\n </bookmark>\n')
@@ -54,12 +56,43 @@ def ensure_thispc(text):
     return text[:i] + THISPC + text[i:]
 
 
-def hide_devices(text):
-    """Existing sidebar: hide KDE's internal "Devices" group (boot/EFI/system partitions), once."""
-    if "GroupState-Devices-IsHidden" in text or "</kde_places_version>" not in text:
+def hide_group(text, tag):
+    """Existing sidebar: hide one of KDE's groups (tag = HIDE_DEVICES / HIDE_RECENT), once."""
+    name = tag[1:tag.index(">")]
+    if name in text or "</kde_places_version>" not in text:
         return text
     i = text.index("</kde_places_version>") + len("</kde_places_version>")
-    return text[:i] + "\n   " + HIDE_DEVICES + text[i:]
+    return text[:i] + "\n   " + tag + text[i:]
+
+
+def hide_devices(text):
+    """KDE's internal "Devices" group (boot/EFI/system partitions): drives are on This PC; USB sticks still show."""
+    return hide_group(text, HIDE_DEVICES)
+
+
+def ui_language():
+    """The display language picked in Settings (Plasma's own setting), else the session's."""
+    import configparser
+    c = configparser.ConfigParser(interpolation=None, strict=False)
+    try:
+        c.read(os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), "plasma-localerc"))
+        lang = c.get("Translations", "LANGUAGE", fallback="")
+    except configparser.Error:
+        lang = ""
+    return lang or os.environ.get("LANG", "")
+
+
+def recycle_bin(text):
+    """English: the bin is "Recycle Bin" (KDE says Trash / Wastebin). Its stored title is only used once it is no
+    longer a translated system entry."""
+    i = text.find('<bookmark href="trash:/">')
+    if i < 0:
+        return text
+    j = text.index("</bookmark>", i)
+    b = text[i:j]
+    b = re.sub(r"<title>[^<]*</title>", "<title>Recycle Bin</title>", b, count=1)
+    b = b.replace("<IsSystemItem>true</IsSystemItem>", "<IsSystemItem>false</IsSystemItem>")
+    return text[:i] + b + text[j:]
 
 
 def main(path):
@@ -93,6 +126,13 @@ def selftest():
     assert HIDE_DEVICES in x
     v4 = '<info>\n  <metadata owner="http://www.kde.org">\n   <kde_places_version>4</kde_places_version>\n  </metadata>\n</info>'
     assert hide_devices(v4).count(HIDE_DEVICES) == 1 and hide_devices(hide_devices(v4)) == hide_devices(v4)
+    both = hide_group(hide_devices(v4), HIDE_RECENT)
+    assert both.count(HIDE_RECENT) == 1 and both.count(HIDE_DEVICES) == 1
+    kde = (' <bookmark href="trash:/">\n  <title>Trash</title>\n  <info>\n   <metadata owner="http://www.kde.org">'
+           '<IsSystemItem>true</IsSystemItem></metadata>\n  </info>\n </bookmark>\n')
+    r = recycle_bin(kde)
+    assert "<title>Recycle Bin</title>" in r and "<IsSystemItem>false</IsSystemItem>" in r and recycle_bin(r) == r
+    assert recycle_bin(old) == old
     print("selftest ok")
 
 
@@ -102,7 +142,9 @@ if __name__ == "__main__":
     elif len(sys.argv) == 3 and sys.argv[1] == "--ensure-thispc":
         p = sys.argv[2]
         t = open(p, encoding="utf-8").read()
-        new = hide_devices(ensure_thispc(t))
+        new = hide_group(hide_devices(ensure_thispc(t)), HIDE_RECENT)
+        if ui_language().startswith("en"):
+            new = recycle_bin(new)
         if new != t:
             with open(p + ".fennek-new", "w", encoding="utf-8") as f:
                 f.write(new)
