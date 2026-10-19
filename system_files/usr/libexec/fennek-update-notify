@@ -10,5 +10,5 @@ mkdir -p "${seen%/*}" && printf '%s\n' "${BUILD_ID:-}" >"$seen"
 sleep 8   # after the desktop is up
 a=$(notify-send -a "Fennek OS" -i system-software-update --action=open="See what's new" --wait \
     "Fennek OS was updated" "Now on ${PRETTY_NAME:-Fennek OS} (version ${IMAGE_VERSION:-?}). Everything is installed.")
-[ "$a" = open ] && exec fennek-app updates
+[ "$a" = open ] && exec fennek-app settings updates   # Settings, on its Updates page
 exit 0

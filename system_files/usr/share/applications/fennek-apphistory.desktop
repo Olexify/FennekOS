@@ -2,7 +2,7 @@
 Type=Application
 Name=App history
 Comment=Which apps used the processor and memory, and so the battery
-Exec=fennek-app apphistory
+Exec=fennek-app settings apphistory
 Icon=fennek-apphistory
 Categories=System;Monitor;
 Keywords=battery;usage;history;cpu;memory;power;

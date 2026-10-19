@@ -374,7 +374,7 @@ Item {
                     Kirigami.FormData.label: "Your files:"
                     icon.name: "drive-removable-media"
                     text: "Backup and restore"
-                    onClicked: run.connectSource("fennek-app backup")
+                    onClicked: run.connectSource("fennek-app settings backup")
                 }
                 QQC2.Label {
                     Layout.fillWidth: true

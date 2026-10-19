@@ -23,7 +23,7 @@ case ${0##*/} in
     msinfo32 | winver) exec kinfocenter ;;
     appwiz.cpl) exec plasma-discover --mode installed ;;
     diskmgmt.msc) exec partitionmanager ;;
-    wf.msc | firewall.cpl) exec fennek-app firewall ;;
+    wf.msc | firewall.cpl) exec fennek-app settings firewall ;;
     ncpa.cpl) settings kcm_networkmanagement ;;
     timedate.cpl) settings kcm_clock ;;
     mmsys.cpl) settings kcm_pulseaudio ;;

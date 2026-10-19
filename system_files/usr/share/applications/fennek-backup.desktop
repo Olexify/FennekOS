@@ -3,5 +3,5 @@ Type=Application
 Name=Backup
 Comment=Copy your folders to a USB drive, every hour while it is connected
 Icon=drive-removable-media
-Exec=fennek-app backup
+Exec=fennek-app settings backup
 Categories=Settings;System;

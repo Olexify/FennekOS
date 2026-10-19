@@ -129,7 +129,7 @@ QQC2.ApplicationWindow {
                             { icon: "fennek-firewall", title: root.t("Firewall", "Брандмауер"),
                               text: root.t("Nobody on the network can connect in. Choose which apps may use the internet.",
                                            "Ніхто з мережі не може підключитися. Оберіть, яким застосункам дозволено інтернет."),
-                              cmd: "fennek-app firewall" },
+                              cmd: "fennek-app settings firewall" },
                             { icon: "fennek-quarantine", title: root.t("Download guard", "Захист завантажень"),
                               text: root.t("New downloads are checked; threats go to quarantine.",
                                            "Нові завантаження перевіряються; загрози йдуть у карантин."), cmd: "fennek-quarantine" },

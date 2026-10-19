@@ -83,7 +83,7 @@ grep -q '^BorderlessMaximizedWindows=false' /etc/xdg/kwinrc       || fail "title
 r=/usr/share/kxmlgui5/dolphin/dolphinui.rc
 grep -q 'name="go_up"' "$r" && grep -q 'version="10[0-9][0-9]"' "$r" && grep -q '<Menu' "$r" || fail "Files toolbar (Back/Forward/Up)"
 python3 -c "import sys, xml.dom.minidom as x; x.parse(sys.argv[1])" "$r"   || fail "Files toolbar file is not valid XML"
-[ -s /usr/share/fennek/apps/firewall/main.qml ] && grep -q '^Exec=fennek-app firewall' /usr/share/applications/fennek-firewall.desktop || fail "Firewall window"
+[ -s /usr/share/fennek/apps/firewall/main.qml ] && grep -q '^Exec=fennek-app settings firewall' /usr/share/applications/fennek-firewall.desktop || fail "Firewall window"
 fennek-firewall list --json | python3 -c 'import json,sys; assert json.load(sys.stdin) == []' || fail "firewall list --json"
 # Dark theme icons: Fennek's own icons over Breeze Dark (light symbols), used by the dark look.
 grep -q '^Inherits=breeze-dark' /usr/share/icons/Fennek-Dark/index.theme && [ -e /usr/share/icons/Fennek-Dark/scalable/apps/fennek-settings.svg ] \
@@ -194,7 +194,7 @@ for c in left_ptr pointer xterm watch left_ptr_watch sb_h_double_arrow; do [ "$(
 grep -q "^font=Inter,11" /etc/xdg/kdeglobals && grep -q "^fixed=Cascadia Mono" /etc/xdg/kdeglobals && [ -n "$(fc-list :family=Inter)" ] && [ -n "$(fc-list ':family=Cascadia Mono')" ] || fail "Inter + Cascadia Mono fonts"
 [ "$(kreadconfig6 --file /etc/xdg/kscreenlockerrc --group Daemon --key Timeout)" = 30 ] && [ "$(kreadconfig6 --file /etc/xdg/kdeglobals --group KDE --key AnimationDurationFactor)" = 0.5 ] || fail "auto-lock after 30 min / snappy animations"
 systemctl is-enabled -q flatpak-system-update.timer && systemctl is-enabled -q rpm-ostreed-automatic.timer || fail "automatic updates: system and Store apps (daily, in the background)"
-/usr/libexec/fennek-update-settings --selftest >/dev/null && /usr/libexec/fennek-update-settings get | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["auto"] and d["apps_auto"] and d["paused_until"] == ""' && grep -q '^ExecCondition=/usr/libexec/fennek-update-settings allowed' /usr/lib/systemd/system/rpm-ostreed-automatic.service.d/fennek-pause.conf /usr/lib/systemd/system/flatpak-system-update.service.d/fennek-pause.conf && [ -s /usr/share/polkit-1/actions/org.fennek.update-settings.policy ] && grep -q '^Exec=fennek-app updates' /usr/share/applications/fennek-updates.desktop || fail "Updates window: settings helper, pause, launcher"
+/usr/libexec/fennek-update-settings --selftest >/dev/null && /usr/libexec/fennek-update-settings get | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["auto"] and d["apps_auto"] and d["paused_until"] == ""' && grep -q '^ExecCondition=/usr/libexec/fennek-update-settings allowed' /usr/lib/systemd/system/rpm-ostreed-automatic.service.d/fennek-pause.conf /usr/lib/systemd/system/flatpak-system-update.service.d/fennek-pause.conf && [ -s /usr/share/polkit-1/actions/org.fennek.update-settings.policy ] && grep -q '^Exec=fennek-app settings updates' /usr/share/applications/fennek-updates.desktop || fail "Updates window: settings helper, pause, launcher"
 grep -q '^IMAGE_VERSION=[0-9]' /usr/lib/os-release && grep -q '^BUILD_ID=' /usr/lib/os-release && grep -q '^PRETTY_NAME="Fennek OS [0-9.]* · ' /usr/lib/os-release && grep -q '^VERSION_ID=' /usr/lib/os-release && python3 -c 'import json; m=json.load(open("/usr/share/fennek/milestones.json")); assert m and m[0]["name"]' && command -v skopeo >/dev/null || fail "Trails: version, build id, milestones, earlier versions list"
 /usr/libexec/fennek-switch-version --selftest >/dev/null && grep -q '<allow_active>auth_admin</allow_active>' /usr/share/polkit-1/actions/org.fennek.switch-version.policy && [ -s /usr/share/fennek/oldest-allowed-build ] && ! /usr/libexec/fennek-update-settings set version latest 2>/dev/null || fail "earlier versions: own helper, fresh password, age limit and cutoff"
 grep -q '^Theme=org.fennek.desktop' /etc/xdg/ksplashrc && [ -s /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/splash/Splash.qml ] && grep -q '^Theme=org.fennek.desktop' /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults || fail "Fennek splash after signing in"
@@ -274,7 +274,7 @@ wm=usr/share/plymouth/themes/spinner/watermark.png; img=$(ls /usr/lib/modules/*/
 { rpm -V fedora-logos 2>/dev/null || true; } | grep -q "/$wm$" || fail "watermark still Fedora's"
 /usr/libexec/fennek-download-guard --selftest >/dev/null    || fail "download guard selftest"
 fennek-usage --selftest >/dev/null && [ -L /etc/systemd/user/default.target.wants/fennek-usage.service ] || fail "usage history"
-grep -q "^Exec=fennek-app apphistory" /usr/share/applications/fennek-apphistory.desktop && [ -s /usr/share/fennek/apps/apphistory/main.qml ] || fail "App history window"
+grep -q "^Exec=fennek-app settings apphistory" /usr/share/applications/fennek-apphistory.desktop && [ -s /usr/share/fennek/apps/apphistory/main.qml ] || fail "App history window"
 bash -n /usr/libexec/fennek-brightness && [ -x /usr/libexec/fennek-brightness ] || fail "brightness helper"
 # Download guard: a sample matching a custom signature goes to quarantine, a clean file stays.
 t=$(mktemp -d); mkdir -p "$t/db"
