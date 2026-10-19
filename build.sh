@@ -41,7 +41,7 @@ dnf -y install \
     zsh zsh-autosuggestions zsh-syntax-highlighting \
     snapper \
     clamav clamav-freshclam inotify-tools \
-    rsync \
+    rsync wl-clipboard \
     "${extra[@]}"
 # Printers page in Settings + print queue in the tray (KDE's printer manager; renamed in newer Plasma).
 dnf -y install plasma-print-manager || dnf -y install print-manager
@@ -372,6 +372,10 @@ t, n = re.subn(r"(^\[Desktop Action RectangularRegionScreenShot\]\n(?:(?!\[Deskt
                lambda m: m.group(1) + ",".join(["Meta+Shift+S"] + [k for k in m.group(2).split(",") if k and k != "Meta+Shift+S"]),
                p.read_text(), count=1, flags=re.M)
 assert n == 1, "Spectacle region action changed: revisit Super+Shift+S"
+# ...through fennek-snip: a click without a box cancels instead of taking the whole screen; the box goes to the clipboard.
+t, n = re.subn(r"(^\[Desktop Action RectangularRegionScreenShot\]\n(?:(?!\[Desktop ).*\n)*?)Exec=.*$",
+               lambda m: m.group(1) + "Exec=/usr/libexec/fennek-snip", t, count=1, flags=re.M)
+assert n == 1, "Spectacle region action has no Exec line: revisit fennek-snip"
 replace_file(p, t)
 # Super+I opens Fennek Settings (fennek-settings.desktop) instead of KDE's System Settings.
 for name in ("systemsettings.desktop",):

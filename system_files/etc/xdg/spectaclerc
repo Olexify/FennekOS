@@ -5,3 +5,7 @@ useReleaseToCapture=true
 clipboardGroup=PostScreenshotCopyImage
 autoSaveImage=true
 showCaptureInstructions=false
+
+[GuiConfig]
+# Every snip starts fresh (no box left over from the last one).
+rememberSelectionRect=Never
