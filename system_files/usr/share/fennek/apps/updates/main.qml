@@ -42,14 +42,14 @@ QQC2.ApplicationWindow {
     property string detail: ""
     // Where an install is: stage (checking | downloading | installing | ready), parts done of total, size in MB.
     property var prog: ({ stage: "checking", done: 0, total: 0, size: 0 })
-    property bool background: false    // an automatic update is running (started by the system, not this window)
+    property bool autoRun: false    // an automatic update is running (started by the system, not this window)
     readonly property int step: root.staged ? 3 : ({ checking: 0, idle: 0, downloading: 1, installing: 2, ready: 3 })[prog.stage] ?? 0
     function size(mb) { return mb >= 1000 ? (mb / 1000).toFixed(1) + " GB" : Math.round(mb) + " MB" }
     Timer {
         interval: 1000
         repeat: true
         running: root.state === "installing"
-        onTriggered: run.connectSource(root.background ? root.statusCmd : root.progressCmd)
+        onTriggered: run.connectSource(root.autoRun ? root.statusCmd : root.progressCmd)
     }
     readonly property int daysOld: booted && booted.timestamp ? Math.floor((Date.now() / 1000 - booted.timestamp) / 86400) : 0
     readonly property var weekdays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -90,8 +90,8 @@ QQC2.ApplicationWindow {
                     root.staged = d.find(x => x.staged) || null
                     // An automatic update already running: show it instead of offering another one.
                     const busy = !!JSON.parse(data.stdout).transaction
-                    if (busy && root.state !== "installing") { root.background = true; root.state = "installing" }
-                    else if (!busy && root.background) { root.background = false; root.state = "idle" }
+                    if (busy && root.state !== "installing") { root.autoRun = true; root.state = "installing" }
+                    else if (!busy && root.autoRun) { root.autoRun = false; root.state = "idle" }
                 } catch (e) {}
             } else if (source === root.releaseCmd) {
                 const r = {}
@@ -171,7 +171,7 @@ QQC2.ApplicationWindow {
                             level: 3
                             text: root.staged ? "An update is ready"
                                 : root.state === "checking" ? "Checking for updates…"
-                                : root.state === "installing" ? (root.background ? "Updating in the background…"
+                                : root.state === "installing" ? (root.autoRun ? "Updating in the background…"
                                     : ["Getting ready…", "Downloading the update…", "Installing…", "Finishing…"][root.step])
                                 : root.state === "available" ? "An update is available"
                                 : root.state === "failed" ? "That didn't work"

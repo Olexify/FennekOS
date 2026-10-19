@@ -38,7 +38,8 @@ QQC2.ApplicationWindow {
     function open(cmd) { root.visible = false; bye.start(); run.connectSource("setsid -f " + cmd) }
     Timer { id: bye; interval: 2000; onTriggered: Qt.quit() }   // never lingers hidden
 
-    onActiveChanged: if (!active && visible) Qt.quit()
+    property bool wasActive: false   // closes when you click elsewhere (after it had the focus once)
+    onActiveChanged: { if (active) wasActive = true; else if (wasActive && visible) Qt.quit() }
     Shortcut { sequences: ["Escape", "Meta+X"]; onActivated: Qt.quit() }
 
     Rectangle {   // thin frame
