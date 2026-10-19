@@ -231,13 +231,14 @@ Item {
 		y: (parent.height - height) / 2
 	}
 
-	// Fennek OS: a group's walls, always shown (clearer on hover), with a corner grip to move them.
+	// Fennek OS: a group's walls, always shown (clearer on hover), with handles on the right wall, the bottom wall and the corner to move them.
 	Loader {
 		id: groupEffectLoader
 		active: appObj.isGroup && !modelData.folded && appObj.groupRect && appObj.groupRect.h > 0
 		sourceComponent: Rectangle {
 			id: groupOutline
-			readonly property bool hot: groupHover.hovered || tileMouseArea.containsMouse || grip.pressed
+			property bool dragging: false
+			readonly property bool hot: groupHover.hovered || tileMouseArea.containsMouse || dragging
 			color: "transparent"   // above the tiles (so the grip is reachable): an outline only
 			border.width: Math.max(1, Math.round(1 * Screen.devicePixelRatio))   // a hint of the walls; clearer on hover
 			border.color: Qt.rgba(config.menuTextColor.r, config.menuTextColor.g, config.menuTextColor.b, hot ? 0.28 : 0.09)
@@ -248,43 +249,71 @@ Item {
 			height: (modelData.h + appObj.groupRect.h) * cellBoxSize - 2
 			Behavior on border.color { ColorAnimation { duration: 120 } }
 			HoverHandler { id: groupHover }
-			MouseArea {
-				id: grip
-				visible: !plasmoid.configuration.tilesLocked
-				width: Math.round(cellSize * 0.32)
-				height: width
-				anchors.right: parent.right
-				anchors.bottom: parent.bottom
-				hoverEnabled: true
-				preventStealing: true
-				cursorShape: Qt.SizeFDiagCursor
-				property point start
-				property int startW
-				property int startRows
-				onPressed: function(mouse) {
-					start = mapToItem(tileGrid, mouse.x, mouse.y)
-					startW = modelData.w
-					startRows = appObj.groupRect.h
-				}
-				onPositionChanged: function(mouse) {
-					if (!pressed) return
-					var p = mapToItem(tileGrid, mouse.x, mouse.y)
-					tileGrid.resizeGroup(index, startW + Math.round((p.x - start.x) / cellBoxSize),
-						startRows + Math.round((p.y - start.y) / cellBoxSize))
-				}
-				Canvas {
-					anchors.fill: parent
-					anchors.margins: 3
-					opacity: parent.containsMouse || parent.pressed ? 0.95 : (groupOutline.hot ? 0.55 : 0)   // only when the group is hovered
-					onPaint: {
-						var c = getContext("2d")
-						c.reset()
-						c.strokeStyle = config.menuTextColor
-						c.lineWidth = 1.6
-						c.lineCap = "round"
-						for (var i = 1; i <= 2; i++) {
-							var o = width * i / 3
-							c.beginPath(); c.moveTo(width - 1, o); c.lineTo(o, height - 1); c.stroke()
+			// Handles: the right wall (width), the bottom wall (rows), the corner (both). Wide grab strips that
+			// straddle the wall, snapping at half a cell.
+			Repeater {
+				model: plasmoid.configuration.tilesLocked ? [] : [[1, 0], [0, 1], [1, 1]]
+				MouseArea {
+					id: handle
+					required property var modelData
+					readonly property int sx: modelData[0]
+					readonly property int sy: modelData[1]
+					readonly property int strip: Math.max(12, Math.round(cellSize * 0.18))
+					readonly property bool corner: sx && sy
+					x: sx ? groupOutline.width - (corner ? width - strip / 2 : strip / 2) : 0
+					y: sy ? groupOutline.height - (corner ? height - strip / 2 : strip / 2) : 0
+					width: corner ? Math.round(cellSize * 0.5) : (sx ? strip : groupOutline.width - Math.round(cellSize * 0.5))
+					height: corner ? Math.round(cellSize * 0.5) : (sy ? strip : groupOutline.height - Math.round(cellSize * 0.5))
+					z: corner ? 1 : 0
+					hoverEnabled: true
+					preventStealing: true
+					cursorShape: corner ? Qt.SizeFDiagCursor : (sx ? Qt.SizeHorCursor : Qt.SizeVerCursor)
+					property point start
+					property int startW
+					property int startRows
+					onPressed: function(mouse) {
+						start = mapToItem(tileGrid, mouse.x, mouse.y)
+						startW = appObj.groupRect.w
+						startRows = appObj.groupRect.h
+						groupOutline.dragging = true
+					}
+					onReleased: groupOutline.dragging = false
+					onCanceled: groupOutline.dragging = false
+					onPositionChanged: function(mouse) {
+						if (!pressed) return
+						var p = mapToItem(tileGrid, mouse.x, mouse.y)
+						tileGrid.resizeGroup(index, startW + sx * Math.round((p.x - start.x) / cellBoxSize),
+							startRows + sy * Math.round((p.y - start.y) / cellBoxSize))
+					}
+					// the wall being grabbed lights up
+					Rectangle {
+						visible: !handle.corner
+						color: config.menuTextColor
+						opacity: handle.containsMouse || handle.pressed ? 0.6 : 0
+						radius: 1.5
+						x: handle.sx ? (parent.width - width) / 2 : 12
+						y: handle.sy ? (parent.height - height) / 2 : 12
+						width: handle.sx ? 3 : parent.width - 24
+						height: handle.sy ? 3 : parent.height - 24
+						Behavior on opacity { NumberAnimation { duration: 100 } }
+					}
+					Canvas {
+						visible: handle.corner
+						width: Math.round(cellSize * 0.32)
+						height: width
+						x: parent.width - width - handle.strip / 2 + 3
+						y: parent.height - height - handle.strip / 2 + 3
+						opacity: handle.containsMouse || handle.pressed ? 0.95 : (groupOutline.hot ? 0.55 : 0)   // only when the group is hovered
+						onPaint: {
+							var c = getContext("2d")
+							c.reset()
+							c.strokeStyle = config.menuTextColor
+							c.lineWidth = 1.6
+							c.lineCap = "round"
+							for (var i = 1; i <= 2; i++) {
+								var o = width * i / 3
+								c.beginPath(); c.moveTo(width - 1, o); c.lineTo(o, height - 1); c.stroke()
+							}
 						}
 					}
 				}
