@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=Run
-Comment=Open a program, folder, document or web address (Super+R)
+Name=Launch
+Comment=Open a program, a file or folder on this PC, or a web address (Super+R)
 Exec=fennek-app run
 Icon=system-run
 Categories=System;
-Keywords=run;command;open;execute;
+Keywords=run;launch;command;open;execute;find;file;
 X-KDE-Shortcuts=Meta+R

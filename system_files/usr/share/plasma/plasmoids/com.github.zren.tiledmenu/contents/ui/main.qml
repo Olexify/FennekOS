@@ -246,7 +246,7 @@ PlasmoidItem {
 		PlasmaCore.Action { text: i18n("Task Manager"); icon.name: "utilities-system-monitor"; onTriggered: widget.run("plasma-systemmonitor") },
 		PlasmaCore.Action { text: i18n("Settings"); icon.name: "fennek-settings"; onTriggered: widget.run("fennek-app settings") },
 		PlasmaCore.Action { text: i18n("File Explorer"); icon.name: "system-file-manager"; onTriggered: widget.run("dolphin") },
-		PlasmaCore.Action { text: i18n("Run"); icon.name: "system-run"; onTriggered: widget.run("fennek-app run") },
+		PlasmaCore.Action { text: i18n("Launch"); icon.name: "system-search"; onTriggered: widget.run("fennek-app run") },
 		PlasmaCore.Action { isSeparator: true },
 		PlasmaCore.Action { text: i18n("Shut down or sign out"); icon.name: "system-shutdown"; onTriggered: widget.run("dbus-send --session --dest=org.kde.LogoutPrompt --type=method_call /LogoutPrompt org.kde.LogoutPrompt.promptAll") },
 		PlasmaCore.Action { text: i18n("Desktop"); icon.name: "user-desktop"; onTriggered: widget.run("dbus-send --session --dest=org.kde.kglobalaccel --type=method_call /component/kwin org.kde.kglobalaccel.Component.invokeShortcut string:'Fennek Show Desktop'") }

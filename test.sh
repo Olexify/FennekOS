@@ -336,7 +336,7 @@ rpm -q firefox >/dev/null && grep -q '"DisableTelemetry": true' /etc/firefox/pol
 grep -q '^Name=Files$' /usr/share/applications/org.kde.dolphin.desktop || fail "Files name"
 grep -q '^Name=Task Manager$' /usr/share/applications/org.kde.plasma-systemmonitor.desktop || fail "Task Manager name"
 grep -q '^X-KDE-Shortcuts=.*Ctrl+Shift+Esc' /usr/share/applications/org.kde.plasma-systemmonitor.desktop || fail "Ctrl+Shift+Esc"
-grep -q '^X-KDE-Shortcuts=Meta+R' /usr/share/applications/fennek-run.desktop && /usr/libexec/fennek-run-command --selftest >/dev/null     && ! grep -q 'Meta+R' /usr/share/applications/org.kde.krunner.desktop || fail "Win+R: the centred Run box"
+grep -q '^X-KDE-Shortcuts=Meta+R' /usr/share/applications/fennek-run.desktop && grep -q "org.fennek.Search" /usr/share/fennek/apps/run/main.qml && /usr/libexec/fennek-run-command --selftest >/dev/null     && ! grep -q 'Meta+R' /usr/share/applications/org.kde.krunner.desktop || fail "Win+R: Launch (commands, then files on this PC)"
 grep -q '^X-KDE-Shortcuts=.*Meta+E' /usr/share/kglobalaccel/org.kde.dolphin.desktop || fail "Super+E opens File Explorer"
 grep -q '^X-KDE-Shortcuts=Meta+Shift+S,' /usr/share/applications/org.kde.spectacle.desktop || fail "Super+Shift+S snips a region"
 [ "$(kreadconfig6 --file /etc/xdg/kglobalshortcutsrc --group kwin --key Overview | cut -f1)" = Meta+Tab ] || fail "Super+Tab task view"

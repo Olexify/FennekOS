@@ -1,18 +1,20 @@
-// Fennek Run (Super+R): a calm card in the middle of the screen, like the classic Run box but prettier. Type a
-// program, a classic command (calc, notepad, ncpa.cpl…), a file or folder, or a web address; suggestions come from
-// what you ran before and the classic commands. Options: run as administrator, run in a terminal. Browse picks a
-// file. Enter runs, Escape closes. The fennekwinx KWin script centres it. Runs through fennek-run-command.
+// Fennek Launch (Super+R): a calm card in the middle of the screen. Type a program, a classic command (calc,
+// notepad, ncpa.cpl…), a file or folder, or a web address. Below the box: what you can run (what you ran before, the
+// classic commands), then files and folders on this PC that match (the fennek-search index, over D-Bus). Options:
+// as administrator, in a terminal. Browse picks a file. Enter opens, Escape closes. The fennekwinx KWin script
+// centres it. Runs through fennek-run-command.
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import QtQuick.Dialogs
+import QtCore
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
 
 QQC2.ApplicationWindow {
     id: root
     visible: true
-    title: "Run"
+    title: "Launch"
     flags: Qt.FramelessWindowHint | Qt.Dialog
     color: "transparent"
     width: Kirigami.Units.gridUnit * 34
@@ -23,8 +25,9 @@ QQC2.ApplicationWindow {
         "msinfo32", "winver", "appwiz.cpl", "diskmgmt.msc", "firewall.cpl", "ncpa.cpl", "timedate.cpl", "mmsys.cpl",
         "powercfg.cpl", "main.cpl", "desk.cpl", "firefox", "dolphin", "konsole"]
     property var past: []
+    property var files: []   // matching files and folders on this PC: [path, name, folder it is in, icon]
     property string error: ""
-    readonly property var suggestions: {
+    readonly property var commands: {
         const q = field.text.trim().toLowerCase()
         if (q === "") return []
         const seen = {}
@@ -33,8 +36,23 @@ QQC2.ApplicationWindow {
             if (seen[k] || !k.startsWith(q) || k === q) return false
             seen[k] = true
             return true
-        }).slice(0, 6)
+        }).slice(0, 5)
     }
+    // One list: commands first, then (under their own heading) files.
+    readonly property var suggestions: commands.map(c => ({ kind: "Run", text: c, sub: "", path: "" }))
+        .concat(files.map(f => ({ kind: "On this PC", text: f[1], sub: f[2], path: f[0], icon: f[3] })))
+    readonly property string findCmd: "busctl --user --json=short call org.fennek.Search /runner org.kde.krunner1 Match s "
+    function find() {
+        const t = field.text.trim()
+        if (t.length < 2 || /^[a-z]+:\/\//i.test(t)) { files = []; return }
+        run.connectSource(findCmd + q(t))
+    }
+    Timer { id: findLater; interval: 180; onTriggered: root.find() }
+    function pick(s) {
+        if (s.path) { root.visible = false; run.connectSource("setsid -f xdg-open " + q(s.path)); bye.start() }
+        else { field.text = s.text; go() }
+    }
+    Timer { id: bye; interval: 1500; onTriggered: Qt.quit() }
 
     function q(s) { return "'" + String(s).replace(/'/g, "'\\''") + "'" }
     function go() {
@@ -49,6 +67,15 @@ QQC2.ApplicationWindow {
         engine: "executable"
         onNewData: (source, data) => {
             disconnectSource(source)
+            if (source.startsWith(root.findCmd)) {
+                if (source !== root.findCmd + root.q(field.text.trim())) return   // typed on meanwhile
+                try {
+                    const home = String(StandardPaths.writableLocation(StandardPaths.HomeLocation)).replace("file://", "")
+                    root.files = JSON.parse(data.stdout).data[0].slice(0, 6).map(m =>
+                        [m[0], m[1], m[0].slice(0, m[0].length - m[1].length - 1).replace(home, "~") || "/", m[2]])
+                } catch (e) { root.files = [] }
+                return
+            }
             if (source === root.helper + " --history") {
                 try { root.past = JSON.parse(data.stdout) } catch (e) {}
                 if (root.past.length) { field.text = root.past[0]; field.selectAll() }   // like the classic box
@@ -93,12 +120,12 @@ QQC2.ApplicationWindow {
                     Layout.preferredHeight: Layout.preferredWidth
                     radius: 12
                     color: Qt.rgba(Kirigami.Theme.highlightColor.r, Kirigami.Theme.highlightColor.g, Kirigami.Theme.highlightColor.b, 0.18)
-                    Kirigami.Icon { anchors.centerIn: parent; source: "system-run"; width: parent.width * .6; height: width }
+                    Kirigami.Icon { anchors.centerIn: parent; source: "system-search"; width: parent.width * .6; height: width }
                 }
                 ColumnLayout {
                     spacing: 0
-                    Kirigami.Heading { text: "Run"; level: 2 }
-                    QQC2.Label { text: "Open a program, folder, document or web address."; opacity: 0.7 }
+                    Kirigami.Heading { text: "Launch"; level: 2 }
+                    QQC2.Label { text: "A program, a file or folder on this PC, or a web address."; opacity: 0.7 }
                 }
                 Item { Layout.fillWidth: true }
                 QQC2.ToolButton { icon.name: "window-close"; onClicked: Qt.quit(); QQC2.ToolTip.visible: hovered; QQC2.ToolTip.text: "Close" }
@@ -111,11 +138,12 @@ QQC2.ApplicationWindow {
                 placeholderText: "calc, notepad, ~/Documents, kitsumi.org…"
                 focus: true
                 onAccepted: root.go()
-                onTextEdited: root.error = ""
+                onTextEdited: { root.error = ""; findLater.restart() }
                 Keys.onDownPressed: if (root.suggestions.length) { suggestionsList.currentIndex = 0; suggestionsList.forceActiveFocus() }
             }
 
-            // Suggestions: what you ran before and the classic commands (click or arrow keys + Enter).
+            // Suggestions: what you can run (what you ran before, the classic commands), then files and folders on this
+            // PC (click, or arrow keys + Enter).
             ListView {
                 id: suggestionsList
                 Layout.fillWidth: true
@@ -124,16 +152,40 @@ QQC2.ApplicationWindow {
                 interactive: false
                 model: root.suggestions
                 keyNavigationWraps: true
-                Keys.onReturnPressed: { field.text = root.suggestions[currentIndex]; root.go() }
+                Keys.onReturnPressed: root.pick(root.suggestions[currentIndex])
                 Keys.onUpPressed: currentIndex > 0 ? decrementCurrentIndex() : field.forceActiveFocus()
+                section.property: "kind"
+                section.delegate: ColumnLayout {
+                    required property string section
+                    width: ListView.view.width
+                    spacing: 0
+                    Kirigami.Separator { Layout.fillWidth: true; visible: section !== "Run"; Layout.topMargin: Kirigami.Units.smallSpacing }
+                    QQC2.Label {
+                        visible: section !== "Run"
+                        text: section
+                        opacity: 0.6
+                        font.pointSize: Kirigami.Theme.smallFont.pointSize
+                        Layout.topMargin: Kirigami.Units.smallSpacing
+                        Layout.leftMargin: Kirigami.Units.smallSpacing
+                    }
+                }
                 delegate: QQC2.ItemDelegate {
-                    required property string modelData
+                    required property var modelData
                     required property int index
                     width: ListView.view.width
                     highlighted: ListView.isCurrentItem && suggestionsList.activeFocus
-                    text: modelData
-                    icon.name: root.past.indexOf(modelData) >= 0 ? "document-open-recent" : "system-run"
-                    onClicked: { field.text = modelData; root.go() }
+                    contentItem: RowLayout {
+                        spacing: Kirigami.Units.largeSpacing
+                        Kirigami.Icon {
+                            source: modelData.path ? modelData.icon
+                                : (root.past.indexOf(modelData.text) >= 0 ? "document-open-recent" : "system-run")
+                            Layout.preferredWidth: Kirigami.Units.iconSizes.small
+                            Layout.preferredHeight: Kirigami.Units.iconSizes.small
+                        }
+                        QQC2.Label { text: modelData.text; elide: Text.ElideRight; Layout.fillWidth: !modelData.sub }
+                        QQC2.Label { visible: !!modelData.sub; text: modelData.sub; opacity: 0.55; elide: Text.ElideMiddle; Layout.fillWidth: true; horizontalAlignment: Text.AlignRight }
+                    }
+                    onClicked: root.pick(modelData)
                 }
             }
 
@@ -148,14 +200,14 @@ QQC2.ApplicationWindow {
                 spacing: Kirigami.Units.gridUnit
                 QQC2.CheckBox {
                     id: admin
-                    text: "Run as administrator"
+                    text: "As administrator"
                     QQC2.ToolTip.visible: hovered
                     QQC2.ToolTip.delay: 600
                     QQC2.ToolTip.text: "Runs the command with administrator rights in a terminal (asks for your password)."
                 }
                 QQC2.CheckBox {
                     id: terminal
-                    text: "Run in a terminal"
+                    text: "In a terminal"
                     QQC2.ToolTip.visible: hovered
                     QQC2.ToolTip.delay: 600
                     QQC2.ToolTip.text: "Shows the command's output in a terminal that stays open."
@@ -167,7 +219,7 @@ QQC2.ApplicationWindow {
                 QQC2.Button { text: "Browse…"; icon.name: "document-open"; onClicked: browse.open() }
                 Item { Layout.fillWidth: true }
                 QQC2.Button { text: "Cancel"; onClicked: Qt.quit() }
-                QQC2.Button { text: "Run"; icon.name: "media-playback-start"; highlighted: true; enabled: field.text.trim() !== ""; onClicked: root.go() }
+                QQC2.Button { text: "Open"; icon.name: "media-playback-start"; highlighted: true; enabled: field.text.trim() !== ""; onClicked: root.go() }
             }
         }
     }
