@@ -183,14 +183,15 @@ QQC2.ApplicationWindow {
                                 ["Zoom", "Zoom", "us.zoom.Zoom"],
                                 ["GIMP", "gimp", "org.gimp.GIMP"],
                                 ["VS Code", "vscode", "com.visualstudio.code"],
-                                ["Leonote", "fennek-get-leonote", ""]
+                                ["Leonote", "fennek-get-leonote", "", "xdg-open https://github.com/Olexify/Leonote/releases/latest"],
+                                ["MPV Player", "multimedia-video-player", "", "/usr/libexec/fennek-get-mpv"]
                             ]
                             delegate: QQC2.ItemDelegate {
                                 required property var modelData
                                 Layout.fillWidth: true
                                 onClicked: run.connectSource(modelData[2]
                                     ? "plasma-discover --application appstream://" + modelData[2]
-                                    : "xdg-open https://github.com/Olexify/Leonote/releases/latest")
+                                    : "setsid -f " + modelData[3])
                                 contentItem: RowLayout {
                                     spacing: Kirigami.Units.largeSpacing
                                     Kirigami.Icon {

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=MPV Player (Oleks Edition)
+GenericName=Video player (get it)
+Comment=A fast, beautiful video player with modern controls, thumbnails and resume. Not installed yet: installs it and its setup.
+Exec=/usr/libexec/fennek-get-mpv
+Icon=multimedia-video-player
+Categories=AudioVideo;Video;Player;
+Keywords=video;player;mpv;movie;
