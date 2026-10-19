@@ -4,6 +4,8 @@ A Linux desktop for **people who want a familiar, classic desktop**. It feels fa
 built-in security, and aims for long battery life.
 Built as a [bootc](https://containers.github.io/bootc/) image on Fedora Kinoite (KDE Plasma).
 
+![Fennek OS: the desktop with Start open](.github/screenshot.png)
+
 What's in it so far:
 
 - **`.exe` programs:** double-click any `.exe`, which runs it through Proton (umu-launcher).
