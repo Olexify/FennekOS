@@ -138,40 +138,6 @@ def ridge(xs, seed, top):
 mountains = ridge((-60, 1240), 4, 420) + ridge((2600, 3900), 8, 460)
 
 
-# Neon chess cast, drawn here as neon signs: a pawn, a knight with one big googly eye, a rook. Each is one bright
-# tube line in a coloured glow, a dark body behind it, googly eyes on top. 45-unit box, standing on y=40.
-PAWN = ("M22.5 5.5a6 6 0 1 1 0 12a6 6 0 1 1 0-12z"
-        "M15.6 20.4h13.8"
-        "M18.4 20.6c.4 6.4-2.8 10.4-5.8 14.2h19.8c-3-3.8-6.2-7.8-5.8-14.2"
-        "M10.4 34.8h24.2a2.6 2.6 0 0 1 2.6 2.6a2.6 2.6 0 0 1-2.6 2.6H10.4a2.6 2.6 0 0 1-2.6-2.6a2.6 2.6 0 0 1 2.6-2.6z")
-KNIGHT = ("M14 35C14 27 17 23 21 20C17 21 13 21 11 18L13 13C15 9 19 6 24 5L25 1.5L28.6 4.6C34 6.6 37 12 37 18V35"
-          "M9.6 35h25.8a2.4 2.4 0 0 1 2.4 2.4a2.4 2.4 0 0 1-2.4 2.4H9.6a2.4 2.4 0 0 1-2.4-2.4a2.4 2.4 0 0 1 2.4-2.4z"
-          "M26 9.4c3.4 2.6 5.4 6.8 5.4 12.2")
-ROOKN = ("M11.6 6.4h4.4v3.6h3.8V6.4h5.4v3.6h3.8V6.4h4.4v8.4l-2.8 2.6H14.4l-2.8-2.6z"
-         "M15 17.4l-1.6 17.4h18.2L30 17.4"
-         "M10 34.8h25a2.6 2.6 0 0 1 2.6 2.6a2.6 2.6 0 0 1-2.6 2.6H10a2.6 2.6 0 0 1-2.6-2.6a2.6 2.6 0 0 1 2.6-2.6z")
-
-
-def googly(cx, cy, rr, dx, dy, col):
-    return (f'<circle cx="{cx}" cy="{cy}" r="{rr}" fill="#fffaf2" stroke="{col}" stroke-width=".5"/>'
-            f'<circle cx="{cx + dx:.2f}" cy="{cy + dy:.2f}" r="{rr * .48:.2f}" fill="#140a22"/>'
-            f'<circle cx="{cx + dx - rr * .18:.2f}" cy="{cy + dy - rr * .2:.2f}" r="{rr * .13:.2f}" fill="#fff"/>')
-
-
-def sign(path, x, y, sc, col, eyes, tilt=0):
-    tx, ty = x - 22.5 * sc, y - 40 * sc
-    g = f'transform="translate({tx:.0f} {ty:.0f}) scale({sc}) rotate({tilt} 22.5 40)" stroke-linecap="round" stroke-linejoin="round"'
-    return (f'<ellipse cx="{x}" cy="{y + 6}" rx="{18 * sc:.0f}" ry="{2.8 * sc:.0f}" fill="{col}" opacity=".32" filter="url(#glow2)"/>'
-            f'<path d="{path}" {g} fill="#120a20" fill-opacity=".88" stroke="none"/>'
-            f'<path d="{path}" {g} fill="none" stroke="{col}" stroke-width="3.8" opacity=".5" filter="url(#ng1)"/>'
-            f'<path d="{path}" {g} fill="none" stroke="{col}" stroke-width="1.9" opacity=".9" filter="url(#ng2)"/>'
-            f'<path d="{path}" {g} fill="none" stroke="#fff6fd" stroke-width=".8"/>'
-            f'<g {g}>' + "".join(googly(*e, col) for e in eyes) + '</g>')
-
-
-cast = (sign(KNIGHT, 980, 1930, 13, "#ff4fd0", [(19.5, 13.2, 3.4, 1.3, .9)], -4)
-        + sign(PAWN, 1920, 1560, 7.2, "#56e1ff", [(20.4, 11.6, 2.1, .7, -.6), (24.6, 11.6, 2.1, -.5, .8)])
-        + sign(ROOKN, 2860, 1930, 13, "#ffc94d", [(19.6, 25.6, 2.7, -1.0, .6), (25.4, 25.6, 2.7, .9, -.7)], 4))
 stripes = "".join(f'<rect x="{W / 2 - 700}" y="{hy - 380 + k * 70 + k * k * 2}" width="1400" height="{6 + k * 3}" fill="#140c24"/>' for k in range(2, 9))
 arcade_base = lambda cast: svg('''<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c0a14"/><stop offset=".55" stop-color="#26123f"/><stop offset="1" stop-color="#4a1d4f"/></linearGradient>
 <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd166"/><stop offset=".55" stop-color="#ff8a4c"/><stop offset="1" stop-color="#d43f8d"/></linearGradient>
@@ -189,7 +155,6 @@ arcade_base = lambda cast: svg('''<linearGradient id="sky" x1="0" y1="0" x2="0" 
 <rect x="0" y="{hy - 2}" width="{W}" height="4" fill="#ffd6ef"/>
 {cast}''')
 
-for name, s in (("amber", amber), ("sakura", sakura), ("royal", royal), ("arcade", arcade_base("")),
-                ("arcade-chess", arcade_base(cast))):
+for name, s in (("amber", amber), ("sakura", sakura), ("royal", royal), ("arcade", arcade_base(""))):
     open(f"{out}/theme-{name}.svg", "w", encoding="utf-8", newline="\n").write(s)
 print("theme wallpapers ok")
