@@ -221,7 +221,7 @@ QQC2.ApplicationWindow {
                             ["Super + Shift + S", root.t("Screenshot of a part of the screen", "Знімок частини екрана")],
                             ["Super + Tab", root.t("All open windows", "Усі відкриті вікна")],
                             ["Super + A", root.t("Notifications and quick settings", "Сповіщення та швидкі налаштування")],
-                            ["Super + R", root.t("Run a command", "Виконати команду")],
+                            ["Super + R", root.t("Launch: an app, a file or a command", "Запуск: застосунок, файл або команда")],
                             [root.t("Double-click a .exe", "Подвійний клік на .exe"),
                              root.t("Unknown programs run in a safe sandbox", "Невідомі програми запускаються в безпечній пісочниці")]
                         ]
@@ -236,6 +236,29 @@ QQC2.ApplicationWindow {
                         }
                     }
                     Item { Layout.fillHeight: true }
+                    // Fennek OS is free, built by one person: where to say hi or help (opens only when clicked).
+                    QQC2.Label {
+                        text: root.t("Fennek OS is free, with no ads and no tracking, made by one person and a fox.",
+                                     "Fennek OS безкоштовна, без реклами й стеження, її робить одна людина й лисиця.")
+                        opacity: 0.7
+                        wrapMode: Text.Wrap
+                        Layout.fillWidth: true
+                    }
+                    RowLayout {
+                        spacing: Kirigami.Units.smallSpacing
+                        Repeater {
+                            model: [[root.t("Support it", "Підтримати"), "emblem-favorite", "https://ko-fi.com/olexify"],
+                                    ["Discord", "im-user", "https://discord.gg/UpmNHxT7PF"],
+                                    [root.t("Website", "Сайт"), "internet-web-browser", "https://fennekos.org"]]
+                            delegate: QQC2.Button {
+                                required property var modelData
+                                text: modelData[0]
+                                icon.name: modelData[1]
+                                flat: true
+                                onClicked: Qt.openUrlExternally(modelData[2])
+                            }
+                        }
+                    }
                 }
             }
 

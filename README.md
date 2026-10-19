@@ -4,6 +4,8 @@ A Linux desktop for **people who want a familiar, classic desktop**. It feels fa
 built-in security, and aims for long battery life.
 Built as a [bootc](https://containers.github.io/bootc/) image on Fedora Kinoite (KDE Plasma).
 
+<p align="center"><a href="https://fennekos.org"><img src="https://img.shields.io/badge/Website-fennekos.org-18181B?style=for-the-badge&labelColor=7C3AED&color=18181B" height="44" alt="Website"></a>&nbsp;<a href="https://discord.gg/UpmNHxT7PF"><img src="https://img.shields.io/badge/Discord-Join-18181B?style=for-the-badge&logo=discord&logoColor=white&labelColor=5865F2&color=18181B" height="44" alt="Discord"></a>&nbsp;<a href="#support-and-links"><img src="https://img.shields.io/badge/Support-%E2%9D%A4-18181B?style=for-the-badge&labelColor=FF5E5B&color=18181B" height="44" alt="Support"></a></p>
+
 ![Fennek OS: the desktop with Start open](.github/screenshot.png)
 
 What's in it so far:
@@ -57,6 +59,19 @@ Test VM (Hyper-V):
 
 1. `vm-disk.ps1` builds and tests the image, then writes `E:\Fennek-build\vm\fennek-next.vhdx`.
 2. `vm.ps1`, run as admin, creates the VM and boots it.
+
+## Support and links
+
+Free, no ads, no telemetry, no paywalled features, built by one person and a fox. If Fennek OS made leaving your old
+system a little less scary, you can share some love:
+
+<p align="center"><a href="https://ko-fi.com/olexify"><img src="https://img.shields.io/badge/Ko--fi-Support-18181B?style=for-the-badge&logo=kofi&logoColor=white&labelColor=FF5E5B&color=18181B" height="44" alt="Ko-fi"></a>&nbsp;<a href="https://www.patreon.com/Olexifyyy"><img src="https://img.shields.io/badge/Patreon-Support-18181B?style=for-the-badge&logo=patreon&logoColor=white&labelColor=FF424D&color=18181B" height="44" alt="Patreon"></a>&nbsp;<a href="https://buymeacoffee.com/olexify"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Support-18181B?style=for-the-badge&logo=buymeacoffee&logoColor=white&labelColor=FFDD00&color=18181B" height="44" alt="Buy Me a Coffee"></a></p>
+
+Bugs and ideas go in [Issues](../../issues). Questions and general fox business go to [Discord](https://discord.gg/UpmNHxT7PF).
+
+More from the same den: [Leonote](https://leonote.app) (popup notes that keep you focused),
+[Kitsumi](https://kitsumi.org) (learn Japanese from what you already watch) and
+[Rook Paper Scissors](https://rookpaperscissors.com) (chess, with a twist).
 
 ## Contributing, security, license
 
