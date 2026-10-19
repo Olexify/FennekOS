@@ -59,6 +59,8 @@ plasma-systemmonitor >/dev/null 2>&1 & shot 12-task-manager 8; close
 fennek-app welcome >/dev/null 2>&1 & shot 13-welcome 6; close
 fennek-app updates >/dev/null 2>&1 & shot 30-updates 8; close
 fennek-app winx >/dev/null 2>&1 & shot 32-quick-links 5; DISPLAY=:99 xdotool key Escape; sleep 1
+# Settings with a page open inside (no Apply) and a category with the new icons.
+fennek-app settings kcm_mouse >/dev/null 2>&1 & shot 33-settings-page 8; close
 # Start with a search typed in (results, not the list).
 call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; sleep 2
 DISPLAY=:99 xdotool type --delay 80 "fire"; shot 14-start-search 3
