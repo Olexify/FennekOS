@@ -9,6 +9,8 @@ out = sys.argv[1]
 FX = '''<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="160"/></filter>
 <filter id="glow2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="60"/></filter>
 <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="8"/></filter>
+<filter id="ng1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.4"/></filter>
+<filter id="ng2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation=".7"/></filter>
 <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .045 0"/></filter>'''
 
 
@@ -123,15 +125,63 @@ for k in range(1, 18):
 # outlines, standing on the grid at different depths with a soft light under each.
 import json, os
 PIECES = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "arcade-pieces.json")))
-crew = ""
-for k, x, y, sc, col in (("o", 520, 1990, 11.5, "#ff7ad9"), ("z", 960, 1660, 8.6, "#58d6ff"), ("u", 1420, 1470, 6.2, "#a970ff"),
-                         ("S", 2060, 1930, 9.4, "#ffd166"), ("g", 2620, 1560, 7.2, "#58d6ff"), ("d", 3190, 1830, 10.4, "#ff7ad9")):
-    tx, ty = x - 22.5 * sc, y - 39 * sc
-    crew += (f'<ellipse cx="{x}" cy="{y + 4}" rx="{17 * sc:.0f}" ry="{3.2 * sc:.0f}" fill="{col}" opacity=".35" filter="url(#glow2)"/>'
-             f'<g transform="translate({tx:.0f} {ty:.0f}) scale({sc})" fill="none" stroke="{col}" stroke-width="2.4" opacity=".6" filter="url(#soft)">{PIECES[k]}</g>'
-             f'<g transform="translate({tx:.0f} {ty:.0f}) scale({sc})" fill="#1b1030" stroke="{col}" stroke-width="1.1" stroke-linejoin="round">{PIECES[k]}</g>')
+def ridge(xs, seed, top):
+    """A neon-edged mountain range along the horizon (left or right of the sun)."""
+    r = random.Random(seed)
+    pts, x = [], xs[0]
+    while x < xs[1]:
+        pts.append((x, hy - r.uniform(top * .35, top)))
+        x += r.uniform(120, 260)
+    pts.append((xs[1], hy - r.uniform(40, 120)))
+    d = f"M{xs[0]} {hy} " + " ".join(f"L{px:.0f} {py:.0f}" for px, py in pts) + f" L{xs[1]} {hy} Z"
+    edge = "M" + " L".join(f"{px:.0f} {py:.0f}" for px, py in pts)
+    return (f'<path d="{d}" fill="#170c2a"/><path d="{edge}" fill="none" stroke="#c18cff" stroke-width="5" opacity=".7" filter="url(#soft)"/>'
+            f'<path d="{edge}" fill="none" stroke="#e7d2ff" stroke-width="2"/>')
+
+
+mountains = ridge((-60, 1240), 4, 420) + ridge((2600, 3900), 8, 460)
+
+
+# An elegant rook drawn as neon tubes: a classic silhouette (base, collar, slim body, three crenels) in one bright line
+# with a coloured glow, and two googly eyes. In a 45-unit box, standing on y=40.
+ROOK = ("M8.5 40h28M10 40c0-2 1-3 2.6-3h19.8c1.6 0 2.6 1 2.6 3M13.4 37l1.4-3h15.4l1.4 3M15.2 34l1.6-15.4h11.4L29.8 34"
+        "M13.6 18.6h17.8M13.6 18.6V10h3.6v3.4h3.6V10h3.4v3.4h3.6V10h3.6v8.6")
+
+
+def neon(cast):
+    out = ""
+    for x, y, sc, col, look in cast:
+        tx, ty = x - 22.5 * sc, y - 40 * sc
+        g = f'transform="translate({tx:.0f} {ty:.0f}) scale({sc})" fill="none" stroke-linecap="round" stroke-linejoin="round"'
+        eyes = ""
+        for ex, (dx, dy) in ((19.6, look[0]), (25.4, look[1])):
+            eyes += (f'<circle cx="{ex}" cy="25.4" r="2.5" fill="#fffaf2" stroke="{col}" stroke-width=".6"/>'
+                     f'<circle cx="{ex + dx:.2f}" cy="{25.4 + dy:.2f}" r="1.2" fill="#140a22"/>')
+        out += (f'<ellipse cx="{x}" cy="{y + 4}" rx="{19 * sc:.0f}" ry="{3 * sc:.0f}" fill="{col}" opacity=".28" filter="url(#glow2)"/>'
+                f'<path d="{ROOK}" {g} stroke="{col}" stroke-width="3.6" opacity=".55" filter="url(#ng1)"/>'
+                f'<path d="{ROOK}" {g} stroke="{col}" stroke-width="1.8" opacity=".9" filter="url(#ng2)"/>'
+                f'<path d="{ROOK}" {g} stroke="#fff4ff" stroke-width=".75"/>'
+                f'<g {g.replace(" fill=\"none\"", "")}>{eyes}</g>')
+    return out
+
+
+def cast_neon(cast):
+    out = ""
+    for k, x, y, sc, col in cast:
+        tx, ty = x - 22.5 * sc, y - 39 * sc
+        out += (f'<ellipse cx="{x}" cy="{y + 4}" rx="{17 * sc:.0f}" ry="{3.2 * sc:.0f}" fill="{col}" opacity=".35" filter="url(#glow2)"/>'
+                f'<g transform="translate({tx:.0f} {ty:.0f}) scale({sc})" fill="none" stroke="{col}" stroke-width="2.4" opacity=".6" filter="url(#soft)">{PIECES[k]}</g>'
+                f'<g transform="translate({tx:.0f} {ty:.0f}) scale({sc})" fill="#1b1030" stroke="{col}" stroke-width="1.1" stroke-linejoin="round">{PIECES[k]}</g>')
+    return out
+
+
+# Arcade: just rooks (the one-eyed rook), a few at different depths. Arcade Crew: the whole googly-eyed cast.
+rooks = neon(((760, 1900, 10.5, "#ff5fd2", ((.9, .6), (-.4, .9))), (1500, 1500, 6.4, "#4fd8ff", ((.7, -.5), (.9, .2))),
+              (2480, 1640, 7.8, "#b07bff", ((-.8, .5), (.3, .9))), (3150, 1960, 11.2, "#ffc65c", ((.5, .9), (-.9, .3)))))
+crew = cast_neon((("o", 520, 1990, 11.5, "#ff7ad9"), ("z", 960, 1660, 8.6, "#58d6ff"), ("u", 1420, 1470, 6.2, "#a970ff"),
+             ("S", 2060, 1930, 9.4, "#ffd166"), ("g", 2620, 1560, 7.2, "#58d6ff"), ("d", 3190, 1830, 10.4, "#ff7ad9")))
 stripes = "".join(f'<rect x="{W / 2 - 700}" y="{hy - 380 + k * 70 + k * k * 2}" width="1400" height="{6 + k * 3}" fill="#140c24"/>' for k in range(2, 9))
-arcade = svg('''<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c0a14"/><stop offset=".55" stop-color="#26123f"/><stop offset="1" stop-color="#4a1d4f"/></linearGradient>
+arcade_base = lambda cast: svg('''<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c0a14"/><stop offset=".55" stop-color="#26123f"/><stop offset="1" stop-color="#4a1d4f"/></linearGradient>
 <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd166"/><stop offset=".55" stop-color="#ff8a4c"/><stop offset="1" stop-color="#d43f8d"/></linearGradient>
 <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c0f30"/><stop offset="1" stop-color="#0c0a14"/></linearGradient>
 <clipPath id="sunclip"><circle cx="1920" cy="880" r="560"/></clipPath>''',
@@ -139,12 +189,15 @@ arcade = svg('''<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offse
 {bokeh(160, 3, ["#ffffff", "#c8a8ff"], 0, hy - 200, 1, 3)}
 <circle cx="1920" cy="900" r="900" fill="#ff8a4c" opacity=".22" filter="url(#glow)"/>
 <g clip-path="url(#sunclip)"><rect x="1300" y="300" width="1300" height="1200" fill="url(#sun)"/>{stripes}</g>
+{mountains}
+<rect x="0" y="{hy - 160}" width="{W}" height="200" fill="#ff8a4c" opacity=".10" filter="url(#glow2)"/>
 <rect x="0" y="{hy}" width="{W}" height="{H - hy}" fill="url(#floor)"/>
 <g>{grid}</g>
 <rect x="0" y="{hy - 6}" width="{W}" height="12" fill="#ff9ad5" opacity=".75" filter="url(#soft)"/>
 <rect x="0" y="{hy - 2}" width="{W}" height="4" fill="#ffd6ef"/>
-{crew}''')
+{cast}''')
 
-for name, s in (("amber", amber), ("sakura", sakura), ("royal", royal), ("arcade", arcade)):
+for name, s in (("amber", amber), ("sakura", sakura), ("royal", royal), ("arcade", arcade_base(rooks)),
+                ("arcade-crew", arcade_base(crew))):
     open(f"{out}/theme-{name}.svg", "w", encoding="utf-8", newline="\n").write(s)
 print("theme wallpapers ok")
