@@ -301,13 +301,13 @@ cp -a "$lnf/contents/." "$dark/contents/"
 # a palette from one of Olexify's apps (Leonote, Kitsumi, Olexify, Rook Paper Scissors). Each is Fennek OS Dark (same
 # taskbar, Start, icons) with its own accent colour, tinted backgrounds and a wallpaper of pure art
 # (branding/theme-wallpapers.py). The apps' own wallpapers (brand-wallpapers.py) stay as extra choices.
-for v in amber:Amber sakura:Sakura royal:Royal arcade:Arcade arcade-crew:Arcade-Crew; do
+for v in amber:Amber sakura:Sakura royal:Royal arcade:Arcade arcade-chess:Arcade-Chess; do
     d=/usr/share/wallpapers/${v#*:}
     mkdir -p "$d/contents/images"
     magick -background none "/usr/share/fennek/theme-${v%%:*}.svg" -depth 8 "$d/contents/images/3840x2160.png"
     python3 -c 'import json, sys; print(json.dumps({"KPlugin": {"Authors": [{"Name": "Fennek OS"}], "Id": sys.argv[1], "License": "CC-BY-SA-4.0", "Name": sys.argv[1]}}, indent=2))'         "${v#*:}" >"$d/metadata.json"
 done
-for v in kitsumi:Kitsumi olexify:Olexify rps:RookPaperScissors; do
+for v in rps:RookPaperScissors; do
     d=/usr/share/wallpapers/${v#*:}
     mkdir -p "$d/contents/images"
     magick -background none "/usr/share/fennek/theme-${v%%:*}.svg" -depth 8 "$d/contents/images/3840x2160.png"
