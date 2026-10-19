@@ -31,6 +31,9 @@ QQC2.ApplicationWindow {
         for (const c of Catalog.categories)
             for (const i of c.items)
                 if (want !== "" && (i.kcm === want || i.page === want)) { category = c; page = i }
+        // A KDE page that isn't in the catalog: shown inside anyway (its own name in the header).
+        if (page === null && /^kcm_[a-z0-9_-]+$/.test(want) && pageView.has(want))
+            page = { name: "", kcm: want, icon: "" }
     }
 
     P5Support.DataSource {
@@ -211,7 +214,7 @@ QQC2.ApplicationWindow {
                         Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
                         Layout.preferredHeight: Layout.preferredWidth
                     }
-                    Kirigami.Heading { text: root.page ? root.page.name : ""; level: 2; Layout.fillWidth: true; elide: Text.ElideRight }
+                    Kirigami.Heading { text: root.page ? (root.page.name || pageView.title) : ""; level: 2; Layout.fillWidth: true; elide: Text.ElideRight }
                 }
                 Kirigami.Separator { Layout.fillWidth: true }
                 // Fennek's own pages (Updates...): the same page its own window shows.

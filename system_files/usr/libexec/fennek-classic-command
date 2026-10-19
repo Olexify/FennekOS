@@ -10,7 +10,7 @@ app() {   # launch by desktop id (works for built-in and store apps)
     echo "${0##*/}: the app for this is not installed yet (it comes with the first update after setup)" >&2
     exit 1
 }
-settings() { exec systemsettings "$1"; }
+settings() { exec fennek-app settings "$1"; }   # inside Fennek Settings, saved without Apply
 case ${0##*/} in
     calc) app org.kde.kcalc ;;
     notepad) app org.kde.kwrite ;;

@@ -17,9 +17,9 @@ QQC2.ApplicationWindow {
 
     readonly property var links: [
         ["Install or remove apps", "plasmadiscover", "plasma-discover"],
-        ["Power options", "preferences-system-power-management", "systemsettings kcm_powerdevilprofilesconfig"],
+        ["Power options", "preferences-system-power-management", "fennek-app settings kcm_powerdevilprofilesconfig"],
         ["System", "hwinfo", "kinfocenter"],
-        ["Network connections", "network-wired", "systemsettings kcm_networkmanagement"],
+        ["Network connections", "network-wired", "fennek-app settings kcm_networkmanagement"],
         ["Storage", "drive-harddisk", "filelight"],
         ["Disk management", "partitionmanager", "partitionmanager"],
         [],

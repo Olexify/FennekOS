@@ -22,7 +22,7 @@ PlasmoidItem {
         return /^[A-Z]{2}$/.test(c) ? String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65, 0x1F1E6 + c.charCodeAt(1) - 65) : ""
     }
     readonly property string current: label(layouts[kb.layout])
-    function settings() { run.connectSource("systemsettings kcm_keyboard"); root.expanded = false }
+    function settings() { run.connectSource("fennek-app settings kcm_keyboard"); root.expanded = false }
 
     // Only one language: nothing to switch, nothing to show.
     Plasmoid.status: layouts.length > 1 ? PlasmaCore.Types.ActiveStatus : PlasmaCore.Types.HiddenStatus

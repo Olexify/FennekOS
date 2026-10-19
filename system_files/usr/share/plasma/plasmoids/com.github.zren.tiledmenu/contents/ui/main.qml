@@ -236,9 +236,9 @@ PlasmoidItem {
 
 	Plasmoid.contextualActions: [
 		PlasmaCore.Action { text: i18n("Install or remove apps"); icon.name: "plasmadiscover"; onTriggered: widget.run("plasma-discover") },
-		PlasmaCore.Action { text: i18n("Power options"); icon.name: "preferences-system-power-management"; onTriggered: widget.run("systemsettings kcm_powerdevilprofilesconfig") },
+		PlasmaCore.Action { text: i18n("Power options"); icon.name: "preferences-system-power-management"; onTriggered: widget.run("fennek-app settings kcm_powerdevilprofilesconfig") },
 		PlasmaCore.Action { text: i18n("System"); icon.name: "hwinfo"; onTriggered: widget.run("kinfocenter") },
-		PlasmaCore.Action { text: i18n("Network connections"); icon.name: "network-wired"; onTriggered: widget.run("systemsettings kcm_networkmanagement") },
+		PlasmaCore.Action { text: i18n("Network connections"); icon.name: "network-wired"; onTriggered: widget.run("fennek-app settings kcm_networkmanagement") },
 		PlasmaCore.Action { text: i18n("Storage"); icon.name: "drive-harddisk"; onTriggered: widget.run("filelight") },
 		PlasmaCore.Action { text: i18n("Disk management"); icon.name: "partitionmanager"; onTriggered: widget.run("partitionmanager") },
 		PlasmaCore.Action { isSeparator: true },

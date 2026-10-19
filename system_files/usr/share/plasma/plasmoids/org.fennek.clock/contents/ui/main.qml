@@ -138,7 +138,7 @@ PlasmoidItem {
             Layout.margins: Kirigami.Units.smallSpacing
             text: "Date and time settings"
             icon.name: "preferences-system-time"
-            onClicked: { run.connectSource("systemsettings kcm_clock"); root.expanded = false }
+            onClicked: { run.connectSource("fennek-app settings kcm_clock"); root.expanded = false }
         }
     }
 }
