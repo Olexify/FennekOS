@@ -41,12 +41,12 @@ protected:
 
 int main(int argc, char *argv[])
 {
-    QApplication app(argc, argv);
     const QString id = argc > 1 ? QString::fromLocal8Bit(argv[1]) : QString();
     if (!QRegularExpression(QStringLiteral("^kcm_[a-z0-9_-]+$")).match(id).hasMatch()) {   // a page id, never a path
         qWarning("usage: fennek-kcm kcm_NAME");
         return 2;
     }
+    QApplication app(argc, argv);
     const KPluginMetaData md = find(id);
     if (!md.isValid()) {
         qWarning("fennek-kcm: no settings page %s", qPrintable(id));
