@@ -163,6 +163,7 @@ print("settings icons ok")
 
 # Settings: one icon per setting (fennek-set-NAME), same tile style, each its own colour and symbol.
 setting_icons = {
+    "support": ("#ff8fb1", "#e0457f", '<path d="M32 44s-12-7.2-12-15.3A6.7 6.7 0 0 1 32 25a6.7 6.7 0 0 1 12 3.7C44 36.8 32 44 32 44z"/>'),
     "display": ("#5aa9f8", "#1f6fd6", '<rect x="17" y="20" width="30" height="19" rx="3"/><path d="M27 45h10M32 39v6"/>'),
     "nightlight": ("#7c8cf8", "#4251d6", '<path d="M38 20a12 12 0 1 0 6 18 10 10 0 0 1-6-18z"/>'),
     "sound": ("#46c6d3", "#1d8a9c", '<path d="M20 28h6l8-7v22l-8-7h-6z"/><path d="M39 26a8 8 0 0 1 0 12M43 22a14 14 0 0 1 0 20"/>'),

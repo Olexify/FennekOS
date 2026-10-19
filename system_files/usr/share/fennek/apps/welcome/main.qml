@@ -248,7 +248,7 @@ QQC2.ApplicationWindow {
                     RowLayout {
                         spacing: Kirigami.Units.smallSpacing
                         Repeater {
-                            model: [[root.t("Support it", "Підтримати"), "emblem-favorite", "https://ko-fi.com/olexify"],
+                            model: [[root.t("Support it", "Підтримати"), "fennek-set-support", "https://ko-fi.com/olexify"],
                                     ["Discord", "im-user", "https://discord.gg/UpmNHxT7PF"],
                                     [root.t("Website", "Сайт"), "internet-web-browser", "https://fennekos.org"]]
                             delegate: QQC2.Button {

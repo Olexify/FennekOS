@@ -192,7 +192,7 @@ QQC2.ApplicationWindow {
                     QQC2.ItemDelegate {   // free, made by one person: where to help (opens the page only when clicked)
                         Layout.fillWidth: true
                         text: "Support Fennek OS"
-                        icon.name: "emblem-favorite"
+                        icon.name: "fennek-set-support"
                         onClicked: Qt.openUrlExternally("https://github.com/Olexify/FennekOS#support-and-links")
                         background: Rectangle { radius: 8; color: parent.hovered ? root.cardColor : "transparent" }
                     }
