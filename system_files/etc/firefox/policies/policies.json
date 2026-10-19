@@ -65,20 +65,29 @@
         "Placement": "toolbar"
       },
       {
-        "Title": "Rook Paper Scissors (chess)",
-        "URL": "https://rookpaperscissors.com",
-        "Placement": "toolbar"
-      },
-      {
         "Title": "Kitsumi",
         "URL": "https://kitsumi.org",
         "Placement": "toolbar"
       },
       {
-        "Title": "Kitsumi: learn languages",
-        "URL": "https://addons.mozilla.org/firefox/addon/Kitsumi/",
+        "Title": "Rook Paper Scissors (chess)",
+        "URL": "https://rookpaperscissors.com",
         "Placement": "toolbar"
       }
-    ]
+    ],
+    "ExtensionSettings": {
+      "uBlock0@raymondhill.net": {
+        "installation_mode": "normal_installed",
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
+      },
+      "jid1-MnnxcxisBPnSXQ@jetpack": {
+        "installation_mode": "normal_installed",
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/privacy-badger17/latest.xpi"
+      },
+      "lexisubs@yourdomain.com": {
+        "installation_mode": "normal_installed",
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/kitsumi/latest.xpi"
+      }
+    }
   }
 }

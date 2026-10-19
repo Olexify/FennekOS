@@ -31,7 +31,7 @@ we treat it as a bug.
 
 | Program | Notes |
 |---|---|
-| **Firefox** | Telemetry, "studies", Pocket and sponsored content are **switched off** system-wide (`/etc/firefox/policies/policies.json`). Firefox still makes its own browsing-related connections, for example Safe Browsing lists and extension updates, under [Mozilla's privacy notice](https://www.mozilla.org/privacy/firefox/). |
+| **Firefox** | Telemetry, "studies", Pocket and sponsored content are **switched off** system-wide (`/etc/firefox/policies/policies.json`). Firefox still makes its own browsing-related connections, for example Safe Browsing lists and extension updates, under [Mozilla's privacy notice](https://www.mozilla.org/privacy/firefox/). On first start it installs three add-ons from addons.mozilla.org (uBlock Origin and Privacy Badger, which block trackers, and Kitsumi); each can be switched off in Firefox's add-ons page, and they update through Mozilla like any add-on. |
 
 ## What Fennek OS turned off
 
