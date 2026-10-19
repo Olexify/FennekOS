@@ -6,8 +6,9 @@ RememberOpenedTabs=false
 # Each folder remembers its own view (default: details); Home keeps its grouped big-icon view.
 GlobalViewProps=false
 # Files opens on your home folder (KDE's default), shown as the Home page: your folders, frequent folders, drives.
-# No pop-up on hover: the Information panel on the right shows what you click or point at.
-ShowToolTips=false
+# Details pop-up (size, dates, how many items in a folder) only for a selected item you rest the pointer on (the
+# Fennek patch to Files); passing over items shows nothing.
+ShowToolTips=true
 # No "+" box popping up on every item under the pointer (select with Ctrl/Shift or a drag, like the classic one).
 ShowSelectionToggle=false
 

@@ -6,6 +6,8 @@
      (src/thispc: everything in your home as big tiles, the main folders with their own icons, then frequent
      folders and drives). The address stays your home folder; its entries are your real files and folders (rename,
      delete, drag and drop work as anywhere), and the page refreshes when something in your home changes.
+  4. Details pop-up only on purpose: resting the pointer on an item you selected (clicked) shows its details (size,
+     dates, picture size, length; a folder: how many items) after a moment; passing over items shows nothing.
   2. Groups fold: a click on a group's name hides its items (▸), another click shows them again (▾).
      The arrow keys skip a folded group's items. Folded groups stay folded while Files runs (by name, so "Frequent folders" stays folded everywhere).
      How: the layout gives a folded group's items no height (the group's name keeps its place), and their
@@ -214,4 +216,42 @@ patch_view("""    if (m_viewPropertiesContext.isEmpty()) {
     }""", """    if (m_viewPropertiesContext.isEmpty()) {
         return fennekIsHome(m_url) ? fennekHomePage : m_url; // Fennek OS: Home keeps the Home page's view
     }""")
+# 4. The details pop-up: only for a selected item the pointer rests on, after a longer pause.
+patch_view("""void DolphinView::slotItemHovered(int index)
+{
+    const KFileItem item = m_model->fileItem(index);
+
+    if (GeneralSettings::showToolTips() && !m_dragging) {""", """void DolphinView::slotItemHovered(int index)
+{
+    const KFileItem item = m_model->fileItem(index);
+    setProperty("fennekHovered", index); // Fennek OS: the pop-up waits until this item is selected
+
+    if (GeneralSettings::showToolTips() && !m_dragging && m_container->controller()->selectionManager()->isSelected(index)) {""")
+patch_view("""void DolphinView::slotItemUnhovered(int index)
+{
+    Q_UNUSED(index)
+""", """void DolphinView::slotItemUnhovered(int index)
+{
+    Q_UNUSED(index)
+    setProperty("fennekHovered", -1);
+""")
+patch_view("""void DolphinView::slotSelectionChanged(const KItemSet &current, const KItemSet &previous)
+{
+""", """void DolphinView::slotSelectionChanged(const KItemSet &current, const KItemSet &previous)
+{
+    // Fennek OS: the item under the pointer was just selected (clicked): its details pop-up can come now.
+    const int fennekHovered = property("fennekHovered").isValid() ? property("fennekHovered").toInt() : -1;
+    if (fennekHovered >= 0 && current.contains(fennekHovered)) {
+        QTimer::singleShot(0, this, [this, fennekHovered] {
+            if (property("fennekHovered").toInt() == fennekHovered) {
+                slotItemHovered(fennekHovered);
+            }
+        });
+    }
+""")
+tips = pathlib.Path(sys.argv[1]) / "src" / "views" / "tooltips" / "tooltipmanager.cpp"
+t = tips.read_text(encoding="utf-8")
+old = "    m_showToolTipTimer->setInterval(500);\n"
+assert t.count(old) == 1, "tooltipmanager.cpp: the pop-up delay moved"
+tips.write_text(t.replace(old, "    m_showToolTipTimer->setInterval(900); // Fennek OS: on purpose, not in passing\n"), encoding="utf-8")
 print("dolphin: Fennek changes applied")
