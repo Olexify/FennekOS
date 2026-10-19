@@ -131,6 +131,18 @@ DropArea {
 			}
 		}
 
+		// Fennek OS: a group has its own walls (rows under its name, set by dragging its corner); it never grows to
+		// swallow tiles below it. Folded: only the row with its small tiles. Old groups without walls get them once
+		// (fixGroupRows), around the tiles they had.
+		if (groupTile.folded) {
+			y2 = y1 + (groupTile.previewRow ? 1 : 0) - 1
+			return { x1: x1, y1: y1, x2: x2, y2: y2, w: x2 - x1 + 1, h: y2 - y1 + 1 }
+		}
+		if (typeof groupTile.rows === "number") {
+			y2 = Math.min(y2, y1 + Math.max(1, groupTile.rows) - 1)
+			return { x1: x1, y1: y1, x2: x2, y2: y2, w: x2 - x1 + 1, h: y2 - y1 + 1 }
+		}
+
 		var lowestTileY = y1
 		// console.log('lowestTileY start at y = ', lowestTileY)
 		for (var i = 0; i < tileModel.length; i++) {
@@ -317,7 +329,52 @@ DropArea {
 		maxWidth = w
 		maxHeight = h
 	}
+	// Old groups (no walls yet): walls around the tiles they hold now, saved once.
+	function fixGroupRows() {
+		var changed = false
+		for (var i = 0; i < tileModel.length; i++) {
+			var g = tileModel[i]
+			if (g.tileType == "group" && !g.folded && typeof g.rows !== "number") {
+				g.rows = getGroupAreaRect(g).h
+				changed = true
+			}
+		}
+		return changed
+	}
+
+	// Drag a group's corner: its walls move (in whole cells). Never smaller than the tiles inside, never over
+	// another group.
+	function resizeGroup(index, w, rows) {
+		var g = tileModel[index]
+		if (!g || g.tileType != "group" || g.folded) return
+		var area = getGroupAreaRect(g)
+		var minW = 1, minRows = 1
+		getTilesInArea(area).forEach(function (t) {
+			if (t === g) return
+			minW = Math.max(minW, t.x + t.w - g.x)
+			minRows = Math.max(minRows, t.y + t.h - (g.y + g.h))
+		})
+		w = limit(Math.max(1, minW), w, columns - g.x)
+		rows = limit(minRows, rows, 40)
+		if (w == g.w && rows == g.rows) return
+		var top = g.y, bottom = g.y + g.h + rows - 1, left = g.x, right = g.x + w - 1
+		for (var i = 0; i < tileModel.length; i++) {
+			var o = tileModel[i]
+			if (i == index || o.tileType != "group") continue
+			var oa = getGroupAreaRect(o)
+			var oTop = o.y, oBottom = Math.max(o.y + o.h - 1, oa.y2), oLeft = o.x, oRight = o.x + o.w - 1
+			if (left <= oRight && oLeft <= right && top <= oBottom && oTop <= bottom) return
+		}
+		g.w = w
+		g.rows = rows
+		tileModelChanged()
+	}
+
 	function update() {
+		if (fixGroupRows()) {   // saved; this runs again
+			tileModelChanged()
+			return
+		}
 		var urlList = []
 		for (var i = 0; i < tileModel.length; i++) {
 			var tile = tileModel[i]

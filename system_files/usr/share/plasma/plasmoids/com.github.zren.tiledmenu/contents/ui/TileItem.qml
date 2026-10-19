@@ -9,11 +9,12 @@ Item {
 	y: modelData.y * cellBoxSize
 	width: modelData.w * cellBoxSize
 	height: modelData.h * cellBoxSize
+	z: appObj.isGroup ? 1 : 0   // a group's walls and corner grip stay on top of the tiles inside
 
 	function fixCoordinateBindings() {
 		x = Qt.binding(function(){ return modelData.x * cellBoxSize })
 		y = Qt.binding(function(){ return modelData.y * cellBoxSize })
-		z = 0
+		z = appObj.isGroup ? 1 : 0
 	}
 
 	AppObject {
@@ -230,20 +231,64 @@ Item {
 		y: (parent.height - height) / 2
 	}
 
+	// Fennek OS: a group's walls, always shown (clearer on hover), with a corner grip to move them.
 	Loader {
 		id: groupEffectLoader
-		visible: tileMouseArea.containsMouse
-		active: appObj.isGroup && visible
+		active: appObj.isGroup && !modelData.folded && appObj.groupRect && appObj.groupRect.h > 0
 		sourceComponent: Rectangle {
 			id: groupOutline
-			color: "transparent"
-			border.width: Math.max(1, Math.round(1 * Screen.devicePixelRatio))
-			border.color: "#33ffffff"   // Fennek OS: a faint rounded outline, not a hard square
-			radius: 10
-			y: modelData.h * cellBoxSize
-			z: 100
-			width: appObj.groupRect.w * cellBoxSize
-			height: appObj.groupRect.h * cellBoxSize
+			readonly property bool hot: groupHover.hovered || tileMouseArea.containsMouse || grip.pressed
+			color: "transparent"   // above the tiles (so the grip is reachable): an outline only
+			border.width: Math.max(1, Math.round(1.5 * Screen.devicePixelRatio))
+			border.color: Qt.rgba(config.menuTextColor.r, config.menuTextColor.g, config.menuTextColor.b, hot ? 0.45 : 0.22)
+			radius: 12
+			x: 1
+			y: 1   // wraps the name too
+			width: appObj.groupRect.w * cellBoxSize - 2
+			height: (modelData.h + appObj.groupRect.h) * cellBoxSize - 2
+			Behavior on border.color { ColorAnimation { duration: 120 } }
+			HoverHandler { id: groupHover }
+			MouseArea {
+				id: grip
+				visible: !plasmoid.configuration.tilesLocked
+				width: Math.round(cellSize * 0.32)
+				height: width
+				anchors.right: parent.right
+				anchors.bottom: parent.bottom
+				hoverEnabled: true
+				preventStealing: true
+				cursorShape: Qt.SizeFDiagCursor
+				property point start
+				property int startW
+				property int startRows
+				onPressed: function(mouse) {
+					start = mapToItem(tileGrid, mouse.x, mouse.y)
+					startW = modelData.w
+					startRows = appObj.groupRect.h
+				}
+				onPositionChanged: function(mouse) {
+					if (!pressed) return
+					var p = mapToItem(tileGrid, mouse.x, mouse.y)
+					tileGrid.resizeGroup(index, startW + Math.round((p.x - start.x) / cellBoxSize),
+						startRows + Math.round((p.y - start.y) / cellBoxSize))
+				}
+				Canvas {
+					anchors.fill: parent
+					anchors.margins: 3
+					opacity: parent.containsMouse || parent.pressed ? 0.95 : (groupOutline.hot ? 0.6 : 0.3)
+					onPaint: {
+						var c = getContext("2d")
+						c.reset()
+						c.strokeStyle = config.menuTextColor
+						c.lineWidth = 1.6
+						c.lineCap = "round"
+						for (var i = 1; i <= 2; i++) {
+							var o = width * i / 3
+							c.beginPath(); c.moveTo(width - 1, o); c.lineTo(o, height - 1); c.stroke()
+						}
+					}
+				}
+			}
 		}
 	}
 
