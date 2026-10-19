@@ -160,7 +160,7 @@ QQC2.ApplicationWindow {
                         }
                         contentItem: RowLayout {
                             spacing: Kirigami.Units.largeSpacing
-                            Kirigami.Icon { source: "fennek-settings"; Layout.preferredWidth: 24; Layout.preferredHeight: 24 }   // the Settings app icon (it stood above the list before)
+                            Kirigami.Icon { source: "fennek-settings-home"; Layout.preferredWidth: 24; Layout.preferredHeight: 24 }   // a house in the Fennek violet, like the category icons
                             QQC2.Label { text: "Home"; Layout.fillWidth: true }
                         }
                     }

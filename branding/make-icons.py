@@ -149,6 +149,8 @@ settings = {
     "accessibility": ("#5aa9f8", "#1f6fd6", '<circle cx="32" cy="20" r="2.5" fill="#fff" stroke="none"/><path d="M21 26l11 2 11-2M32 28v8l-5 9M32 36l5 9"/>'),
     "privacy": ("#a77bf3", "#6a35c9", '<path d="M32 17l12 4.5v9c0 8-5.2 13.6-12 16.5-6.8-2.9-12-8.5-12-16.5v-9z"/><path d="M27 32l4 4 7-8"/>'),
     "update": ("#4fc3f7", "#1e88e5", '<path d="M44 30a12 12 0 0 0-22-5M20 34a12 12 0 0 0 22 5"/><path d="M22 19v6h6M42 45v-6h-6"/>'),
+    # Settings' own Home row: a house in the Fennek violet, with a lit window.
+    "home": ("#b39bff", "#6d3fe0", '<path d="M18 31.5L32 20l14 11.5"/><path d="M22.5 28.5V44h19V28.5"/><path d="M29 44v-7.5h6V44"/><circle cx="32" cy="29.5" r="1.7" fill="#fff" stroke="none"/>'),
 }
 for k, g in settings.items():
     s = app(*g)
