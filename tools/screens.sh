@@ -92,6 +92,9 @@ DISPLAY=:99 xdotool key Escape; sleep 1
 # Dark look: how long applying takes (a hang shows here), then a dialog's button icons on dark.
 { time timeout 90 plasma-apply-lookandfeel -a org.fennek.dark.desktop; echo "exit $?"; } >>/out/lnf-apply.log 2>&1
 shot 24-dark 4
+# The project page picture: dark look, Start open.
+call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; shot 31-hero-dark-start 3
+DISPLAY=:99 xdotool key Escape; sleep 1
 kdialog --title "Apply Settings" --warningyesnocancel "The current page has unsaved changes." >/dev/null 2>&1 & shot 25-dark-dialog 3; DISPLAY=:99 xdotool key Escape
 { time timeout 90 plasma-apply-lookandfeel -a org.fennek.desktop; echo "exit $?"; } >>/out/lnf-apply.log 2>&1
 ps -eo pid,user,args >>/out/diag.log 2>&1

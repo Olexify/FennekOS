@@ -6,7 +6,7 @@ Built as a [bootc](https://containers.github.io/bootc/) image on Fedora Kinoite 
 
 What's in it so far:
 
-- **Windows programs:** double-click any `.exe`, which runs it through Proton (umu-launcher).
+- **`.exe` programs:** double-click any `.exe`, which runs it through Proton (umu-launcher).
 - **Auto-containment:** unknown programs run in a sandbox. They see only `~/Sandbox/<program>` and never your real home.
 - **VirusTotal check:** right-click any file. Only the file's hash is sent, never the file.
 - **Download guard:** ClamAV scans new files in Downloads, and threats go to quarantine. No always-on scanner daemon.
@@ -26,7 +26,7 @@ podman build --build-arg BASE_IMAGE=$base -f Containerfile -t fennek:dev .
 podman run --rm -v ./test.sh:/t.sh:ro fennek:dev bash /t.sh
 ```
 
-Test VM on Windows (Hyper-V):
+Test VM (Hyper-V):
 
 1. `vm-disk.ps1` builds and tests the image, then writes `E:\Fennek-build\vm\fennek-next.vhdx`.
 2. `vm.ps1`, run as admin, creates the VM and boots it.
