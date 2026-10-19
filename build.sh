@@ -132,6 +132,8 @@ for v in night:Night graph:Graph paper:Paper; do
 }
 ' "${v#*:}" "${v#*:}" >"$d/metadata.json"
 done
+# Right-click > New > Word document / Excel spreadsheet / Presentation (blank files, KDE templates).
+python3 "$files/../branding/office-templates.py" /usr/share/templates
 # Look-and-feel: Fedora's as base; our metadata + taskbar layout (from system_files) win.
 lnf=/usr/share/plasma/look-and-feel/org.fennek.desktop
 cp -an /usr/share/plasma/look-and-feel/org.fedoraproject.fedora.desktop/contents/. "$lnf/contents/"
