@@ -252,8 +252,8 @@ Item {
 		tileIndex: index
 		onPopulateMenu: function(menu) {
 			if (!plasmoid.configuration.tilesLocked && modelData.tileType == "group") {
-				var removeGroup = menu.newMenuItem()   // Fennek OS: the header only; its tiles stay
-				removeGroup.text = i18n("Remove group name")
+				var removeGroup = menu.newMenuItem()   // Fennek OS: the group goes; its tiles stay where they are
+				removeGroup.text = i18n("Remove group")
 				removeGroup.icon = "list-remove"
 				removeGroup.clicked.connect(function() { tileGrid.setGroupFolded(index, false); tileGrid.removeIndex(index) })   // tucked tiles come back first
 				menu.addMenuItem(removeGroup)

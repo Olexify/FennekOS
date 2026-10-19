@@ -306,7 +306,7 @@ QQC2.ApplicationWindow {
                 RowLayout {
                     Kirigami.FormData.label: "When:"
                     enabled: root.settings.auto
-                    QQC2.ComboBox {
+                    QQC2.ComboBox { wheelEnabled: false   // the wheel scrolls the page, never changes a setting
                         id: when
                         model: ["About once a day", "Every day at", "Every week on"]
                         currentIndex: root.settings.schedule.kind === "daily" ? 1 : root.settings.schedule.kind === "weekly" ? 2 : 0
@@ -314,14 +314,14 @@ QQC2.ApplicationWindow {
                                    : index === 1 ? root.set("schedule daily " + hour.currentText)
                                    : root.set("schedule weekly " + root.weekdays[dayBox.currentIndex] + " " + hour.currentText)
                     }
-                    QQC2.ComboBox {
+                    QQC2.ComboBox { wheelEnabled: false   // the wheel scrolls the page, never changes a setting
                         id: dayBox
                         visible: when.currentIndex === 2
                         model: root.weekdayNames
                         currentIndex: Math.max(0, root.weekdays.indexOf(root.settings.schedule.day || "Sun"))
                         onActivated: index => root.set("schedule weekly " + root.weekdays[index] + " " + hour.currentText)
                     }
-                    QQC2.ComboBox {
+                    QQC2.ComboBox { wheelEnabled: false   // the wheel scrolls the page, never changes a setting
                         id: hour
                         visible: when.currentIndex > 0
                         model: Array.from({ length: 24 }, (_, h) => (h < 10 ? "0" : "") + h + ":00")
@@ -330,7 +330,7 @@ QQC2.ApplicationWindow {
                                             : root.set("schedule weekly " + root.weekdays[dayBox.currentIndex] + " " + model[index])
                     }
                 }
-                QQC2.ComboBox {
+                QQC2.ComboBox { wheelEnabled: false   // the wheel scrolls the page, never changes a setting
                     Kirigami.FormData.label: "Pause:"
                     model: ["Don't pause", "For 1 week", "For 2 weeks", "For 4 weeks"]
                     currentIndex: 0

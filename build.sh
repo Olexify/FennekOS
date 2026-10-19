@@ -337,6 +337,11 @@ p = d / "Slider.qml"; s = p.read_text()
 old = "onWheel: wheel => {\n"
 assert s.count(old) == 1, "Slider.qml changed upstream: revisit the Fennek wheel patch"
 replace_file(p, s.replace(old, old + "                wheel.accepted = false; return;  // Fennek OS: wheel scrolls the page\n"))
+# The style also carries compiled copies of these files, and its qmldir says to prefer them: then the patched files
+# above would never be used (dropdowns still changed on the wheel). Without "prefer", Qt loads the files on disk.
+q = d / "qmldir"
+t = q.read_text()
+replace_file(q, "".join(l for l in t.splitlines(True) if not l.startswith("prefer ")))
 EOF
 
 # familiar shortcuts, added to KDE's own: Ctrl+Shift+Esc = Task Manager (System Monitor, renamed), Super+R = Run,

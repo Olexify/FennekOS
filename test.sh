@@ -324,7 +324,7 @@ grep -q 'actioncenter").globalShortcut = "Meta+A"' /usr/share/plasma/look-and-fe
 grep -q '^ViewMode=1' /etc/skel/.local/share/dolphin/view_properties/global/.directory || fail "Files details view"
 q=$(ls -d /usr/lib*/qt6/qml/org/kde/desktop | head -1)
 grep -q "wheelEnabled: false  // Fennek" "$q/ComboBox.qml" && grep -q "wheelEnabled: false  // Fennek" "$q/SpinBox.qml" \
-    && grep -q "wheel.accepted = false; return;  // Fennek" "$q/Slider.qml" || fail "mouse-wheel comfort patch"
+    && grep -q "wheel.accepted = false; return;  // Fennek" "$q/Slider.qml" && ! grep -q "^prefer " "$q/qmldir" || fail "mouse-wheel comfort patch (and the patched files are the ones used)"
 for f in "$q/ComboBox.qml" "$q/SpinBox.qml" "$q/Slider.qml" /etc/zshrc $(x86 && ls /usr/lib/python3*/site-packages/umu/umu_runtime.py); do
     [ "$(tr -d '\000' < "$f" | wc -c)" = "$(wc -c < "$f")" ] || fail "$f has zero bytes (broken in-place edit)"
 done
