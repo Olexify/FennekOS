@@ -225,12 +225,3 @@ for k, (top, bot, g) in setting_icons.items():
     for d in (f"{base}/apps", hicolor):
         open(f"{d}/fennek-set-{k}.svg", "w", newline="\n").write(s)
 print("setting icons ok")
-
-# Apps you can get (not installed yet): their tile with a small download badge.
-BADGE = ('<circle cx="49" cy="49" r="11" fill="#2f6fe0" stroke="#fff" stroke-width="2.5"/>'
-         '<path d="M49 43v10M45 49.5l4 4 4-4" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>')
-leonote = app("#ffd45c", "#e8a512", '<path d="M21 18h22v22l-8 8H21z"/><path d="M35 48v-8h8M26 26h12M26 32h12M26 38h6"/>')
-leonote = leonote.replace("</svg>", BADGE + "</svg>")
-for d in (f"{base}/apps", hicolor):
-    open(f"{d}/fennek-get-leonote.svg", "w", newline="\n").write(leonote)
-print("get icons ok")

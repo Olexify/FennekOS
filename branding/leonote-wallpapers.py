@@ -1,6 +1,7 @@
 # Leonote wallpapers (a friendly promo for Leonote, popup notes): three 4K designs in Leonote's own look — near-black,
 # warm gold (#e0a84a), the golden note with its curled corner, an elegant serif line. Writes SVGs; the image build
 # renders them to PNG wallpapers (Settings > Background: Leonote Night / Graph / Paper).
+# Also Leonote's icon for its Start entry (Leonote, "get it"): the same tile and note, with a download badge.
 #   python branding/leonote-wallpapers.py system_files/usr/share/fennek
 import math, random, sys
 
@@ -108,4 +109,12 @@ paper = svg(f'''
 
 for name, s in (("night", night), ("graph", graph), ("paper", paper)):
     open(f"{out}/leonote-{name}.svg", "w", encoding="utf-8", newline="\n").write(s)
+# Start entry icon: the tile + note, a small blue download badge (not installed yet).
+badge = ('<circle cx="468" cy="468" r="104" fill="#2f6fe0" stroke="#fff" stroke-width="22"/>'
+         '<path d="M468 410v100M428 474l40 40 40-40" stroke="#fff" stroke-width="24" fill="none" stroke-linecap="round" stroke-linejoin="round"/>')
+icon = (f'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="-20 -20 600 620">{DEFS}'
+        + note(0, 0, 560) + badge + '</svg>\n')
+root = out.rsplit("/fennek", 1)[0].rsplit("/share", 1)[0] + "/share"
+for d in (f"{root}/icons/Fennek/scalable/apps", f"{root}/icons/hicolor/scalable/apps"):
+    open(f"{d}/fennek-get-leonote.svg", "w", encoding="utf-8", newline="\n").write(icon)
 print("leonote wallpapers ok")
