@@ -1,0 +1,10 @@
+[Unit]
+Description=Sign-in screen in the last user's language
+Before=display-manager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/fennek-greeter-lang
+
+[Install]
+WantedBy=multi-user.target

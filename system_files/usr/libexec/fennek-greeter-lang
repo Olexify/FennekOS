@@ -1,0 +1,74 @@
+#!/usr/bin/python3
+"""Sign-in screen in the language of the person who signed in last (like the classic one), not the language the
+system was installed in. Runs as root at startup, before the sign-in screen: reads that user's display language
+(Settings > Region & language) and gives it to the sign-in screen. Only a plain language name (en_US) is taken.
+
+  fennek-greeter-lang            update /etc/sddm.conf.d/20-fennek-language.conf
+  fennek-greeter-lang --selftest
+"""
+import configparser, os, re, sys
+
+STATE = "/var/lib/sddm/state.conf"
+OUT = "/etc/sddm.conf.d/20-fennek-language.conf"
+OK = re.compile(r"^[a-z]{2,3}(_[A-Z]{2})?(@[a-z]+)?$")
+
+
+def ini(text):
+    c = configparser.ConfigParser(interpolation=None, strict=False)
+    c.optionxform = str
+    try:
+        c.read_string(text)
+    except configparser.Error:
+        return None
+    return c
+
+
+def language(localerc):
+    """plasma-localerc text -> a locale like en_US, or None."""
+    c = ini(localerc)
+    if c is None:
+        return None
+    lang = c.get("Translations", "LANGUAGE", fallback="").split(":")[0]
+    lang = lang or c.get("Formats", "LANG", fallback="").split(".")[0]
+    return lang if OK.match(lang) else None
+
+
+def conf(lang):
+    return f"# Written at startup by fennek-greeter-lang: the last user's language.\n[General]\nGreeterEnvironment=LANG={lang}.UTF-8,LANGUAGE={lang}\n"
+
+
+def main():
+    import pwd
+    try:
+        c = ini(open(STATE).read())
+        user = c.get("Last", "User", fallback="") if c else ""
+        home = pwd.getpwnam(user).pw_dir if user else ""
+    except (OSError, KeyError):
+        return
+    try:
+        lang = language(open(os.path.join(home, ".config/plasma-localerc")).read()) if home else None
+    except OSError:
+        lang = None
+    if not lang:
+        if os.path.exists(OUT):
+            os.remove(OUT)
+        return
+    new = conf(lang)
+    if os.path.exists(OUT) and open(OUT).read() == new:
+        return
+    with open(OUT + ".new", "w") as f:
+        f.write(new)
+    os.replace(OUT + ".new", OUT)
+
+
+def selftest():
+    assert language("[Formats]\nLANG=uk_UA.UTF-8\n\n[Translations]\nLANGUAGE=en_US:uk\n") == "en_US"
+    assert language("[Formats]\nLANG=de_DE.UTF-8\n") == "de_DE"
+    assert language("[Translations]\nLANGUAGE=en_US,QT_PLUGIN_PATH=/tmp\n") is None, "nothing but a language"
+    assert language("") is None and language("garbage [") is None
+    assert "LANG=en_US.UTF-8,LANGUAGE=en_US" in conf("en_US")
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    selftest() if sys.argv[1:] == ["--selftest"] else main()

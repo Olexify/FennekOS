@@ -20,3 +20,7 @@ _launch=Meta+I
 
 [services][org.kde.plasma-systemmonitor.desktop]
 _launch=Ctrl+Shift+Esc	Ctrl+Esc
+
+# Super+Space: the next input language (Alt+Shift and Super+Alt+K keep working).
+[KDE Keyboard Layout Switcher]
+Switch to Next Keyboard Layout=Meta+Space	Meta+Alt+K,Meta+Alt+K,Switch to Next Keyboard Layout

@@ -520,7 +520,7 @@ CursorTheme=Fennek-Cursors
 EOF
 
 # Dual boot: "Restart to Windows" appears when a Windows boot entry exists.
-systemctl enable fennek-detect-windows.service fennek-essential-apps.service
+systemctl enable fennek-detect-windows.service fennek-essential-apps.service fennek-greeter-lang.service
 
 # Instant file search feeds the Start menu / KRunner.
 systemctl --global enable fennek-search.service fennek-usage.service fennek-update-ready.service fennek-update-ready.path fennek-shortcuts-update.service fennek-app-names.service fennek-backup.timer

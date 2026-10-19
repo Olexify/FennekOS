@@ -156,7 +156,7 @@ if [ "$(cat "$files_seen" 2>/dev/null)" != 2026-10-17 ]; then
     mkdir -p "${files_seen%/*}" && echo 2026-10-17 >"$files_seen"
 fi
 
-version=2026-10-18b
+version=2026-10-19
 seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/shortcuts-version
 [ "$(cat "$seen" 2>/dev/null)" = "$version" ] && exit 0
 f=${XDG_CONFIG_HOME:-$HOME/.config}/kglobalshortcutsrc
@@ -169,5 +169,6 @@ if [ -f "$f" ]; then
     kwriteconfig6 --file "$f" --group services --group org.kde.krunner.desktop --key _launch $'Meta+R	Alt+Space	Alt+F2	Search'   # Super+R: Run box
     kwriteconfig6 --file "$f" --group services --group fennek-settings.desktop --key _launch Meta+I                    # Super+I: Settings
     kwriteconfig6 --file "$f" --group services --group org.kde.plasma-systemmonitor.desktop --key _launch $'Ctrl+Shift+Esc	Ctrl+Esc'   # Task Manager
+    kw "KDE Keyboard Layout Switcher" "Switch to Next Keyboard Layout" $'Meta+Space\tMeta+Alt+K,Meta+Alt+K,Switch to Next Keyboard Layout'   # Super+Space: next language
 fi
 mkdir -p "${seen%/*}" && echo "$version" >"$seen"

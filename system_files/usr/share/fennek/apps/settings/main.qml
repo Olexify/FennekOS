@@ -101,23 +101,33 @@ QQC2.ApplicationWindow {
                     anchors.margins: Kirigami.Units.largeSpacing * 2
                     spacing: Kirigami.Units.smallSpacing
 
-                    QQC2.ItemDelegate {   // Home: "Settings" title
-                        Layout.fillWidth: true
-                        onClicked: { root.category = null; search.text = "" }
-                        background: Rectangle { radius: 8; color: parent.hovered ? root.cardHover : "transparent" }
-                        contentItem: RowLayout {
-                            spacing: Kirigami.Units.largeSpacing
-                            Kirigami.Icon { source: "fennek-settings"; Layout.preferredWidth: 32; Layout.preferredHeight: 32 }
-                            Kirigami.Heading { text: "Settings"; level: 2 }
-                        }
-                    }
+                    // Search first, then Home like any other row (the window title already says "Settings").
                     Kirigami.SearchField {
                         id: search
                         Layout.fillWidth: true
-                        Layout.topMargin: Kirigami.Units.largeSpacing
                         Layout.bottomMargin: Kirigami.Units.largeSpacing
                         placeholderText: "Find a setting"
                         onTextChanged: root.query = text
+                    }
+                    QQC2.ItemDelegate {
+                        readonly property bool current: root.category === null && root.query === ""
+                        Layout.fillWidth: true
+                        onClicked: { root.category = null; search.text = "" }
+                        background: Rectangle {
+                            radius: 8
+                            color: parent.current ? root.cardHover : parent.hovered ? root.cardColor : "transparent"
+                            Rectangle {
+                                visible: parent.parent.current
+                                width: 3; radius: 2
+                                anchors { left: parent.left; top: parent.top; bottom: parent.bottom; topMargin: 8; bottomMargin: 8 }
+                                color: Kirigami.Theme.highlightColor
+                            }
+                        }
+                        contentItem: RowLayout {
+                            spacing: Kirigami.Units.largeSpacing
+                            Kirigami.Icon { source: "go-home"; Layout.preferredWidth: 24; Layout.preferredHeight: 24 }
+                            QQC2.Label { text: "Home"; Layout.fillWidth: true }
+                        }
                     }
                     Repeater {
                         model: Catalog.categories
