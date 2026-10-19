@@ -279,6 +279,12 @@ h=$(mktemp -d); touch "$h/a b" "$h/c"
     && [ ! -e "$h/.hidden" ] && grep -q "^Exec=/usr/libexec/fennek-hide --unhide" /usr/share/kio/servicemenus/fennek-hide.desktop \
     || fail "Hide / Unhide keeps names and places"
 rm -rf "$h"
+h=$(mktemp -d); mkdir -p "$h/Desktop" "$h/cfg"; touch "$h/a.txt"
+HOME=$h XDG_CONFIG_HOME=$h/cfg /usr/libexec/fennek-shortcut-desktop "$h/a.txt" "file://$h/a.txt" \
+    && [ "$(readlink "$h/Desktop/a.txt")" = "$h/a.txt" ] && [ -L "$h/Desktop/a (2).txt" ] \
+    && grep -q "^Exec=/usr/libexec/fennek-shortcut-desktop" /usr/share/kio/servicemenus/fennek-pin-quick-access.desktop \
+    || fail "Pin to > Desktop makes a shortcut, never overwrites one"
+rm -rf "$h"
 grep -q "^Exec=/usr/libexec/fennek-change-icon --reset" /usr/share/kio/servicemenus/fennek-change-icon.desktop \
     && cmp -s /usr/share/icons/Fennek/scalable/places/folder-documents.svg /usr/share/icons/Fennek/scalable/places/fennek-folder-documents.svg \
     || fail "Change icon on folders and shortcuts; main folders look like on This PC"

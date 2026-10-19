@@ -1,0 +1,17 @@
+#!/usr/bin/bash
+# Right-click → Pin to ▸ Desktop: a shortcut (link with the arrow badge) on the desktop; the file itself stays put.
+# A name already on the desktop gets " (2)", " (3)"…
+#   fennek-shortcut-desktop PATH...
+set -u
+desk=$(xdg-user-dir DESKTOP 2>/dev/null); [ -d "$desk" ] || desk=$HOME/Desktop
+mkdir -p -- "$desk"
+for p in "$@"; do
+    p=${p#file://}; p=${p%/}
+    [ -e "$p" ] || continue
+    name=$(basename -- "$p"); base=${name%.*}; ext=${name#"$base"}
+    [ -n "$base" ] || { base=$name; ext=; }
+    dest=$desk/$name; n=2
+    while [ -e "$dest" ] || [ -L "$dest" ]; do dest="$desk/$base ($n)$ext"; n=$((n + 1)); done
+    ln -s -- "$p" "$dest"
+done
+exit 0
