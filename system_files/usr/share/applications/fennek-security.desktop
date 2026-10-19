@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Security options
+Comment=Lock, switch user, sign out, change a password, Task Manager (Ctrl+Alt+Del)
+Exec=fennek-app security
+Icon=system-lock-screen
+NoDisplay=true
+X-KDE-Shortcuts=Ctrl+Alt+Del

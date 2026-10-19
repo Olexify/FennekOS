@@ -14,6 +14,10 @@ Window Quick Tile Bottom=none,Meta+Down,Quick Tile Window to the Bottom
 Fennek Maximize=Meta+Up,Meta+Up,Maximize the window
 Fennek Restore or Minimize=Meta+Down,Meta+Down,Restore a maximized window, or minimize it
 
+[ksmserver]
+# Ctrl+Alt+Del opens the security options screen below, not the sign-out prompt.
+Log Out=none,Ctrl+Alt+Del,Log Out
+
 [plasmashell]
 # Super+Tab belongs to the task view above, not to switching activities.
 next activity=none,Meta+Tab,Walk through activities
@@ -33,6 +37,10 @@ _launch=Meta+I
 # Super+X: quick links (Task Manager, Settings, File Explorer, Run, Shut down...).
 [services][fennek-winx.desktop]
 _launch=Meta+X
+
+# Ctrl+Alt+Del: Lock, Switch user, Sign out, Change a password, Task Manager.
+[services][fennek-security.desktop]
+_launch=Ctrl+Alt+Del
 
 [services][org.kde.plasma-systemmonitor.desktop]
 _launch=Ctrl+Shift+Esc	Ctrl+Esc

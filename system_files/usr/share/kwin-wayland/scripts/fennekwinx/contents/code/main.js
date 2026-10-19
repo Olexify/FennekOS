@@ -11,6 +11,13 @@ workspace.windowAdded.connect(function (w) {
         workspace.activeWindow = w;
         return;
     }
+    if (w.resourceClass === "fennek-security") {   // Ctrl+Alt+Del: over everything, out of the taskbar
+        w.keepAbove = true;
+        w.skipTaskbar = true;
+        w.skipSwitcher = true;
+        workspace.activeWindow = w;
+        return;
+    }
     if (w.resourceClass !== "fennek-winx") return;
     var a = workspace.clientArea(KWin.PlacementArea, workspace.activeScreen, workspace.currentDesktop);
     var g = w.frameGeometry;

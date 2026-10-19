@@ -397,7 +397,8 @@ for pg in updates firewall quarantine backup apphistory; do   # Fennek's own pag
     rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 10 fennek-app settings $pg >/tmp/setpage.log 2>&1 || rc=$?
     [ $rc -eq 124 ] && ! grep -q 'Page.qml.*\(Error\|error\|Cannot\|is not\)' /tmp/setpage.log || { tail -5 /tmp/setpage.log; fail "$pg opens inside Settings (exit $rc)"; }
 done
-for a in settings firewall welcome apphistory backup live updates quarantine winx power run; do   # starts off-screen and keeps running = the QML loads
+grep -q '^_launch=Ctrl+Alt+Del' /etc/xdg/kglobalshortcutsrc && grep -q '^Log Out=none,Ctrl+Alt+Del' /etc/xdg/kglobalshortcutsrc && grep -q 'fennek-security' /usr/share/kwin-wayland/scripts/fennekwinx/contents/code/main.js || fail "Ctrl+Alt+Del: security options screen"
+for a in settings firewall welcome apphistory backup live updates quarantine winx power run security; do   # starts off-screen and keeps running = the QML loads
     rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-app "$a" >/tmp/app-$a.log 2>&1 || rc=$?
     [ $rc -eq 124 ] || { tail -5 /tmp/app-$a.log; fail "app $a does not start (exit $rc)"; }
 done
