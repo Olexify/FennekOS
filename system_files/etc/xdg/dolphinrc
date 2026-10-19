@@ -16,14 +16,19 @@ ShowSelectionToggle=false
 MenuBar=Enabled
 
 [DetailsMode]
-# Classic details view: compact rows, small icons, no tree lines (folders open on double-click).
+# Classic details view: comfortable rows, clear icons, no tree lines (folders open on double-click).
 ExpandableFolders=false
-IconSize=16
-PreviewSize=16
+IconSize=22
+PreviewSize=22
 # No empty strip left and right of the rows (the list starts at the edge, like the classic file manager).
-SidePadding=0
+LeftPadding=0
+RightPadding=0
 
 [IconsMode]
 # Big icons where folders show as icons (This PC: folders and drives with their usage bar, like the classic page).
 IconSize=64
 PreviewSize=64
+
+[ContentDisplay]
+# Real dates (18.10.2026 21:02) instead of "Yesterday at 21:02", like the classic file manager.
+UseShortRelativeDates=false

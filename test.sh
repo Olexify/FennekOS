@@ -205,6 +205,7 @@ grep -q '"cmd": "/usr/libexec/fennek-reset-layout"' /usr/share/fennek/apps/setti
 /usr/libexec/fennek-update-run --selftest >/dev/null && grep -q fennek-update-run /usr/share/fennek/apps/updates/main.qml && command -v script >/dev/null || fail "Updates: install progress (steps, parts downloaded)"
 grep -q '^Exec=/usr/libexec/fennek-update-notify' /etc/xdg/autostart/fennek-update-notify.desktop || fail "Updates: a notice after an update was installed"
 grep -q '^ShowSelectionToggle=false' /etc/xdg/dolphinrc || fail "File Explorer: no + box on hover"
+grep -q '^LeftPadding=0' /etc/xdg/dolphinrc && grep -q '^UseShortRelativeDates=false' /etc/xdg/dolphinrc && grep -q '^IconSize=22' /etc/xdg/dolphinrc \n    && [ "$(kreadconfig6 --file /etc/xdg/kdeglobals --group Locale --key BinaryUnitDialect)" = 1 ] || fail "File Explorer: bigger rows, real dates, KB/MB, no side strips"
 /usr/libexec/fennek-greeter-lang --selftest >/dev/null && systemctl is-enabled -q fennek-greeter-lang.service || fail "Sign-in screen in the last user's language"
 grep -q '^Switch to Next Keyboard Layout=Meta+Space' /etc/xdg/kglobalshortcutsrc || fail "Super+Space switches the input language"
 grep -q '^maxsizerule=2' /etc/xdg/kwinrulesrc && grep -q '^wmclass=' /etc/xdg/kwinrulesrc || fail "Windows programs and games can be maximized (button, drag to top)"

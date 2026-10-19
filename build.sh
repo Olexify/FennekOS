@@ -131,6 +131,8 @@ printf '\n[kdeglobals][KDE]\nwidgetStyle=Fennek\n' >> "$lnf/contents/defaults"
 kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key smallestReadableFont "Inter,8,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
 kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key fixed "Cascadia Mono,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
 kwriteconfig6 --file /etc/xdg/kdeglobals --group WM --key activeFont "Inter,10,-1,5,500,0,0,0,0,0,0,0,0,0,0,1"
+# Sizes like the classic file manager: KB, MB, GB (powers of 1024) instead of KiB, MiB.
+kwriteconfig6 --file /etc/xdg/kdeglobals --group Locale --key BinaryUnitDialect 1
 # Fennek accent colour (highlights, selection, Start tiles): deep violet, from the wallpaper and the logo.
 kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key AccentColor 109,69,184
 printf '\n[kdeglobals][General]\nAccentColor=109,69,184\n' >> "$lnf/contents/defaults"
@@ -443,9 +445,9 @@ s = rc[:rc.find(b"</gui>") + 6].decode()
 if edit == "files-toolbar":
     m = re.search(r'(<ToolBar[^>]*name="mainToolBar"[^>]*>\s*<text[^<]*</text>)(.*?)(\s*</ToolBar>)', s, re.S)
     assert m and 'name="go_back"' in m.group(2), "Files main toolbar changed upstream"
-    # Then the classic View tools: view mode, sort, hidden files, filter, details pane.
+    # Then the classic View tools: view mode, sort, hidden files, details pane (the filter: Ctrl+I; search sits up top).
     acts = ("go_back", "go_forward", "go_up", "url_navigators", "toggle_search", "-",
-            "view_mode", "sort", "show_hidden_files", "show_filter_bar", "show_information_panel")
+            "view_mode", "sort", "show_hidden_files", "show_information_panel")
     s = s[:m.start(2)] + "".join("\n        <Separator />" if a == "-" else f'\n        <Action name="{a}" />' for a in acts) + s[m.end(2):]
 elif edit in ("hide-toolbars", "terminal-session"):
     s, n = re.subn(r'<ToolBar(?![^>]*hidden=)', '<ToolBar hidden="true"', s)
