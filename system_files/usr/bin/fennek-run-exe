@@ -75,14 +75,21 @@ def forget(digest):
             f.write_text("".join(l + "\n" for l in f.read_text().splitlines() if not l.startswith(digest)))
 
 
+def odd_char(c):
+    """Control characters and anything a line splitter could treat as a line break: never in a recorded path."""
+    o = ord(c)
+    return o < 32 or 127 <= o <= 159 or o in (0x2028, 0x2029) or 0xD800 <= o <= 0xDFFF   # also undecodable bytes
+
+
 def note_name(digest, exe):
     """Where this program was last run from, for Settings > App permissions (one line per program). A path with
     control characters (a file named to forge a line) is not recorded."""
-    if any(ord(c) < 32 or ord(c) == 127 for c in str(exe)):
+    if any(odd_char(c) for c in str(exe)):
         return
     CFG.mkdir(parents=True, exist_ok=True)
-    rows = [l for l in (NAMES.read_text().splitlines() if NAMES.is_file() else []) if not l.startswith(digest + "\t")]
-    NAMES.write_text("".join(l + "\n" for l in rows + [f"{digest}\t{exe}"]))
+    rows = [l for l in (NAMES.read_text(encoding="utf-8", errors="replace").split("\n") if NAMES.is_file() else [])
+            if l and not l.startswith(digest + "\t")]
+    NAMES.write_text("".join(l + "\n" for l in rows + [f"{digest}\t{exe}"]), encoding="utf-8")
 
 
 def remember(digest, mode):

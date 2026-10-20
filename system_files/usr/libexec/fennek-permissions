@@ -102,21 +102,28 @@ def apps():
 # ---- classic programs (.exe) ------------------------------------------------------------------------------------
 def lines(name):
     f = CFG / name
-    return f.read_text().splitlines() if f.is_file() else []
+    return f.read_text(encoding="utf-8", errors="replace").splitlines() if f.is_file() else []
 
 
 def write(name, rows):
     CFG.mkdir(parents=True, exist_ok=True)
     tmp = CFG / (name + ".new")
-    tmp.write_text("".join(r + "\n" for r in rows))
+    tmp.write_text("".join(r + "\n" for r in rows), encoding="utf-8")
     os.replace(tmp, CFG / name)
+
+
+def odd_char(c):
+    """Control characters and anything a line splitter could treat as a line break: never in a recorded path."""
+    o = ord(c)
+    return o < 32 or 127 <= o <= 159 or o in (0x2028, 0x2029) or 0xD800 <= o <= 0xDFFF   # also undecodable bytes
 
 
 def programs():
     names = {}
-    for l in lines("exe-names"):
+    raw = (CFG / "exe-names").read_text(encoding="utf-8", errors="replace") if (CFG / "exe-names").is_file() else ""
+    for l in raw.split("\n"):   # real line breaks only
         d, _, path = l.partition("\t")
-        if path.startswith("/") and not any(ord(c) < 32 or ord(c) == 127 for c in path):   # no forged lines
+        if DIGEST.match(d) and path.startswith("/") and not any(odd_char(c) for c in path):   # no forged lines
             names[d] = path
     trusted = set(lines("trusted-exes"))
     choices = dict(l.split(" ", 1) for l in lines("exe-choices") if " " in l)
@@ -172,6 +179,8 @@ def selftest():
     set_program(d, "run", "sandbox")
     assert programs()[0]["run"] == "sandbox" and programs()[0]["name"] == "Game Setup.exe"
     assert len(programs()) == 1, "a line that isn't a real path is not shown"
+    write("exe-names", [f"{d}\t/home/u/Game.exe", "c" * 64 + "\t/x" + chr(0x2028) + "y.exe", "zz\t/z.exe"])
+    assert [x["name"] for x in programs()] == ["Game.exe"], "odd characters and bad fingerprints are not shown"
     set_program(d, "run", "trusted")
     assert programs()[0]["run"] == "trusted" and lines("exe-choices") == []
     set_program(d, "run", "ask")
