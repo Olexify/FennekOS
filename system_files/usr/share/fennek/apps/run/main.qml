@@ -166,9 +166,17 @@ QQC2.ApplicationWindow {
                 visible: root.suggestions.length > 0
                 interactive: false
                 model: root.suggestions
-                keyNavigationWraps: true
+                // not interactive (no flicking) also turns off its arrow keys: handled here
                 Keys.onReturnPressed: root.pick(root.suggestions[currentIndex])
-                Keys.onUpPressed: currentIndex > 0 ? decrementCurrentIndex() : field.forceActiveFocus()
+                Keys.onEnterPressed: root.pick(root.suggestions[currentIndex])
+                Keys.onUpPressed: currentIndex > 0 ? currentIndex-- : field.forceActiveFocus()
+                Keys.onDownPressed: if (currentIndex < count - 1) currentIndex++
+                // typing while in the list goes on in the box
+                Keys.onPressed: event => {
+                    if (event.text.length === 1 && event.text >= " " && !(event.modifiers & (Qt.ControlModifier | Qt.AltModifier))) {
+                        field.forceActiveFocus(); field.insert(field.cursorPosition, event.text); findLater.restart(); event.accepted = true
+                    }
+                }
                 section.property: "kind"
                 section.delegate: ColumnLayout {
                     required property string section

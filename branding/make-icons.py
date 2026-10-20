@@ -53,7 +53,7 @@ names = {
     "files": ["apps/org.kde.dolphin", "apps/system-file-manager", "apps/file-manager"],
     "settings": ["apps/fennek-settings", "apps/preferences-system", "apps/systemsettings"],
     "firewall": ["apps/fennek-firewall"], "quarantine": ["apps/fennek-quarantine"],
-    "taskmanager": ["apps/org.kde.plasma-systemmonitor", "apps/utilities-system-monitor", "apps/ksysguard"],
+    "taskmanager": ["apps/fennek-taskmanager", "apps/org.kde.plasma-systemmonitor", "apps/utilities-system-monitor", "apps/ksysguard"],
     "terminal": ["apps/org.kde.konsole", "apps/utilities-terminal", "apps/konsole"],
     "store": ["apps/plasmadiscover", "apps/org.kde.discover", "apps/system-software-install"],
     "notepad": ["apps/org.kde.kwrite", "apps/kwrite", "apps/accessories-text-editor", "apps/org.kde.kate"],
