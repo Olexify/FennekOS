@@ -9,6 +9,7 @@ fennek-run-exe's sandbox choices and the no-internet list).
   fennek-permissions reset APP-ID                      back to what the app asks for itself
   fennek-permissions program SHA256 run sandbox|sandbox-sound|trusted|ask
   fennek-permissions program SHA256 internet on|off    (sandboxed programs)
+  fennek-permissions program SHA256 folder KIND on|off  KIND: documents downloads pictures music videos
   fennek-permissions new-apps                          a notice for each app installed since last time, with what it
                                                        may reach (Review opens this page); the first run only records
   fennek-permissions --selftest
@@ -181,13 +182,19 @@ def programs():
     trusted = set(lines("trusted-exes"))
     choices = dict(l.split(" ", 1) for l in lines("exe-choices") if " " in l)
     offline = set(lines("offline-exes"))
+    granted = {}
+    for l in lines("exe-folders"):
+        d, _, kind = l.partition(" ")
+        if kind in FOLDERS:
+            granted.setdefault(d, []).append(kind)
     out = []
     for d in sorted(set(names) | trusted | set(choices)):
         if not DIGEST.match(d):
             continue
         path = names.get(d, "")
         out.append({"sha256": d, "name": Path(path).name if path else "Program " + d[:8], "path": path,
-                    "run": "trusted" if d in trusted else choices.get(d, "ask"), "internet": d not in offline})
+                    "run": "trusted" if d in trusted else choices.get(d, "ask"), "internet": d not in offline,
+                    "folders": sorted(granted.get(d, []))})
     return out
 
 
@@ -203,6 +210,12 @@ def set_program(d, what, value):
             raise ValueError(value)
         rest = [l for l in lines("offline-exes") if l != d]
         write("offline-exes", rest + ([d] if value == "off" else []))
+    elif what == "folder":
+        kind, _, state = value.partition(":")
+        if kind not in FOLDERS or state not in ("on", "off"):
+            raise ValueError(value)
+        rest = [l for l in lines("exe-folders") if l != f"{d} {kind}"]
+        write("exe-folders", rest + ([f"{d} {kind}"] if state == "on" else []))
     else:
         raise ValueError(what)
 
@@ -275,6 +288,15 @@ def selftest():
     assert programs()[0]["run"] == "ask" and lines("trusted-exes") == []
     set_program(d, "internet", "off")
     assert programs()[0]["internet"] is False
+    set_program(d, "folder", "documents:on")
+    assert programs()[0]["folders"] == ["documents"]
+    set_program(d, "folder", "documents:off")
+    assert programs()[0]["folders"] == []
+    try:
+        set_program(d, "folder", "home:on")
+        raise AssertionError("the whole home must not be grantable to a classic program")
+    except ValueError:
+        pass
     set_program(d, "internet", "on")
     assert programs()[0]["internet"] is True and lines("offline-exes") == []
     assert new_apps(["a", "b"], None) is None, "first run: no notices"
@@ -313,6 +335,8 @@ def main(a):
         sys.exit(r.returncode)
     if len(a) == 2 and a[0] == "reset" and APP_ID.match(a[1]):
         sys.exit(subprocess.run(["flatpak", "override", "--user", "--reset", a[1]]).returncode)
+    if len(a) == 5 and a[0] == "program" and DIGEST.match(a[1]) and a[2] == "folder":
+        return set_program(a[1], "folder", f"{a[3]}:{a[4]}")
     if len(a) == 4 and a[0] == "program" and DIGEST.match(a[1]):
         return set_program(a[1], a[2], a[3])
     sys.exit(__doc__)

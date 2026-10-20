@@ -22,6 +22,8 @@ DATA = Path(os.environ.get("XDG_DATA_HOME") or HOME / ".local/share")
 TRUSTED = CFG / "trusted-exes"           # one sha256 per line
 CHOICES = CFG / "exe-choices"           # "sha256 sandbox|sandbox-sound" per line: remembered sandbox runs
 OFFLINE = CFG / "offline-exes"           # sha256s blocked by fennek-firewall: sandbox gets no network at all
+FOLDERS = CFG / "exe-folders"            # "sha256 documents|downloads|pictures|music|videos" per line: also visible
+XDG_KIND = {"documents": "DOCUMENTS", "downloads": "DOWNLOAD", "pictures": "PICTURES", "music": "MUSIC", "videos": "VIDEOS"}
 NAMES = CFG / "exe-names"               # "sha256<TAB>path" per line: what App permissions shows for each program
 BOXES = DATA / "fennek" / "sandboxes"    # private home per sandboxed program
 SHARED = HOME / "Sandbox"                # ~/Sandbox/<program> = the only real folder it can see
@@ -79,6 +81,22 @@ def odd_char(c):
     """Control characters and anything a line splitter could treat as a line break: never in a recorded path."""
     o = ord(c)
     return o < 32 or 127 <= o <= 159 or o in (0x2028, 0x2029) or 0xD800 <= o <= 0xDFFF   # also undecodable bytes
+
+
+def granted_folders(digest):
+    """Your folders this sandboxed program may also see (App permissions): [(real folder, same place inside)].
+    Only real folders inside your home, never a link, never the home itself."""
+    out = []
+    rows = FOLDERS.read_text(encoding="utf-8", errors="replace").split("\n") if FOLDERS.is_file() else []
+    for kind in sorted({l.split(" ", 1)[1] for l in rows if l.startswith(digest + " ")} & set(XDG_KIND)):
+        try:
+            p = subprocess.run(["xdg-user-dir", XDG_KIND[kind]], capture_output=True, text=True).stdout.strip()
+        except OSError:
+            continue
+        real = Path(p)
+        if p and real.is_dir() and not real.is_symlink() and real.resolve().parent == HOME.resolve():
+            out.append((real, HOME / real.name))
+    return out
 
 
 def note_name(digest, exe):
@@ -161,7 +179,7 @@ def placement(exe, shared):
 
 
 def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env, sound=False, wayland=False,
-               resolv=None, uid=1000, gid=1000):
+               resolv=None, uid=1000, gid=1000, folders=()):
     src, target = placement(exe, shared)
     a = ["bwrap",
          # pasta's namespace makes us "root" (mapped to the real user); map back to the user's own id,
@@ -187,6 +205,8 @@ def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env, so
          "--setenv", "PROTONPATH", str(proton), "--setenv", "UMU_RUNTIME_UPDATE", "0"]
     if src:
         a += ["--ro-bind", str(src), str(target)]
+    for real, inside in folders:   # folders you allowed in App permissions, at the same place as outside
+        a += ["--bind", str(real), str(inside)]
     if str(HOME).startswith("/var/home/"):
         a += ["--symlink", "var/home", "/home"]
     if resolv:   # host's resolv.conf points at 127.0.0.53, which is unreachable from the sandbox's network
@@ -226,10 +246,13 @@ def run_sandboxed(exe, digest, args, sound=False):
     wayland = bool(os.environ.get("WAYLAND_DISPLAY")) and wine_wayland(proton)
     resolv = box_home.parent / "resolv.conf"
     resolv.write_text(f"nameserver {SANDBOX_DNS}\n")
-    say(f"{exe.name} runs in a sandbox and only sees ~/Sandbox/{name}. "
-        "If it needs its other files, move them there and start it from that folder.", "passivepopup")
+    extra = granted_folders(digest)
+    also = (" and " + ", ".join(f"~/{inside.name}" for _, inside in extra)) if extra else ""
+    say(f"{exe.name} runs in a sandbox and only sees ~/Sandbox/{name}{also}. "
+        "If it needs other files, move them there, or allow a folder in Settings > App permissions.", "passivepopup")
     cmd = bwrap_args(exe, args, box_home, shared, proton, os.environ.get("XDG_RUNTIME_DIR"), os.environ,
-                     sound=sound, wayland=wayland, resolv=resolv, uid=os.getuid(), gid=os.getgid())
+                     sound=sound, wayland=wayland, resolv=resolv, uid=os.getuid(), gid=os.getgid(),
+                     folders=extra)
     if OFFLINE.is_file() and digest in OFFLINE.read_text().split():
         return subprocess.run([cmd[0], "--unshare-net", *cmd[1:]]).returncode   # firewall: no network at all
     # Own network namespace with internet via pasta: host-only sockets and host loopback become unreachable.
@@ -314,6 +337,10 @@ def selftest():
     assert ("/p/UMU-Proton-9", "--tmp-overlay", "/p/UMU-Proton-9") in pairs, "Proton writes are throwaway"
     assert all(src != "/var/home/u" for flag, src, _ in pairs if flag in ("--bind", "--ro-bind")), "real home never mounted"
     assert "--unshare-pid" in a and "--new-session" in a
+    f = bwrap_args(dl, [], Path("/b/home"), Path("/s"), Path("/p/UMU-Proton-9"), None, {},
+                   folders=[(Path("/var/home/u/Documents"), Path("/var/home/u/Documents"))])
+    assert f.index("/var/home/u/Documents") > f.index("/b/home"), "an allowed folder is mounted over the private home"
+    assert "/var/home/u/Documents" not in a, "no folders unless allowed"
     assert "/sys" not in a, "never all of /sys"
     assert a.index("/var/home/u/App/setup.exe") > a.index("/var/home/u"), "program mounted over the private home"
     assert a[a.index("--uid") + 1] == "1000", "never root inside the sandbox"

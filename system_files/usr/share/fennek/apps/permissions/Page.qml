@@ -199,12 +199,16 @@ Item {
             }
             Repeater {
                 model: root.programs
-                delegate: RowLayout {
+                delegate: ColumnLayout {
                     id: progRow
                     required property var modelData
+                    readonly property bool boxed: modelData.run === "sandbox" || modelData.run === "sandbox-sound"
                     Layout.fillWidth: true
                     Layout.leftMargin: Kirigami.Units.largeSpacing * 2
                     Layout.rightMargin: Kirigami.Units.largeSpacing * 2
+                    spacing: Kirigami.Units.smallSpacing
+                  RowLayout {
+                    Layout.fillWidth: true
                     spacing: Kirigami.Units.largeSpacing
                     Kirigami.Icon { source: "application-x-ms-dos-executable"; fallback: "application-x-executable"; Layout.preferredWidth: Kirigami.Units.iconSizes.medium; Layout.preferredHeight: Kirigami.Units.iconSizes.medium }
                     ColumnLayout {
@@ -224,6 +228,25 @@ Item {
                         checked: progRow.modelData.internet
                         onToggled: root.act("program " + progRow.modelData.sha256 + " internet " + (checked ? "on" : "off"))
                     }
+                  }
+                    // Your folders it may also see, besides its own one in Sandbox (sandboxed programs only)
+                    Flow {
+                        visible: progRow.boxed
+                        Layout.fillWidth: true
+                        Layout.leftMargin: Kirigami.Units.iconSizes.medium + Kirigami.Units.largeSpacing
+                        spacing: Kirigami.Units.smallSpacing
+                        QQC2.Label { text: "Also sees:"; opacity: 0.7; height: implicitHeight; topPadding: Kirigami.Units.smallSpacing }
+                        Repeater {
+                            model: root.folders.slice(0, 5)
+                            delegate: QQC2.CheckBox {
+                                required property var modelData
+                                text: modelData[1]
+                                checked: progRow.modelData.folders.indexOf(modelData[0]) >= 0
+                                onToggled: root.act("program " + progRow.modelData.sha256 + " folder " + modelData[0] + (checked ? " on" : " off"))
+                            }
+                        }
+                    }
+                    Kirigami.Separator { Layout.fillWidth: true; opacity: 0.4 }
                 }
             }
 
