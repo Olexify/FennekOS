@@ -127,8 +127,8 @@ fn = {"documents": ["folder-documents"], "download": ["folder-download", "folder
       "pictures": ["folder-pictures", "folder-image", "folder-images"], "music": ["folder-music", "folder-sound"],
       "videos": ["folder-videos", "folder-video"], "desktop": ["folder-desktop", "user-desktop"],
       "home": ["user-home", "folder-home"], "public": ["folder-publicshare", "folder-public"], "templates": ["folder-templates"]}
-# Home, in Files and in Settings: a house in the Fennek violet, with a lit window.
-HOME = ("#b39bff", "#6d3fe0", '<path d="M18 31.5L32 20l14 11.5"/><path d="M22.5 28.5V44h19V28.5"/><path d="M29 44v-7.5h6V44"/><circle cx="32" cy="29.5" r="1.7" fill="#fff" stroke="none"/>')
+# Home, in Files and in Settings: a house in the Fennek violet, with an arched door.
+HOME = ("#b39bff", "#6d3fe0", '<path d="M17.5 31.5L32 19.5l14.5 12"/><path d="M22 28v15.5h20V28"/><path d="M28.5 43.5v-5.5a3.5 3.5 0 0 1 7 0v5.5"/>')
 svg = lambda b: f'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">{DEFS}{b}</svg>\n'
 for n in ("folder", "inode-directory"):
     open(f"{base}/places/{n}.svg", "w", newline="\n").write(svg(BACK + FRONT))
