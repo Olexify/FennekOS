@@ -12,6 +12,7 @@ already keeps (each app and service runs in its own cgroup).
                                can_end, procs: [{pid, name, mem}]}
   fennek-tasks end UNIT        stop one of your apps or background services
   fennek-tasks kill PID        end one process of yours (asked to close, made to after 3 seconds)
+  fennek-tasks show PID        Open file location: the program's file, selected in Files
   fennek-tasks perf            counters for the Performance graphs (the window turns them into rates)
   fennek-tasks details         every process: pid, name, user, status, cpu, mem, cmd, own
   fennek-tasks users           who is signed in, with their processes' cpu and memory
@@ -123,6 +124,23 @@ def kill(pid):
         os.kill(pid, signal.SIGKILL)
     except ProcessLookupError:
         pass
+
+
+def show(pid):
+    """Open file location: the program a process runs, selected in Files (only for processes you can see into)."""
+    if not str(pid).isdigit():
+        sys.exit("not a process")
+    try:
+        exe = os.readlink(f"/proc/{int(pid)}/exe")
+    except OSError:
+        sys.exit("Its file can't be shown (it belongs to the system or another user).")
+    exe = exe.removesuffix(" (deleted)")
+    if not os.path.exists(exe):
+        sys.exit("Its file isn't there any more (it was updated or removed since it started).")
+    try:
+        subprocess.Popen(["dolphin", "--select", exe], start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        sys.exit("Files couldn't be opened.")
 
 
 def perf():
@@ -358,6 +376,12 @@ def selftest():
             raise AssertionError("kill accepted " + bad)
         except SystemExit:
             pass
+    for bad in ("x", "1;2"):
+        try:
+            show(bad)
+            raise AssertionError("show accepted " + bad)
+        except SystemExit:
+            pass
     print("selftest ok")
 
 
@@ -371,6 +395,8 @@ if __name__ == "__main__":
         end(a[1])
     elif len(a) == 2 and a[0] == "kill":
         kill(a[1])
+    elif len(a) == 2 and a[0] == "show":
+        show(a[1])
     elif a == ["perf"]:
         print(json.dumps(perf()))
     elif a == ["details"]:

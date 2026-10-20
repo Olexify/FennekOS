@@ -215,6 +215,33 @@ QQC2.ApplicationWindow {
         }
     }
 
+    // Right-click on a row: End task / End process / Open file location
+    QQC2.Menu {
+        id: rowMenu
+        property string unit: ""
+        property bool canEnd: false
+        property int pid: 0
+        property bool own: false
+        function openFor(u, c, p, o) { unit = u; canEnd = c; pid = p; own = o; popup() }
+        QQC2.MenuItem {
+            text: "End task"; icon.name: "process-stop"
+            visible: rowMenu.unit !== ""; height: visible ? implicitHeight : 0
+            enabled: rowMenu.canEnd
+            onTriggered: root.act("end " + root.q(rowMenu.unit))
+        }
+        QQC2.MenuItem {
+            text: "End process"; icon.name: "process-stop"
+            visible: rowMenu.unit === ""; height: visible ? implicitHeight : 0
+            enabled: rowMenu.own
+            onTriggered: root.act("kill " + rowMenu.pid)
+        }
+        QQC2.MenuItem {
+            text: "Open file location"; icon.name: "folder-open"
+            enabled: rowMenu.pid > 0
+            onTriggered: root.act("show " + rowMenu.pid)
+        }
+    }
+
     // A column title that sorts (Details)
     component SortTitle: QQC2.ToolButton {
         property string key
@@ -296,6 +323,11 @@ QQC2.ApplicationWindow {
                                 QQC2.ItemDelegate {
                                     Layout.fillWidth: true
                                     highlighted: root.selected !== "" && root.selected === row.modelData.unit
+                                    TapHandler {
+                                        acceptedButtons: Qt.RightButton
+                                        onTapped: rowMenu.openFor(row.modelData.unit, row.modelData.can_end,
+                                                                  row.modelData.procs.length ? row.modelData.procs[0].pid : 0, false)
+                                    }
                                     onClicked: {
                                         const o = Object.assign({}, root.open)
                                         if (o[row.modelData.unit]) delete o[row.modelData.unit]; else o[row.modelData.unit] = true
@@ -555,6 +587,10 @@ QQC2.ApplicationWindow {
                     width: ListView.view.width
                     highlighted: root.selectedPid === modelData.pid
                     onClicked: root.selectedPid = modelData.pid
+                    TapHandler {
+                        acceptedButtons: Qt.RightButton
+                        onTapped: { root.selectedPid = modelData.pid; rowMenu.openFor("", false, modelData.pid, modelData.own) }
+                    }
                     contentItem: RowLayout {
                         spacing: 0
                         QQC2.Label { textFormat: Text.PlainText; text: modelData.name; elide: Text.ElideRight; Layout.preferredWidth: Kirigami.Units.gridUnit * 10 }
