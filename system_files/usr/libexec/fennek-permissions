@@ -55,8 +55,11 @@ def merge(base, *overrides):
         for k, v in o.items():
             for x in v:
                 if x.startswith("!"):
-                    name = x[1:].split(":")[0]
-                    out[k] = {y for y in out[k] if y.split(":")[0] != name}
+                    if k == "filesystems":   # "!xdg-download" also takes away "xdg-download:ro"
+                        name = x[1:].split(":")[0]
+                        out[k] = {y for y in out[k] if y.split(":")[0] != name}
+                    else:                    # services and the rest: exactly that entry, nothing else
+                        out[k].discard(x[1:])
                 else:
                     out[k].add(x)
     return out
@@ -73,7 +76,8 @@ KNOWN_FS = {"host", "host-os", "host-etc", "home", "~"} | set(FOLDERS.values())
 
 def plain(x):
     """Names come from the app itself: only plain characters are shown (no markup, no look-alike tricks)."""
-    return re.sub(r"[^A-Za-z0-9_.~/:@+-]", "?", x)[:80]
+    x = re.sub(r"/(\./)+", "/", re.sub(r"/{2,}", "/", x))   # tidy paths; always shown in full (the end matters)
+    return re.sub(r"[^A-Za-z0-9_.~/:@+-]", "?", x)
 
 
 def other_access(p, app_id=""):
@@ -287,6 +291,10 @@ def selftest():
                                              "org.example.App.Helper=own\n")), "org.example.App"))
     assert "acts as service org.freedesktop.Notifications" in spoof and "Helper" not in spoof, spoof
     assert plain("<b>x</b>") == "?b?x?/b?", plain("<b>x</b>")
+    kept = summary_text(summary(merge(parse("[Session Bus Policy]\norg.evil.Spy=own\n"),
+                                      parse("[Session Bus Policy]\norg.other.Thing=none\n"))))
+    assert "acts as service org.evil.Spy" in kept, "removing one name keeps the others"
+    assert plain("~//a/./b/" + "x" * 100 + "/.ssh").endswith("/.ssh"), "long paths are never cut"
     sb = summary_text(summary(merge(parse("[System Bus Policy]\norg.freedesktop.NetworkManager=talk\n"))))
     assert "run as administrator (org.freedesktop.NetworkManager)" in sb, sb
     print("selftest ok")
