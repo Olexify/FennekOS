@@ -78,7 +78,7 @@ QQC2.ApplicationWindow {
     // The KDE page's own search words too ("dpi" finds Display, "wallpaper" finds Background); looked up once.
     property var wordCache: ({})
     function words(i) {
-        if (!i.kcm) return ""
+        if (!i.kcm) return i.keys || ""   // Fennek pages: their own keywords
         if (wordCache[i.kcm] === undefined) wordCache[i.kcm] = pageView.keywords(i.kcm)
         return wordCache[i.kcm]
     }

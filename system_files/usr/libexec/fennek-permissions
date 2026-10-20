@@ -1,0 +1,201 @@
+#!/usr/bin/python3
+"""App permissions (Settings > Privacy & Security > App permissions): what each app may do outside its box, in plain
+switches, for store apps (Flatpak: per-account overrides, `flatpak override --user`) and classic programs (.exe:
+fennek-run-exe's sandbox choices and the no-internet list).
+
+  fennek-permissions list                              JSON: {"apps": [...], "programs": [...]}
+  fennek-permissions app APP-ID PERM on|off            PERM: network sound devices launch home host
+                                                       documents downloads pictures music videos
+  fennek-permissions reset APP-ID                      back to what the app asks for itself
+  fennek-permissions program SHA256 run sandbox|sandbox-sound|trusted|ask
+  fennek-permissions program SHA256 internet on|off    (sandboxed programs)
+  fennek-permissions --selftest
+"""
+import configparser, json, os, re, subprocess, sys
+from pathlib import Path
+
+CFG = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "fennek"
+APP_ID = re.compile(r"^[A-Za-z0-9_.-]{3,255}$")
+DIGEST = re.compile(r"^[0-9a-f]{64}$")
+FOLDERS = {"documents": "xdg-documents", "downloads": "xdg-download", "pictures": "xdg-pictures",
+           "music": "xdg-music", "videos": "xdg-videos"}
+LAUNCH_BUS = "org.freedesktop.Flatpak"   # flatpak-spawn --host: starting programs outside the box
+
+
+# ---- store apps -------------------------------------------------------------------------------------------------
+def parse(text):
+    """Flatpak keyfile (metadata or overrides) -> {"shared": set, "sockets": set, "devices": set,
+    "filesystems": set, "talk": set}; negations kept as "!x"."""
+    c = configparser.ConfigParser(interpolation=None, strict=False, delimiters=("=",))
+    c.optionxform = str
+    try:
+        c.read_string(text)
+    except configparser.Error:
+        return {k: set() for k in ("shared", "sockets", "devices", "filesystems", "talk")}
+    ctx = c["Context"] if c.has_section("Context") else {}
+    split = lambda k: {x for x in ctx.get(k, "").split(";") if x}
+    bus = c["Session Bus Policy"] if c.has_section("Session Bus Policy") else {}
+    talk = {n if v in ("talk", "own") else "!" + n for n, v in bus.items()}
+    return {"shared": split("shared"), "sockets": split("sockets"), "devices": split("devices"),
+            "filesystems": split("filesystems"), "talk": talk}
+
+
+def merge(base, *overrides):
+    """What the app may really do: its own permissions with the overrides on top ("!x" takes x away)."""
+    out = {k: set(x for x in v if not x.startswith("!")) for k, v in base.items()}
+    for o in overrides:
+        for k, v in o.items():
+            for x in v:
+                if x.startswith("!"):
+                    name = x[1:].split(":")[0]
+                    out[k] = {y for y in out[k] if y.split(":")[0] != name}
+                else:
+                    out[k].add(x)
+    return out
+
+
+def summary(p):
+    fs = {x.split(":")[0] for x in p["filesystems"]}
+    return {"network": "network" in p["shared"], "sound": "pulseaudio" in p["sockets"],
+            "devices": "all" in p["devices"], "launch": LAUNCH_BUS in p["talk"],
+            "host": bool(fs & {"host", "host-os", "host-etc"}), "home": "home" in fs or "~" in fs,
+            **{k: v in fs for k, v in FOLDERS.items()}}
+
+
+def override_args(perm, on):
+    """The `flatpak override --user` options for one switch."""
+    if perm == "network":
+        return ["--share=network" if on else "--unshare=network"]
+    if perm == "sound":
+        return ["--socket=pulseaudio" if on else "--nosocket=pulseaudio"]
+    if perm == "devices":
+        return ["--device=all" if on else "--nodevice=all"]
+    if perm == "launch":
+        return [f"--talk-name={LAUNCH_BUS}" if on else f"--no-talk-name={LAUNCH_BUS}"]
+    if perm == "host":
+        return ["--filesystem=host"] if on else ["--nofilesystem=host", "--nofilesystem=host-os", "--nofilesystem=host-etc"]
+    if perm == "home":   # off: the whole home and anything wider
+        return ["--filesystem=home"] if on else ["--nofilesystem=home", "--nofilesystem=host"]
+    if perm in FOLDERS:
+        return [f"--filesystem={FOLDERS[perm]}" if on else f"--nofilesystem={FOLDERS[perm]}"]
+    raise ValueError(f"unknown permission {perm}")
+
+
+def run(cmd):
+    return subprocess.run(cmd, capture_output=True, text=True).stdout
+
+
+def apps():
+    out = []
+    for line in run(["flatpak", "list", "--app", "--columns=application,name"]).splitlines():
+        app, _, name = line.partition("\t")
+        if not APP_ID.match(app) or any(a["id"] == app for a in out):
+            continue
+        base = parse(run(["flatpak", "info", "--show-metadata", app]))
+        p = merge(base, parse(run(["flatpak", "override", "--show", app])),
+                  parse(run(["flatpak", "override", "--user", "--show", app])))
+        out.append({"id": app, "name": name or app, "perms": summary(p),
+                    "changed": bool(run(["flatpak", "override", "--user", "--show", app]).strip())})
+    return sorted(out, key=lambda a: a["name"].lower())
+
+
+# ---- classic programs (.exe) ------------------------------------------------------------------------------------
+def lines(name):
+    f = CFG / name
+    return f.read_text().splitlines() if f.is_file() else []
+
+
+def write(name, rows):
+    CFG.mkdir(parents=True, exist_ok=True)
+    tmp = CFG / (name + ".new")
+    tmp.write_text("".join(r + "\n" for r in rows))
+    os.replace(tmp, CFG / name)
+
+
+def programs():
+    names = {}
+    for l in lines("exe-names"):
+        d, _, path = l.partition("\t")
+        names[d] = path
+    trusted = set(lines("trusted-exes"))
+    choices = dict(l.split(" ", 1) for l in lines("exe-choices") if " " in l)
+    offline = set(lines("offline-exes"))
+    out = []
+    for d in sorted(set(names) | trusted | set(choices)):
+        if not DIGEST.match(d):
+            continue
+        path = names.get(d, "")
+        out.append({"sha256": d, "name": Path(path).name if path else "Program " + d[:8], "path": path,
+                    "run": "trusted" if d in trusted else choices.get(d, "ask"), "internet": d not in offline})
+    return out
+
+
+def set_program(d, what, value):
+    if what == "run":
+        if value not in ("sandbox", "sandbox-sound", "trusted", "ask"):
+            raise ValueError(value)
+        write("trusted-exes", [l for l in lines("trusted-exes") if l != d] + ([d] if value == "trusted" else []))
+        write("exe-choices", [l for l in lines("exe-choices") if not l.startswith(d + " ")]
+              + ([f"{d} {value}"] if value in ("sandbox", "sandbox-sound") else []))
+    elif what == "internet":
+        if value not in ("on", "off"):
+            raise ValueError(value)
+        rest = [l for l in lines("offline-exes") if l != d]
+        write("offline-exes", rest + ([d] if value == "off" else []))
+    else:
+        raise ValueError(what)
+
+
+# ---- check --------------------------------------------------------------------------------------------------
+def selftest():
+    import tempfile
+    global CFG
+    meta = ("[Application]\nname=org.example.Launcher\n\n[Context]\nshared=network;ipc;\nsockets=x11;wayland;pulseaudio;\n"
+            "devices=dri;\nfilesystems=xdg-download;~/Games:ro;\n\n[Session Bus Policy]\norg.freedesktop.Notifications=talk\n")
+    user = "[Context]\nshared=!network;\nfilesystems=home;!xdg-download;\n\n[Session Bus Policy]\norg.freedesktop.Flatpak=talk\n"
+    s = summary(merge(parse(meta), parse(""), parse(user)))
+    assert s["network"] is False and s["sound"] is True and s["launch"] is True, s
+    assert s["home"] is True and s["downloads"] is False and s["devices"] is False and s["host"] is False, s
+    s2 = summary(merge(parse(meta), parse("[Context]\nfilesystems=!xdg-download:ro;\n")))
+    assert s2["downloads"] is False, "a negation removes the folder whatever its :ro/:rw"
+    assert override_args("home", False) == ["--nofilesystem=home", "--nofilesystem=host"]
+    assert override_args("launch", True) == [f"--talk-name={LAUNCH_BUS}"]
+    try:
+        override_args("everything", True)
+        raise AssertionError("unknown permission accepted")
+    except ValueError:
+        pass
+    CFG = Path(tempfile.mkdtemp())
+    d = "a" * 64
+    write("exe-names", [f"{d}\t/home/u/Downloads/Game Setup.exe"])
+    set_program(d, "run", "sandbox")
+    assert programs()[0]["run"] == "sandbox" and programs()[0]["name"] == "Game Setup.exe"
+    set_program(d, "run", "trusted")
+    assert programs()[0]["run"] == "trusted" and lines("exe-choices") == []
+    set_program(d, "run", "ask")
+    assert programs()[0]["run"] == "ask" and lines("trusted-exes") == []
+    set_program(d, "internet", "off")
+    assert programs()[0]["internet"] is False
+    set_program(d, "internet", "on")
+    assert programs()[0]["internet"] is True and lines("offline-exes") == []
+    print("selftest ok")
+
+
+def main(a):
+    if a == ["--selftest"]:
+        return selftest()
+    if a == ["list"]:
+        print(json.dumps({"apps": apps(), "programs": programs()}))
+        return
+    if len(a) == 4 and a[0] == "app" and APP_ID.match(a[1]) and a[3] in ("on", "off"):
+        r = subprocess.run(["flatpak", "override", "--user", *override_args(a[2], a[3] == "on"), a[1]])
+        sys.exit(r.returncode)
+    if len(a) == 2 and a[0] == "reset" and APP_ID.match(a[1]):
+        sys.exit(subprocess.run(["flatpak", "override", "--user", "--reset", a[1]]).returncode)
+    if len(a) == 4 and a[0] == "program" and DIGEST.match(a[1]):
+        return set_program(a[1], a[2], a[3])
+    sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

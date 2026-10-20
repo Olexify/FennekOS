@@ -22,6 +22,7 @@ DATA = Path(os.environ.get("XDG_DATA_HOME") or HOME / ".local/share")
 TRUSTED = CFG / "trusted-exes"           # one sha256 per line
 CHOICES = CFG / "exe-choices"           # "sha256 sandbox|sandbox-sound" per line: remembered sandbox runs
 OFFLINE = CFG / "offline-exes"           # sha256s blocked by fennek-firewall: sandbox gets no network at all
+NAMES = CFG / "exe-names"               # "sha256<TAB>path" per line: what App permissions shows for each program
 BOXES = DATA / "fennek" / "sandboxes"    # private home per sandboxed program
 SHARED = HOME / "Sandbox"                # ~/Sandbox/<program> = the only real folder it can see
 GUI = bool(os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY"))
@@ -72,6 +73,13 @@ def forget(digest):
     for f in (TRUSTED, CHOICES):
         if f.is_file():
             f.write_text("".join(l + "\n" for l in f.read_text().splitlines() if not l.startswith(digest)))
+
+
+def note_name(digest, exe):
+    """Where this program was last run from, for Settings > App permissions (one line per program)."""
+    CFG.mkdir(parents=True, exist_ok=True)
+    rows = [l for l in (NAMES.read_text().splitlines() if NAMES.is_file() else []) if not l.startswith(digest + "\t")]
+    NAMES.write_text("".join(l + "\n" for l in rows + [f"{digest}\t{exe}"]))
 
 
 def remember(digest, mode):
@@ -248,6 +256,7 @@ def main(argv):
     if not exe.is_file():
         return say(f"Not found: {exe}", "error")
     digest = sha256(exe)
+    note_name(digest, exe)
     if mode == "--trusted" or (mode is None and not choose and is_trusted(digest)):
         return run_trusted(exe, argv[1:])
     if mode is None and not choose and remembered(digest):

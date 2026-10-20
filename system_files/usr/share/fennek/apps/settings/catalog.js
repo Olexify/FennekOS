@@ -96,7 +96,7 @@ var categories = [
   "items": [
    {"name": "Firewall", "icon": "fennek-set-firewall", "desc": "Choose which apps may use the internet", "page": "firewall"},
    {"name": "Quarantine", "icon": "fennek-set-quarantine", "desc": "Downloads the antivirus blocked", "page": "quarantine"},
-   {"name": "App permissions", "kcm": "kcm_app-permissions", "icon": "fennek-set-permissions", "desc": "What store apps may access"},
+   {"name": "App permissions", "page": "permissions", "icon": "fennek-set-permissions", "desc": "What each app may do outside its box", "keys": "permissions sandbox camera microphone internet files folders devices launcher emulator exe trust flatpak"},
    {"name": "Recent files", "kcm": "kcm_recentFiles", "icon": "fennek-set-recent", "desc": "What Fennek remembers you opened", "optional": true},
    {"name": "Sign out and restart", "kcm": "kcm_smserver", "icon": "fennek-set-signout", "desc": "What happens when you sign out", "optional": true},
    {"name": "Privacy policy", "cmd": "xdg-open https://github.com/Olexify/FennekOS/blob/main/PRIVACY.md", "icon": "fennek-set-privacypolicy", "desc": "Every connection Fennek OS makes"}
