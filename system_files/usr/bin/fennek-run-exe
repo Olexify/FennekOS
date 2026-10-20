@@ -130,13 +130,11 @@ def folder_name(exe, digest):
 
 
 def wine_cmd(target, args):
-    """What Proton runs: a program itself; an installer package through msiexec; a batch file through cmd."""
+    """What Proton runs: a program itself; an installer package through msiexec. (Batch files are not handed to cmd:
+    it reads their name as a command line, so a crafted name could run something other than the file checked.)"""
     t = str(target)
-    win = "Z:" + t.replace("/", "\\")   # Wine's Z: is /; a bare /path would read as a /switch to msiexec and cmd
-    if re.search(r"\.msi$", t, re.I):
-        return ["msiexec", "/i", win, *args]
-    if re.search(r"\.(bat|cmd)$", t, re.I):
-        return ["cmd", "/c", win, *args]
+    if re.search(r"\.msi$", t, re.I):   # Wine's Z: is /; a bare /path would read as a /switch to msiexec
+        return ["msiexec", "/i", "Z:" + t.replace("/", "\\"), *args]
     return [t, *args]
 
 
@@ -359,7 +357,7 @@ def selftest():
     assert "/tmp/.X11-unix" in a, "X11 only as fallback when Proton lacks Wine-Wayland"
     assert a[-3:] == ["umu-run", "/var/home/u/App/setup.exe", "/S"]
     assert wine_cmd(Path("/var/home/u/Setup.MSI"), ["/qb"]) == ["msiexec", "/i", "Z:\\var\\home\\u\\Setup.MSI", "/qb"]
-    assert wine_cmd(Path("/h/run.bat"), []) == ["cmd", "/c", "Z:\\h\\run.bat"]
+    assert wine_cmd(Path("/h/a&calc.bat"), []) == ["/h/a&calc.bat"], "a batch file is never handed to cmd"
 
     s = bwrap_args(dl, [], Path("/b"), Path("/s"), Path("/p"), "/run/user/1000", {}, sound=True)
     assert "/run/user/1000/pipewire-0" in s, "sound on request"
