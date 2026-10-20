@@ -124,6 +124,8 @@ fn = {"documents": ["folder-documents"], "download": ["folder-download", "folder
       "pictures": ["folder-pictures", "folder-image", "folder-images"], "music": ["folder-music", "folder-sound"],
       "videos": ["folder-videos", "folder-video"], "desktop": ["folder-desktop", "user-desktop"],
       "home": ["user-home", "folder-home"], "public": ["folder-publicshare", "folder-public"], "templates": ["folder-templates"]}
+# Home, in Files and in Settings: a house in the Fennek violet, with a lit window.
+HOME = ("#b39bff", "#6d3fe0", '<path d="M18 31.5L32 20l14 11.5"/><path d="M22.5 28.5V44h19V28.5"/><path d="M29 44v-7.5h6V44"/><circle cx="32" cy="29.5" r="1.7" fill="#fff" stroke="none"/>')
 svg = lambda b: f'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">{DEFS}{b}</svg>\n'
 for n in ("folder", "inode-directory"):
     open(f"{base}/places/{n}.svg", "w", newline="\n").write(svg(BACK + FRONT))
@@ -134,8 +136,8 @@ same = {"documents": "documents", "download": "downloads", "pictures": "pictures
 for k, ns in fn.items():
     for n in ns:
         icon = (open(f"{base}/places/fennek-folder-{same[k]}.svg").read() if k in same
-                # Home is the page with your folders and drives: the computer icon (it was This PC's).
-                else open(f"{base}/places/computer.svg").read() if k == "home"
+                # Home: the violet house, the same as Settings' Home.
+                else app(*HOME) if k == "home"
                 else svg(BACK + FRONT + f"<g {G}>{sym[k]}</g>"))
         open(f"{base}/places/{n}.svg", "w", newline="\n").write(icon)
 print("ok")
@@ -152,8 +154,7 @@ settings = {
     "accessibility": ("#5aa9f8", "#1f6fd6", '<circle cx="32" cy="20" r="2.5" fill="#fff" stroke="none"/><path d="M21 26l11 2 11-2M32 28v8l-5 9M32 36l5 9"/>'),
     "privacy": ("#a77bf3", "#6a35c9", '<path d="M32 17l12 4.5v9c0 8-5.2 13.6-12 16.5-6.8-2.9-12-8.5-12-16.5v-9z"/><path d="M27 32l4 4 7-8"/>'),
     "update": ("#5cc8ff", "#1f78e0", '<path d="M44.6 27.5A13.5 13.5 0 1 0 45 36"/><path d="M45.5 19.5v8.2h-8.2"/><path d="M32 25.5v11.5M27.2 32.6l4.8 4.8 4.8-4.8"/>'),
-    # Settings' own Home row: a house in the Fennek violet, with a lit window.
-    "home": ("#b39bff", "#6d3fe0", '<path d="M18 31.5L32 20l14 11.5"/><path d="M22.5 28.5V44h19V28.5"/><path d="M29 44v-7.5h6V44"/><circle cx="32" cy="29.5" r="1.7" fill="#fff" stroke="none"/>'),
+    "home": HOME,
 }
 for k, g in settings.items():
     s = app(*g)
