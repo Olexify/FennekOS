@@ -361,12 +361,13 @@ done
 sed -e 's/^Name=Fennek$/Name=Fennek Dark/' -e 's/^Inherits=breeze,hicolor$/Inherits=breeze-dark,hicolor/' "$fni/index.theme" > "$fdi/index.theme"
 gtk-update-icon-cache -f -t "$fdi" 2>/dev/null || true
 rm -rf /usr/share/plasma/look-and-feel/org.fedoraproject.*
-# KDE's own global themes leave the list too (picking one swapped in KDE's frame, taskbar and Start menu).
-# Only their defaults + layout go: the theme list shows packages that have them, while the rest of Breeze
-# (splash, logout, fallbacks KDE relies on) stays. Automatic light/dark switching uses the Fennek themes.
-for p in org.kde.breeze.desktop org.kde.breezedark.desktop org.kde.breezetwilight.desktop; do
-    rm -rf "/usr/share/plasma/look-and-feel/$p/contents/defaults" "/usr/share/plasma/look-and-feel/$p/contents/layouts"
+# KDE's own global themes leave every theme list (Quick Settings lists all packages, whatever they hold; picking
+# one swapped in KDE's frame, taskbar and Start menu). The screens Fennek's themes took from Breeze as a fallback
+# (log out, on-screen notices, window switcher...) are copied into each of them first, so nothing relies on Breeze.
+for t in /usr/share/plasma/look-and-feel/org.fennek.*desktop; do
+    cp -an /usr/share/plasma/look-and-feel/org.kde.breeze.desktop/contents/. "$t/contents/"
 done
+rm -rf /usr/share/plasma/look-and-feel/org.kde.breeze.desktop /usr/share/plasma/look-and-feel/org.kde.breezedark.desktop     /usr/share/plasma/look-and-feel/org.kde.breezetwilight.desktop
 kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key DefaultLightLookAndFeel org.fennek.desktop
 kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key DefaultDarkLookAndFeel org.fennek.dark.desktop
 # Window frame per theme: Fennek Classic (white title bar) / Fennek Classic Dark, generated from it by color swap.
