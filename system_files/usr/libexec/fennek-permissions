@@ -9,9 +9,11 @@ fennek-run-exe's sandbox choices and the no-internet list).
   fennek-permissions reset APP-ID                      back to what the app asks for itself
   fennek-permissions program SHA256 run sandbox|sandbox-sound|trusted|ask
   fennek-permissions program SHA256 internet on|off    (sandboxed programs)
+  fennek-permissions new-apps                          a notice for each app installed since last time, with what it
+                                                       may reach (Review opens this page); the first run only records
   fennek-permissions --selftest
 """
-import configparser, json, os, re, subprocess, sys
+import configparser, html, json, os, re, subprocess, sys
 from pathlib import Path
 
 CFG = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "fennek"
@@ -154,6 +156,40 @@ def set_program(d, what, value):
         raise ValueError(what)
 
 
+# ---- new apps -----------------------------------------------------------------------------------------------
+def new_apps(current, known):
+    """Apps in CURRENT not in KNOWN (both lists of ids); None on the very first run (record only, no notices)."""
+    if known is None:
+        return None
+    return [a for a in current if a not in set(known)]
+
+
+def notice_new_apps():
+    known_file = CFG / "known-apps"
+    known = lines("known-apps") if known_file.is_file() else None
+    found = apps()
+    fresh = new_apps([a["id"] for a in found], known)
+    write("known-apps", sorted({a["id"] for a in found} | set(known or [])))
+    for a in found:
+        if fresh and a["id"] in fresh:
+            subprocess.Popen(["sh", "-c", 'r=$(notify-send -a "App permissions" -i "$1" --action=review=Review --wait "$2" "$3"); '
+                              '[ "$r" = review ] && exec fennek-app settings permissions', "sh",
+                              a["id"], html.escape(a["name"]) + " was installed", "It can reach: " + summary_text(a["perms"])],
+                             start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def summary_text(p):
+    parts = []
+    if p["network"]: parts.append("the internet")
+    if p["host"]: parts.append("the whole computer")
+    elif p["home"]: parts.append("your home folder")
+    else: parts += [k.capitalize() for k in FOLDERS if p[k]]
+    if p["sound"]: parts.append("sound and microphone")
+    if p["devices"]: parts.append("camera and devices")
+    if p["launch"]: parts.append("starting other programs")
+    return ", ".join(parts) if parts else "nothing outside its box"
+
+
 # ---- check --------------------------------------------------------------------------------------------------
 def selftest():
     import tempfile
@@ -189,12 +225,19 @@ def selftest():
     assert programs()[0]["internet"] is False
     set_program(d, "internet", "on")
     assert programs()[0]["internet"] is True and lines("offline-exes") == []
+    assert new_apps(["a", "b"], None) is None, "first run: no notices"
+    assert new_apps(["a", "b", "c"], ["a", "b"]) == ["c"] and new_apps(["a"], ["a", "x"]) == []
+    t = summary_text({"network": True, "host": False, "home": False, "documents": True, "downloads": False, "pictures": False,
+                      "music": False, "videos": False, "sound": False, "devices": False, "launch": True})
+    assert t == "the internet, Documents, starting other programs", t
     print("selftest ok")
 
 
 def main(a):
     if a == ["--selftest"]:
         return selftest()
+    if a == ["new-apps"]:
+        return notice_new_apps()
     if a == ["list"]:
         print(json.dumps({"apps": apps(), "programs": programs()}))
         return

@@ -1,0 +1,11 @@
+[Unit]
+Description=Watch for newly installed apps (App permissions)
+
+[Path]
+# Store apps installed for everyone or for this account
+PathChanged=/var/lib/flatpak/app
+PathChanged=%h/.local/share/flatpak/app
+Unit=fennek-new-apps.service
+
+[Install]
+WantedBy=graphical-session.target

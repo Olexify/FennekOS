@@ -1,0 +1,9 @@
+[Unit]
+Description=Say what a newly installed app may reach (App permissions)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/fennek-permissions new-apps
+
+[Install]
+WantedBy=graphical-session.target
