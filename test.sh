@@ -141,6 +141,7 @@ an=$(mktemp -d) && mkdir -p "$an/exp" && printf '[Desktop Entry]\nName=Okular\nE
   && grep -q '^Name=PDF Reader$' "$an/applications/org.kde.okular.desktop" && rm "$an/exp/org.kde.okular.desktop" \
   && FENNEK_FLATPAK_EXPORTS="$an/exp" XDG_DATA_HOME="$an" /usr/libexec/fennek-app-names && [ ! -e "$an/applications/org.kde.okular.desktop" ] \
   && [ -L /etc/systemd/user/graphical-session.target.wants/fennek-app-names.service ] || fail "plain names for everyday apps"
+an=$(mktemp -d) && mkdir -p "$an/exp" && printf '[Desktop Entry]\nName=KClock\n' > "$an/exp/org.kde.kclock.desktop"   && FENNEK_FLATPAK_EXPORTS="$an/exp" XDG_DATA_HOME="$an" /usr/libexec/fennek-app-names && grep -qx 'Name=Alarms & Clock' "$an/applications/org.kde.kclock.desktop"   && /usr/libexec/fennek-essential-apps --list | grep -q org.kde.kamoso || fail "Camera and Alarms & Clock among the everyday apps"; rm -rf "$an"
 rm -rf "$an"
 # Fennek colour schemes: violet instead of Breeze blue; system default for new users; existing users switched once.
 grep -q '^Name=Fennek Light$' /usr/share/color-schemes/FennekLight.colors && ! grep -q '61,174,233' /usr/share/color-schemes/FennekLight.colors   && grep -q '^Name=Fennek Dark$' /usr/share/color-schemes/FennekDark.colors && ! grep -q '61,174,233' /usr/share/color-schemes/FennekDark.colors   && [ "$(kreadconfig6 --file /etc/xdg/kdeglobals --group Colors:Selection --key BackgroundNormal)" = 109,69,184 ]   && grep -q '^ColorScheme=FennekDark' /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults || fail "Fennek colour schemes"

@@ -6,13 +6,15 @@ set -u
 src=${FENNEK_FLATPAK_EXPORTS:-/var/lib/flatpak/exports/share/applications}
 dst=${XDG_DATA_HOME:-$HOME/.local/share}/applications
 declare -A names=([org.kde.gwenview]=Photos [org.kde.okular]="PDF Reader" [org.kde.haruna]="Media Player"
-                  [org.kde.elisa]=Music [org.kde.kcalc]=Calculator [org.kde.kolourpaint]=Paint [org.kde.skanpage]=Scanner)
+                  [org.kde.elisa]=Music [org.kde.kcalc]=Calculator [org.kde.kolourpaint]=Paint [org.kde.skanpage]=Scanner
+                  [org.kde.kamoso]=Camera [org.kde.kclock]="Alarms & Clock")
 mkdir -p "$dst"
 for id in "${!names[@]}"; do
     out=$dst/$id.desktop
     if [ -f "$src/$id.desktop" ]; then
         # Only the first Name= (the main entry); translations and actions stay the app's own.
-        sed -e "0,/^Name=.*/s//Name=${names[$id]}/" -e '/^Name\[en_[A-Za-z@]*\]=/d' "$src/$id.desktop" >"$out.tmp" \
+        name=${names[$id]//&/\\&}   # "&" means "the matched text" to sed
+        sed -e "0,/^Name=.*/s//Name=$name/" -e '/^Name\[en_[A-Za-z@]*\]=/d' "$src/$id.desktop" >"$out.tmp" \
             && printf 'X-Fennek-Renamed=true\n' >>"$out.tmp" && mv "$out.tmp" "$out"
     elif grep -qs '^X-Fennek-Renamed=true' "$out"; then
         rm -f "$out"   # app was removed: don't leave a dead launcher
