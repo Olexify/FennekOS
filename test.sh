@@ -30,8 +30,8 @@ grep -q '^Image=Fennek' /usr/share/plasma/look-and-feel/org.fennek.desktop/conte
 python3 - <<'PY' || fail "a desktop update script is malformed"
 import glob, re
 for f in glob.glob("/usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/fennek-*.js"):
-    code = re.sub(r"//[^\n]*", "", open(f).read())
-    code = re.sub(r'"(\\.|[^"\\])*"', '""', code)
+    # strings and comments in one pass: "preferred://x" is a string, not a comment
+    code = re.sub(r'"(?:\\.|[^"\\])*"|//[^\n]*', lambda m: '""' if m.group(0)[0] == '"' else "", open(f).read())
     stack, pairs = [], {")": "(", "]": "[", "}": "{"}
     for ch in code:
         if ch in "([{": stack.append(ch)
