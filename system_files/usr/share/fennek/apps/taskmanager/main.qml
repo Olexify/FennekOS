@@ -221,6 +221,8 @@ QQC2.ApplicationWindow {
         property string label
         text: label + (root.sortKey === key ? (root.sortDown ? " ▾" : " ▴") : "")
         flat: true
+        leftPadding: Kirigami.Units.largeSpacing   // the rows' own padding: titles sit over their columns
+        contentItem: QQC2.Label { text: parent.text; opacity: 0.75; horizontalAlignment: Text.AlignLeft; elide: Text.ElideRight }
         onClicked: { if (root.sortKey === key) root.sortDown = !root.sortDown; else { root.sortKey = key; root.sortDown = key === "cpu" || key === "mem" } }
     }
     // A line graph of the last minute
@@ -398,11 +400,14 @@ QQC2.ApplicationWindow {
                                 Layout.preferredWidth: Kirigami.Units.gridUnit * 4
                                 Layout.preferredHeight: Kirigami.Units.gridUnit * 2.4
                                 color: "transparent"
-                                border.color: Qt.rgba(Kirigami.Theme.highlightColor.r, Kirigami.Theme.highlightColor.g, Kirigami.Theme.highlightColor.b, 0.5)
-                                Graph { anchors.fill: parent; anchors.margins: 1; values: modelData[1]; ceiling: modelData[2] }
+                                // on the picked one (violet behind it) the graph is drawn in the text colour
+                                readonly property color tone: root.perfView === index ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.highlightColor
+                                border.color: Qt.rgba(tone.r, tone.g, tone.b, 0.5)
+                                Graph { anchors.fill: parent; anchors.margins: 1; values: modelData[1]; ceiling: modelData[2]; lineColor: parent.tone }
                             }
                             ColumnLayout {
                                 spacing: 0
+                                Layout.fillWidth: true
                                 QQC2.Label { text: modelData[0]; font.weight: Font.DemiBold }
                                 QQC2.Label { text: modelData[3]; opacity: 0.7; font: Kirigami.Theme.smallFont }
                             }
@@ -526,7 +531,6 @@ QQC2.ApplicationWindow {
             spacing: 0
             RowLayout {
                 Layout.fillWidth: true
-                Layout.leftMargin: Kirigami.Units.smallSpacing
                 Layout.rightMargin: Kirigami.Units.largeSpacing * 2
                 spacing: 0
                 SortTitle { key: "name"; label: "Name"; Layout.preferredWidth: Kirigami.Units.gridUnit * 10 }
@@ -584,6 +588,13 @@ QQC2.ApplicationWindow {
                 model: root.tab === 6 ? root.shownUnits() : []
                 reuseItems: true
                 QQC2.ScrollBar.vertical: QQC2.ScrollBar {}
+                Kirigami.PlaceholderMessage {
+                    anchors.centerIn: parent
+                    width: parent.width - Kirigami.Units.gridUnit * 4
+                    visible: parent.count === 0
+                    text: root.filter !== "" ? "No service matches" : "No services to show"
+                    explanation: root.filter !== "" ? "" : "The list of services couldn't be read on this system."
+                }
                 delegate: QQC2.ItemDelegate {
                     required property var modelData
                     width: ListView.view.width
