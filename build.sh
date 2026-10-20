@@ -373,7 +373,8 @@ rm -rf /usr/share/plasma/look-and-feel/org.fedoraproject.*
 for t in /usr/share/plasma/look-and-feel/org.fennek.*desktop; do
     cp -an /usr/share/plasma/look-and-feel/org.kde.breeze.desktop/contents/. "$t/contents/"
 done
-rm -rf /usr/share/plasma/look-and-feel/org.kde.breeze.desktop /usr/share/plasma/look-and-feel/org.kde.breezedark.desktop     /usr/share/plasma/look-and-feel/org.kde.breezetwilight.desktop
+ls -d /usr/share/plasma/look-and-feel/*/
+rm -rf /usr/share/plasma/look-and-feel/org.kde.*
 kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key DefaultLightLookAndFeel org.fennek.desktop
 kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key DefaultDarkLookAndFeel org.fennek.dark.desktop
 # Window frame per theme: Fennek Classic (white title bar) / Fennek Classic Dark, generated from it by color swap.

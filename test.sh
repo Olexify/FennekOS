@@ -250,7 +250,8 @@ grep -q "nmi_watchdog=0" /usr/lib/bootc/kargs.d/20-fennek-battery.toml && grep -
 grep -q "^ColorScheme=FennekDark" /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults || fail "Fennek Dark colors"
 grep -q "^theme=__aurorae__svg__FennekClassicDark" /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults && grep -q "^theme=__aurorae__svg__FennekClassic$" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults && grep -q "fill=\"#202020\"" /usr/share/aurorae/themes/FennekClassicDark/decoration.svg && [ -s /usr/share/aurorae/themes/FennekClassicDark/FennekClassicDarkrc ] || fail "window frame follows light/dark theme"
 ! ls -d /usr/share/plasma/look-and-feel/org.fedoraproject.* 2>/dev/null || fail "Fedora global themes still listed"
-! ls -d /usr/share/plasma/look-and-feel/org.kde.* 2>/dev/null && [ -f /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/logout/Logout.qml ]   && [ -d /usr/share/plasma/look-and-feel/org.fennek.amber.desktop/contents/systemdialog ] || fail "KDE global themes still listed, or Fennek's themes miss a screen"
+for x in org.kde.breeze.desktop org.kde.breezedark.desktop org.kde.breezetwilight.desktop; do [ ! -e "/usr/share/plasma/look-and-feel/$x" ] || fail "KDE global theme still listed: $x"; done
+for x in org.fennek.dark.desktop/contents/logout org.fennek.amber.desktop/contents/systemdialog; do [ -d "/usr/share/plasma/look-and-feel/$x" ] || fail "Fennek's theme misses a screen: $x ($(ls /usr/share/plasma/look-and-feel/${x%%/*}/contents | xargs))"; done
 grep -aq fennekCollapsedGroups "$(ls /usr/lib64/libdolphinprivate.so.*.* | head -1)" || fail "Files: Fennek's patched view (no group lines, groups fold)"
 # Taskbar button right-click > App permissions: the task manager rebuilt with the item (its QML is compiled in, so the
 # check is "not Fedora's file any more"), and the link it opens lands on Settings > App permissions.
