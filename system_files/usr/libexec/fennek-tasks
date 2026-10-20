@@ -11,6 +11,12 @@ already keeps (each app and service runs in its own cgroup).
                                item: {unit, name, icon, desc, cpu (% of the whole computer), mem (bytes),
                                can_end, procs: [{pid, name, mem}]}
   fennek-tasks end UNIT        stop one of your apps or background services
+  fennek-tasks kill PID        end one process of yours (asked to close, made to after 3 seconds)
+  fennek-tasks perf            counters for the Performance graphs (the window turns them into rates)
+  fennek-tasks details         every process: pid, name, user, status, cpu, mem, cmd, own
+  fennek-tasks users           who is signed in, with their processes' cpu and memory
+  fennek-tasks services        every service (the computer's and your account's): unit, desc, active, sub, scope
+  fennek-tasks service start|stop|restart system|user UNIT   (the computer's ask for an administrator)
   fennek-tasks --selftest
 """
 import json, os, re, subprocess, sys, time
@@ -45,11 +51,166 @@ def tree_procs(cg):
 
 def proc_info(pid):
     name = read(f"/proc/{pid}/comm").strip() or str(pid)
-    rss = 0
+    rss, uid, state = 0, -1, ""
     for line in read(f"/proc/{pid}/status").splitlines():
         if line.startswith("VmRSS:"):
             rss = int(line.split()[1]) * 1024
-    return {"pid": pid, "name": name, "mem": rss}
+        elif line.startswith("Uid:"):
+            uid = int(line.split()[1])
+        elif line.startswith("State:"):
+            state = line.split()[1]
+    return {"pid": pid, "name": name, "mem": rss, "uid": uid, "state": state, "own": uid == os.getuid()}
+
+
+def proc_ticks(pid):
+    """utime + stime of one process, in clock ticks (fields after the name, which may hold spaces)."""
+    st = read(f"/proc/{pid}/stat")
+    rest = st[st.rfind(")") + 2:].split()
+    return int(rest[11]) + int(rest[12]) if len(rest) > 12 else 0
+
+
+def pids():
+    return [int(p) for p in os.listdir("/proc") if p.isdigit()]
+
+
+def user_name(uid, cache={}):
+    if uid not in cache:
+        import pwd
+        try:
+            cache[uid] = pwd.getpwuid(uid).pw_name
+        except KeyError:
+            cache[uid] = str(uid)
+    return cache[uid]
+
+
+STATES = {"R": "Running", "S": "Running", "D": "Waiting", "I": "Running", "T": "Paused", "t": "Paused", "Z": "Ended",
+          "X": "Ended"}
+
+
+def details():
+    hz = os.sysconf("SC_CLK_TCK")
+    first = {p: proc_ticks(p) for p in pids()}
+    t0 = time.monotonic()
+    time.sleep(0.5)
+    dt = time.monotonic() - t0
+    cpus = os.cpu_count() or 1
+    out = []
+    for p in pids():
+        i = proc_info(p)
+        if i["uid"] < 0:
+            continue   # gone meanwhile
+        cpu = max(0.0, (proc_ticks(p) - first.get(p, 0)) / hz / dt / cpus * 100)
+        cmd = read(f"/proc/{p}/cmdline").replace("\0", " ").strip()[:300]
+        out.append({"pid": p, "name": i["name"], "user": user_name(i["uid"]), "status": STATES.get(i["state"], "Running"),
+                    "cpu": round(cpu, 1), "mem": i["mem"], "cmd": cmd, "own": i["own"]})
+    return out
+
+
+def kill(pid):
+    """End one process of yours: asked to close (TERM), made to (KILL) if it is still there after 3 seconds."""
+    import signal
+    if not str(pid).isdigit() or int(pid) <= 1 or proc_info(int(pid))["uid"] != os.getuid():
+        sys.exit("only your own processes can be ended here")
+    pid = int(pid)
+    try:
+        os.kill(pid, signal.SIGTERM)
+        for _ in range(30):
+            time.sleep(0.1)
+            os.kill(pid, 0)
+        os.kill(pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+
+
+def perf():
+    cpu = []
+    for line in read("/proc/stat").splitlines():
+        if line.startswith("cpu"):
+            v = [int(x) for x in line.split()[1:]]
+            cpu.append([sum(v[:8]), v[3] + (v[4] if len(v) > 4 else 0)])   # total, idle + iowait
+    mem = {}
+    for line in read("/proc/meminfo").splitlines():
+        k, _, v = line.partition(":")
+        mem[k] = int(v.split()[0]) * 1024 if v.split() else 0
+    rd = wr = 0
+    for line in read("/proc/diskstats").splitlines():
+        f = line.split()
+        # whole disks only (sda, nvme0n1, vda, mmcblk0), not their partitions or loop/zram devices
+        if len(f) > 9 and re.match(r"^(sd[a-z]+|vd[a-z]+|xvd[a-z]+|nvme\d+n\d+|mmcblk\d+)$", f[2]):
+            rd += int(f[5]) * 512
+            wr += int(f[9]) * 512
+    rx = tx = 0
+    for line in read("/proc/net/dev").splitlines()[2:]:
+        name, _, v = line.partition(":")
+        if name.strip() != "lo" and v.split():
+            rx += int(v.split()[0])
+            tx += int(v.split()[8])
+    model = ""
+    for line in read("/proc/cpuinfo").splitlines():
+        if line.startswith("model name"):
+            model = line.split(":", 1)[1].strip()
+            break
+    threads = 0
+    ps = pids()
+    for p in ps:
+        for line in read(f"/proc/{p}/status").splitlines():
+            if line.startswith("Threads:"):
+                threads += int(line.split()[1])
+                break
+    up = float(read("/proc/uptime", "0").split()[0] or 0)
+    total, avail = mem.get("MemTotal", 0), mem.get("MemAvailable", 0)
+    return {"cpu": cpu[0] if cpu else [0, 0], "cores": len(cpu) - 1, "cpu_name": model,
+            "mem_total": total, "mem_used": total - avail, "mem_cached": mem.get("Cached", 0),
+            "swap_total": mem.get("SwapTotal", 0), "swap_used": mem.get("SwapTotal", 0) - mem.get("SwapFree", 0),
+            "disk": [rd, wr], "net": [rx, tx], "procs": len(ps), "threads": threads, "uptime": int(up)}
+
+
+def users():
+    """People signed in (loginctl), with what their processes use right now."""
+    out = subprocess.run(["loginctl", "list-users", "--no-legend", "--no-pager"], capture_output=True, text=True).stdout
+    signed = {int(l.split()[0]): l.split()[1] for l in out.splitlines() if l.split() and l.split()[0].isdigit()}
+    if not signed:
+        signed = {os.getuid(): user_name(os.getuid())}
+    hz = os.sysconf("SC_CLK_TCK")
+    first = {p: proc_ticks(p) for p in pids()}
+    t0 = time.monotonic()
+    time.sleep(0.5)
+    dt = time.monotonic() - t0
+    cpus = os.cpu_count() or 1
+    tot = {u: {"cpu": 0.0, "mem": 0, "procs": 0} for u in signed}
+    for p in pids():
+        i = proc_info(p)
+        if i["uid"] in tot:
+            t = tot[i["uid"]]
+            t["cpu"] += max(0.0, (proc_ticks(p) - first.get(p, 0)) / hz / dt / cpus * 100)
+            t["mem"] += i["mem"]
+            t["procs"] += 1
+    return [{"uid": u, "name": n, "you": u == os.getuid(), "cpu": round(tot[u]["cpu"], 1), "mem": tot[u]["mem"],
+             "procs": tot[u]["procs"]} for u, n in sorted(signed.items())]
+
+
+def services():
+    out = []
+    for scope in ("system", "user"):
+        cmd = ["systemctl"] + (["--user"] if scope == "user" else []) + \
+              ["list-units", "--type=service", "--all", "--no-pager", "--output=json"]
+        try:
+            units = json.loads(subprocess.run(cmd, capture_output=True, text=True).stdout or "[]")
+        except ValueError:
+            units = []
+        for u in units:
+            if UNIT.match(u.get("unit", "")):
+                out.append({"unit": u["unit"], "desc": u.get("description", ""), "active": u.get("active", ""),
+                            "sub": u.get("sub", ""), "scope": scope})
+    return out
+
+
+def service(action, scope, unit):
+    if action not in ("start", "stop", "restart") or scope not in ("system", "user") or not UNIT.match(unit) \
+            or not unit.endswith(".service"):
+        sys.exit("not a service action")
+    cmd = ["systemctl"] + (["--user"] if scope == "user" else []) + [action, "--", unit]
+    sys.exit(subprocess.run(cmd).returncode)
 
 
 def app_id(unit):
@@ -183,6 +344,17 @@ def selftest():
     assert app_id("app-org.kde.konsole\\x2dterminal@1.service") == "org.kde.konsole-terminal"
     assert UNIT.match("app-org.kde.dolphin@3f2a.service") and not UNIT.match("../evil.service") and not UNIT.match("x;rm.scope")
     assert any(i["procs"] for i in plain_processes()) or not os.path.isdir("/proc/1")
+    d = details()
+    assert any(x["pid"] == os.getpid() and x["own"] for x in d), "this process is listed as yours"
+    pf = perf()
+    assert pf["mem_total"] > 0 and pf["procs"] > 0 and len(pf["cpu"]) == 2
+    assert proc_ticks(os.getpid()) >= 0
+    for bad in ("1; rm", "../x", ""):
+        try:
+            kill(bad)
+            raise AssertionError("kill accepted " + bad)
+        except SystemExit:
+            pass
     print("selftest ok")
 
 
@@ -194,5 +366,17 @@ if __name__ == "__main__":
         print(json.dumps(snapshot()))
     elif len(a) == 2 and a[0] == "end":
         end(a[1])
+    elif len(a) == 2 and a[0] == "kill":
+        kill(a[1])
+    elif a == ["perf"]:
+        print(json.dumps(perf()))
+    elif a == ["details"]:
+        print(json.dumps(details()))
+    elif a == ["users"]:
+        print(json.dumps(users()))
+    elif a == ["services"]:
+        print(json.dumps(services()))
+    elif len(a) == 4 and a[0] == "service":
+        service(a[1], a[2], a[3])
     else:
         sys.exit(__doc__)
