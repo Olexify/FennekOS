@@ -5,14 +5,29 @@ The list (/usr/share/fennek/wallpapers.json) pins one commit of github.com/Olexi
 size and SHA-256; a download that doesn't match is thrown away. A picture lands in the account's own wallpapers
 (~/.local/share/wallpapers/ID), where the Background page and the themes find it.
 
-  fennek-wallpaper-get --list           JSON: [{id, name, installed, image}]
+  fennek-wallpaper-get --list           JSON: [{id, name, installed, image, preview}]
+  fennek-wallpaper-get --previews       fetch the small previews not on this PC yet (checked like the pictures),
+                                        into ~/.cache/fennek/wallpaper-previews; Personalize shows them
   fennek-wallpaper-get ID               fetch (if missing); prints the wallpaper's folder
   fennek-wallpaper-get --selftest
 """
-import hashlib, json, os, sys, tempfile, urllib.request
+import hashlib, json, os, re, sys, tempfile, urllib.request
 
 LIST = "/usr/share/fennek/wallpapers.json"
 MAX = 30 * 1024 * 1024
+
+
+def preview_dir():
+    return os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.cache"), "fennek", "wallpaper-previews")
+
+
+def preview_path(item):
+    return os.path.join(preview_dir(), item["file"]) if item.get("preview") else ""
+
+
+def check(data, size, sha):
+    if len(data) != size or hashlib.sha256(data).hexdigest() != sha:
+        raise ValueError("the download doesn't match the checked picture")
 
 
 def home_dir():
@@ -38,8 +53,7 @@ def installed(item, root=None):
 
 def install(item, data, root=None):
     """Check DATA against the pinned size and SHA-256, then write the wallpaper package."""
-    if len(data) != item["bytes"] or hashlib.sha256(data).hexdigest() != item["sha256"]:
-        raise ValueError("the download doesn't match the checked picture")
+    check(data, item["bytes"], item["sha256"])
     img = image_path(item, root)
     os.makedirs(os.path.dirname(img), exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=os.path.dirname(img))
@@ -52,13 +66,31 @@ def install(item, data, root=None):
     return folder(item, root)
 
 
-def fetch(lst, item):
-    url = f'https://raw.githubusercontent.com/{lst["repo"]}/{lst["commit"]}/{item["file"]}'
+def fetch(lst, item, path=None):
+    url = f'https://raw.githubusercontent.com/{lst["repo"]}/{lst["commit"]}/{path or item["file"]}'
     with urllib.request.urlopen(url, timeout=60) as r:
         data = r.read(MAX + 1)
     if len(data) > MAX:
         raise ValueError("too big")
     return data
+
+
+def fetch_previews(lst):
+    """The small previews Personalize shows, once each, checked against the list; failures are just skipped."""
+    os.makedirs(preview_dir(), exist_ok=True)
+    for w in lst["wallpapers"]:
+        p = preview_path(w)
+        if not p or os.path.isfile(p) or not re.match(r"^previews/[A-Za-z0-9._-]+\.jpg$", w["preview"]):
+            continue
+        try:
+            data = fetch(lst, w, w["preview"])
+            check(data, w["preview_bytes"], w["preview_sha256"])
+        except Exception:
+            continue
+        fd, tmp = tempfile.mkstemp(dir=preview_dir())
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+        os.replace(tmp, p)
 
 
 def selftest():
@@ -82,6 +114,7 @@ def selftest():
             lst = load()
             assert len(lst["commit"]) == 40 and lst["wallpapers"]
             assert all(len(w["sha256"]) == 64 and w["bytes"] > 0 and "/" not in w["file"] for w in lst["wallpapers"])
+            assert all(len(w.get("preview_sha256", "")) == 64 for w in lst["wallpapers"]), "every picture has a checked preview"
     finally:
         shutil.rmtree(root)
     print("selftest ok")
@@ -93,8 +126,12 @@ def main(args):
     lst = load()
     if args == ["--list"]:
         print(json.dumps([{"id": w["id"], "name": w["name"], "installed": installed(w),
-                           "image": image_path(w) if installed(w) else ""} for w in lst["wallpapers"]]))
+                           "image": image_path(w) if installed(w) else "",
+                           "preview": preview_path(w) if preview_path(w) and os.path.isfile(preview_path(w)) else ""}
+                          for w in lst["wallpapers"]]))
         return
+    if args == ["--previews"]:
+        return fetch_previews(lst)
     if len(args) != 1:
         sys.exit(__doc__)
     item = next((w for w in lst["wallpapers"] if w["id"] == args[0]), None)

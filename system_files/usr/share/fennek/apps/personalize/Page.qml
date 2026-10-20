@@ -28,9 +28,11 @@ Item {
     property string look: ""
     property string busy: ""        // the theme or wallpaper being downloaded
     property string failedMsg: ""
-    property var walls: []          // the extra wallpapers: [{id, name, installed}]
+    property var walls: []          // the extra wallpapers: [{id, name, installed, image, preview}]
+    property bool previewsAsked: false
     readonly property var themeWalls: ["Amber", "Sakura", "Royal", "Arcade"]
     readonly property string wallsCmd: "/usr/libexec/fennek-wallpaper-get --list"
+    readonly property string previewsCmd: "/usr/libexec/fennek-wallpaper-get --previews"
     // A theme: its picture first (fetched once), then the look.
     function applyTheme(t) {
         failedMsg = ""
@@ -57,8 +59,14 @@ Item {
         engine: "executable"
         connectedSources: [root.getCmd, root.wallsCmd]
         onNewData: (source, data) => {
-            if (source === root.wallsCmd) {
+            if (source === root.previewsCmd) {   // the small previews are here: show them
+                connectSource(root.wallsCmd)
+            } else if (source === root.wallsCmd) {
                 try { root.walls = JSON.parse(data.stdout).filter(w => root.themeWalls.indexOf(w.id) < 0) } catch (e) {}
+                if (!root.previewsAsked && root.walls.some(w => !w.installed && !w.preview)) {
+                    root.previewsAsked = true
+                    connectSource(root.previewsCmd)
+                }
             } else if (source.startsWith("sh -c ")) {   // a theme or wallpaper fetched (or not)
                 if (data["exit code"] === 0) {
                     const out = data.stdout.trim()
@@ -199,18 +207,34 @@ Item {
                                     color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, wcard.hovered ? 0.12 : 0.06)
                                     border.width: 1
                                     border.color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, wcard.hovered ? 0.35 : 0.12)
-                                    Image {
+                                    Image {   // the picture itself once it's here, before that its small preview
                                         anchors.fill: parent
                                         anchors.margins: 1
-                                        visible: wcard.modelData.installed
-                                        source: wcard.modelData.image ? "file://" + wcard.modelData.image : ""
+                                        visible: source != ""
+                                        source: wcard.modelData.image ? "file://" + wcard.modelData.image
+                                              : wcard.modelData.preview ? "file://" + wcard.modelData.preview : ""
                                         sourceSize: Qt.size(384, 216)
                                         fillMode: Image.PreserveAspectCrop
                                         asynchronous: true
                                     }
-                                    ColumnLayout {   // not on this PC yet
+                                    Rectangle {   // not on this PC yet: a small "Get" badge over the preview
+                                        visible: !wcard.modelData.installed && !!wcard.modelData.preview
+                                        anchors { right: parent.right; bottom: parent.bottom; margins: 6 }
+                                        radius: height / 2
+                                        color: Qt.rgba(0, 0, 0, 0.55)
+                                        width: getRow.implicitWidth + 14
+                                        height: getRow.implicitHeight + 6
+                                        RowLayout {
+                                            id: getRow
+                                            anchors.centerIn: parent
+                                            spacing: 4
+                                            Kirigami.Icon { source: "download"; color: "white"; isMask: true; Layout.preferredWidth: 14; Layout.preferredHeight: 14 }
+                                            QQC2.Label { text: "Get"; color: "white"; font: Kirigami.Theme.smallFont }
+                                        }
+                                    }
+                                    ColumnLayout {   // not on this PC yet and no preview (offline)
                                         anchors.centerIn: parent
-                                        visible: !wcard.modelData.installed
+                                        visible: !wcard.modelData.installed && !wcard.modelData.preview
                                         Kirigami.Icon { source: "download"; Layout.alignment: Qt.AlignHCenter; Layout.preferredWidth: 28; Layout.preferredHeight: 28; opacity: 0.7 }
                                         QQC2.Label { text: "Get"; opacity: 0.7; Layout.alignment: Qt.AlignHCenter }
                                     }

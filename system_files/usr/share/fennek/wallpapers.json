@@ -1,6 +1,6 @@
 {
  "repo": "Olexify/FennekWallpapers",
- "commit": "49d1fae35675e7da093b9c2c585c804936d213d4",
+ "commit": "557760932bb9df19d097b2579d9ba828652e7098",
  "wallpapers": [
   {
    "id": "Amber",
@@ -9,7 +9,10 @@
    "bytes": 1059584,
    "width": 3840,
    "height": 2160,
-   "sha256": "23626a9b3e53711f628e9a8b279d87eb91180e675368f2e1f66e24f06ebc2ac7"
+   "sha256": "23626a9b3e53711f628e9a8b279d87eb91180e675368f2e1f66e24f06ebc2ac7",
+   "preview": "previews/Amber.jpg",
+   "preview_bytes": 9137,
+   "preview_sha256": "093dbab82d1d89f3e3a55b2170f5bb1a4e6d4e6a06a528abf2111ae5fc4afe1f"
   },
   {
    "id": "Arcade",
@@ -18,7 +21,10 @@
    "bytes": 639911,
    "width": 3840,
    "height": 2160,
-   "sha256": "cebfa717c35e902810dea2d77b4ff416db0efeae00e93a7433e463a9f4bdb3f1"
+   "sha256": "cebfa717c35e902810dea2d77b4ff416db0efeae00e93a7433e463a9f4bdb3f1",
+   "preview": "previews/Arcade.jpg",
+   "preview_bytes": 15069,
+   "preview_sha256": "acddf8346385d1ffed5aa0f4092736ac045c13c48c6ac9b2228f69024ab5f2c0"
   },
   {
    "id": "Fennek-Classic",
@@ -27,7 +33,10 @@
    "bytes": 211165,
    "width": 3840,
    "height": 2160,
-   "sha256": "f479450ccacf9af3b93626f7f600f73b8af28c036aff8466e33956b42e9d89ed"
+   "sha256": "f479450ccacf9af3b93626f7f600f73b8af28c036aff8466e33956b42e9d89ed",
+   "preview": "previews/Fennek-Classic.jpg",
+   "preview_bytes": 7035,
+   "preview_sha256": "55b077bdc350cf2bd72edfbb4f5796b7310442557c7a1af4f30169455f6c3c7c"
   },
   {
    "id": "Kitsumi-Night",
@@ -36,7 +45,10 @@
    "bytes": 306180,
    "width": 1672,
    "height": 941,
-   "sha256": "445d17b413a9aabafc99d9b602f580c735432620481a7450cc87f8e184876049"
+   "sha256": "445d17b413a9aabafc99d9b602f580c735432620481a7450cc87f8e184876049",
+   "preview": "previews/Kitsumi-Night.jpg",
+   "preview_bytes": 29128,
+   "preview_sha256": "a9916ad393271f6fcc911011bfa34ee252ce26bcb6866309f99c00f56b93a30a"
   },
   {
    "id": "Leonote-Graph",
@@ -45,7 +57,10 @@
    "bytes": 235618,
    "width": 3840,
    "height": 2160,
-   "sha256": "aabdd871e656521fec5d06104783804d9cdfd580bf632ed6d119bd3ef4d7751e"
+   "sha256": "aabdd871e656521fec5d06104783804d9cdfd580bf632ed6d119bd3ef4d7751e",
+   "preview": "previews/Leonote-Graph.jpg",
+   "preview_bytes": 7990,
+   "preview_sha256": "527bd1f4e7c8473561b5642d48e3a437b219195078e53e1788e9ee4bffa41fa3"
   },
   {
    "id": "Leonote-Night",
@@ -54,7 +69,10 @@
    "bytes": 274756,
    "width": 3840,
    "height": 2160,
-   "sha256": "cfda5a3599891577410e55dad0f456b7ff4944841a676e619be56481dd4413ac"
+   "sha256": "cfda5a3599891577410e55dad0f456b7ff4944841a676e619be56481dd4413ac",
+   "preview": "previews/Leonote-Night.jpg",
+   "preview_bytes": 11775,
+   "preview_sha256": "9618319cef9365bdc92f939255f00e7face44433b206d0d598e2ecc571cc981d"
   },
   {
    "id": "Leonote-Paper",
@@ -63,7 +81,10 @@
    "bytes": 235002,
    "width": 3840,
    "height": 2160,
-   "sha256": "2f0429abe0a0949405dccfe2186633c4c861dac0550dcfbe4c4e4e62930a7c0b"
+   "sha256": "2f0429abe0a0949405dccfe2186633c4c861dac0550dcfbe4c4e4e62930a7c0b",
+   "preview": "previews/Leonote-Paper.jpg",
+   "preview_bytes": 8796,
+   "preview_sha256": "3eb515f711dab6b87afcd2788a4f8044f702a1a0ecbc0fdafedc3616f5ef15b7"
   },
   {
    "id": "Royal",
@@ -72,7 +93,10 @@
    "bytes": 867629,
    "width": 3840,
    "height": 2160,
-   "sha256": "c8633eb1fc5d0656b66318f79bff0829c76964d197a67e33cfea106c2bb56e91"
+   "sha256": "c8633eb1fc5d0656b66318f79bff0829c76964d197a67e33cfea106c2bb56e91",
+   "preview": "previews/Royal.jpg",
+   "preview_bytes": 8221,
+   "preview_sha256": "ce83bd1f3fcb5ce2cf0b589495fb51af6273d72c1421e4a53146e13cdcd5b324"
   },
   {
    "id": "Sakura",
@@ -81,7 +105,10 @@
    "bytes": 394841,
    "width": 3840,
    "height": 2160,
-   "sha256": "9c1d8cdfa4b54e0ee026062d4a958ebdb996ab3247ba9a6d7fbaf8675adca655"
+   "sha256": "9c1d8cdfa4b54e0ee026062d4a958ebdb996ab3247ba9a6d7fbaf8675adca655",
+   "preview": "previews/Sakura.jpg",
+   "preview_bytes": 9544,
+   "preview_sha256": "681650fa0141447ca750ef433c087a14a3ff3c76bec812e505006d2383a84999"
   }
  ]
 }
