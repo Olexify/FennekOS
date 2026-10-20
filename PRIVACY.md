@@ -26,6 +26,8 @@ we treat it as a bug.
 | **.exe programs** (Proton/umu): first use | `github.com`, `repo.steampowered.com` | Download of Proton and its runtime (a few hundred MB), once |
 | **.exe programs**: later | the same | An update check **at most once a day**, and only for programs you trusted. **Never** for sandboxed ones. |
 | **Sandboxed .exe programs** | whatever the program contacts | The program's own traffic. Block it with right-click → **Firewall → Block internet access**. |
+| **Extra wallpapers and theme pictures** (Personalize, Fennek Live) | `raw.githubusercontent.com` (GitHub) | A download request for the picture you picked, once. It's checked against the fingerprint built into Fennek OS. |
+| **Get-it apps** (LibreOffice, MPV Player) | `flathub.org`, and for MPV's setup `codeload.github.com` | Download requests for that app, once, when you click it. MPV's setup is checked against a built-in fingerprint. |
 
 ## Programs that come with Fennek OS
 

@@ -160,6 +160,24 @@ if [ "$(cat "$files_seen" 2>/dev/null)" != 2026-10-20c ]; then   # 10-20: Inform
     mkdir -p "${files_seen%/*}" && echo 2026-10-20c >"$files_seen"
 fi
 
+# Wallpapers, once: the extra wallpapers and theme pictures left the system (they come from FennekWallpapers when
+# picked). A desktop, lock screen or Fennek Live picture that used one points to the account's own copy, which is
+# fetched in the background (no network now: the next sign-in tries again; meanwhile the desktop shows its default).
+wp_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/wallpapers-version
+if [ "$(cat "$wp_seen" 2>/dev/null)" != 2026-10-20 ]; then
+    own=${XDG_DATA_HOME:-$HOME/.local/share}/wallpapers
+    pending=0
+    conf=("${XDG_CONFIG_HOME:-$HOME/.config}/plasma-org.kde.plasma.desktop-appletsrc" "${XDG_CONFIG_HOME:-$HOME/.config}/kscreenlockerrc")
+    for w in Amber Sakura Royal Arcade Fennek-Classic Leonote-Night Leonote-Graph Leonote-Paper; do
+        for f in "${conf[@]}"; do [ -f "$f" ] && sed -i "s|file:///usr/share/wallpapers/$w/|file://$own/$w/|g" "$f"; done
+        if grep -qsF "file://$own/$w/" "${conf[@]}" && [ ! -d "$own/$w" ]; then
+            (/usr/libexec/fennek-wallpaper-get "$w" >/dev/null 2>&1 &)   # retried at the next sign-in until it's there
+            pending=1
+        fi
+    done
+    [ $pending = 0 ] && mkdir -p "${wp_seen%/*}" && echo 2026-10-20 >"$wp_seen"
+fi
+
 # Files sidebar, once: hide "Devices" (system partitions) and "Recent", the bin is Recycle Bin (English).
 pl_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/places-version
 if [ "$(cat "$pl_seen" 2>/dev/null)" != 2026-10-20b ]; then   # Home is the start place again (shown as the Home page); This PC goes; Recent hidden

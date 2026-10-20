@@ -1,0 +1,87 @@
+{
+ "repo": "Olexify/FennekWallpapers",
+ "commit": "49d1fae35675e7da093b9c2c585c804936d213d4",
+ "wallpapers": [
+  {
+   "id": "Amber",
+   "name": "Amber",
+   "file": "Amber.jpg",
+   "bytes": 1059584,
+   "width": 3840,
+   "height": 2160,
+   "sha256": "23626a9b3e53711f628e9a8b279d87eb91180e675368f2e1f66e24f06ebc2ac7"
+  },
+  {
+   "id": "Arcade",
+   "name": "Arcade",
+   "file": "Arcade.jpg",
+   "bytes": 639911,
+   "width": 3840,
+   "height": 2160,
+   "sha256": "cebfa717c35e902810dea2d77b4ff416db0efeae00e93a7433e463a9f4bdb3f1"
+  },
+  {
+   "id": "Fennek-Classic",
+   "name": "Fennek Classic",
+   "file": "Fennek-Classic.jpg",
+   "bytes": 211165,
+   "width": 3840,
+   "height": 2160,
+   "sha256": "f479450ccacf9af3b93626f7f600f73b8af28c036aff8466e33956b42e9d89ed"
+  },
+  {
+   "id": "Kitsumi-Night",
+   "name": "Kitsumi Night",
+   "file": "Kitsumi-Night.jpg",
+   "bytes": 306180,
+   "width": 1672,
+   "height": 941,
+   "sha256": "445d17b413a9aabafc99d9b602f580c735432620481a7450cc87f8e184876049"
+  },
+  {
+   "id": "Leonote-Graph",
+   "name": "Leonote Graph",
+   "file": "Leonote-Graph.jpg",
+   "bytes": 235618,
+   "width": 3840,
+   "height": 2160,
+   "sha256": "aabdd871e656521fec5d06104783804d9cdfd580bf632ed6d119bd3ef4d7751e"
+  },
+  {
+   "id": "Leonote-Night",
+   "name": "Leonote Night",
+   "file": "Leonote-Night.jpg",
+   "bytes": 274756,
+   "width": 3840,
+   "height": 2160,
+   "sha256": "cfda5a3599891577410e55dad0f456b7ff4944841a676e619be56481dd4413ac"
+  },
+  {
+   "id": "Leonote-Paper",
+   "name": "Leonote Paper",
+   "file": "Leonote-Paper.jpg",
+   "bytes": 235002,
+   "width": 3840,
+   "height": 2160,
+   "sha256": "2f0429abe0a0949405dccfe2186633c4c861dac0550dcfbe4c4e4e62930a7c0b"
+  },
+  {
+   "id": "Royal",
+   "name": "Royal",
+   "file": "Royal.jpg",
+   "bytes": 867629,
+   "width": 3840,
+   "height": 2160,
+   "sha256": "c8633eb1fc5d0656b66318f79bff0829c76964d197a67e33cfea106c2bb56e91"
+  },
+  {
+   "id": "Sakura",
+   "name": "Sakura",
+   "file": "Sakura.jpg",
+   "bytes": 394841,
+   "width": 3840,
+   "height": 2160,
+   "sha256": "9c1d8cdfa4b54e0ee026062d4a958ebdb996ab3247ba9a6d7fbaf8675adca655"
+  }
+ ]
+}

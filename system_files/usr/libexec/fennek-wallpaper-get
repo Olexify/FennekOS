@@ -1,0 +1,112 @@
+#!/usr/bin/python3
+"""Extra wallpapers and theme backgrounds, fetched only when someone picks one (they are not part of the system).
+
+The list (/usr/share/fennek/wallpapers.json) pins one commit of github.com/Olexify/FennekWallpapers and each picture's
+size and SHA-256; a download that doesn't match is thrown away. A picture lands in the account's own wallpapers
+(~/.local/share/wallpapers/ID), where the Background page and the themes find it.
+
+  fennek-wallpaper-get --list           JSON: [{id, name, installed, image}]
+  fennek-wallpaper-get ID               fetch (if missing); prints the wallpaper's folder
+  fennek-wallpaper-get --selftest
+"""
+import hashlib, json, os, sys, tempfile, urllib.request
+
+LIST = "/usr/share/fennek/wallpapers.json"
+MAX = 30 * 1024 * 1024
+
+
+def home_dir():
+    return os.path.join(os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share"), "wallpapers")
+
+
+def load(path=LIST):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def folder(item, root=None):
+    return os.path.join(root or home_dir(), item["id"])
+
+
+def image_path(item, root=None):
+    return os.path.join(folder(item, root), "contents", "images", f'{item["width"]}x{item["height"]}.jpg')
+
+
+def installed(item, root=None):
+    return os.path.isfile(image_path(item, root))
+
+
+def install(item, data, root=None):
+    """Check DATA against the pinned size and SHA-256, then write the wallpaper package."""
+    if len(data) != item["bytes"] or hashlib.sha256(data).hexdigest() != item["sha256"]:
+        raise ValueError("the download doesn't match the checked picture")
+    img = image_path(item, root)
+    os.makedirs(os.path.dirname(img), exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(img))
+    with os.fdopen(fd, "wb") as f:
+        f.write(data)
+    os.replace(tmp, img)
+    meta = {"KPlugin": {"Authors": [{"Name": "Fennek OS"}], "Id": item["id"], "Name": item["name"]}}
+    with open(os.path.join(folder(item, root), "metadata.json"), "w", encoding="utf-8") as f:
+        json.dump(meta, f, indent=2)
+    return folder(item, root)
+
+
+def fetch(lst, item):
+    url = f'https://raw.githubusercontent.com/{lst["repo"]}/{lst["commit"]}/{item["file"]}'
+    with urllib.request.urlopen(url, timeout=60) as r:
+        data = r.read(MAX + 1)
+    if len(data) > MAX:
+        raise ValueError("too big")
+    return data
+
+
+def selftest():
+    import shutil
+    pic = b"\xff\xd8 not really a jpeg \xff\xd9"
+    item = {"id": "Test-Pic", "name": "Test Pic", "file": "Test-Pic.jpg", "bytes": len(pic), "width": 4, "height": 2,
+            "sha256": hashlib.sha256(pic).hexdigest()}
+    root = tempfile.mkdtemp()
+    try:
+        assert not installed(item, root)
+        d = install(item, pic, root)
+        assert installed(item, root) and open(image_path(item, root), "rb").read() == pic
+        assert json.load(open(os.path.join(d, "metadata.json")))["KPlugin"]["Name"] == "Test Pic"
+        try:
+            install(dict(item, id="Bad"), pic + b"x", root)
+            raise AssertionError("a changed picture was accepted")
+        except ValueError:
+            pass
+        assert not os.path.exists(os.path.join(root, "Bad"))
+        if os.path.exists(LIST):   # the shipped list: pinned commit, every entry checkable
+            lst = load()
+            assert len(lst["commit"]) == 40 and lst["wallpapers"]
+            assert all(len(w["sha256"]) == 64 and w["bytes"] > 0 and "/" not in w["file"] for w in lst["wallpapers"])
+    finally:
+        shutil.rmtree(root)
+    print("selftest ok")
+
+
+def main(args):
+    if args == ["--selftest"]:
+        return selftest()
+    lst = load()
+    if args == ["--list"]:
+        print(json.dumps([{"id": w["id"], "name": w["name"], "installed": installed(w),
+                           "image": image_path(w) if installed(w) else ""} for w in lst["wallpapers"]]))
+        return
+    if len(args) != 1:
+        sys.exit(__doc__)
+    item = next((w for w in lst["wallpapers"] if w["id"] == args[0]), None)
+    if item is None:
+        sys.exit(f"no wallpaper called {args[0]}")
+    if not installed(item):
+        try:
+            install(item, fetch(lst, item))
+        except Exception as e:   # no network, changed file...: say so, change nothing
+            sys.exit(f"{item['name']} couldn't be downloaded ({e}).")
+    print(folder(item))
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

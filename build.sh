@@ -105,35 +105,11 @@ magick -background none /usr/share/fennek/wallpaper.svg $WALLJPG /usr/share/wall
 mkdir -p /usr/share/wallpapers/Fennek/contents/images_dark
 magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.jpg -modulate 52,88,100 $WALLJPG \
     /usr/share/wallpapers/Fennek/contents/images_dark/3840x2160.jpg
-# The first signature (branding/wallpaper-classic.py), kept as an extra choice: Fennek Classic.
-mkdir -p /usr/share/wallpapers/Fennek-Classic/contents/images
-magick -background none /usr/share/fennek/wallpaper-classic.svg $WALLJPG /usr/share/wallpapers/Fennek-Classic/contents/images/3840x2160.jpg
-printf '{
-  "KPlugin": {
-    "Authors": [{ "Name": "Fennek OS" }],
-    "Id": "Fennek-Classic",
-    "License": "CC-BY-SA-4.0",
-    "Name": "Fennek Classic"
-  }
-}
-'     > /usr/share/wallpapers/Fennek-Classic/metadata.json
-# Leonote wallpapers (branding/leonote-wallpapers.py): a friendly promo, offered in Settings > Background.
-# The headline is a serif face (Noto Serif; DejaVu Serif if that package is missing).
-dnf -y install google-noto-serif-vf-fonts || echo "Noto Serif missing: Leonote wallpapers fall back to DejaVu Serif"
-for v in night:Night graph:Graph paper:Paper; do
-    d=/usr/share/wallpapers/Leonote-${v#*:}
-    mkdir -p "$d/contents/images"
-    magick -background none "/usr/share/fennek/leonote-${v%%:*}.svg" $WALLJPG "$d/contents/images/3840x2160.jpg"
-    printf '{
-  "KPlugin": {
-    "Authors": [{ "Name": "Leonote" }],
-    "Id": "Leonote-%s",
-    "License": "CC-BY-SA-4.0",
-    "Name": "Leonote %s"
-  }
-}
-' "${v#*:}" "${v#*:}" >"$d/metadata.json"
-done
+# Extra wallpapers and theme backgrounds (Fennek Classic, Leonote, Amber, Sakura, Royal, Arcade, Kitsumi Night) are
+# not part of the system: github.com/Olexify/FennekWallpapers renders them from these same sources, and Personalize
+# fetches one when it is picked (fennek-wallpaper-get, pinned commit + SHA-256 in /usr/share/fennek/wallpapers.json).
+# Noto Serif stays: a typeface choice in Personalize.
+dnf -y install google-noto-serif-vf-fonts || echo "Noto Serif missing"
 # Right-click > New > Word document / Excel spreadsheet / Presentation (blank files, KDE templates).
 python3 "$files/../branding/office-templates.py" /usr/share/templates
 # Look-and-feel: Fedora's as base; our metadata + taskbar layout (from system_files) win.
@@ -318,11 +294,9 @@ cp -a "$lnf/contents/." "$dark/contents/"
 # a palette from one of Olexify's apps (Leonote, Kitsumi, Olexify, Rook Paper Scissors). Each is Fennek OS Dark (same
 # taskbar, Start, icons) with its own accent colour, tinted backgrounds and a wallpaper of pure art
 # (branding/theme-wallpapers.py). Leonote's own wallpapers stay as extra choices.
-for v in amber:Amber sakura:Sakura royal:Royal arcade:Arcade; do
-    d=/usr/share/wallpapers/${v#*:}
-    mkdir -p "$d/contents/images"
-    magick -background none "/usr/share/fennek/theme-${v%%:*}.svg" $WALLJPG "$d/contents/images/3840x2160.jpg"
-    python3 -c 'import json, sys; print(json.dumps({"KPlugin": {"Authors": [{"Name": "Fennek OS"}], "Id": sys.argv[1], "License": "CC-BY-SA-4.0", "Name": sys.argv[1]}}, indent=2))'         "${v#*:}" >"$d/metadata.json"
+# Their wallpapers come from FennekWallpapers when picked; only a small preview of each is made here.
+for v in amber sakura royal arcade; do
+    magick -background none "/usr/share/fennek/theme-$v.svg" -background '#000' -flatten -resize 960x540 "/tmp/theme-$v.png"
 done
 python3 - <<'EOF'
 import json, pathlib, re, shutil, subprocess
@@ -365,14 +339,15 @@ for key, name, wall, accent, light, deep, bg, muse in THEMES:
     d = re.sub(r"^ColorScheme=.*$", f"ColorScheme={scheme}", d, flags=re.M)
     d = re.sub(r"^Image=.*$", f"Image={wall}", d, flags=re.M)
     (pkg / "contents/defaults").write_text(d)
-    # The Themes page shows the theme by its wallpaper.
+    # The Themes page and Personalize show the theme by a small picture of its wallpaper.
     prev = pkg / "contents/previews"
     prev.mkdir(parents=True, exist_ok=True)
-    img = f"/usr/share/wallpapers/{wall}/contents/images/3840x2160.jpg"
-    subprocess.run(["magick", img, "-resize", "640x360", str(prev / "preview.png")], check=True)
-    subprocess.run(["magick", img, "-resize", "1920x1080", "-quality", "88", str(prev / "fullscreenpreview.jpg")], check=True)
+    for old in prev.glob("fullscreenpreview.*"):
+        old.unlink()
+    subprocess.run(["magick", f"/tmp/theme-{key}.png", "-resize", "480x270", "-strip", str(prev / "preview.png")], check=True)
 print("app themes ok")
 EOF
+rm -f /tmp/theme-*.png
 # Icons for the dark theme: the same Fennek icons, with KDE's light-on-dark Breeze Dark behind them (plain
 # Breeze draws dark symbols, unreadable on dark windows and panels).
 fni=/usr/share/icons/Fennek; fdi=/usr/share/icons/Fennek-Dark

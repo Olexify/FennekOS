@@ -1,5 +1,7 @@
 // Personalize: the whole look in one place, as big picture cards: the theme (wallpaper, colours, taskbar), the text
-// size with a live sample, and the typeface. Everything applies the moment you pick it (no Apply button).
+// size with a live sample, the typeface, and more wallpapers. Everything applies the moment you pick it (no Apply
+// button). Theme pictures other than Fennek's own, and the extra wallpapers, are fetched the first time they are
+// picked (fennek-wallpaper-get: github.com/Olexify/FennekWallpapers, pinned and checked).
 // Shown inside Settings (fennek-app personalize opens Settings on it).
 import QtQuick
 import QtQuick.Layouts
@@ -24,6 +26,24 @@ Item {
         .filter(f => Qt.fontFamilies().indexOf(f) >= 0)
 
     property string look: ""
+    property string busy: ""        // the theme or wallpaper being downloaded
+    property string failedMsg: ""
+    property var walls: []          // the extra wallpapers: [{id, name, installed}]
+    readonly property var themeWalls: ["Amber", "Sakura", "Royal", "Arcade"]
+    readonly property string wallsCmd: "/usr/libexec/fennek-wallpaper-get --list"
+    // A theme: its picture first (fetched once), then the look.
+    function applyTheme(t) {
+        failedMsg = ""
+        if (themeWalls.indexOf(t[2]) < 0) { look = t[0]; run.connectSource("plasma-apply-lookandfeel --apply " + t[0]); return }
+        busy = t[1]
+        run.connectSource("sh -c " + q("/usr/libexec/fennek-wallpaper-get " + t[2] + " >/dev/null && plasma-apply-lookandfeel --apply " + t[0] + " && echo " + t[0]))
+    }
+    // An extra wallpaper: fetched once, then on the desktop.
+    function applyWall(w) {
+        failedMsg = ""
+        busy = w.name
+        run.connectSource("sh -c " + q("d=$(/usr/libexec/fennek-wallpaper-get " + w.id + ") && plasma-apply-wallpaperimage \"$d\" >/dev/null && echo wall"))
+    }
     property int textSize: 11
     property string family: "Inter"
     property bool loaded: false
@@ -35,9 +55,20 @@ Item {
     P5Support.DataSource {
         id: run
         engine: "executable"
-        connectedSources: [root.getCmd]
+        connectedSources: [root.getCmd, root.wallsCmd]
         onNewData: (source, data) => {
-            if (source === root.getCmd) {
+            if (source === root.wallsCmd) {
+                try { root.walls = JSON.parse(data.stdout).filter(w => root.themeWalls.indexOf(w.id) < 0) } catch (e) {}
+            } else if (source.startsWith("sh -c ")) {   // a theme or wallpaper fetched (or not)
+                if (data["exit code"] === 0) {
+                    const out = data.stdout.trim()
+                    if (out.startsWith("org.fennek.")) root.look = out
+                } else {
+                    root.failedMsg = (data.stderr || "").trim() || "That didn't work. Check the internet connection."
+                }
+                root.busy = ""
+                connectSource(root.wallsCmd)
+            } else if (source === root.getCmd) {
                 const out = data.stdout.split("\n")
                 root.look = out[0].trim()
                 const m = (out[1] || "").match(/^(\d+) (.+)$/)
@@ -75,7 +106,8 @@ Item {
                             width: Kirigami.Units.gridUnit * 10
                             height: width * 9 / 16 + Kirigami.Units.gridUnit * 1.6
                             hoverEnabled: true
-                            onClicked: { root.look = modelData[0]; run.connectSource("plasma-apply-lookandfeel --apply " + modelData[0]) }
+                            enabled: root.busy === ""
+                            onClicked: root.applyTheme(modelData)
                             contentItem: ColumnLayout {
                                 spacing: Kirigami.Units.smallSpacing
                                 Rectangle {   // the picture, with a small taskbar and window drawn on it
@@ -90,7 +122,9 @@ Item {
                                     Image {
                                         anchors.fill: parent
                                         anchors.margins: parent.border.width
-                                        source: "file:///usr/share/wallpapers/" + card.modelData[2] + "/contents/images/3840x2160.jpg"
+                                        // Fennek's own picture, or the theme's small built-in preview (its picture comes when picked)
+                                        source: card.modelData[2] === "Fennek" ? "file:///usr/share/wallpapers/Fennek/contents/images/3840x2160.jpg"
+                                            : "file:///usr/share/plasma/look-and-feel/" + card.modelData[0] + "/contents/previews/preview.png"
                                         sourceSize: Qt.size(384, 216)
                                         fillMode: Image.PreserveAspectCrop
                                         asynchronous: true
@@ -118,6 +152,70 @@ Item {
                                     }
                                 }
                                 QQC2.Label { text: card.modelData[1]; font.weight: card.current ? Font.DemiBold : Font.Normal }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Kirigami.InlineMessage {
+                Layout.fillWidth: true
+                Layout.leftMargin: Kirigami.Units.largeSpacing * 2
+                Layout.rightMargin: Kirigami.Units.largeSpacing * 2
+                visible: root.busy !== "" || root.failedMsg !== ""
+                type: root.failedMsg !== "" ? Kirigami.MessageType.Warning : Kirigami.MessageType.Information
+                text: root.failedMsg !== "" ? root.failedMsg : "Downloading " + root.busy + "… (once; then it's on this PC)"
+            }
+
+            // More wallpapers: fetched the first time they're picked
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.leftMargin: Kirigami.Units.largeSpacing * 2
+                Layout.rightMargin: Kirigami.Units.largeSpacing * 2
+                visible: root.walls.length > 0
+                spacing: Kirigami.Units.largeSpacing
+                Kirigami.Heading { text: "More wallpapers"; level: 2 }
+                QQC2.Label { text: "Downloaded the first time you pick one."; opacity: 0.7 }
+                Flow {
+                    Layout.fillWidth: true
+                    spacing: Kirigami.Units.largeSpacing
+                    Repeater {
+                        model: root.walls
+                        delegate: QQC2.AbstractButton {
+                            id: wcard
+                            required property var modelData
+                            width: Kirigami.Units.gridUnit * 10
+                            height: width * 9 / 16 + Kirigami.Units.gridUnit * 1.6
+                            hoverEnabled: true
+                            enabled: root.busy === ""
+                            onClicked: root.applyWall(modelData)
+                            contentItem: ColumnLayout {
+                                spacing: Kirigami.Units.smallSpacing
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: width * 9 / 16
+                                    radius: 10
+                                    clip: true
+                                    color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, wcard.hovered ? 0.12 : 0.06)
+                                    border.width: 1
+                                    border.color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, wcard.hovered ? 0.35 : 0.12)
+                                    Image {
+                                        anchors.fill: parent
+                                        anchors.margins: 1
+                                        visible: wcard.modelData.installed
+                                        source: wcard.modelData.image ? "file://" + wcard.modelData.image : ""
+                                        sourceSize: Qt.size(384, 216)
+                                        fillMode: Image.PreserveAspectCrop
+                                        asynchronous: true
+                                    }
+                                    ColumnLayout {   // not on this PC yet
+                                        anchors.centerIn: parent
+                                        visible: !wcard.modelData.installed
+                                        Kirigami.Icon { source: "download"; Layout.alignment: Qt.AlignHCenter; Layout.preferredWidth: 28; Layout.preferredHeight: 28; opacity: 0.7 }
+                                        QQC2.Label { text: "Get"; opacity: 0.7; Layout.alignment: Qt.AlignHCenter }
+                                    }
+                                }
+                                QQC2.Label { text: wcard.modelData.name }
                             }
                         }
                     }

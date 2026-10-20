@@ -2,6 +2,7 @@
 // (Amber, Royal, Arcade, any other picture). Light on the computer: a few dozen GPU-drawn shapes, and on battery it
 // stands still unless "Keep moving on battery" is on. Also still when animations are turned off.
 import QtQuick
+import QtCore
 import org.kde.plasma.plasmoid
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
@@ -9,9 +10,14 @@ import org.kde.kirigami as Kirigami
 WallpaperItem {
     id: root
 
-    // Fennek's wallpapers became JPEG (2026-10): a picture chosen before still points at the old .png name.
-    readonly property string picture: String(root.configuration.Image || "file:///usr/share/wallpapers/Sakura/contents/images/3840x2160.jpg")
-        .replace(/^(file:\/\/\/usr\/share\/wallpapers\/.*\/3840x2160)\.png$/, "$1.jpg")
+    // The theme pictures (Sakura, Amber, Royal, Arcade) live in the account's own wallpapers once fetched
+    // (fennek-wallpaper-get); a picture chosen when they were part of the system (PNG, then JPEG) is found there.
+    // Missing: the Fennek desert.
+    readonly property string userWalls: String(StandardPaths.writableLocation(StandardPaths.GenericDataLocation)) + "/wallpapers/"
+    readonly property string picture: String(root.configuration.Image || "file:///usr/share/wallpapers/Fennek/contents/images/3840x2160.jpg")
+        .replace(/^file:\/\/\/usr\/share\/wallpapers\/(Sakura|Amber|Royal|Arcade)\/contents\/images\/3840x2160\.(png|jpg)$/,
+                 userWalls + "$1/contents/images/3840x2160.jpg")
+        .replace(/\/3840x2160\.png$/, "/3840x2160.jpg")
     readonly property string effect: root.configuration.Effect === "auto" || !root.configuration.Effect
         ? (picture.indexOf("Sakura") >= 0 ? "petals" : "lights") : root.configuration.Effect
     // Colours of the lights follow the picture.
@@ -32,11 +38,15 @@ WallpaperItem {
 
     Image {
         anchors.fill: parent
-        source: root.picture
+        property string failed: ""   // a picture that isn't there (not fetched yet): the desert instead
+        source: failed === root.picture ? "file:///usr/share/wallpapers/Fennek/contents/images/3840x2160.jpg" : root.picture
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
         sourceSize: Qt.size(root.width, root.height)
-        onStatusChanged: if (status === Image.Ready) root.accentColorChanged()
+        onStatusChanged: {
+            if (status === Image.Error && source.toString() === root.picture) failed = root.picture
+            if (status === Image.Ready) root.accentColorChanged()
+        }
     }
 
     // Petals on the wind: real sakura petals (petal.svg) blown across from left to right, rising and dipping with
