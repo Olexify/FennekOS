@@ -43,6 +43,10 @@ dnf -y install \
     clamav clamav-freshclam inotify-tools \
     rsync wl-clipboard dbus-tools util-linux-script \
     "${extra[@]}"
+# Thumbnails in Files like the classic Explorer: videos (a frame from the film), PDFs, photos from cameras (RAW),
+# besides pictures. Big files too (a film is GBs; only a few frames are read).
+dnf -y install ffmpegthumbs kdegraphics-thumbnailers
+kwriteconfig6 --file /etc/xdg/kdeglobals --group PreviewSettings --key MaximumSize 4294967296
 # Printers page in Settings + print queue in the tray (KDE's printer manager; renamed in newer Plasma).
 dnf -y install plasma-print-manager || dnf -y install print-manager
 # OpenSnitch's scripts only enable+start the daemon (and fail in a container); we want it off until something
