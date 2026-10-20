@@ -441,6 +441,14 @@ Item {
 					widget.run("/usr/libexec/fennek-open-location " + modelData.url)
 				})
 				menu.addMenuItem(locationItem)
+				// ...and what it may do outside its box (Settings > App permissions, opened on it).
+				var permItem = menu.newMenuItem()
+				permItem.text = i18n("App permissions")
+				permItem.icon = "fennek-set-permissions"
+				permItem.clicked.connect(function() {
+					Qt.openUrlExternally("fennek-permissions:" + modelData.url.replace(/\.desktop$/, ""))
+				})
+				menu.addMenuItem(permItem)
 			}
 
 			if (!plasmoid.configuration.tilesLocked) {
