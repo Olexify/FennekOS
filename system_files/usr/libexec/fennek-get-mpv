@@ -28,6 +28,9 @@ tar -xzf "$tmp/setup.tar.gz" -C "$tmp/src" --strip-components=1 --no-same-owner 
 src=$tmp/src
 [ -f "$src/mpv.conf" ] || { note "MPV Player is installed" "The setup download looked wrong; nothing was changed."; exit 1; }
 rm -rf "$src/.git" "$src/.github" "$src/README.md" "$src/.gitignore"
+# Its fonts.conf is the other system's font setup (its font folders): here it leaves subtitles and the on-screen
+# display without fonts. Without it, the system's fonts plus the setup's own fonts/ folder are used.
+rm -f "$src/fonts.conf"
 find "$src" -type l -delete   # plain files only
 # Linux graphics: the same idea (fast GPU output, hardware decoding) with this system's names.
 sed -i -e 's/^gpu-api=d3d11$/gpu-api=auto/' -e 's/^hwdec=d3d11va\(-copy\)\?$/hwdec=auto-safe/' \
