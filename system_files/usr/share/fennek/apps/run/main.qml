@@ -197,8 +197,8 @@ QQC2.ApplicationWindow {
                             Layout.preferredWidth: Kirigami.Units.iconSizes.small
                             Layout.preferredHeight: Kirigami.Units.iconSizes.small
                         }
-                        QQC2.Label { text: modelData.text; elide: Text.ElideRight; Layout.fillWidth: !modelData.sub }
-                        QQC2.Label { visible: !!modelData.sub; text: modelData.sub; opacity: 0.55; elide: Text.ElideMiddle; Layout.fillWidth: true; horizontalAlignment: Text.AlignRight }
+                        QQC2.Label { textFormat: Text.PlainText; text: modelData.text; elide: Text.ElideRight; Layout.fillWidth: !modelData.sub }   // file names: never markup
+                        QQC2.Label { textFormat: Text.PlainText; visible: !!modelData.sub; text: modelData.sub; opacity: 0.55; elide: Text.ElideMiddle; Layout.fillWidth: true; horizontalAlignment: Text.AlignRight }
                     }
                     onClicked: root.pick(modelData)
                 }
