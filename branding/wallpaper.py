@@ -1,7 +1,8 @@
 # Fennek OS signature wallpaper: the desert at dusk under a crescent moon. Painted in layers: a night sky warming
 # to gold at the horizon, stars and a few glints, the moon with its halo, dunes lit on their crests by the last light
-# here and there, mist in the hollows, a soft vignette and fine grain. Writes an SVG; the image build renders it to the 4K PNG wallpaper (and a darker night version).
-#   python branding/wallpaper.py system_files/usr/share/fennek/wallpaper.svg
+# here and there, mist in the hollows, a soft vignette and fine grain. Writes an SVG; the image build renders it to the 4K wallpaper.
+# The night version (dark look): the same desert, darker, under a bright full moon.
+#   python branding/wallpaper.py system_files/usr/share/fennek/wallpaper.svg system_files/usr/share/fennek/wallpaper-night.svg
 import math, random, sys
 
 W, H = 3840, 2160
@@ -81,3 +82,21 @@ svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewB
 '''
 open(sys.argv[1], "w", newline="\n").write(svg)
 print("ok", len(svg))
+
+# Night (the dark look): dusk dimmed under a deep violet veil, then a bright full moon with its seas and halo on top.
+FULL = f'''<rect width="{W}" height="{H}" fill="#0a0618" opacity=".5"/>
+<circle cx="3000" cy="440" r="520" fill="#e8e4ff" opacity=".10" filter="url(#glow)"/>
+<circle cx="3000" cy="440" r="250" fill="#f4f0ff" opacity=".16" filter="url(#glow2)"/>
+<circle cx="3000" cy="440" r="160" fill="url(#fullmoon)"/>
+<g fill="#a9a1bd" opacity=".22" filter="url(#seas)" clip-path="url(#moonclip)"><ellipse cx="2950" cy="392" rx="66" ry="44" transform="rotate(-15 2950 392)"/><ellipse cx="2898" cy="450" rx="24" ry="62" transform="rotate(12 2898 450)"/><ellipse cx="3032" cy="418" rx="34" ry="27"/><ellipse cx="3058" cy="462" rx="27" ry="40" transform="rotate(22 3058 462)"/><ellipse cx="2945" cy="505" rx="40" ry="24" transform="rotate(-8 2945 505)"/></g>
+'''
+MOON = '<circle cx="3000" cy="440" r="160" fill="url(#moon)" mask="url(#crescent)"/>\n'
+VIG = f'<rect width="{W}" height="{H}" fill="url(#vig)"/>'
+FULLMOON = ('  <radialGradient id="fullmoon" cx=".42" cy=".38" r=".66"><stop offset="0" stop-color="#ffffff"/>'
+            '<stop offset=".7" stop-color="#f1eefa"/><stop offset="1" stop-color="#d9d3ea"/></radialGradient>\n'
+            '  <filter id="seas" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9"/></filter>\n'
+            '  <clipPath id="moonclip"><circle cx="3000" cy="440" r="156"/></clipPath>\n</defs>')
+assert svg.count(MOON) == 1 and svg.count(VIG) == 1 and svg.count("</defs>") == 1
+night = svg.replace(MOON, "").replace(VIG, FULL + VIG).replace("</defs>", FULLMOON)
+if len(sys.argv) > 2:
+    open(sys.argv[2], "w", newline="\n").write(night)
