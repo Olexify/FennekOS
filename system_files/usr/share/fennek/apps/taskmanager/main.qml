@@ -243,14 +243,22 @@ QQC2.ApplicationWindow {
     }
 
     // A column title that sorts (Details)
-    component SortTitle: QQC2.ToolButton {
+    component SortTitle: QQC2.Label {
         property string key
         property string label
         text: label + (root.sortKey === key ? (root.sortDown ? " ▾" : " ▴") : "")
-        flat: true
+        opacity: titleMouse.containsMouse ? 1 : 0.75
+        elide: Text.ElideRight
         leftPadding: Kirigami.Units.largeSpacing   // the rows' own padding: titles sit over their columns
-        contentItem: QQC2.Label { text: parent.text; opacity: 0.75; horizontalAlignment: Text.AlignLeft; elide: Text.ElideRight }
-        onClicked: { if (root.sortKey === key) root.sortDown = !root.sortDown; else { root.sortKey = key; root.sortDown = key === "cpu" || key === "mem" } }
+        topPadding: Kirigami.Units.smallSpacing * 2
+        bottomPadding: Kirigami.Units.smallSpacing * 2
+        MouseArea {
+            id: titleMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: { if (root.sortKey === key) root.sortDown = !root.sortDown; else { root.sortKey = key; root.sortDown = key === "cpu" || key === "mem" } }
+        }
     }
     // A line graph of the last minute
     component Graph: Canvas {
@@ -440,8 +448,8 @@ QQC2.ApplicationWindow {
                             ColumnLayout {
                                 spacing: 0
                                 Layout.fillWidth: true
-                                QQC2.Label { text: modelData[0]; font.weight: Font.DemiBold }
-                                QQC2.Label { text: modelData[3]; opacity: 0.7; font: Kirigami.Theme.smallFont }
+                                QQC2.Label { text: modelData[0]; font.weight: Font.DemiBold; Layout.fillWidth: true; horizontalAlignment: Text.AlignLeft }
+                                QQC2.Label { text: modelData[3]; opacity: 0.7; font: Kirigami.Theme.smallFont; Layout.fillWidth: true; horizontalAlignment: Text.AlignLeft }
                             }
                         }
                     }
