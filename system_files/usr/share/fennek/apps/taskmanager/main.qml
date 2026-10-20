@@ -577,7 +577,7 @@ QQC2.ApplicationWindow {
                 SortTitle { key: "pid"; label: "PID"; Layout.preferredWidth: Kirigami.Units.gridUnit * 4 }
                 SortTitle { key: "status"; label: "Status"; Layout.preferredWidth: Kirigami.Units.gridUnit * 5 }
                 SortTitle { key: "user"; label: "User"; Layout.preferredWidth: Kirigami.Units.gridUnit * 6 }
-                SortTitle { key: "cpu"; label: "Processor"; Layout.preferredWidth: Kirigami.Units.gridUnit * 5 }
+                SortTitle { key: "cpu"; label: "Processor"; Layout.preferredWidth: Kirigami.Units.gridUnit * 6 }
                 SortTitle { key: "mem"; label: "Memory"; Layout.preferredWidth: Kirigami.Units.gridUnit * 5 }
                 SortTitle { key: "cmd"; label: "Command"; Layout.fillWidth: true }
             }
@@ -605,7 +605,7 @@ QQC2.ApplicationWindow {
                         QQC2.Label { text: modelData.pid; Layout.preferredWidth: Kirigami.Units.gridUnit * 4 }
                         QQC2.Label { text: modelData.status; Layout.preferredWidth: Kirigami.Units.gridUnit * 5 }
                         QQC2.Label { textFormat: Text.PlainText; text: modelData.user; elide: Text.ElideRight; Layout.preferredWidth: Kirigami.Units.gridUnit * 6 }
-                        QQC2.Label { text: modelData.cpu.toFixed(1) + "%"; Layout.preferredWidth: Kirigami.Units.gridUnit * 5 }
+                        QQC2.Label { text: modelData.cpu.toFixed(1) + "%"; Layout.preferredWidth: Kirigami.Units.gridUnit * 6 }
                         QQC2.Label { text: root.size(modelData.mem); Layout.preferredWidth: Kirigami.Units.gridUnit * 5 }
                         QQC2.Label { textFormat: Text.PlainText; text: modelData.cmd; elide: Text.ElideRight; opacity: 0.6; Layout.fillWidth: true }
                     }
