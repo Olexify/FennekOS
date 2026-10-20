@@ -37,10 +37,13 @@ def parse(text):
     ctx = c["Context"] if c.has_section("Context") else {}
     split = lambda k: {x for x in ctx.get(k, "").split(";") if x}
     bus = c["Session Bus Policy"] if c.has_section("Session Bus Policy") else {}
-    talk = {n if v in ("talk", "own") else "!" + n for n, v in bus.items()}
+    # "own" (acting as that service) is kept apart from "talk" (using it): the safe list only covers talking.
+    talk = set()
+    for n, v in bus.items():
+        talk |= {n} if v == "talk" else {"own:" + n} if v == "own" else {"!" + n, "!own:" + n}
     # The system bus (services running as administrator): never on the safe list, always named.
     sysbus = c["System Bus Policy"] if c.has_section("System Bus Policy") else {}
-    talk |= {("system bus: " + n) if v in ("talk", "own") else "!system bus: " + n for n, v in sysbus.items()}
+    talk |= {("sys:" + n) if v in ("talk", "own") else "!sys:" + n for n, v in sysbus.items()}
     return {"shared": split("shared"), "sockets": split("sockets"), "devices": split("devices"),
             "filesystems": split("filesystems"), "talk": talk}
 
@@ -68,10 +71,15 @@ SAFE_TALK = re.compile(r"^(org\.freedesktop\.Notifications|org\.kde\.StatusNotif
 KNOWN_FS = {"host", "host-os", "host-etc", "home", "~"} | set(FOLDERS.values())
 
 
-def other_access(p):
+def plain(x):
+    """Names come from the app itself: only plain characters are shown (no markup, no look-alike tricks)."""
+    return re.sub(r"[^A-Za-z0-9_.~/:@+-]", "?", x)[:80]
+
+
+def other_access(p, app_id=""):
     """Everything beyond the page's switches and a short safe list, in plain words (so nothing is hidden)."""
     out = []
-    fs = sorted({x.split(":")[0] for x in p["filesystems"]} - KNOWN_FS)
+    fs = sorted(plain(x) for x in {x.split(":")[0] for x in p["filesystems"]} - KNOWN_FS)
     if fs:
         out.append("files at " + ", ".join(fs))
     if "x11" in p["sockets"]:
@@ -82,18 +90,25 @@ def other_access(p):
     devs = sorted(p["devices"] - SAFE_DEVICES)
     if devs:
         out.append("devices (" + ", ".join(devs) + ")")
-    talk = sorted(n for n in p["talk"] if not n.startswith("!") and not SAFE_TALK.match(n))
+    system = sorted(plain(n[4:]) for n in p["talk"] if n.startswith("sys:"))
+    if system:
+        out.append("system services that run as administrator (" + ", ".join(system) + ")")
+    talk = sorted(plain(n) for n in p["talk"] if not n.startswith(("!", "own:", "sys:")) and not SAFE_TALK.match(n))
     if talk:
         out.append("other services (" + ", ".join(talk) + ")")
+    owned = sorted(plain(n[4:]) for n in p["talk"] if n.startswith("own:")
+                   and not (app_id and (n[4:] == app_id or n[4:].startswith(app_id + "."))))
+    if owned:
+        out.append("acts as service " + ", ".join(owned))
     return out
 
 
-def summary(p):
+def summary(p, app_id=""):
     fs = {x.split(":")[0] for x in p["filesystems"]}
     return {"network": "network" in p["shared"], "sound": "pulseaudio" in p["sockets"],
             "devices": "all" in p["devices"], "launch": LAUNCH_BUS in p["talk"],
             "host": bool(fs & {"host", "host-os", "host-etc"}), "home": "home" in fs or "~" in fs,
-            **{k: v in fs for k, v in FOLDERS.items()}, "other": other_access(p)}
+            **{k: v in fs for k, v in FOLDERS.items()}, "other": other_access(p, app_id)}
 
 
 def override_args(perm, on):
@@ -128,7 +143,7 @@ def apps():
         base = parse(run(["flatpak", "info", "--show-metadata", app]))
         p = merge(base, parse(run(["flatpak", "override", "--show", app])),
                   parse(run(["flatpak", "override", "--user", "--show", app])))
-        out.append({"id": app, "name": name or app, "perms": summary(p),
+        out.append({"id": app, "name": name or app, "perms": summary(p, app),
                     "changed": bool(run(["flatpak", "override", "--user", "--show", app]).strip())})
     return sorted(out, key=lambda a: a["name"].lower())
 
@@ -206,7 +221,7 @@ def notice_new_apps():
         if fresh and a["id"] in fresh:
             subprocess.Popen(["sh", "-c", 'r=$(notify-send -a "App permissions" -i "$1" --action=review=Review --wait "$2" "$3"); '
                               '[ "$r" = review ] && exec fennek-app settings permissions', "sh",
-                              a["id"], html.escape(a["name"]) + " was installed", "It can reach: " + summary_text(a["perms"])],
+                              a["id"], html.escape(a["name"]) + " was installed", "It can reach: " + html.escape(summary_text(a["perms"]))],
                              start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
@@ -268,8 +283,12 @@ def selftest():
     st = summary_text(sneaky)
     assert "~/.ssh" in st and "session-bus" in st and "input" in st and "org.freedesktop.secrets" in st, st
     assert "Notifications" not in st and st != "nothing outside its box", st
+    spoof = summary_text(summary(merge(parse("[Session Bus Policy]\norg.freedesktop.Notifications=own\n"
+                                             "org.example.App.Helper=own\n")), "org.example.App"))
+    assert "acts as service org.freedesktop.Notifications" in spoof and "Helper" not in spoof, spoof
+    assert plain("<b>x</b>") == "?b?x?/b?", plain("<b>x</b>")
     sb = summary_text(summary(merge(parse("[System Bus Policy]\norg.freedesktop.NetworkManager=talk\n"))))
-    assert "system bus: org.freedesktop.NetworkManager" in sb, sb
+    assert "run as administrator (org.freedesktop.NetworkManager)" in sb, sb
     print("selftest ok")
 
 
