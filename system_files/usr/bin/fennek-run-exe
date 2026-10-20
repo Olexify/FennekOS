@@ -76,7 +76,10 @@ def forget(digest):
 
 
 def note_name(digest, exe):
-    """Where this program was last run from, for Settings > App permissions (one line per program)."""
+    """Where this program was last run from, for Settings > App permissions (one line per program). A path with
+    control characters (a file named to forge a line) is not recorded."""
+    if any(ord(c) < 32 or ord(c) == 127 for c in str(exe)):
+        return
     CFG.mkdir(parents=True, exist_ok=True)
     rows = [l for l in (NAMES.read_text().splitlines() if NAMES.is_file() else []) if not l.startswith(digest + "\t")]
     NAMES.write_text("".join(l + "\n" for l in rows + [f"{digest}\t{exe}"]))

@@ -113,7 +113,7 @@ Item {
                             ColumnLayout {
                                 spacing: 0
                                 Layout.fillWidth: true
-                                QQC2.Label { text: appRow.modelData.name; font.weight: Font.DemiBold; elide: Text.ElideRight; Layout.fillWidth: true }
+                                QQC2.Label { textFormat: Text.PlainText; text: appRow.modelData.name; font.weight: Font.DemiBold; elide: Text.ElideRight; Layout.fillWidth: true }
                                 QQC2.Label { text: root.summary(appRow.modelData.perms); opacity: 0.65; elide: Text.ElideRight; Layout.fillWidth: true }
                             }
                             Kirigami.Icon { source: appRow.expanded ? "go-up" : "go-down"; Layout.preferredWidth: 16; Layout.preferredHeight: 16; opacity: 0.6 }
@@ -200,8 +200,8 @@ Item {
                     ColumnLayout {
                         spacing: 0
                         Layout.fillWidth: true
-                        QQC2.Label { text: progRow.modelData.name; font.weight: Font.DemiBold; elide: Text.ElideMiddle; Layout.fillWidth: true }
-                        QQC2.Label { text: progRow.modelData.path.replace(/^\/(var\/)?home\/[^\/]+/, "~"); opacity: 0.6; elide: Text.ElideMiddle; Layout.fillWidth: true; visible: text !== "" }
+                        QQC2.Label { textFormat: Text.PlainText; text: progRow.modelData.name; font.weight: Font.DemiBold; elide: Text.ElideMiddle; Layout.fillWidth: true }
+                        QQC2.Label { textFormat: Text.PlainText; text: progRow.modelData.path.replace(/^\/(var\/)?home\/[^\/]+/, "~"); opacity: 0.6; elide: Text.ElideMiddle; Layout.fillWidth: true; visible: text !== "" }
                     }
                     QQC2.ComboBox {
                         model: root.runModes.map(m => m[1])

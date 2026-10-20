@@ -116,7 +116,8 @@ def programs():
     names = {}
     for l in lines("exe-names"):
         d, _, path = l.partition("\t")
-        names[d] = path
+        if path.startswith("/") and not any(ord(c) < 32 or ord(c) == 127 for c in path):   # no forged lines
+            names[d] = path
     trusted = set(lines("trusted-exes"))
     choices = dict(l.split(" ", 1) for l in lines("exe-choices") if " " in l)
     offline = set(lines("offline-exes"))
@@ -167,9 +168,10 @@ def selftest():
         pass
     CFG = Path(tempfile.mkdtemp())
     d = "a" * 64
-    write("exe-names", [f"{d}\t/home/u/Downloads/Game Setup.exe"])
+    write("exe-names", [f"{d}\t/home/u/Downloads/Game Setup.exe", f"{'b' * 64}\tnot/absolute"])
     set_program(d, "run", "sandbox")
     assert programs()[0]["run"] == "sandbox" and programs()[0]["name"] == "Game Setup.exe"
+    assert len(programs()) == 1, "a line that isn't a real path is not shown"
     set_program(d, "run", "trusted")
     assert programs()[0]["run"] == "trusted" and lines("exe-choices") == []
     set_program(d, "run", "ask")
