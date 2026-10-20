@@ -64,7 +64,10 @@ QQC2.ApplicationWindow {
             anchors.fill: parent
             spacing: Kirigami.Units.largeSpacing
             Kirigami.SearchField {
-                Layout.preferredWidth: Kirigami.Units.gridUnit * 14
+                // takes the room that's left, so the buttons always fit
+                Layout.fillWidth: true
+                Layout.minimumWidth: Kirigami.Units.gridUnit * 7
+                Layout.maximumWidth: Kirigami.Units.gridUnit * 14
                 placeholderText: "Find an app or service"
                 onTextChanged: root.filter = text
             }
@@ -79,7 +82,6 @@ QQC2.ApplicationWindow {
                 QQC2.Label { text: "Memory " + root.size(root.data.mem_used) + " of " + root.size(root.data.mem_total); font: Kirigami.Theme.smallFont }
                 QQC2.ProgressBar { from: 0; to: root.data.mem_total || 1; value: root.data.mem_used; Layout.preferredWidth: Kirigami.Units.gridUnit * 9 }
             }
-            Item { Layout.fillWidth: true }
             QQC2.ToolButton {
                 text: "Startup apps"
                 icon.name: "fennek-set-startup"

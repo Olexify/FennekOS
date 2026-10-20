@@ -107,6 +107,19 @@ def units_in(slice_dir):
         return []
 
 
+def plain_processes():
+    """Running programs by name, from /proc (memory only), when the system keeps no per-app units."""
+    by = {}
+    for p in os.listdir("/proc"):
+        if p.isdigit():
+            i = proc_info(int(p))
+            if i["mem"]:
+                by.setdefault(i["name"], []).append(i)
+    items = [{"name": n, "icon": "", "desc": "", "unit": n, "cpu": 0.0, "mem": sum(x["mem"] for x in ps), "can_end": False,
+              "procs": sorted(ps, key=lambda x: -x["mem"])[:30]} for n, ps in by.items()]
+    return sorted(items, key=lambda i: -i["mem"])
+
+
 def snapshot():
     uid = os.getuid()
     user_root = f"{CG}/user.slice/user-{uid}.slice/user@{uid}.service"
@@ -143,6 +156,8 @@ def snapshot():
             items.append(item)
         items.sort(key=lambda i: (-i["cpu"], -i["mem"]))
         groups.append({"key": key, "name": gname, "items": items})
+    if not any(g["items"] for g in groups):   # no per-app units to read (no systemd here): the programs themselves
+        groups.append({"key": "procs", "name": "Programs", "items": plain_processes()})
     total = used = 0
     for line in read("/proc/meminfo").splitlines():
         if line.startswith("MemTotal:"):
@@ -167,6 +182,7 @@ def selftest():
     assert app_id("app-firefox-4711.scope") == "firefox"
     assert app_id("app-org.kde.konsole\\x2dterminal@1.service") == "org.kde.konsole-terminal"
     assert UNIT.match("app-org.kde.dolphin@3f2a.service") and not UNIT.match("../evil.service") and not UNIT.match("x;rm.scope")
+    assert any(i["procs"] for i in plain_processes()) or not os.path.isdir("/proc/1")
     print("selftest ok")
 
 
