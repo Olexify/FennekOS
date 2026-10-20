@@ -736,7 +736,7 @@ rm -rf /tmp/cargo-home
     lib=$(ls /usr/lib64/libdolphinprivate.so.*.* 2>/dev/null | head -1 || true)   # the real file (not the .so.N link)
     [ -n "$lib" ] || { echo "Dolphin's view library moved: revisit src/dolphin-fennek"; exit 1; }
     dv=$(rpm -qf --qf '%{VERSION}-%{RELEASE}' "$lib")   # from dolphin-libs; the source package is dolphin
-    rpm -qa | sort > /tmp/rpms-before
+    rpm -qa --qf '%{NAME}\n' | sort -u > /tmp/rpms-before   # names: an upgrade pulled in by the tools is not "new"
     mkdir -p /tmp/dolphin && cd /tmp/dolphin
     dnf -y download --srpm "dolphin-$dv"
     srpm=$(ls dolphin-*.src.rpm)
@@ -751,7 +751,7 @@ rm -rf /tmp/cargo-home
     built=$(find build -name "${lib##*/}" -type f | head -1)
     [ -n "$built" ] || { echo "Patched Dolphin library not built"; exit 1; }
     install -m 755 "$built" "$lib"
-    rpm -qa | sort > /tmp/rpms-after
+    rpm -qa --qf '%{NAME}\n' | sort -u > /tmp/rpms-after
     added=$(comm -13 /tmp/rpms-before /tmp/rpms-after)
     [ -z "$added" ] || dnf -y remove $added
     cd / && rm -rf /tmp/dolphin /tmp/rpms-before /tmp/rpms-after
