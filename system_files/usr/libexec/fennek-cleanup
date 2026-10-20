@@ -1,0 +1,181 @@
+#!/usr/bin/python3
+"""Free up space (Settings > System > Free up space): what can be cleaned safely in your account, with sizes.
+
+  fennek-cleanup sizes          JSON: [{key, name, desc, bytes, count, action}]  action: clean | open | none
+  fennek-cleanup clean KEY      KEY: trash thumbnails cache apps
+  fennek-cleanup --selftest
+
+  trash        the Recycle Bin (everything in it)
+  thumbnails   picture previews Files made (made again when needed)
+  cache        app caches not touched for 30 days (recent ones stay: apps may be using them)
+  apps         store-app parts nothing uses any more (flatpak uninstall --unused, this account's)
+  downloads    shown with its size; never cleaned for you (Open shows the folder)
+"""
+import json, os, shutil, subprocess, sys, time
+
+HOME = os.path.expanduser("~")
+DATA = os.environ.get("XDG_DATA_HOME") or os.path.join(HOME, ".local/share")
+CACHE = os.environ.get("XDG_CACHE_HOME") or os.path.join(HOME, ".cache")
+OLD = 30 * 86400
+KEEP_CACHE = {"fennek"}   # Fennek's own small caches (wallpaper previews)
+
+
+def walk_size(path, older_than=None, now=None):
+    """(bytes, files) under PATH, never following links; with OLDER_THAN only files not modified for that long."""
+    total = count = 0
+    now = now or time.time()
+    for root, dirs, files in os.walk(path, followlinks=False):
+        for f in files:
+            try:
+                st = os.lstat(os.path.join(root, f))
+            except OSError:
+                continue
+            if older_than and now - st.st_mtime < older_than:
+                continue
+            total += st.st_blocks * 512 if hasattr(st, "st_blocks") else st.st_size
+            count += 1
+    return total, count
+
+
+def cache_dirs():
+    try:
+        return [os.path.join(CACHE, d) for d in os.listdir(CACHE)
+                if d not in KEEP_CACHE and d != "thumbnails" and not os.path.islink(os.path.join(CACHE, d))]
+    except OSError:
+        return []
+
+
+def remove_old(path, now=None):
+    """Delete files under PATH not modified for 30 days, then empty folders; never follows links."""
+    now = now or time.time()
+    for root, dirs, files in os.walk(path, topdown=False, followlinks=False):
+        for f in files:
+            p = os.path.join(root, f)
+            try:
+                if now - os.lstat(p).st_mtime >= OLD:
+                    os.unlink(p)
+            except OSError:
+                pass
+        for d in dirs:
+            try:
+                os.rmdir(os.path.join(root, d))   # only if empty
+            except OSError:
+                pass
+
+
+def empty_dir(path):
+    try:
+        names = os.listdir(path)
+    except OSError:
+        return
+    for n in names:
+        p = os.path.join(path, n)
+        if os.path.isdir(p) and not os.path.islink(p):
+            shutil.rmtree(p, ignore_errors=True)
+        else:
+            try:
+                os.unlink(p)
+            except OSError:
+                pass
+
+
+def downloads_dir():
+    try:
+        d = subprocess.run(["xdg-user-dir", "DOWNLOAD"], capture_output=True, text=True).stdout.strip()
+    except OSError:
+        d = ""
+    return d if d and d != HOME else os.path.join(HOME, "Downloads")
+
+
+def unused_apps():
+    out = subprocess.run(["flatpak", "uninstall", "--user", "--unused", "--assumeno"], capture_output=True, text=True)
+    return sum(1 for l in (out.stdout + out.stderr).splitlines() if l.strip()[:1].isdigit() and "." in l)
+
+
+def sizes():
+    trash = walk_size(os.path.join(DATA, "Trash", "files"))
+    thumbs = walk_size(os.path.join(CACHE, "thumbnails"))
+    cache = [0, 0]
+    for d in cache_dirs():
+        b, c = walk_size(d, OLD)
+        cache[0] += b
+        cache[1] += c
+    dl = walk_size(downloads_dir())
+    try:
+        apps = unused_apps()
+    except OSError:
+        apps = 0
+    return [
+        {"key": "trash", "name": "Recycle Bin", "desc": "Files you deleted", "bytes": trash[0], "count": trash[1], "action": "clean"},
+        {"key": "thumbnails", "name": "Thumbnails", "desc": "Picture previews, made again when needed", "bytes": thumbs[0], "count": thumbs[1], "action": "clean"},
+        {"key": "cache", "name": "Old temporary files", "desc": "App caches not used for 30 days", "bytes": cache[0], "count": cache[1], "action": "clean"},
+        {"key": "apps", "name": "Unused app parts", "desc": "Left over from apps you removed", "bytes": 0, "count": apps, "action": "clean" if apps else "none"},
+        {"key": "downloads", "name": "Downloads", "desc": "Your downloads: check them yourself", "bytes": dl[0], "count": dl[1], "action": "open"},
+    ]
+
+
+def clean(key):
+    if key == "trash":
+        empty_dir(os.path.join(DATA, "Trash", "files"))
+        empty_dir(os.path.join(DATA, "Trash", "info"))
+        empty_dir(os.path.join(DATA, "Trash", "expunged"))
+    elif key == "thumbnails":
+        empty_dir(os.path.join(CACHE, "thumbnails"))
+    elif key == "cache":
+        for d in cache_dirs():
+            if os.path.isdir(d):
+                remove_old(d)
+            elif time.time() - os.lstat(d).st_mtime >= OLD:
+                os.unlink(d)
+    elif key == "apps":
+        subprocess.run(["flatpak", "uninstall", "--user", "--unused", "-y", "--noninteractive"])
+    else:
+        sys.exit("unknown")
+
+
+def selftest():
+    import tempfile
+    global DATA, CACHE
+    t = tempfile.mkdtemp()
+    DATA, CACHE = os.path.join(t, "data"), os.path.join(t, "cache")
+    now = time.time()
+
+    def mk(p, age=0):
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        open(p, "w").write("x" * 100)
+        os.utime(p, (now - age, now - age))
+    mk(os.path.join(DATA, "Trash/files/a.txt"))
+    mk(os.path.join(DATA, "Trash/info/a.txt.trashinfo"))
+    mk(os.path.join(CACHE, "thumbnails/large/x.png"))
+    mk(os.path.join(CACHE, "app/old.bin"), 40 * 86400)
+    mk(os.path.join(CACHE, "app/new.bin"), 1 * 86400)
+    mk(os.path.join(CACHE, "fennek/wallpaper-previews/p.jpg"), 40 * 86400)
+    outside = os.path.join(t, "outside.txt")
+    mk(outside, 40 * 86400)
+    try:
+        os.symlink(outside, os.path.join(CACHE, "app", "link-out"))
+    except OSError:
+        pass   # no symlinks here (not Linux): that check is skipped
+    assert walk_size(os.path.join(CACHE, "app"), OLD)[1] == 1, "only the old file counts"
+    clean("trash")
+    assert os.listdir(os.path.join(DATA, "Trash/files")) == [] and os.listdir(os.path.join(DATA, "Trash/info")) == []
+    clean("thumbnails")
+    assert os.listdir(os.path.join(CACHE, "thumbnails")) == []
+    clean("cache")
+    assert not os.path.exists(os.path.join(CACHE, "app/old.bin")) and os.path.exists(os.path.join(CACHE, "app/new.bin"))
+    assert os.path.exists(os.path.join(CACHE, "fennek/wallpaper-previews/p.jpg")), "Fennek's own cache stays"
+    assert os.path.exists(outside), "a link never leads cleaning outside"
+    shutil.rmtree(t)
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    a = sys.argv[1:]
+    if a == ["--selftest"]:
+        selftest()
+    elif a == ["sizes"]:
+        print(json.dumps(sizes()))
+    elif len(a) == 2 and a[0] == "clean" and a[1] in ("trash", "thumbnails", "cache", "apps"):
+        clean(a[1])
+    else:
+        sys.exit(__doc__)

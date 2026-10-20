@@ -16,7 +16,7 @@ var categories = [
    {"name": "Screen edges", "kcm": "kcm_kwinscreenedges", "icon": "fennek-set-edges", "desc": "Corners and edges, touch gestures", "optional": true},
    {"name": "Power & battery", "kcm": "kcm_powerdevilprofilesconfig", "icon": "fennek-set-power", "desc": "Sleep, screen off, battery saving"},
    {"name": "Battery & app usage", "icon": "fennek-set-apphistory", "desc": "Which apps used the battery", "page": "apphistory"},
-   {"name": "Storage", "cmd": "filelight", "icon": "fennek-set-storage", "desc": "What uses space on your disks"},
+   {"name": "Free up space", "page": "cleanup", "icon": "fennek-set-storage", "desc": "Recycle Bin, temporary files, unused app parts; what uses space", "keys": "storage disk cleanup space cache trash temporary filelight"},
    {"name": "Recycle Bin", "kcm": "kcm_trash", "icon": "fennek-set-storage", "desc": "How big it may get, emptying it by itself", "optional": true},
    {"name": "Folders", "kcm": "kcm_desktoppaths", "icon": "fennek-set-filetypes", "desc": "Where Desktop, Documents, Downloads… are", "optional": true},
    {"name": "Removable drives", "kcm": "kcm_device_automounter", "icon": "fennek-set-removable", "desc": "What happens when you plug in a drive", "optional": true},
