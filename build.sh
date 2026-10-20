@@ -97,15 +97,17 @@ if rpm -q plasma-welcome-fedora >/dev/null; then dnf -y remove plasma-welcome-fe
 # Wallpaper, generated at build time (no binaries in the repo).
 mkdir -p /usr/share/wallpapers/Fennek/contents/images
 # Wallpaper: the desert at dusk under a crescent moon (branding/wallpaper.py), rendered from its vector source to 4K.
-magick -background none /usr/share/fennek/wallpaper.svg -depth 8 /usr/share/wallpapers/Fennek/contents/images/3840x2160.png
+# All wallpapers ship as high-quality JPEG (about a tenth of a PNG: 1-2 MB each instead of 7-10).
+WALLJPG="-background '#000' -flatten -quality 90 -sampling-factor 4:2:0 -strip"
+magick -background none /usr/share/fennek/wallpaper.svg $WALLJPG /usr/share/wallpapers/Fennek/contents/images/3840x2160.jpg
 # Night version: the same dusk, darker and calmer. Plasma shows images_dark/ while the dark look is on and switches
 # right away with it; a wallpaper the user picked is never touched.
 mkdir -p /usr/share/wallpapers/Fennek/contents/images_dark
-magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.png -modulate 52,88,100 -depth 8 \
-    /usr/share/wallpapers/Fennek/contents/images_dark/3840x2160.png
+magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.jpg -modulate 52,88,100 $WALLJPG \
+    /usr/share/wallpapers/Fennek/contents/images_dark/3840x2160.jpg
 # The first signature (branding/wallpaper-classic.py), kept as an extra choice: Fennek Classic.
 mkdir -p /usr/share/wallpapers/Fennek-Classic/contents/images
-magick -background none /usr/share/fennek/wallpaper-classic.svg -depth 8 /usr/share/wallpapers/Fennek-Classic/contents/images/3840x2160.png
+magick -background none /usr/share/fennek/wallpaper-classic.svg $WALLJPG /usr/share/wallpapers/Fennek-Classic/contents/images/3840x2160.jpg
 printf '{
   "KPlugin": {
     "Authors": [{ "Name": "Fennek OS" }],
@@ -121,7 +123,7 @@ dnf -y install google-noto-serif-vf-fonts || echo "Noto Serif missing: Leonote w
 for v in night:Night graph:Graph paper:Paper; do
     d=/usr/share/wallpapers/Leonote-${v#*:}
     mkdir -p "$d/contents/images"
-    magick -background none "/usr/share/fennek/leonote-${v%%:*}.svg" -depth 8 "$d/contents/images/3840x2160.png"
+    magick -background none "/usr/share/fennek/leonote-${v%%:*}.svg" $WALLJPG "$d/contents/images/3840x2160.jpg"
     printf '{
   "KPlugin": {
     "Authors": [{ "Name": "Leonote" }],
@@ -319,7 +321,7 @@ cp -a "$lnf/contents/." "$dark/contents/"
 for v in amber:Amber sakura:Sakura royal:Royal arcade:Arcade; do
     d=/usr/share/wallpapers/${v#*:}
     mkdir -p "$d/contents/images"
-    magick -background none "/usr/share/fennek/theme-${v%%:*}.svg" -depth 8 "$d/contents/images/3840x2160.png"
+    magick -background none "/usr/share/fennek/theme-${v%%:*}.svg" $WALLJPG "$d/contents/images/3840x2160.jpg"
     python3 -c 'import json, sys; print(json.dumps({"KPlugin": {"Authors": [{"Name": "Fennek OS"}], "Id": sys.argv[1], "License": "CC-BY-SA-4.0", "Name": sys.argv[1]}}, indent=2))'         "${v#*:}" >"$d/metadata.json"
 done
 python3 - <<'EOF'
@@ -366,7 +368,7 @@ for key, name, wall, accent, light, deep, bg, muse in THEMES:
     # The Themes page shows the theme by its wallpaper.
     prev = pkg / "contents/previews"
     prev.mkdir(parents=True, exist_ok=True)
-    img = f"/usr/share/wallpapers/{wall}/contents/images/3840x2160.png"
+    img = f"/usr/share/wallpapers/{wall}/contents/images/3840x2160.jpg"
     subprocess.run(["magick", img, "-resize", "640x360", str(prev / "preview.png")], check=True)
     subprocess.run(["magick", img, "-resize", "1920x1080", "-quality", "88", str(prev / "fullscreenpreview.jpg")], check=True)
 print("app themes ok")

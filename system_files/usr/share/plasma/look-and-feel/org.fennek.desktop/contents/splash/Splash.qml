@@ -11,7 +11,7 @@ Rectangle {
 
     Image {
         anchors.fill: parent
-        source: "file:///usr/share/wallpapers/Fennek/contents/images/3840x2160.png"
+        source: "file:///usr/share/wallpapers/Fennek/contents/images/3840x2160.jpg"
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
         opacity: 0.55

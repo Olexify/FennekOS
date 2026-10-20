@@ -21,8 +21,8 @@ grep -q '^NAME="Fennek OS"' /usr/lib/os-release                 || fail "os-rele
 grep -q '^ID=fedora' /usr/lib/os-release                      || fail "os-release id must stay fedora"
 ! rpm -q plasma-welcome-fedora >/dev/null                     || fail "fedora welcome pages"
 ! grep -q "Fennek image build" /etc/dnf/dnf.conf                || fail "build-time dnf settings left in the image"
-[ -s /usr/share/wallpapers/Fennek/contents/images/3840x2160.png ] || fail "wallpaper"
-[ "$(magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.png -crop 1x1+1920+1290 -format '%[fx:r>b && r>0.6]' info:)" = 1 ] \
+[ -s /usr/share/wallpapers/Fennek/contents/images/3840x2160.jpg ] || fail "wallpaper"
+[ "$(magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.jpg -crop 1x1+1920+1290 -format '%[fx:r>b && r>0.6]' info:)" = 1 ] \
                                                               || fail "wallpaper isn't the desert at dusk (warm horizon)"
 grep -q '^Image=Fennek' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/defaults || fail "lnf wallpaper"
 [ "$(kreadconfig6 --file /usr/share/plasma/desktoptheme/fennek-dark/colors --group Colors:Selection --key BackgroundNormal)" = 109,69,184 ] && ! grep -q "29,153,243" /usr/share/plasma/desktoptheme/fennek-dark/colors || fail "panel accent is Fennek violet"
@@ -220,11 +220,11 @@ grep -q 'function resizeGroup' /usr/share/plasma/plasmoids/com.github.zren.tiled
 [ -f /usr/share/icons/Fennek/scalable/apps/fennek-get-leonote.svg ] && { ! command -v desktop-file-validate >/dev/null || desktop-file-validate /usr/share/applications/fennek-get-leonote.desktop; } || fail "Start: Leonote (get it)"
 [ -x /usr/libexec/fennek-get-mpv ] && grep -q '^Exec=/usr/libexec/fennek-get-mpv' /usr/share/applications/fennek-get-mpv.desktop && grep -q 'fennek-get-mpv' /usr/share/fennek/apps/welcome/main.qml || fail "MPV Player (Oleks Edition): install on request"
 grep -q 'Support Fennek OS' /usr/share/fennek/apps/settings/main.qml && grep -q 'ko-fi.com/olexify' /usr/share/fennek/apps/welcome/main.qml || fail "Support links in Settings and Welcome"
-for v in Night Graph Paper; do [ -s /usr/share/wallpapers/Leonote-$v/contents/images/3840x2160.png ] && grep -q '"Leonote '$v'"' /usr/share/wallpapers/Leonote-$v/metadata.json || fail "Leonote $v wallpaper"; done
+for v in Night Graph Paper; do [ -s /usr/share/wallpapers/Leonote-$v/contents/images/3840x2160.jpg ] && grep -q '"Leonote '$v'"' /usr/share/wallpapers/Leonote-$v/metadata.json || fail "Leonote $v wallpaper"; done
 for t in amber sakura royal arcade; do [ -s /usr/share/plasma/look-and-feel/org.fennek.$t.desktop/contents/previews/preview.png ] && grep -q "^ColorScheme=Fennek" /usr/share/plasma/look-and-feel/org.fennek.$t.desktop/contents/defaults && grep -q "FennekClassicDark" /usr/share/plasma/look-and-feel/org.fennek.$t.desktop/contents/defaults || fail "colour theme $t (Settings > Themes)"; done
 grep -q '"Id": "org.fennek.live"' /usr/share/plasma/wallpapers/org.fennek.live/metadata.json && grep -q 'OnBattery' /usr/share/plasma/wallpapers/org.fennek.live/contents/ui/main.qml || fail "Fennek Live wallpaper (moving petals / lights, still on battery)"
 grep -q '^fennekshowdesktopEnabled=true' /etc/xdg/kwinrc && grep -q '^Fennek Show Desktop=Meta+D' /etc/xdg/kglobalshortcutsrc && grep -q '^Show Desktop=none' /etc/xdg/kglobalshortcutsrc && grep -q 'w.dialog' /usr/share/kwin-wayland/scripts/fennekshowdesktop/contents/code/main.js || fail "Super+D: classic show desktop, second press brings the windows back; dialogs go away too"
-[ -s /usr/share/wallpapers/Fennek-Classic/contents/images/3840x2160.png ] || fail "Fennek Classic wallpaper (the first signature)"
+[ -s /usr/share/wallpapers/Fennek-Classic/contents/images/3840x2160.jpg ] || fail "Fennek Classic wallpaper (the first signature)"
 grep -q '^fennekarrowsEnabled=true' /etc/xdg/kwinrc && grep -q '^Fennek Maximize=Meta+Up' /etc/xdg/kglobalshortcutsrc && grep -q '^Window Quick Tile Top=none' /etc/xdg/kglobalshortcutsrc || fail "Super+Up maximizes, Super+Down restores or minimizes"
 grep -q 'Meta+Ctrl+D' /usr/share/kwin-wayland/scripts/fennekarrows/contents/code/main.js && grep -q 'removeDesktop' /usr/share/kwin-wayland/scripts/fennekarrows/contents/code/main.js || fail "Super+Ctrl+D new virtual desktop, Super+Ctrl+F4 closes it"
 python3 -c "import zipfile; [zipfile.ZipFile('/usr/share/templates/.source/'+f).testzip() for f in ('Word document.docx','Excel spreadsheet.xlsx','Presentation.odp')]" && [ -f /usr/share/templates/fennek-new-word.desktop ] || fail "New > Word document / Excel spreadsheet / Presentation"
@@ -247,7 +247,7 @@ grep -aq fennekCollapsedGroups "$(ls /usr/lib64/libdolphinprivate.so.*.* | head 
 grep -q '^ShowToolTips=true' /etc/xdg/dolphinrc && grep -aq fennekHovered "$(ls /usr/lib64/libdolphinprivate.so.*.* | head -1)" && grep -q '^rating=false' /etc/xdg/baloofileinformationrc && grep -q '^version=13' /etc/xdg/baloofileinformationrc && /usr/libexec/fennek-files-info-panel --selftest >/dev/null || fail "Files: Information panel instead of hover pop-ups"
 ! grep -q '^HomeUrl=' /etc/xdg/dolphinrc && grep -aq 'fennekWatch' "$(ls /usr/lib64/libdolphinprivate.so.*.* | head -1)" && grep -q 'GroupedSorting=true' /etc/skel/.local/share/dolphin/view_properties/remote/.directory \
     && grep -q 'inode/x-fennek-drive' /usr/share/mime/types || fail "Home page (folders, frequent folders, drives) in Files"
-[ -s /usr/share/wallpapers/Fennek/contents/images_dark/3840x2160.png ] || fail "night version of the Fennek wallpaper"
+[ -s /usr/share/wallpapers/Fennek/contents/images_dark/3840x2160.jpg ] || fail "night version of the Fennek wallpaper"
 for k in desktop documents downloads music pictures videos; do [ -s /usr/share/icons/Fennek/scalable/places/fennek-folder-$k.svg ] && [ -e /usr/share/icons/Fennek-Dark/scalable/places/fennek-folder-$k.svg ] || fail "This PC folder icon $k"; done; [ -s /usr/share/icons/Fennek/scalable/devices/fennek-drive-used-90.svg ] && grep -q ff5a5a /usr/share/icons/Fennek/scalable/devices/fennek-drive-used-90.svg || fail "drive gauge red when nearly full"
 grep -q '^MenuBar=Enabled' /etc/xdg/dolphinrc                     || fail "Files menu bar"
 grep -q 'panel.floating = false' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "taskbar layout"

@@ -6,7 +6,7 @@
   <group name="General">
     <entry name="Image" type="String">
       <label>The picture underneath</label>
-      <default>file:///usr/share/wallpapers/Sakura/contents/images/3840x2160.png</default>
+      <default>file:///usr/share/wallpapers/Sakura/contents/images/3840x2160.jpg</default>
     </entry>
     <entry name="Effect" type="String">
       <label>auto, petals, lights or none</label>

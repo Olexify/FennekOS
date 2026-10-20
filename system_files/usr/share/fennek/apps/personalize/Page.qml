@@ -90,7 +90,7 @@ Item {
                                     Image {
                                         anchors.fill: parent
                                         anchors.margins: parent.border.width
-                                        source: "file:///usr/share/wallpapers/" + card.modelData[2] + "/contents/images/3840x2160.png"
+                                        source: "file:///usr/share/wallpapers/" + card.modelData[2] + "/contents/images/3840x2160.jpg"
                                         sourceSize: Qt.size(384, 216)
                                         fillMode: Image.PreserveAspectCrop
                                         asynchronous: true

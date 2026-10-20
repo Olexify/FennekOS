@@ -9,7 +9,9 @@ import org.kde.kirigami as Kirigami
 WallpaperItem {
     id: root
 
-    readonly property string picture: root.configuration.Image || "file:///usr/share/wallpapers/Sakura/contents/images/3840x2160.png"
+    // Fennek's wallpapers became JPEG (2026-10): a picture chosen before still points at the old .png name.
+    readonly property string picture: String(root.configuration.Image || "file:///usr/share/wallpapers/Sakura/contents/images/3840x2160.jpg")
+        .replace(/^(file:\/\/\/usr\/share\/wallpapers\/.*\/3840x2160)\.png$/, "$1.jpg")
     readonly property string effect: root.configuration.Effect === "auto" || !root.configuration.Effect
         ? (picture.indexOf("Sakura") >= 0 ? "petals" : "lights") : root.configuration.Effect
     // Colours of the lights follow the picture.

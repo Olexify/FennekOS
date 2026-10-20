@@ -14,11 +14,11 @@ Kirigami.FormLayout {
     property alias formLayout: root
 
     readonly property var pictures: [
-        ["Sakura", "file:///usr/share/wallpapers/Sakura/contents/images/3840x2160.png"],
-        ["Amber", "file:///usr/share/wallpapers/Amber/contents/images/3840x2160.png"],
-        ["Royal", "file:///usr/share/wallpapers/Royal/contents/images/3840x2160.png"],
-        ["Arcade", "file:///usr/share/wallpapers/Arcade/contents/images/3840x2160.png"],
-        ["Fennek desert", "file:///usr/share/wallpapers/Fennek/contents/images/3840x2160.png"]
+        ["Sakura", "file:///usr/share/wallpapers/Sakura/contents/images/3840x2160.jpg"],
+        ["Amber", "file:///usr/share/wallpapers/Amber/contents/images/3840x2160.jpg"],
+        ["Royal", "file:///usr/share/wallpapers/Royal/contents/images/3840x2160.jpg"],
+        ["Arcade", "file:///usr/share/wallpapers/Arcade/contents/images/3840x2160.jpg"],
+        ["Fennek desert", "file:///usr/share/wallpapers/Fennek/contents/images/3840x2160.jpg"]
     ]
     readonly property var effects: [["auto", "Matches the picture"], ["petals", "Falling petals"], ["lights", "Drifting lights"], ["none", "Still"]]
 
