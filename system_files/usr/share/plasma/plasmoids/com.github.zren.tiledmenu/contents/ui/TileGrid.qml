@@ -415,7 +415,8 @@ DropArea {
 		}
 		return false
 	}
-	// A tile put on a group's right or bottom wall (or just past it) joins the group: the walls grow around it.
+	// A tile put across a group's right or bottom wall joins the group: the walls grow around it. A tile put
+	// entirely outside the walls stays outside (the group keeps its size).
 	function growGroupsFor(tile) {
 		if (!tile || tile.tileType == "group") return
 		for (var i = 0; i < tileModel.length; i++) {
@@ -423,7 +424,7 @@ DropArea {
 			if (g.tileType != "group" || g.folded || typeof g.rows !== "number") continue
 			var x2 = g.x + g.w - 1, y1 = g.y + g.h, y2 = y1 + g.rows - 1
 			var inside = tile.x >= g.x && tile.x + tile.w - 1 <= x2 && tile.y >= y1 && tile.y + tile.h - 1 <= y2
-			if (inside || tile.x < g.x || tile.y < y1 || !tileWithin(tile, g.x, y1, x2 + 1, y2 + 1)) continue
+			if (inside || tile.x < g.x || tile.y < y1 || !tileWithin(tile, g.x, y1, x2, y2)) continue
 			var f = fitGroup(i, Math.max(g.w, tile.x + tile.w - g.x), Math.max(g.rows, tile.y + tile.h - y1))
 			if (f) {
 				g.w = f.w
