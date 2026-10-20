@@ -263,7 +263,7 @@ grep -q '^ShowToolTips=true' /etc/xdg/dolphinrc && grep -aq fennekHovered "$(ls 
     && grep -q 'inode/x-fennek-drive' /usr/share/mime/types || fail "Home page (folders, frequent folders, drives) in Files"
 [ -s /usr/share/wallpapers/Fennek/contents/images_dark/3840x2160.jpg ] && grep -q 'url(#fullmoon)' /usr/share/fennek/wallpaper-night.svg || fail "night version of the Fennek wallpaper (full moon)"
 # Fennek's wallpaper first on the Background page: only it sits at the top; the stock ones are one folder down.
-[ "$(ls /usr/share/wallpapers)" = "$(printf 'Fennek\nMore')" ] && [ -n "$(ls /usr/share/wallpapers/More)" ] && grep -q 'wallpapers/More/$n/' /usr/libexec/fennek-shortcuts-update || fail "Fennek's wallpaper first; stock ones one folder down"
+[ "$(ls /usr/share/wallpapers)" = "$(printf 'Fennek\nMore')" ] && [ -n "$(ls /usr/share/wallpapers/More)" ] && grep -q 'wallpapers/More/$n/' /usr/libexec/fennek-shortcuts-update || fail "Fennek's wallpaper first; stock ones one folder down: $(ls /usr/share/wallpapers | xargs)"
 for k in desktop documents downloads music pictures videos; do [ -s /usr/share/icons/Fennek/scalable/places/fennek-folder-$k.svg ] && [ -e /usr/share/icons/Fennek-Dark/scalable/places/fennek-folder-$k.svg ] || fail "This PC folder icon $k"; done; [ -s /usr/share/icons/Fennek/scalable/devices/fennek-drive-used-90.svg ] && grep -q ff5a5a /usr/share/icons/Fennek/scalable/devices/fennek-drive-used-90.svg || fail "drive gauge red when nearly full"
 grep -q '^MenuBar=Enabled' /etc/xdg/dolphinrc                     || fail "Files menu bar"
 grep -q 'panel.floating = false' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "taskbar layout"

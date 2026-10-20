@@ -107,9 +107,12 @@ magick -background none /usr/share/fennek/wallpaper-night.svg $WALLJPG /usr/shar
 # Fennek's wallpaper first on the Background page: it lists the packages at the top of each wallpaper folder before
 # those in subfolders, so the stock pictures (KDE's, Fedora's) move one level down, still there to pick.
 mkdir -p /usr/share/wallpapers/More
-for w in /usr/share/wallpapers/*/; do
-    w=${w%/}
-    case ${w##*/} in Fennek | More) ;; *) [ -L "$w" ] || mv "$w" /usr/share/wallpapers/More/ ;; esac
+ls -la /usr/share/wallpapers
+for w in /usr/share/wallpapers/*; do
+    case ${w##*/} in
+        Fennek | More) ;;
+        *) if [ -L "$w" ]; then rm -f "$w"; else mv "$w" /usr/share/wallpapers/More/; fi ;;   # links: aliases of pictures now in More
+    esac
 done
 # Extra wallpapers and theme backgrounds (Fennek Classic, Leonote, Amber, Sakura, Royal, Arcade, Kitsumi Night) are
 # not part of the system: github.com/Olexify/FennekWallpapers renders them from these same sources, and Personalize
