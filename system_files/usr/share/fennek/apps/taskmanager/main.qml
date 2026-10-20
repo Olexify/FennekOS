@@ -81,6 +81,13 @@ QQC2.ApplicationWindow {
             }
             Item { Layout.fillWidth: true }
             QQC2.ToolButton {
+                text: "Startup apps"
+                icon.name: "fennek-set-startup"
+                onClicked: run.connectSource("setsid -f fennek-app settings kcm_autostart")
+                QQC2.ToolTip.visible: hovered
+                QQC2.ToolTip.text: "Choose which apps start when you sign in"
+            }
+            QQC2.ToolButton {
                 text: "Performance"
                 icon.name: "utilities-system-monitor"
                 onClicked: run.connectSource("setsid -f plasma-systemmonitor --page-name overview")
