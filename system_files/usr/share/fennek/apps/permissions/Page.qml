@@ -42,6 +42,7 @@ Item {
         if (p.sound) parts.push("Sound")
         if (p.devices) parts.push("Devices")
         if (p.launch) parts.push("Starts programs")
+        if (p.other && p.other.length) parts.push("More (see below)")
         return parts.length ? parts.join(" · ") : "Nothing outside its box"
     }
 
@@ -158,6 +159,15 @@ Item {
                                     onToggled: root.act("app " + root.q(appRow.modelData.id) + " " + modelData[0] + (checked ? " on" : " off"))
                                 }
                             }
+                        }
+                        // Anything beyond these switches, named plainly (change it in the detailed page)
+                        QQC2.Label {
+                            visible: (appRow.modelData.perms.other || []).length > 0
+                            Layout.fillWidth: true
+                            wrapMode: Text.Wrap
+                            textFormat: Text.PlainText
+                            text: "Also: " + (appRow.modelData.perms.other || []).join("; ")
+                            color: Kirigami.Theme.neutralTextColor
                         }
                         QQC2.Button {
                             visible: appRow.modelData.changed
