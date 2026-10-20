@@ -183,7 +183,7 @@ QQC2.ApplicationWindow {
                                 ["Zoom", "Zoom", "us.zoom.Zoom"],
                                 ["GIMP", "gimp", "org.gimp.GIMP"],
                                 ["VS Code", "vscode", "com.visualstudio.code"],
-                                ["Leonote", "fennek-get-leonote", "", "xdg-open https://github.com/Olexify/Leonote/releases/latest"],
+                                ["Leonote", "fennek-get-leonote", "", "xdg-open https://leonote.app"],
                                 ["MPV Player", "multimedia-video-player", "", "/usr/libexec/fennek-get-mpv"],
                                 ["LibreOffice", "x-office-document", "", "/usr/libexec/fennek-get-app org.libreoffice.LibreOffice LibreOffice fennek-get-libreoffice"]
                             ]

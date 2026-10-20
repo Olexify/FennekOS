@@ -2,8 +2,15 @@
 Type=Application
 Name=Leonote
 GenericName=Popup notes (get it)
-Comment=Quick popup notes that keep you focused. Not installed yet: opens its download page.
-Exec=xdg-open https://github.com/Olexify/Leonote/releases/latest
+Comment=Quick popup notes that keep you focused. Not installed yet: opens its website.
+Exec=xdg-open https://leonote.app
 Icon=fennek-get-leonote
 Categories=Office;Utility;
 Keywords=notes;sticky;memo;todo;
+
+Actions=hide;
+
+[Desktop Action hide]
+Name=Don't recommend this
+Icon=list-remove
+Exec=/usr/libexec/fennek-get-app --hide fennek-get-leonote

@@ -4,6 +4,8 @@ Description=Say what a newly installed app may reach (App permissions)
 [Service]
 Type=oneshot
 ExecStart=/usr/libexec/fennek-permissions new-apps
+# and the Start "get it" entries of apps that are installed now leave Start
+ExecStart=/usr/libexec/fennek-get-app --sync
 
 [Install]
 WantedBy=graphical-session.target

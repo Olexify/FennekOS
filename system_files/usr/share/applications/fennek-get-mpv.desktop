@@ -7,3 +7,10 @@ Exec=/usr/libexec/fennek-get-mpv
 Icon=multimedia-video-player
 Categories=AudioVideo;Video;Player;
 Keywords=video;player;mpv;movie;
+
+Actions=hide;
+
+[Desktop Action hide]
+Name=Don't recommend this
+Icon=list-remove
+Exec=/usr/libexec/fennek-get-app --hide fennek-get-mpv

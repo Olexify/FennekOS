@@ -3,7 +3,23 @@
 # this account (no password) with a notice, opens it, and hides its own "get it" entry from then on (the app's own
 # entry stays). Already there: just opens it.
 #   fennek-get-app APP-ID "Name" GET-ENTRY      e.g. org.libreoffice.LibreOffice "LibreOffice" fennek-get-libreoffice
+#   fennek-get-app --hide GET-ENTRY             "Don't recommend this": the entry leaves Start for this account
+#   fennek-get-app --sync                       hide the entries of apps that are already installed (at sign-in, after installs)
 set -euo pipefail
+hide() {   # a copy of the entry with NoDisplay=true in the account's own applications: Start leaves it out
+    [[ $1 =~ ^fennek-get-[a-z0-9-]+$ ]] && [ -f "/usr/share/applications/$1.desktop" ] || exit 2
+    local apps=${XDG_DATA_HOME:-$HOME/.local/share}/applications
+    mkdir -p "$apps" && grep -v '^NoDisplay=' "/usr/share/applications/$1.desktop" \
+        | sed '0,/^\[Desktop Entry\]$/s//[Desktop Entry]\nNoDisplay=true/' > "$apps/$1.desktop"   # in the main group
+}
+if [ "${1:-}" = --hide ]; then hide "${2:-}"; exit 0; fi
+if [ "${1:-}" = --sync ]; then
+    flatpak info org.libreoffice.LibreOffice >/dev/null 2>&1 || command -v libreoffice >/dev/null && hide fennek-get-libreoffice
+    flatpak info io.mpv.Mpv >/dev/null 2>&1 || command -v mpv >/dev/null && hide fennek-get-mpv
+    ls /usr/share/applications/*eonote*.desktop "${XDG_DATA_HOME:-$HOME/.local/share}"/applications/*eonote*.desktop 2>/dev/null \
+        | grep -qv fennek-get && hide fennek-get-leonote
+    exit 0
+fi
 id=${1:?app id} name=${2:?name} entry=${3:?entry}
 [[ $id =~ ^[A-Za-z0-9._-]+$ && $entry =~ ^[a-z0-9-]+$ ]] || exit 2
 note() { notify-send -a "$name" -i "$id" "$@" || true; }
@@ -15,7 +31,5 @@ if ! flatpak info "$id" >/dev/null 2>&1; then
     note "$name is ready" "You'll find it in Start."
 fi
 # The "get it" entry has done its job: hidden for this account (Start shows the app itself).
-apps=${XDG_DATA_HOME:-$HOME/.local/share}/applications
-mkdir -p "$apps" && [ -f "/usr/share/applications/$entry.desktop" ] \
-    && { cat "/usr/share/applications/$entry.desktop"; echo "NoDisplay=true"; } > "$apps/$entry.desktop"
+hide "$entry"
 exec flatpak run "$id"

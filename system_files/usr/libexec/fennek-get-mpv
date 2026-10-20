@@ -41,5 +41,4 @@ for dest in "$HOME/.var/app/$app/config/mpv" "${XDG_CONFIG_HOME:-$HOME/.config}/
 done
 note "MPV Player is ready" "Oleks Edition. Open a video with it from Files (right-click > Open with)."
 # The "get it" entry has done its job: hidden for this account (Start shows the player itself).
-apps=${XDG_DATA_HOME:-$HOME/.local/share}/applications
-mkdir -p "$apps" && { cat /usr/share/applications/fennek-get-mpv.desktop; echo "NoDisplay=true"; } > "$apps/fennek-get-mpv.desktop"
+/usr/libexec/fennek-get-app --hide fennek-get-mpv

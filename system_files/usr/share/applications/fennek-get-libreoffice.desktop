@@ -7,3 +7,10 @@ Exec=/usr/libexec/fennek-get-app org.libreoffice.LibreOffice LibreOffice fennek-
 Icon=x-office-document
 Categories=Office;
 Keywords=office;word;excel;powerpoint;docx;xlsx;pptx;document;spreadsheet;presentation;
+
+Actions=hide;
+
+[Desktop Action hide]
+Name=Don't recommend this
+Icon=list-remove
+Exec=/usr/libexec/fennek-get-app --hide fennek-get-libreoffice
