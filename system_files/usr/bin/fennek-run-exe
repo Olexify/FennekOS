@@ -129,6 +129,17 @@ def folder_name(exe, digest):
     return f"{safe_name(exe)}-{digest[:8]}"
 
 
+def wine_cmd(target, args):
+    """What Proton runs: a program itself; an installer package through msiexec; a batch file through cmd."""
+    t = str(target)
+    win = "Z:" + t.replace("/", "\\")   # Wine's Z: is /; a bare /path would read as a /switch to msiexec and cmd
+    if re.search(r"\.msi$", t, re.I):
+        return ["msiexec", "/i", win, *args]
+    if re.search(r"\.(bat|cmd)$", t, re.I):
+        return ["cmd", "/c", win, *args]
+    return [t, *args]
+
+
 def proton_dir():
     """Newest Proton that umu downloaded, or None."""
     found = [p for d in (DATA / "umu/compatibilitytools", DATA / "Steam/compatibilitytools.d")
@@ -227,7 +238,7 @@ def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env, so
             a += ["--ro-bind-try", display_env["XAUTHORITY"], display_env["XAUTHORITY"]]
     for k, v in UMU.items():
         a += ["--setenv", k, v]
-    return a + ["--", "umu-run", str(target), *args]
+    return a + ["--", "umu-run", *wine_cmd(target, args)]
 
 
 def run_sandboxed(exe, digest, args, sound=False):
@@ -260,7 +271,7 @@ def run_sandboxed(exe, digest, args, sound=False):
 
 
 def run_trusted(exe, args):
-    return subprocess.run(["umu-run", str(exe), *args], env={**os.environ, **umu_env()}).returncode
+    return subprocess.run(["umu-run", *wine_cmd(exe, args)], env={**os.environ, **umu_env()}).returncode
 
 
 def ask(exe, digest):
@@ -347,6 +358,8 @@ def selftest():
     assert not any("pipewire" in x or "pulse" in x for x in a), "no sound/microphone by default"
     assert "/tmp/.X11-unix" in a, "X11 only as fallback when Proton lacks Wine-Wayland"
     assert a[-3:] == ["umu-run", "/var/home/u/App/setup.exe", "/S"]
+    assert wine_cmd(Path("/var/home/u/Setup.MSI"), ["/qb"]) == ["msiexec", "/i", "Z:\\var\\home\\u\\Setup.MSI", "/qb"]
+    assert wine_cmd(Path("/h/run.bat"), []) == ["cmd", "/c", "Z:\\h\\run.bat"]
 
     s = bwrap_args(dl, [], Path("/b"), Path("/s"), Path("/p"), "/run/user/1000", {}, sound=True)
     assert "/run/user/1000/pipewire-0" in s, "sound on request"
