@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Performance
+Comment=Detailed graphs of processor, memory, disks and network
+Exec=plasma-systemmonitor
+Icon=utilities-system-monitor
+Categories=System;Monitor;
+Keywords=performance;graphs;cpu;memory;monitor;

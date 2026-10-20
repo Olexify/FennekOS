@@ -440,6 +440,16 @@ def _add(p, shortcut, rename):
         head = re.sub(r"^Name=.*$", f"Name={rename}", head, count=1, flags=re.M)
     replace_file(p, head + sep + rest)
 add_shortcut("org.kde.plasma-systemmonitor.desktop", "Ctrl+Shift+Esc", rename="Task Manager")
+# ...which opens Fennek's Task Manager (fennek-app taskmanager: apps, background services, system services, each
+# with its processes). KDE's monitor stays as "Performance" (fennek-performance.desktop, its detailed graphs).
+for d in ("/usr/share/kglobalaccel", "/usr/share/applications"):
+    p = pathlib.Path(d, "org.kde.plasma-systemmonitor.desktop")
+    if p.exists():
+        head, sep, rest = p.read_text().partition("\n[Desktop Action")
+        head = re.sub(r"^Exec=.*$", "Exec=fennek-app taskmanager", head, count=1, flags=re.M)
+        head = re.sub(r"^Icon=.*$", "Icon=fennek-taskmanager", head, count=1, flags=re.M)
+        head = re.sub(r"^(DBusActivatable|X-DBUS-ServiceName|SingleMainWindow)=.*\n", "", head, flags=re.M)
+        replace_file(p, head + sep + rest)
 add_shortcut("org.kde.dolphin.desktop", "Meta+E")
 # Super+Shift+S = snip a screen region (Spectacle's region action; its own Meta+Shift+Print stays).
 p = pathlib.Path("/usr/share/applications/org.kde.spectacle.desktop")

@@ -24,7 +24,7 @@ QQC2.ApplicationWindow {
         ["Disk management", "partitionmanager", "partitionmanager"],
         [],
         ["Terminal", "utilities-terminal", "konsole"],
-        ["Task Manager", "utilities-system-monitor", "plasma-systemmonitor"],
+        ["Task Manager", "fennek-taskmanager", "fennek-app taskmanager"],
         ["Settings", "fennek-settings", "fennek-app settings"],
         ["File Explorer", "system-file-manager", "dolphin"],
         ["Launch", "system-search", "fennek-app run"],

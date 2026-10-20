@@ -1,0 +1,182 @@
+#!/usr/bin/python3
+"""Task Manager data: what runs right now, grouped the way people think about it, from the per-unit numbers Linux
+already keeps (each app and service runs in its own cgroup).
+
+  Apps                 your apps (app.slice): name and icon from their Start entry
+  Background services  your account's helpers (background.slice, user services): their description
+  Desktop              the desktop itself (session.slice: taskbar, window manager…), shown, never ended here
+  System services      the computer's services (system.slice), shown, ended only by an administrator elsewhere
+
+  fennek-tasks list            JSON: {"cpus", "mem_total", "mem_used", "groups": [{key, name, items: [...]}]}
+                               item: {unit, name, icon, desc, cpu (% of the whole computer), mem (bytes),
+                               can_end, procs: [{pid, name, mem}]}
+  fennek-tasks end UNIT        stop one of your apps or background services
+  fennek-tasks --selftest
+"""
+import json, os, re, subprocess, sys, time
+
+CG = "/sys/fs/cgroup"
+UNIT = re.compile(r"^[A-Za-z0-9@_.:\\-]+\.(service|scope)$")
+
+
+def read(path, default=""):
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            return f.read()
+    except OSError:
+        return default
+
+
+def cpu_usec(cg):
+    for line in read(os.path.join(cg, "cpu.stat")).splitlines():
+        k, _, v = line.partition(" ")
+        if k == "usage_usec":
+            return int(v)
+    return 0
+
+
+def tree_procs(cg):
+    """Every process in this cgroup and below (an app may keep helpers in sub-cgroups)."""
+    pids = []
+    for root, dirs, files in os.walk(cg):
+        pids += [int(p) for p in read(os.path.join(root, "cgroup.procs")).split() if p.isdigit()]
+    return pids
+
+
+def proc_info(pid):
+    name = read(f"/proc/{pid}/comm").strip() or str(pid)
+    rss = 0
+    for line in read(f"/proc/{pid}/status").splitlines():
+        if line.startswith("VmRSS:"):
+            rss = int(line.split()[1]) * 1024
+    return {"pid": pid, "name": name, "mem": rss}
+
+
+def app_id(unit):
+    """app-org.kde.dolphin@3f2a.service / app-flatpak-org.mozilla.firefox-12.scope -> org.kde.dolphin / org.mozilla.firefox."""
+    u = unit[4:] if unit.startswith("app-") else unit
+    u = re.sub(r"\.(scope|service)$", "", u).split("@")[0]
+    u = re.sub(r"-\d+$", "", u)
+    u = u[8:] if u.startswith("flatpak-") else u
+    return u.replace("\\x2d", "-")
+
+
+def desktop_entries():
+    dirs = [os.path.join(os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share"), "applications")]
+    dirs += [os.path.join(d, "applications") for d in (os.environ.get("XDG_DATA_DIRS") or "/usr/local/share:/usr/share").split(":")]
+    out = {}
+    for d in dirs:
+        try:
+            names = os.listdir(d)
+        except OSError:
+            continue
+        for n in names:
+            if n.endswith(".desktop") and n[:-8] not in out:
+                e = {}
+                for line in read(os.path.join(d, n)).splitlines():
+                    if line.startswith("[") and line != "[Desktop Entry]":
+                        break
+                    if "=" in line:
+                        k, v = line.split("=", 1)
+                        e.setdefault(k.strip(), v.strip())
+                out[n[:-8]] = (e.get("Name", n[:-8]), e.get("Icon", ""))
+    return out
+
+
+def descriptions(units, user):
+    """Unit -> its Description, in one systemctl call."""
+    if not units:
+        return {}
+    cmd = ["systemctl"] + (["--user"] if user else []) + ["show", "-p", "Id,Description", "--"] + units
+    out, cur = {}, {}
+    for line in subprocess.run(cmd, capture_output=True, text=True).stdout.splitlines() + [""]:
+        if not line:
+            if "Id" in cur:
+                out[cur["Id"]] = cur.get("Description", "")
+            cur = {}
+        elif "=" in line:
+            k, v = line.split("=", 1)
+            cur[k] = v
+    return out
+
+
+def units_in(slice_dir):
+    try:
+        return sorted(u for u in os.listdir(slice_dir) if UNIT.match(u) and os.path.isdir(os.path.join(slice_dir, u)))
+    except OSError:
+        return []
+
+
+def snapshot():
+    uid = os.getuid()
+    user_root = f"{CG}/user.slice/user-{uid}.slice/user@{uid}.service"
+    layout = [("apps", "Apps", f"{user_root}/app.slice", True, True),
+              ("background", "Background services", f"{user_root}/background.slice", True, True),
+              ("desktop", "Desktop", f"{user_root}/session.slice", True, False),
+              ("system", "System services", f"{CG}/system.slice", False, False)]
+    found = [(key, name, d, user, can, units_in(d)) for key, name, d, user, can in layout]
+    first = {(d, u): cpu_usec(os.path.join(d, u)) for _, _, d, _, _, us in found for u in us}
+    t0 = time.monotonic()
+    time.sleep(0.5)
+    dt = (time.monotonic() - t0) * 1e6
+    cpus = os.cpu_count() or 1
+    apps = desktop_entries()
+    groups = []
+    for key, gname, d, user, can, us in found:
+        desc = descriptions(us, user) if key != "apps" else {}
+        items = []
+        for u in us:
+            cg = os.path.join(d, u)
+            procs = [proc_info(p) for p in tree_procs(cg)]
+            if not procs:
+                continue
+            cpu = max(0.0, (cpu_usec(cg) - first.get((d, u), 0)) / dt / cpus * 100)
+            mem = int(read(os.path.join(cg, "memory.current"), "0").strip() or 0)
+            if key == "apps":
+                name, icon = apps.get(app_id(u), (app_id(u), ""))
+                item = {"name": name, "icon": icon or "application-x-executable", "desc": ""}
+            else:
+                text = desc.get(u, "") or re.sub(r"\.(service|scope)$", "", u)
+                item = {"name": text, "icon": "", "desc": re.sub(r"\.(service|scope)$", "", u)}
+            item.update({"unit": u, "cpu": round(cpu, 1), "mem": mem, "can_end": can,
+                         "procs": sorted(procs, key=lambda p: -p["mem"])[:30]})
+            items.append(item)
+        items.sort(key=lambda i: (-i["cpu"], -i["mem"]))
+        groups.append({"key": key, "name": gname, "items": items})
+    total = used = 0
+    for line in read("/proc/meminfo").splitlines():
+        if line.startswith("MemTotal:"):
+            total = int(line.split()[1]) * 1024
+        elif line.startswith("MemAvailable:"):
+            used = total - int(line.split()[1]) * 1024
+    return {"cpus": cpus, "mem_total": total, "mem_used": used, "groups": groups}
+
+
+def end(unit):
+    """Stop one of your apps or background services (never the desktop, never a system service)."""
+    uid = os.getuid()
+    base = f"{CG}/user.slice/user-{uid}.slice/user@{uid}.service"
+    if not UNIT.match(unit) or not any(os.path.isdir(f"{base}/{s}/{unit}") for s in ("app.slice", "background.slice")):
+        sys.exit("not one of your apps or background services")
+    sys.exit(subprocess.run(["systemctl", "--user", "stop", "--", unit]).returncode)
+
+
+def selftest():
+    assert app_id("app-org.kde.dolphin@3f2a9b.service") == "org.kde.dolphin"
+    assert app_id("app-flatpak-org.mozilla.firefox-12345.scope") == "org.mozilla.firefox"
+    assert app_id("app-firefox-4711.scope") == "firefox"
+    assert app_id("app-org.kde.konsole\\x2dterminal@1.service") == "org.kde.konsole-terminal"
+    assert UNIT.match("app-org.kde.dolphin@3f2a.service") and not UNIT.match("../evil.service") and not UNIT.match("x;rm.scope")
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    a = sys.argv[1:]
+    if a == ["--selftest"]:
+        selftest()
+    elif a == ["list"]:
+        print(json.dumps(snapshot()))
+    elif len(a) == 2 and a[0] == "end":
+        end(a[1])
+    else:
+        sys.exit(__doc__)

@@ -243,7 +243,7 @@ PlasmoidItem {
 		PlasmaCore.Action { text: i18n("Disk management"); icon.name: "partitionmanager"; onTriggered: widget.run("partitionmanager") },
 		PlasmaCore.Action { isSeparator: true },
 		PlasmaCore.Action { text: i18n("Terminal"); icon.name: "utilities-terminal"; onTriggered: widget.run("konsole") },
-		PlasmaCore.Action { text: i18n("Task Manager"); icon.name: "utilities-system-monitor"; onTriggered: widget.run("plasma-systemmonitor") },
+		PlasmaCore.Action { text: i18n("Task Manager"); icon.name: "fennek-taskmanager"; onTriggered: widget.run("fennek-app taskmanager") },
 		PlasmaCore.Action { text: i18n("Settings"); icon.name: "fennek-settings"; onTriggered: widget.run("fennek-app settings") },
 		PlasmaCore.Action { text: i18n("File Explorer"); icon.name: "system-file-manager"; onTriggered: widget.run("dolphin") },
 		PlasmaCore.Action { text: i18n("Launch"); icon.name: "system-search"; onTriggered: widget.run("fennek-app run") },

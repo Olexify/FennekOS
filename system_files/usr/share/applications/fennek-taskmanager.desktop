@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Task Manager
+Comment=Apps, background services and system services, with what each one uses
+Exec=fennek-app taskmanager
+Icon=fennek-taskmanager
+NoDisplay=true

@@ -18,7 +18,7 @@ case ${0##*/} in
     explorer) exec dolphin --new-window "$@" ;;
     cmd) exec konsole ;;
     control) exec fennek-app settings ;;
-    taskmgr) exec plasma-systemmonitor ;;
+    taskmgr) exec fennek-app taskmanager ;;
     snippingtool) exec spectacle ;;
     msinfo32 | winver) exec kinfocenter ;;
     appwiz.cpl) exec plasma-discover --mode installed ;;
