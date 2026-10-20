@@ -100,11 +100,17 @@ mkdir -p /usr/share/wallpapers/Fennek/contents/images
 # All wallpapers ship as high-quality JPEG (a fraction of a PNG: a few MB each instead of 7-10).
 WALLJPG="-background '#000' -flatten -quality 95 -sampling-factor 4:4:4 -strip"   # full colour detail: thin lines stay crisp
 magick -background none /usr/share/fennek/wallpaper.svg $WALLJPG /usr/share/wallpapers/Fennek/contents/images/3840x2160.jpg
-# Night version: the same dusk, darker and calmer. Plasma shows images_dark/ while the dark look is on and switches
-# right away with it; a wallpaper the user picked is never touched.
+# Night version: the same desert, darker, under a full moon (wallpaper-night.svg, same generator). Plasma shows
+# images_dark/ while the dark look is on and switches right away with it; a wallpaper the user picked is never touched.
 mkdir -p /usr/share/wallpapers/Fennek/contents/images_dark
-magick /usr/share/wallpapers/Fennek/contents/images/3840x2160.jpg -modulate 52,88,100 $WALLJPG \
-    /usr/share/wallpapers/Fennek/contents/images_dark/3840x2160.jpg
+magick -background none /usr/share/fennek/wallpaper-night.svg $WALLJPG /usr/share/wallpapers/Fennek/contents/images_dark/3840x2160.jpg
+# Fennek's wallpaper first on the Background page: it lists the packages at the top of each wallpaper folder before
+# those in subfolders, so the stock pictures (KDE's, Fedora's) move one level down, still there to pick.
+mkdir -p /usr/share/wallpapers/More
+for w in /usr/share/wallpapers/*/; do
+    w=${w%/}
+    case ${w##*/} in Fennek | More) ;; *) [ -L "$w" ] || mv "$w" /usr/share/wallpapers/More/ ;; esac
+done
 # Extra wallpapers and theme backgrounds (Fennek Classic, Leonote, Amber, Sakura, Royal, Arcade, Kitsumi Night) are
 # not part of the system: github.com/Olexify/FennekWallpapers renders them from these same sources, and Personalize
 # fetches one when it is picked (fennek-wallpaper-get, pinned commit + SHA-256 in /usr/share/fennek/wallpapers.json).

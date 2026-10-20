@@ -177,6 +177,14 @@ if [ "$(cat "$wp_seen" 2>/dev/null)" != 2026-10-20 ]; then
     done
     [ $pending = 0 ] && mkdir -p "${wp_seen%/*}" && echo 2026-10-20 >"$wp_seen"
 fi
+# The stock pictures (KDE's, Fedora's) moved one folder down (Fennek's own come first on the Background page):
+# a desktop or lock screen that uses one follows it there.
+for f in "${XDG_CONFIG_HOME:-$HOME/.config}/plasma-org.kde.plasma.desktop-appletsrc" "${XDG_CONFIG_HOME:-$HOME/.config}/kscreenlockerrc"; do
+    grep -qs 'file:///usr/share/wallpapers/' "$f" || continue
+    for w in /usr/share/wallpapers/More/*/; do
+        [ -d "$w" ] || continue; n=$(basename "$w"); sed -i "s#file:///usr/share/wallpapers/$n/#file:///usr/share/wallpapers/More/$n/#g" "$f"
+    done
+done
 
 # Files sidebar, once: hide "Devices" (system partitions) and "Recent", the bin is Recycle Bin (English).
 pl_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/places-version
