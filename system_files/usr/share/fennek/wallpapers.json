@@ -1,42 +1,42 @@
 {
  "repo": "Olexify/FennekWallpapers",
- "commit": "557760932bb9df19d097b2579d9ba828652e7098",
+ "commit": "e5f7a8e797b8ba87a83e2c7761033816d6872105",
  "wallpapers": [
   {
    "id": "Amber",
    "name": "Amber",
    "file": "Amber.jpg",
-   "bytes": 1059584,
+   "bytes": 2249802,
    "width": 3840,
    "height": 2160,
-   "sha256": "23626a9b3e53711f628e9a8b279d87eb91180e675368f2e1f66e24f06ebc2ac7",
+   "sha256": "586cf7fee6e899aa5b5bfee725e08e51e30fa162da6d70022f28485b3074d12b",
    "preview": "previews/Amber.jpg",
-   "preview_bytes": 9137,
-   "preview_sha256": "093dbab82d1d89f3e3a55b2170f5bb1a4e6d4e6a06a528abf2111ae5fc4afe1f"
+   "preview_bytes": 11105,
+   "preview_sha256": "d001160aa8451be54c10a3e78e27e5e51c43826a3ba8b42fd25015c5395aa12f"
   },
   {
    "id": "Arcade",
    "name": "Arcade",
    "file": "Arcade.jpg",
-   "bytes": 639911,
+   "bytes": 1403019,
    "width": 3840,
    "height": 2160,
-   "sha256": "cebfa717c35e902810dea2d77b4ff416db0efeae00e93a7433e463a9f4bdb3f1",
+   "sha256": "a574c17e1bedd847565b9fb9cf91f459eb4e41b6d3494553d3ebf5f5fb188d91",
    "preview": "previews/Arcade.jpg",
-   "preview_bytes": 15069,
-   "preview_sha256": "acddf8346385d1ffed5aa0f4092736ac045c13c48c6ac9b2228f69024ab5f2c0"
+   "preview_bytes": 20331,
+   "preview_sha256": "00708f20c10681a8c18623d900fa6e2e7b3d388bc4abdc8a7f90acc3c304c0d7"
   },
   {
    "id": "Fennek-Classic",
    "name": "Fennek Classic",
    "file": "Fennek-Classic.jpg",
-   "bytes": 211165,
+   "bytes": 483275,
    "width": 3840,
    "height": 2160,
-   "sha256": "f479450ccacf9af3b93626f7f600f73b8af28c036aff8466e33956b42e9d89ed",
+   "sha256": "aac084e4ce194f9f2be3384bd08af04e1637672e0b3d147bc074af807e99e8fa",
    "preview": "previews/Fennek-Classic.jpg",
-   "preview_bytes": 7035,
-   "preview_sha256": "55b077bdc350cf2bd72edfbb4f5796b7310442557c7a1af4f30169455f6c3c7c"
+   "preview_bytes": 8091,
+   "preview_sha256": "c75d2478ab87f905c76051dc5a248af4a3867e35a5c4f9b51a7ec177491ccaf7"
   },
   {
    "id": "Kitsumi-Night",
@@ -54,61 +54,61 @@
    "id": "Leonote-Graph",
    "name": "Leonote Graph",
    "file": "Leonote-Graph.jpg",
-   "bytes": 235618,
+   "bytes": 475997,
    "width": 3840,
    "height": 2160,
-   "sha256": "aabdd871e656521fec5d06104783804d9cdfd580bf632ed6d119bd3ef4d7751e",
+   "sha256": "6c181c6c59b7a7e219ac7560f8ef686f3c635556c5204d29a29d1bf76dd9cc23",
    "preview": "previews/Leonote-Graph.jpg",
-   "preview_bytes": 7990,
-   "preview_sha256": "527bd1f4e7c8473561b5642d48e3a437b219195078e53e1788e9ee4bffa41fa3"
+   "preview_bytes": 9593,
+   "preview_sha256": "8c0ca7ab337a15fd51f41802b431e9acaf01722747dc3667f165ac43cf312d7f"
   },
   {
    "id": "Leonote-Night",
    "name": "Leonote Night",
    "file": "Leonote-Night.jpg",
-   "bytes": 274756,
+   "bytes": 521269,
    "width": 3840,
    "height": 2160,
-   "sha256": "cfda5a3599891577410e55dad0f456b7ff4944841a676e619be56481dd4413ac",
+   "sha256": "e3359dcc4bc17ab797264d59b837bf8ec50f893f5f9255c4369762fe13743e28",
    "preview": "previews/Leonote-Night.jpg",
-   "preview_bytes": 11775,
-   "preview_sha256": "9618319cef9365bdc92f939255f00e7face44433b206d0d598e2ecc571cc981d"
+   "preview_bytes": 13582,
+   "preview_sha256": "31e1f36b3b698b1747a8e8b807b7272d25db813d9e49f8d970ca9010857677c7"
   },
   {
    "id": "Leonote-Paper",
    "name": "Leonote Paper",
    "file": "Leonote-Paper.jpg",
-   "bytes": 235002,
+   "bytes": 495978,
    "width": 3840,
    "height": 2160,
-   "sha256": "2f0429abe0a0949405dccfe2186633c4c861dac0550dcfbe4c4e4e62930a7c0b",
+   "sha256": "7b4caef2b62150e96438bd637243d544bf4dbaa39714ff0c6db077a29539b9d9",
    "preview": "previews/Leonote-Paper.jpg",
-   "preview_bytes": 8796,
-   "preview_sha256": "3eb515f711dab6b87afcd2788a4f8044f702a1a0ecbc0fdafedc3616f5ef15b7"
+   "preview_bytes": 10733,
+   "preview_sha256": "c225933642a5922b1f85251b86d69364b4d7d3312a3edd934cb0fca65eaf2e39"
   },
   {
    "id": "Royal",
    "name": "Royal",
    "file": "Royal.jpg",
-   "bytes": 867629,
+   "bytes": 1956915,
    "width": 3840,
    "height": 2160,
-   "sha256": "c8633eb1fc5d0656b66318f79bff0829c76964d197a67e33cfea106c2bb56e91",
+   "sha256": "f4b58ba1ea24f40d48d52c49b1ef25da572a358dec52d00d06bab2309de5fe8e",
    "preview": "previews/Royal.jpg",
-   "preview_bytes": 8221,
-   "preview_sha256": "ce83bd1f3fcb5ce2cf0b589495fb51af6273d72c1421e4a53146e13cdcd5b324"
+   "preview_bytes": 9942,
+   "preview_sha256": "a2ec23636e5777b1fea9acb91a408d063a89a5e0c5db9b5c92a3451055d0c99a"
   },
   {
    "id": "Sakura",
    "name": "Sakura",
    "file": "Sakura.jpg",
-   "bytes": 394841,
+   "bytes": 1003890,
    "width": 3840,
    "height": 2160,
-   "sha256": "9c1d8cdfa4b54e0ee026062d4a958ebdb996ab3247ba9a6d7fbaf8675adca655",
+   "sha256": "ddf491fbd5a297466489e5db4a7a4f0b5e817970139d26fd9a4d7f5b3141e6fb",
    "preview": "previews/Sakura.jpg",
-   "preview_bytes": 9544,
-   "preview_sha256": "681650fa0141447ca750ef433c087a14a3ff3c76bec812e505006d2383a84999"
+   "preview_bytes": 11159,
+   "preview_sha256": "18074503e8a0132765062ee31353c678debc90f457d9cf6e7fb1bd8c054e75d6"
   }
  ]
 }

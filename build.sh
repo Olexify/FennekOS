@@ -97,8 +97,8 @@ if rpm -q plasma-welcome-fedora >/dev/null; then dnf -y remove plasma-welcome-fe
 # Wallpaper, generated at build time (no binaries in the repo).
 mkdir -p /usr/share/wallpapers/Fennek/contents/images
 # Wallpaper: the desert at dusk under a crescent moon (branding/wallpaper.py), rendered from its vector source to 4K.
-# All wallpapers ship as high-quality JPEG (about a tenth of a PNG: 1-2 MB each instead of 7-10).
-WALLJPG="-background '#000' -flatten -quality 90 -sampling-factor 4:2:0 -strip"
+# All wallpapers ship as high-quality JPEG (a fraction of a PNG: a few MB each instead of 7-10).
+WALLJPG="-background '#000' -flatten -quality 95 -sampling-factor 4:4:4 -strip"   # full colour detail: thin lines stay crisp
 magick -background none /usr/share/fennek/wallpaper.svg $WALLJPG /usr/share/wallpapers/Fennek/contents/images/3840x2160.jpg
 # Night version: the same dusk, darker and calmer. Plasma shows images_dark/ while the dark look is on and switches
 # right away with it; a wallpaper the user picked is never touched.
