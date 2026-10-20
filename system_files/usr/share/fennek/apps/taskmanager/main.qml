@@ -143,6 +143,11 @@ QQC2.ApplicationWindow {
     Timer { interval: root.tab === 6 || root.tab === 4 ? 5000 : 2000; running: root.visible; repeat: true; triggeredOnStart: true
             onTriggered: root.refresh() }
     property var seen: [0]          // tabs shown so far (their pages are loaded then)
+    // fennek-app taskmanager performance|app-history|startup|users|details|services: opens on that tab
+    Component.onCompleted: {
+        const i = ["processes", "performance", "app-history", "startup", "users", "details", "services"].indexOf(Qt.application.arguments[2] || "")
+        if (i > 0) tabs.currentIndex = i
+    }
     onTabChanged: { message = ""; if (seen.indexOf(tab) < 0) seen = seen.concat([tab]); refresh() }
 
     header: QQC2.ToolBar {

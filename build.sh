@@ -452,7 +452,7 @@ def _add(p, shortcut, rename):
     replace_file(p, head + sep + rest)
 add_shortcut("org.kde.plasma-systemmonitor.desktop", "Ctrl+Shift+Esc", rename="Task Manager")
 # ...which opens Fennek's Task Manager (fennek-app taskmanager: apps, background services, system services, each
-# with its processes). KDE's monitor stays as "Performance" (fennek-performance.desktop, its detailed graphs).
+# with its processes). "Performance" (fennek-performance.desktop) opens its Performance tab; KDE's monitor is one click further (More detail).
 for d in ("/usr/share/kglobalaccel", "/usr/share/applications"):
     p = pathlib.Path(d, "org.kde.plasma-systemmonitor.desktop")
     if p.exists():

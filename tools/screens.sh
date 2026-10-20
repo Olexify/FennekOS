@@ -71,6 +71,9 @@ fennek-app settings kcm_mouse >/dev/null 2>&1 & shot 33-settings-page 8; close
 fennek-app settings personalize >/dev/null 2>&1 & shot 35-personalize 8; close
 fennek-app settings permissions >/dev/null 2>&1 & shot 38-permissions 8; close
 fennek-app taskmanager >/dev/null 2>&1 & shot 39-task-manager 8; close
+fennek-app taskmanager performance >/dev/null 2>&1 & shot 40-task-manager-performance 10; close
+fennek-app taskmanager details >/dev/null 2>&1 & shot 41-task-manager-details 8; close
+fennek-app taskmanager services >/dev/null 2>&1 & shot 42-task-manager-services 8; close
 fennek-app security >/dev/null 2>&1 & shot 36-ctrl-alt-del 5; DISPLAY=:99 xdotool key Escape; sleep 1
 # Start with a search typed in (results, not the list).
 call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.activateLauncherMenu; sleep 2

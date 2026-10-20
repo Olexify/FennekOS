@@ -2,7 +2,7 @@
 Type=Application
 Name=Performance
 Comment=Detailed graphs of processor, memory, disks and network
-Exec=plasma-systemmonitor
-Icon=utilities-system-monitor
+Exec=fennek-app taskmanager performance
+Icon=fennek-taskmanager
 Categories=System;Monitor;
 Keywords=performance;graphs;cpu;memory;monitor;
