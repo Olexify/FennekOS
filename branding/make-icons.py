@@ -26,6 +26,8 @@ glyphs = {
     "settings": ("#9aa3b0", "#5d6674", '<circle cx="32" cy="32" r="5.5"/><path d="M32 16v5M32 43v5M16 32h5M43 32h5M20.7 20.7l3.6 3.6M39.7 39.7l3.6 3.6M20.7 43.3l3.6-3.6M39.7 24.3l3.6-3.6"/>'),
     "firewall": ("#ff9b55", "#e2561f", shield + '<path d="M26 32h12M32 26v12" stroke-width="3"/>'),
     "quarantine": ("#a77bf3", "#6a35c9", shield + '<rect x="27" y="30.5" width="10" height="8" rx="1.5" fill="#fff" stroke="none"/><path d="M29 30.5v-2.5a3 3 0 0 1 6 0v2.5" stroke-width="2.6"/>'),
+    # Launch (Win+R): an arrow leaving its box, on the Fennek violet
+    "run": ("#9d8cff", "#5b3fd9", '<path d="M33 20h-10a3 3 0 0 0-3 3v18a3 3 0 0 0 3 3h18a3 3 0 0 0 3-3V31"/><path d="M30 34l15-15M37 19h8v8"/>'),
     "taskmanager": ("#4ad07f", "#15985a", '<path d="M17 38l7-8 6 5 7-11 10 9"/>'),
     "terminal": ("#4a5160", "#1e222b", '<path d="M20 25l7 7-7 7"/><path d="M31 40h12"/>'),
     "store": ("#b38af7", "#7543d6", '<path d="M21 26h22l-2 18H23z"/><path d="M27 26v-2a5 5 0 0 1 10 0v2"/>'),
@@ -53,6 +55,7 @@ names = {
     "files": ["apps/org.kde.dolphin", "apps/system-file-manager", "apps/file-manager"],
     "settings": ["apps/fennek-settings", "apps/preferences-system", "apps/systemsettings"],
     "firewall": ["apps/fennek-firewall"], "quarantine": ["apps/fennek-quarantine"],
+    "run": ["apps/fennek-run"],
     "taskmanager": ["apps/fennek-taskmanager", "apps/org.kde.plasma-systemmonitor", "apps/utilities-system-monitor", "apps/ksysguard"],
     "terminal": ["apps/org.kde.konsole", "apps/utilities-terminal", "apps/konsole"],
     "store": ["apps/plasmadiscover", "apps/org.kde.discover", "apps/system-software-install"],

@@ -130,12 +130,10 @@ QQC2.ApplicationWindow {
 
             RowLayout {
                 spacing: Kirigami.Units.largeSpacing
-                Rectangle {
+                Kirigami.Icon {
+                    source: "fennek-run"
                     Layout.preferredWidth: Kirigami.Units.gridUnit * 2.6
                     Layout.preferredHeight: Layout.preferredWidth
-                    radius: 12
-                    color: Qt.rgba(Kirigami.Theme.highlightColor.r, Kirigami.Theme.highlightColor.g, Kirigami.Theme.highlightColor.b, 0.18)
-                    Kirigami.Icon { anchors.centerIn: parent; source: "system-search"; width: parent.width * .6; height: width }
                 }
                 ColumnLayout {
                     spacing: 0
