@@ -251,6 +251,11 @@ grep -q "^theme=__aurorae__svg__FennekClassicDark" /usr/share/plasma/look-and-fe
 ! ls -d /usr/share/plasma/look-and-feel/org.fedoraproject.* 2>/dev/null || fail "Fedora global themes still listed"
 ! ls /usr/share/plasma/look-and-feel/org.kde.breeze*/contents/defaults 2>/dev/null || fail "KDE global themes still listed"
 grep -aq fennekCollapsedGroups "$(ls /usr/lib64/libdolphinprivate.so.*.* | head -1)" || fail "Files: Fennek's patched view (no group lines, groups fold)"
+# Taskbar button right-click > App permissions: the task manager rebuilt with the item (its QML is compiled in, so the
+# check is "not Fedora's file any more"), and the link it opens lands on Settings > App permissions.
+t=/usr/lib64/qt6/plugins/plasma/applets/org.kde.plasma.taskmanager.so
+rpm -Vf "$t" | grep -q "^..5.* $t$" && grep -q '^MimeType=x-scheme-handler/fennek-permissions;' /usr/share/applications/fennek-permissions-link.desktop \
+  && grep -q 'arguments\[3\]' /usr/share/fennek/apps/permissions/Page.qml || fail "taskbar right-click: App permissions"
 grep -q '^ShowToolTips=true' /etc/xdg/dolphinrc && grep -aq fennekHovered "$(ls /usr/lib64/libdolphinprivate.so.*.* | head -1)" && grep -q '^rating=false' /etc/xdg/baloofileinformationrc && grep -q '^version=13' /etc/xdg/baloofileinformationrc && /usr/libexec/fennek-files-info-panel --selftest >/dev/null || fail "Files: Information panel instead of hover pop-ups"
 ! grep -q '^HomeUrl=' /etc/xdg/dolphinrc && grep -aq 'fennekWatch' "$(ls /usr/lib64/libdolphinprivate.so.*.* | head -1)" && grep -q 'GroupedSorting=true' /etc/skel/.local/share/dolphin/view_properties/remote/.directory \
     && grep -q 'inode/x-fennek-drive' /usr/share/mime/types || fail "Home page (folders, frequent folders, drives) in Files"

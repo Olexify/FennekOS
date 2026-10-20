@@ -16,7 +16,8 @@ Item {
     property var apps: []
     property var programs: []
     property bool loaded: false
-    property string open: ""        // the app or program whose switches are shown
+    // the app whose switches are shown; opened from a taskbar button: fennek-app settings permissions fennek-permissions:ID
+    property string open: String(Qt.application.arguments[3] || "").replace(/^fennek-permissions:/, "")
 
     // [key, label, explanation]
     readonly property var appSwitches: [

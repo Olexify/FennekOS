@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=App permissions
+Comment=Opens Settings on one app's permissions (fennek-permissions:APP-ID, from the taskbar's right-click)
+Icon=fennek-set-permissions
+Exec=fennek-app settings permissions %u
+MimeType=x-scheme-handler/fennek-permissions;
+NoDisplay=true

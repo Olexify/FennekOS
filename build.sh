@@ -738,34 +738,39 @@ for prog in fennek-search fennek-download-guard fennek-usage; do
     rm -rf "/tmp/$prog"
 done
 rm -rf /tmp/cargo-home
-# Files (Dolphin) with Fennek's changes (src/dolphin-fennek/patch.py): no separator lines between groups, and a
-# click on a group's name folds it. Built from Fedora's own source package of the installed version (signature
-# checked); only its view library is replaced. Its build tools go again right after.
-(
+# Fennek's changes to KDE programs, built from Fedora's own source package of the installed version (signature
+# checked); only the changed library is replaced. Their build tools go again right after.
+#   from_source PACKAGE INSTALLED-FILE CMAKE-TARGET PATCHER
+from_source() (
     set -e
-    lib=$(ls /usr/lib64/libdolphinprivate.so.*.* 2>/dev/null | head -1 || true)   # the real file (not the .so.N link)
-    [ -n "$lib" ] || { echo "Dolphin's view library moved: revisit src/dolphin-fennek"; exit 1; }
-    dv=$(rpm -qf --qf '%{VERSION}-%{RELEASE}' "$lib")   # from dolphin-libs; the source package is dolphin
+    pkg=$1 lib=$2 target=$3 patcher=$4
+    [ -f "$lib" ] || { echo "$pkg: $lib moved: revisit $patcher"; exit 1; }
+    v=$(rpm -qf --qf '%{VERSION}-%{RELEASE}' "$lib")
     rpm -qa --qf '%{NAME}\n' | sort -u > /tmp/rpms-before   # names: an upgrade pulled in by the tools is not "new"
-    mkdir -p /tmp/dolphin && cd /tmp/dolphin
-    dnf -y download --srpm "dolphin-$dv"
-    srpm=$(ls dolphin-*.src.rpm)
-    rpm -K "$srpm" | grep -q 'signatures OK' || { echo "Dolphin source package: signature not OK"; exit 1; }
+    mkdir -p "/tmp/src-$pkg" && cd "/tmp/src-$pkg"
+    dnf -y download --srpm "$pkg-$v"
+    srpm=$(ls "$pkg"-*.src.rpm)
+    rpm -K "$srpm" | grep -q 'signatures OK' || { echo "$pkg source package: signature not OK"; exit 1; }
     dnf -y builddep "./$srpm"
     rpm2cpio "$srpm" | cpio -idm --quiet
-    tar xf dolphin-*.tar.xz
-    srcdir=$(find . -maxdepth 1 -type d -name 'dolphin-*' | head -1)
-    python3 "$files/../src/dolphin-fennek/patch.py" "$srcdir"
+    tar xf "$pkg"-*.tar.xz
+    srcdir=$(find . -maxdepth 1 -type d -name "$pkg-*" | head -1)
+    python3 "$patcher" "$srcdir"
     cmake -S "$srcdir" -B build -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
-    cmake --build build -j"$(nproc)" --target dolphinprivate
+    cmake --build build -j"$(nproc)" --target "$target"
     built=$(find build -name "${lib##*/}" -type f | head -1)
-    [ -n "$built" ] || { echo "Patched Dolphin library not built"; exit 1; }
+    [ -n "$built" ] || { echo "$pkg: patched ${lib##*/} not built"; exit 1; }
     install -m 755 "$built" "$lib"
     rpm -qa --qf '%{NAME}\n' | sort -u > /tmp/rpms-after
     added=$(comm -13 /tmp/rpms-before /tmp/rpms-after)
     [ -z "$added" ] || dnf -y remove $added
-    cd / && rm -rf /tmp/dolphin /tmp/rpms-before /tmp/rpms-after
+    cd / && rm -rf "/tmp/src-$pkg" /tmp/rpms-before /tmp/rpms-after
 )
+# Files (Dolphin), src/dolphin-fennek/patch.py: no separator lines between groups, a click on a group's name folds
+# it, Home as the start page, details only on purpose. The view library comes from dolphin-libs; the source is dolphin.
+from_source dolphin "$(ls /usr/lib64/libdolphinprivate.so.*.* 2>/dev/null | head -1)" dolphinprivate "$files/../src/dolphin-fennek/patch.py"
+# Taskbar, src/taskmanager-fennek/patch.py: "App permissions" in a taskbar button's right-click menu.
+from_source plasma-desktop /usr/lib64/qt6/plugins/plasma/applets/org.kde.plasma.taskmanager.so org.kde.plasma.taskmanager "$files/../src/taskmanager-fennek/patch.py"
 # Settings in Start search (fennek-search's /settings runner): Settings' catalog as a plain list, only pages that
 # exist in this image (optional KDE pages may be missing, e.g. on ARM).
 python3 - <<'EOF'
