@@ -39,8 +39,11 @@ ListView {
 	// 	}
 	// }
 
+	// Fennek OS: the A-Z list shows a highlighted item only while you move through it with the keyboard (Start opened
+	// with "App history" looking selected). Search results keep theirs: Enter opens the first one.
+	property bool highlightWithoutFocus: false
 	highlight: PlasmaExtras.Highlight {
-		visible: listView.currentItem && !listView.currentItem.isSeparator
+		visible: listView.currentItem && !listView.currentItem.isSeparator && (listView.activeFocus || listView.highlightWithoutFocus)
 	}
 
 	// function triggerIndex(index) {

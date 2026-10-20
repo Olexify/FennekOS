@@ -20,6 +20,8 @@ use std::{env, fs};
 
 const MAX_RESULTS: usize = 20;
 
+mod settings;
+
 fn types(kind: &str) -> Option<&'static [&'static str]> {
     Some(match kind {
         "image" => &["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "heic", "tif", "tiff", "raw", "avif"],
@@ -411,6 +413,7 @@ fn serve() -> zbus::Result<()> {
     let _conn = zbus::blocking::connection::Builder::session()?
         .name("org.fennek.Search")?
         .serve_at("/runner", Runner { index: index.clone() })?
+        .serve_at("/settings", settings::Runner { entries: settings::load() })?
         .build()?;
     // The inotify fd is shared through the index; wait for events without holding the lock.
     let mut buf = vec![0u8; 64 * 1024];
@@ -450,6 +453,7 @@ mod libc_poll {
 }
 
 fn selftest() {
+    settings::selftest();
     let t = env::temp_dir().join(format!("fennek-search-test-{}", std::process::id()));
     let t = t.to_string_lossy().into_owned();
     let mk = |f: &str| {

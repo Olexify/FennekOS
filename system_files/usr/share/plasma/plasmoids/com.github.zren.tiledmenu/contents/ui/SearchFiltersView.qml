@@ -66,10 +66,10 @@ ColumnLayout {
 	//--- end baloosearch filters
 
 	SearchFiltersViewItem {
-		runnerId: "krunner_systemsettings"
+		runnerId: "fennek-settings"
 		indentLevel: 1
 		iconSource: "preferences-system"
-		text: i18n("System Settings")
+		text: i18n("Settings")
 	}
 
 	SearchFiltersViewItem {

@@ -756,6 +756,29 @@ rm -rf /tmp/cargo-home
     [ -z "$added" ] || dnf -y remove $added
     cd / && rm -rf /tmp/dolphin /tmp/rpms-before /tmp/rpms-after
 )
+# Settings in Start search (fennek-search's /settings runner): Settings' catalog as a plain list, only pages that
+# exist in this image (optional KDE pages may be missing, e.g. on ARM).
+python3 - <<'EOF'
+import glob, json, os, re
+src = open("/usr/share/fennek/apps/settings/catalog.js", encoding="utf-8").read()
+cats = json.loads(src[src.index("["):src.rindex("]") + 1])
+kcms = {os.path.basename(p)[:-3] for p in glob.glob("/usr/lib64/qt6/plugins/plasma/kcms/**/*.so", recursive=True)}
+clean = lambda x: re.sub(r"[\t\n]", " ", str(x))
+rows = []
+for c in cats:
+    for i in c["items"]:
+        if "kcm" in i:
+            if i.get("optional") and i["kcm"] not in kcms:
+                continue
+            target = i["kcm"]
+        elif "page" in i:
+            target = i["page"]
+        else:
+            target = "cmd:" + i["cmd"]
+        rows.append("\t".join(clean(x) for x in (i["name"], target, i.get("icon", ""), i.get("desc", ""), c["name"], i.get("keys", ""))))
+open("/usr/share/fennek/settings-index.tsv", "w", encoding="utf-8").write("\n".join(rows) + "\n")
+print(len(rows), "settings searchable from Start")
+EOF
 # Syntax check of every Fennek QML file while Qt's tools are here: a typo fails the build, not the desktop.
 qmlformat=$(command -v qmlformat || echo /usr/lib64/qt6/bin/qmlformat)
 for f in /usr/share/plasma/plasmoids/org.fennek.*/contents/ui/*.qml /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/*.qml /usr/share/fennek/apps/*/*.qml /usr/share/plasma/wallpapers/org.fennek.live/contents/ui/*.qml /usr/share/sddm/themes/fennek/*.qml \

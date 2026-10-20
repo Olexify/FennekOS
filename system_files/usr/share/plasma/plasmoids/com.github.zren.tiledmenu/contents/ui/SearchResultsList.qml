@@ -1,6 +1,7 @@
 import QtQuick
 
 KickerListView { // RunnerResultsList
+	highlightWithoutFocus: true
 	id: searchResultsList
 
 	model: []

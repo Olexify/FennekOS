@@ -1,0 +1,15 @@
+[Desktop Entry]
+Name=Settings
+Comment=Finds a setting by name or word and opens it in Settings (Fennek OS)
+X-KDE-ServiceTypes=Plasma/Runner
+Type=Service
+Icon=fennek-settings
+X-KDE-PluginInfo-Author=Fennek OS
+X-KDE-PluginInfo-Name=fennek-settings
+X-KDE-PluginInfo-Version=1.0
+X-KDE-PluginInfo-License=GPL
+X-KDE-PluginInfo-EnabledByDefault=true
+X-Plasma-API=DBus
+X-Plasma-DBusRunner-Service=org.fennek.Search
+X-Plasma-DBusRunner-Path=/settings
+X-Plasma-Runner-Min-Letter-Count=2

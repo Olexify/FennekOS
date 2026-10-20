@@ -29,7 +29,10 @@ start.writeConfig("favoriteApps", ["preferred://browser", "org.kde.dolphin.deskt
 
 // Classic order: Start, search icon, then the app icons (window overview: Super+Tab).
 panel.addWidget("org.fennek.searchbox")
-panel.addWidget("org.kde.plasma.icontasks")
+var tasks = panel.addWidget("org.kde.plasma.icontasks")
+tasks.currentConfigGroup = ["General"]   // pinned: Fennek Settings (not KDE's full settings window), Store, Files, browser
+tasks.writeConfig("launchers", ["applications:fennek-settings.desktop", "applications:org.kde.discover.desktop",
+                                "preferred://filemanager", "preferred://browser"])
 panel.addWidget("org.kde.plasma.marginsseparator")
 // Tray: network, sound and battery always visible; everything else behind the ^ arrow.
 var systray = panel.addWidget("org.kde.plasma.systemtray")
