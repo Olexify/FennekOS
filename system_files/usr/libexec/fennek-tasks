@@ -51,6 +51,9 @@ def tree_procs(cg):
 
 def proc_info(pid):
     name = read(f"/proc/{pid}/comm").strip() or str(pid)
+    if len(name) == 15:   # the kernel keeps 15 characters: the program's own name in full, when it starts the same
+        full = os.path.basename(read(f"/proc/{pid}/cmdline").split("\0")[0])
+        name = full if full.startswith(name) else name
     rss, uid, state = 0, -1, ""
     for line in read(f"/proc/{pid}/status").splitlines():
         if line.startswith("VmRSS:"):
