@@ -253,6 +253,7 @@ grep -q "^theme=__aurorae__svg__FennekClassicDark" /usr/share/plasma/look-and-fe
 for x in org.kde.breeze.desktop org.kde.breezedark.desktop org.kde.breezetwilight.desktop; do [ ! -e "/usr/share/plasma/look-and-feel/$x" ] || fail "KDE global theme still listed: $x"; done
 for x in org.fennek.dark.desktop/contents/logout org.fennek.amber.desktop/contents/logout; do [ -d "/usr/share/plasma/look-and-feel/$x" ] || fail "Fennek's theme misses a screen: $x ($(ls /usr/share/plasma/look-and-feel/${x%%/*}/contents | xargs))"; done
 grep -aq fennekCollapsedGroups "$(ls /usr/lib64/libdolphinprivate.so.*.* | head -1)" || fail "Files: Fennek's patched view (no group lines, groups fold)"
+python3 -c 'import sys; sys.exit("Files".encode("utf-16-le") not in open("/usr/bin/dolphin", "rb").read())' || fail "Files: its windows are titled Files, not Dolphin"
 # Taskbar button right-click > App permissions: the task manager rebuilt with the item (its QML is compiled in, so the
 # check is "not Fedora's file any more"), and the link it opens lands on Settings > App permissions.
 t=/usr/lib64/qt6/plugins/plasma/applets/org.kde.plasma.taskmanager.so

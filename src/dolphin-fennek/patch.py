@@ -254,4 +254,10 @@ t = tips.read_text(encoding="utf-8")
 old = "    m_showToolTipTimer->setInterval(500);\n"
 assert t.count(old) == 1, "tooltipmanager.cpp: the pop-up delay moved"
 tips.write_text(t.replace(old, "    m_showToolTipTimer->setInterval(900); // Fennek OS: on purpose, not in passing\n"), encoding="utf-8")
+# 5. Its name is Files (window titles "Home — Files", About): the program, built from main.cpp.
+main = pathlib.Path(sys.argv[1]) / "src" / "main.cpp"
+t = main.read_text(encoding="utf-8")
+old = '        QStringLiteral("dolphin"),\n        i18n("Dolphin"),\n'
+assert t.count(old) == 1, "main.cpp: the program's name moved"
+main.write_text(t.replace(old, '        QStringLiteral("dolphin"),\n        QStringLiteral("Files"), // Fennek OS\n'), encoding="utf-8")
 print("dolphin: Fennek changes applied")
