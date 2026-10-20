@@ -226,25 +226,25 @@ QQC2.ApplicationWindow {
     // A line graph of the last minute
     component Graph: Canvas {
         property var values: []
-        property real top: 100          // 0: scale to the highest value
-        property color color: Kirigami.Theme.highlightColor
+        property real ceiling: 100      // 0: scale to the highest value
+        property color lineColor: Kirigami.Theme.highlightColor
         onValuesChanged: requestPaint()
         onWidthChanged: requestPaint()
         onPaint: {
             const c = getContext("2d"), w = width, h = height
             c.reset()
-            c.strokeStyle = Qt.rgba(color.r, color.g, color.b, 0.25); c.lineWidth = 1
+            c.strokeStyle = Qt.rgba(lineColor.r, lineColor.g, lineColor.b, 0.25); c.lineWidth = 1
             for (let i = 1; i < 4; i++) { c.beginPath(); c.moveTo(0, h * i / 4); c.lineTo(w, h * i / 4); c.stroke() }
             if (values.length < 2) return
-            const max = top > 0 ? top : Math.max(1024, ...values) * 1.2
+            const max = ceiling > 0 ? ceiling : Math.max(1024, ...values) * 1.2
             const x = i => w - (values.length - 1 - i) * w / 59, y = v => h - Math.min(1, v / max) * (h - 2) - 1
             c.beginPath(); c.moveTo(x(0), h)
             for (let i = 0; i < values.length; i++) c.lineTo(x(i), y(values[i]))
             c.lineTo(x(values.length - 1), h); c.closePath()
-            c.fillStyle = Qt.rgba(color.r, color.g, color.b, 0.18); c.fill()
+            c.fillStyle = Qt.rgba(lineColor.r, lineColor.g, lineColor.b, 0.18); c.fill()
             c.beginPath()
             for (let i = 0; i < values.length; i++) i ? c.lineTo(x(i), y(values[i])) : c.moveTo(x(i), y(values[i]))
-            c.strokeStyle = color; c.lineWidth = 1.6; c.stroke()
+            c.strokeStyle = lineColor; c.lineWidth = 1.6; c.stroke()
         }
     }
 
@@ -399,7 +399,7 @@ QQC2.ApplicationWindow {
                                 Layout.preferredHeight: Kirigami.Units.gridUnit * 2.4
                                 color: "transparent"
                                 border.color: Qt.rgba(Kirigami.Theme.highlightColor.r, Kirigami.Theme.highlightColor.g, Kirigami.Theme.highlightColor.b, 0.5)
-                                Graph { anchors.fill: parent; anchors.margins: 1; values: modelData[1]; top: modelData[2] }
+                                Graph { anchors.fill: parent; anchors.margins: 1; values: modelData[1]; ceiling: modelData[2] }
                             }
                             ColumnLayout {
                                 spacing: 0
@@ -452,7 +452,7 @@ QQC2.ApplicationWindow {
                         anchors.fill: parent
                         anchors.margins: 1
                         values: [root.cpuHist, root.memHist, root.diskHist, root.netHist][root.perfView]
-                        top: root.perfView < 2 ? 100 : 0
+                        ceiling: root.perfView < 2 ? 100 : 0
                     }
                 }
                 GridLayout {
