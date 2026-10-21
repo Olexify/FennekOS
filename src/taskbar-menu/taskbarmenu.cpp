@@ -55,7 +55,7 @@ public:
         add("view-grid", QStringLiteral("Show task view"), [] { kwinShortcut(QStringLiteral("Overview")); });
         add("user-desktop", QStringLiteral("Show the desktop"), [] { kwinShortcut(QStringLiteral("Show Desktop")); });
         separator();
-        add("utilities-system-monitor", QStringLiteral("Task Manager"), [] { QProcess::startDetached(QStringLiteral("plasma-systemmonitor"), {}); });
+        add("fennek-taskmanager", QStringLiteral("Task Manager"), [] { QProcess::startDetached(QStringLiteral("fennek-app"), {QStringLiteral("taskmanager")}); });
         separator();
 
         Plasma::Containment *c = containment();
