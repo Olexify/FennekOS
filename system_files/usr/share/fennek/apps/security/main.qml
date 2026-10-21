@@ -21,7 +21,7 @@ QQC2.ApplicationWindow {
         ["Switch user", "dbus-send --session --type=method_call --dest=org.kde.ksmserver /KSMServer org.kde.KSMServerInterface.openSwitchUserDialog"],
         ["Sign out", ksm + "logout"],
         ["Change a password", "fennek-app settings kcm_users"],
-        ["Task Manager", "plasma-systemmonitor"]
+        ["Task Manager", "fennek-app taskmanager"]
     ]
 
     // Started detached, so it keeps running after this screen closes.
