@@ -621,6 +621,11 @@ QQC2.ApplicationWindow {
                     width: ListView.view.width
                     highlighted: root.selectedPid === modelData.pid
                     onClicked: root.selectedPid = modelData.pid
+                    // who started it: the program that launched this one (PID 1 / none: started by the system)
+                    QQC2.ToolTip.visible: hovered
+                    QQC2.ToolTip.delay: 700
+                    QQC2.ToolTip.text: modelData.parent ? "Started by " + String(modelData.parent).replace(/[<>&]/g, "") + " (PID " + modelData.ppid + ")"
+                                                        : "Started by the system"
                     TapHandler {
                         acceptedButtons: Qt.RightButton
                         onTapped: { root.selectedPid = modelData.pid; rowMenu.openFor("", false, modelData.pid, modelData.own) }

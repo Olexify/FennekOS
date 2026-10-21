@@ -58,7 +58,7 @@ def proc_info(pid):
     if len(name) == 15:   # the kernel keeps 15 characters: the program's own name in full, when it starts the same
         full = os.path.basename(read(f"/proc/{pid}/cmdline").split("\0")[0])
         name = full if full.startswith(name) else name
-    rss, uid, state = 0, -1, ""
+    rss, uid, state, ppid = 0, -1, "", 0
     for line in read(f"/proc/{pid}/status").splitlines():
         if line.startswith("VmRSS:"):
             rss = int(line.split()[1]) * 1024
@@ -66,7 +66,9 @@ def proc_info(pid):
             uid = int(line.split()[1])
         elif line.startswith("State:"):
             state = line.split()[1]
-    return {"pid": pid, "name": name, "mem": rss, "uid": uid, "state": state, "own": uid == os.getuid()}
+        elif line.startswith("PPid:"):
+            ppid = int(line.split()[1])
+    return {"pid": pid, "name": name, "mem": rss, "uid": uid, "state": state, "own": uid == os.getuid(), "ppid": ppid}
 
 
 def proc_ticks(pid):
@@ -108,7 +110,9 @@ def details():
             continue   # gone meanwhile
         cpu = max(0.0, (proc_ticks(p) - first.get(p, 0)) / hz / dt / cpus * 100)
         cmd = read(f"/proc/{p}/cmdline").replace("\0", " ").strip()[:300]
+        parent = read(f"/proc/{i['ppid']}/comm").strip() if i["ppid"] > 1 else ""
         out.append({"pid": p, "name": i["name"], "user": user_name(i["uid"]), "status": STATES.get(i["state"], "Running"),
+                    "ppid": i["ppid"], "parent": parent,
                     "cpu": round(cpu, 1), "mem": i["mem"], "cmd": cmd, "own": i["own"]})
     return out
 
