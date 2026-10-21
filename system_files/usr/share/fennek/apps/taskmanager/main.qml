@@ -188,6 +188,12 @@ QQC2.ApplicationWindow {
             }
             QQC2.Button {
                 visible: root.tab === 0
+                text: "Run new task"
+                icon.name: "fennek-run"
+                onClicked: run.connectSource("setsid -f fennek-app run")
+            }
+            QQC2.Button {
+                visible: root.tab === 0
                 text: "End task"
                 icon.name: "process-stop"
                 enabled: root.selected !== ""
