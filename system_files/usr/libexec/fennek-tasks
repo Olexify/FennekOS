@@ -13,6 +13,7 @@ already keeps (each app and service runs in its own cgroup).
   fennek-tasks end UNIT        stop one of your apps or background services
   fennek-tasks kill PID        end one process of yours (asked to close, made to after 3 seconds)
   fennek-tasks freeze|thaw UNIT   pause one of your apps or background services (nothing runs, memory kept) / go on
+  fennek-tasks limit|unlimit UNIT  hold one of your apps to half the processor until it restarts / no limit
   fennek-tasks block PID       no internet for the program a process runs (Fennek Firewall)
   fennek-tasks show PID        Open file location: the program's file, selected in Files
   fennek-tasks perf            counters for the Performance graphs (the window turns them into rates)
@@ -337,6 +338,7 @@ def snapshot():
                 item = {"name": text, "icon": "", "desc": re.sub(r"\.(service|scope)$", "", u)}
             item.update({"unit": u, "cpu": round(cpu, 1), "mem": mem, "can_end": can,
                          "frozen": read(os.path.join(cg, "cgroup.freeze")).strip() == "1",
+                         "limited": not read(os.path.join(cg, "cpu.max"), "max").startswith("max"),
                          "procs": sorted(procs, key=lambda p: -p["mem"])[:30]})
             items.append(item)
         items.sort(key=lambda i: (-i["cpu"], -i["mem"]))
@@ -363,6 +365,14 @@ def freeze(unit, on):
     if not own_unit(unit):
         sys.exit("not one of your apps or background services")
     sys.exit(subprocess.run(["systemctl", "--user", "freeze" if on else "thaw", "--", unit]).returncode)
+
+
+def limit(unit, on):
+    """Half the processor at most (systemd's CPUQuota, for this run of the app only), or no limit again."""
+    if not own_unit(unit):
+        sys.exit("not one of your apps or background services")
+    quota = f"CPUQuota={50 * (os.cpu_count() or 1)}%" if on else "CPUQuota="
+    sys.exit(subprocess.run(["systemctl", "--user", "set-property", "--runtime", "--", unit, quota]).returncode)
 
 
 def block_target(pid):
@@ -439,6 +449,8 @@ if __name__ == "__main__":
         kill(a[1])
     elif len(a) == 2 and a[0] in ("freeze", "thaw"):
         freeze(a[1], a[0] == "freeze")
+    elif len(a) == 2 and a[0] in ("limit", "unlimit"):
+        limit(a[1], a[0] == "limit")
     elif len(a) == 2 and a[0] == "block":
         block(a[1])
     elif len(a) == 2 and a[0] == "show":
