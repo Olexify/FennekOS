@@ -366,21 +366,23 @@ def freeze(unit, on):
 
 
 def block_target(pid):
-    """What the firewall should block for a process: a Windows program by its .exe, otherwise the program file."""
-    args = read(f"/proc/{pid}/cmdline").split("\0")
-    win = [a for a in args if a.lower().endswith(".exe")   # Proton's own helpers aren't the program
-           and os.path.basename(a.replace("\\", "/")).lower() not in ("steam.exe", "start.exe", "explorer.exe")]
-    if win:
-        return win[-1]
+    """What the firewall should block for a process, resolved exactly as fennek-firewall's exe_of: the program file the
+    kernel reports; only when that is a compatibility-layer loader (wine*), the .exe it runs. A native program can
+    write anything into its own command line, so that is never trusted for it."""
     try:
-        return os.readlink(f"/proc/{pid}/exe").removesuffix(" (deleted)")
+        path = os.readlink(f"/proc/{pid}/exe").removesuffix(" (deleted)")
     except OSError:
         return ""
+    if os.path.basename(path).startswith("wine"):
+        for arg in read(f"/proc/{pid}/cmdline").split("\0"):
+            if arg.lower().endswith((".exe", ".msi")):   # = fennek-firewall's is_exe
+                return re.split(r"[\\/]", arg)[-1]
+    return path
 
 
 def block(pid):
-    if not str(pid).isdigit() or int(pid) <= 1:
-        sys.exit("not a process")
+    if not str(pid).isdigit() or int(pid) <= 1 or proc_info(int(pid))["uid"] != os.getuid():
+        sys.exit("only your own programs can be blocked here")
     t = block_target(int(pid))
     if not t:
         sys.exit("Its program can't be found (it belongs to the system or another user).")
