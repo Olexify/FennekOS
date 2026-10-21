@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=About this computer
+Comment=Version and hardware (Super+Pause)
+Exec=fennek-app settings kcm_about-distro
+Icon=fennek-set-about
+NoDisplay=true
