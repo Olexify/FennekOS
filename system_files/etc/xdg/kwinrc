@@ -30,3 +30,5 @@ fenneksnapassistEnabled=true
 fennekshowdesktopEnabled=true
 # Super+Up maximizes, Super+Down restores or minimizes (scripts/fennekarrows).
 fennekarrowsEnabled=true
+# Super+M minimizes all windows (again: back), Super+Home all but the active one (KDE's minimizeall script).
+minimizeallEnabled=true

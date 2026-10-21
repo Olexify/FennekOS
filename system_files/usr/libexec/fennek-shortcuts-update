@@ -212,6 +212,8 @@ if [ -f "$f" ]; then
     kw kwin "Window Quick Tile Bottom" "none,Meta+Down,Quick Tile Window to the Bottom"
     kw kwin "Fennek Maximize" "Meta+Up,Meta+Up,Maximize the window"
     kw kwin "Fennek Restore or Minimize" "Meta+Down,Meta+Down,Restore a maximized window, or minimize it"
+    kw kwin MinimizeAll "Meta+M,Meta+Shift+D,Minimize all windows"                       # Super+M
+    kw kwin minimizeAllOthers "Meta+Home,Meta+Shift+O,Minimize all other windows"          # Super+Home
     kwriteconfig6 --file "$f" --group services --group org.kde.krunner.desktop --key _launch $'Alt+Space	Alt+F2	Search'   # search
     kwriteconfig6 --file "$f" --group services --group fennek-run.desktop --key _launch Meta+R                            # Super+R: Run box
     kwriteconfig6 --file "$f" --group services --group fennek-settings.desktop --key _launch Meta+I                    # Super+I: Settings

@@ -13,6 +13,9 @@ Window Quick Tile Top=none,Meta+Up,Quick Tile Window to the Top
 Window Quick Tile Bottom=none,Meta+Down,Quick Tile Window to the Bottom
 Fennek Maximize=Meta+Up,Meta+Up,Maximize the window
 Fennek Restore or Minimize=Meta+Down,Meta+Down,Restore a maximized window, or minimize it
+# Super+M / Super+Home: minimize all windows / all but the active one, like the classic keys.
+MinimizeAll=Meta+M,Meta+Shift+D,Minimize all windows
+minimizeAllOthers=Meta+Home,Meta+Shift+O,Minimize all other windows
 
 [ksmserver]
 # Ctrl+Alt+Del opens the security options screen below, not the sign-out prompt.
