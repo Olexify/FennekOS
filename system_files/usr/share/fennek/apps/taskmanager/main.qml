@@ -228,7 +228,8 @@ QQC2.ApplicationWindow {
         property bool canEnd: false
         property int pid: 0
         property bool own: false
-        function openFor(u, c, p, o) { unit = u; canEnd = c; pid = p; own = o; popup() }
+        property bool frozen: false
+        function openFor(u, c, p, o, f) { unit = u; canEnd = c; pid = p; own = o; frozen = !!f; popup() }
         QQC2.MenuItem {
             text: "End task"; icon.name: "process-stop"
             visible: rowMenu.unit !== ""; height: visible ? implicitHeight : 0
@@ -240,6 +241,17 @@ QQC2.ApplicationWindow {
             visible: rowMenu.unit === ""; height: visible ? implicitHeight : 0
             enabled: rowMenu.own
             onTriggered: root.act("kill " + rowMenu.pid)
+        }
+        QQC2.MenuItem {   // paused: every process stops where it is, nothing is lost; Resume goes on
+            text: rowMenu.frozen ? "Resume" : "Pause"
+            icon.name: rowMenu.frozen ? "media-playback-start" : "media-playback-pause"
+            visible: rowMenu.unit !== "" && rowMenu.canEnd; height: visible ? implicitHeight : 0
+            onTriggered: root.act((rowMenu.frozen ? "thaw " : "freeze ") + root.q(rowMenu.unit))
+        }
+        QQC2.MenuItem {
+            text: "Block internet"; icon.name: "network-disconnect"
+            enabled: rowMenu.pid > 0
+            onTriggered: root.act("block " + rowMenu.pid)
         }
         QQC2.MenuItem {
             text: "Open file location"; icon.name: "folder-open"
@@ -340,7 +352,8 @@ QQC2.ApplicationWindow {
                                     TapHandler {
                                         acceptedButtons: Qt.RightButton
                                         onTapped: rowMenu.openFor(row.modelData.unit, row.modelData.can_end,
-                                                                  row.modelData.procs.length ? row.modelData.procs[0].pid : 0, false)
+                                                                  row.modelData.procs.length ? row.modelData.procs[0].pid : 0, false,
+                                                                  row.modelData.frozen)
                                     }
                                     onClicked: {
                                         const o = Object.assign({}, root.open)
@@ -362,7 +375,7 @@ QQC2.ApplicationWindow {
                                         ColumnLayout {
                                             spacing: 0
                                             Layout.fillWidth: true
-                                            QQC2.Label { textFormat: Text.PlainText; text: row.modelData.name; elide: Text.ElideRight; Layout.fillWidth: true }
+                                            QQC2.Label { textFormat: Text.PlainText; text: row.modelData.name + (row.modelData.frozen ? "  (paused)" : ""); elide: Text.ElideRight; Layout.fillWidth: true }
                                             QQC2.Label {
                                                 textFormat: Text.PlainText
                                                 visible: row.modelData.desc !== "" && row.modelData.desc !== row.modelData.name
