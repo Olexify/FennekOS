@@ -27,7 +27,7 @@ we treat it as a bug.
 | **.exe programs**: later | the same | An update check **at most once a day**, and only for programs you trusted. **Never** for sandboxed ones. |
 | **Sandboxed .exe programs** | whatever the program contacts | The program's own traffic. Block it with right-click → **Firewall → Block internet access**. |
 | **Extra wallpapers and theme pictures** (Personalize, Fennek Live) | `raw.githubusercontent.com` (GitHub) | Small previews of the extra wallpapers (about 100 KB in all) the first time you open Personalize, and the picture you pick, once. Both are checked against fingerprints built into Fennek OS. |
-| **Get-it apps** (LibreOffice, MPV Player) | `flathub.org`, and for MPV's setup `codeload.github.com` | Download requests for that app, once, when you click it. MPV's setup is checked against a built-in fingerprint. |
+| **Get-it apps** (LibreOffice, MPV Player, Thunderbird) | `flathub.org`, and for MPV's setup `codeload.github.com` | Download requests for that app, once, when you click it. MPV's setup is checked against a built-in fingerprint. |
 
 ## Programs that come with Fennek OS
 

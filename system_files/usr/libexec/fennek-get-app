@@ -16,6 +16,7 @@ if [ "${1:-}" = --hide ]; then hide "${2:-}"; exit 0; fi
 if [ "${1:-}" = --sync ]; then
     flatpak info org.libreoffice.LibreOffice >/dev/null 2>&1 || command -v libreoffice >/dev/null && hide fennek-get-libreoffice
     flatpak info io.mpv.Mpv >/dev/null 2>&1 || command -v mpv >/dev/null && hide fennek-get-mpv
+    flatpak info org.mozilla.Thunderbird >/dev/null 2>&1 || command -v thunderbird >/dev/null && hide fennek-get-thunderbird
     ls /usr/share/applications/*eonote*.desktop "${XDG_DATA_HOME:-$HOME/.local/share}"/applications/*eonote*.desktop 2>/dev/null \
         | grep -qv fennek-get && hide fennek-get-leonote
     exit 0

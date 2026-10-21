@@ -185,7 +185,8 @@ QQC2.ApplicationWindow {
                                 ["VS Code", "vscode", "com.visualstudio.code"],
                                 ["Leonote", "fennek-get-leonote", "", "xdg-open https://leonote.app"],
                                 ["MPV Player", "multimedia-video-player", "", "/usr/libexec/fennek-get-mpv"],
-                                ["LibreOffice", "x-office-document", "", "/usr/libexec/fennek-get-app org.libreoffice.LibreOffice LibreOffice fennek-get-libreoffice"]
+                                ["LibreOffice", "x-office-document", "", "/usr/libexec/fennek-get-app org.libreoffice.LibreOffice LibreOffice fennek-get-libreoffice"],
+                                ["Thunderbird", "internet-mail", "", "/usr/libexec/fennek-get-app org.mozilla.Thunderbird Thunderbird fennek-get-thunderbird"]
                             ]
                             delegate: QQC2.ItemDelegate {
                                 required property var modelData
