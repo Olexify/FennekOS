@@ -764,8 +764,10 @@ from_source() (
     v=$(rpm -qf --qf '%{VERSION}-%{RELEASE}' "$first")
     rpm -qa --qf '%{NAME}\n' | sort -u > /tmp/rpms-before   # names: an upgrade pulled in by the tools is not "new"
     mkdir -p "/tmp/src-$pkg" && cd "/tmp/src-$pkg"
-    dnf -y download --srpm "$pkg-$v"
-    srpm=$(ls "$pkg"-*.src.rpm)
+    # The installed version's source; a fresh update's source may still sit in the testing repo only.
+    dnf -y download --srpm "$pkg-$v" || true
+    ls "$pkg"-*.src.rpm >/dev/null 2>&1 || dnf -y download --srpm --enablerepo=updates-testing-source "$pkg-$v" || true
+    srpm=$(ls "$pkg"-*.src.rpm 2>/dev/null) || { echo "$pkg: no source package for the installed $v (revisit when it reaches the repos)"; exit 1; }
     rpm -K "$srpm" | grep -q 'signatures OK' || { echo "$pkg source package: signature not OK"; exit 1; }
     dnf -y builddep "./$srpm"
     rpm2cpio "$srpm" | cpio -idm --quiet
