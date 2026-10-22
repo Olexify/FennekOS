@@ -333,6 +333,7 @@ QQC2.ApplicationWindow {
                     // like the classic columns: the computer's total above its name
                     QQC2.Label { text: Math.round(root.cpuPct) + "%\nProcessor"; opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
                     QQC2.Label { text: Math.round(root.perfNow.mem_total ? 100 * root.perfNow.mem_used / root.perfNow.mem_total : 0) + "%\nMemory"; opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
+                    QQC2.Label { text: root.rate(root.diskRate) + "\nDisk"; opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
                 }
                 Repeater {
                     model: root.data.groups
@@ -406,6 +407,12 @@ QQC2.ApplicationWindow {
                                         }
                                         QQC2.Label {
                                             text: root.size(row.modelData.mem)
+                                            Layout.preferredWidth: Kirigami.Units.gridUnit * 5
+                                            horizontalAlignment: Text.AlignRight
+                                        }
+                                        QQC2.Label {
+                                            text: row.modelData.disk ? root.rate(row.modelData.disk) : "0 MB/s"
+                                            opacity: row.modelData.disk ? 1 : 0.5
                                             Layout.preferredWidth: Kirigami.Units.gridUnit * 5
                                             horizontalAlignment: Text.AlignRight
                                         }

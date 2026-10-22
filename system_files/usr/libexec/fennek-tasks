@@ -46,6 +46,17 @@ def cpu_usec(cg):
     return 0
 
 
+def io_bytes(cg):
+    """Bytes read + written by everything in this cgroup, all disks (io.stat; 0 where the io controller is off)."""
+    total = 0
+    for line in read(os.path.join(cg, "io.stat")).splitlines():
+        for f in line.split()[1:]:
+            k, _, v = f.partition("=")
+            if k in ("rbytes", "wbytes") and v.isdigit():
+                total += int(v)
+    return total
+
+
 def tree_procs(cg):
     """Every process in this cgroup and below (an app may keep helpers in sub-cgroups)."""
     pids = []
@@ -319,6 +330,7 @@ def snapshot():
               ("system", "System services", f"{CG}/system.slice", False, False)]
     found = [(key, name, d, user, can, units_in(d)) for key, name, d, user, can in layout]
     first = {(d, u): cpu_usec(os.path.join(d, u)) for _, _, d, _, _, us in found for u in us}
+    first_io = {(d, u): io_bytes(os.path.join(d, u)) for _, _, d, _, _, us in found for u in us}
     t0 = time.monotonic()
     time.sleep(0.5)
     dt = (time.monotonic() - t0) * 1e6
@@ -335,13 +347,14 @@ def snapshot():
                 continue
             cpu = max(0.0, (cpu_usec(cg) - first.get((d, u), 0)) / dt / cpus * 100)
             mem = int(read(os.path.join(cg, "memory.current"), "0").strip() or 0)
+            disk = max(0, io_bytes(cg) - first_io.get((d, u), 0)) / (dt / 1e6)   # bytes a second
             if key == "apps":
                 name, icon = apps.get(app_id(u), (app_id(u), ""))
                 item = {"name": name, "icon": icon or "application-x-executable", "desc": ""}
             else:
                 text = desc.get(u, "") or re.sub(r"\.(service|scope)$", "", u)
                 item = {"name": text, "icon": "", "desc": re.sub(r"\.(service|scope)$", "", u)}
-            item.update({"unit": u, "cpu": round(cpu, 1), "mem": mem, "can_end": can,
+            item.update({"unit": u, "cpu": round(cpu, 1), "mem": mem, "disk": int(disk), "can_end": can,
                          "frozen": read(os.path.join(cg, "cgroup.freeze")).strip() == "1",
                          "limited": not read(os.path.join(cg, "cpu.max"), "max").startswith("max"),
                          "procs": sorted(procs, key=lambda p: -p["mem"])[:30]})
@@ -468,6 +481,10 @@ def selftest():
     assert not own_unit("../x.service") and not own_unit("x;y.service")
     assert block_target(os.getpid()), "a process's program is found"
     assert program_file(os.getpid()) == os.readlink("/proc/self/exe")
+    t = "/tmp/fennek-io-test"
+    os.makedirs(t, exist_ok=True)
+    open(t + "/io.stat", "w").write("8:0 rbytes=1000 wbytes=24 rios=1 wios=1 dbytes=0 dios=0\n259:0 rbytes=1 wbytes=1\n")
+    assert io_bytes(t) == 1026 and io_bytes("/nonexistent") == 0
     print("selftest ok")
 
 
