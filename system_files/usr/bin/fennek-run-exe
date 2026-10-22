@@ -29,6 +29,7 @@ BOXES = DATA / "fennek" / "sandboxes"    # private home per sandboxed program
 SHARED = HOME / "Sandbox"                # ~/Sandbox/<program> = the only real folder it can see
 GUI = bool(os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY"))
 UMU = {"GAMEID": "umu-default"}
+SECCOMP = Path("/usr/share/fennek/sandbox-seccomp.bpf")   # src/sandbox-seccomp/make-filter.py, made at build time
 SANDBOX_DNS = "169.254.1.1"             # pasta answers DNS here and forwards to the host's resolver
 PASTA = ["pasta", "--config-net", "--quiet",
          "--no-map-gw",                                             # gateway must NOT reach host 127.0.0.1 services
@@ -239,6 +240,12 @@ def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env, so
     return a + ["--", "umu-run", *wine_cmd(target, args)]
 
 
+def with_seccomp(cmd, bpf=SECCOMP):
+    """bwrap CMD with Fennek's seccomp filter: a tiny shell opens the filter as fd 10 right where bwrap starts (so it
+    survives pasta), and bwrap applies it to everything inside."""
+    return ["sh", "-c", 'exec "$@" 10<"$0"', str(bpf), cmd[0], "--seccomp", "10", *cmd[1:]]
+
+
 def run_sandboxed(exe, digest, args, sound=False):
     proton = ensure_proton()
     if not proton:
@@ -262,10 +269,12 @@ def run_sandboxed(exe, digest, args, sound=False):
     cmd = bwrap_args(exe, args, box_home, shared, proton, os.environ.get("XDG_RUNTIME_DIR"), os.environ,
                      sound=sound, wayland=wayland, resolv=resolv, uid=os.getuid(), gid=os.getgid(),
                      folders=extra)
+    if not SECCOMP.is_file():   # never quietly weaker
+        return say("The sandbox's system-call filter is missing; not running.", "error")
     if OFFLINE.is_file() and digest in OFFLINE.read_text().split():
-        return subprocess.run([cmd[0], "--unshare-net", *cmd[1:]]).returncode   # firewall: no network at all
+        return subprocess.run(with_seccomp([cmd[0], "--unshare-net", *cmd[1:]])).returncode   # firewall: no network
     # Own network namespace with internet via pasta: host-only sockets and host loopback become unreachable.
-    return subprocess.run([*PASTA, "--", *cmd]).returncode
+    return subprocess.run([*PASTA, "--", *with_seccomp(cmd)]).returncode
 
 
 def run_trusted(exe, args):
@@ -356,6 +365,8 @@ def selftest():
     assert not any("pipewire" in x or "pulse" in x for x in a), "no sound/microphone by default"
     assert "/tmp/.X11-unix" in a, "X11 only as fallback when Proton lacks Wine-Wayland"
     assert a[-3:] == ["umu-run", "/var/home/u/App/setup.exe", "/S"]
+    w = with_seccomp(["bwrap", "--die-with-parent", "--", "x"], Path("/f.bpf"))
+    assert w[:5] == ["sh", "-c", 'exec "$@" 10<"$0"', "/f.bpf", "bwrap"] and w[5:7] == ["--seccomp", "10"] and w[-2:] == ["--", "x"]
     assert wine_cmd(Path("/var/home/u/Setup.MSI"), ["/qb"]) == ["msiexec", "/i", "Z:\\var\\home\\u\\Setup.MSI", "/qb"]
     assert wine_cmd(Path("/h/a&calc.bat"), []) == ["/h/a&calc.bat"], "a batch file is never handed to cmd"
 

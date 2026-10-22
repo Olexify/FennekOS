@@ -753,6 +753,11 @@ for prog in fennek-search fennek-download-guard fennek-usage; do
     rm -rf "/tmp/$prog"
 done
 rm -rf /tmp/cargo-home
+# The .exe sandbox's system-call filter (src/sandbox-seccomp/make-filter.py): written once here, loaded by
+# fennek-run-exe for every sandboxed program. Its generator goes again; the filter is a plain file.
+dnf -y install libseccomp-python
+python3 "$files/../src/sandbox-seccomp/make-filter.py" /usr/share/fennek/sandbox-seccomp.bpf
+dnf -y remove libseccomp-python
 # Fennek's changes to KDE programs, built from Fedora's own source package of the installed version (signature
 # checked); only the changed files are replaced. Their build tools go again right after.
 #   from_source PACKAGE PATCHER INSTALLED-FILE:CMAKE-TARGET...
