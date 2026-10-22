@@ -106,6 +106,7 @@ var categories = [
    {"name": "Updates", "icon": "fennek-set-updates", "desc": "Status, automatic updates, schedule, pause", "page": "updates"},
    {"name": "Store app updates", "cmd": "plasma-discover --mode update", "icon": "fennek-set-storeupdates", "desc": "Update Store apps now"},
    {"name": "Go back", "cmd": "fennek-go-back", "icon": "fennek-set-goback", "desc": "Undo the last update, keep your files"},
+   {"name": "Reset desktop settings", "cmd": "/usr/libexec/fennek-reset-settings", "icon": "fennek-set-restore", "desc": "Back to how Fennek OS starts, keep your files and apps", "keys": "reset this pc factory defaults fresh start keep my files"},
    {"name": "Backup", "icon": "fennek-set-backup", "desc": "Copy your folders to a USB drive", "page": "backup"}
   ]}
 ]

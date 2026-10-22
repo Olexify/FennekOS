@@ -1,0 +1,114 @@
+#!/usr/bin/python3
+"""Settings → Update & Recovery → Reset desktop settings, the "keep my files" reset: the taskbar, Start, appearance,
+shortcuts and the desktop's own settings go back to how Fennek OS ships them, as for a new account. Files, apps and
+the apps' own data (browser profiles, mail, games) stay. Nothing is deleted: the old settings move to
+~/.local/share/fennek/settings-backups/DATE and can be put back.
+
+The desktop writes its settings again when it closes, so the reset happens at the next sign-in, before the desktop
+starts (/etc/xdg/plasma-workspace/env/fennek-reset.sh).
+
+  fennek-reset-settings              ask, then reset at the next sign-in (offers to sign out now)
+  fennek-reset-settings --now        do it (called at sign-in when a reset is pending)
+  fennek-reset-settings --selftest
+"""
+import os, shutil, subprocess, sys, time
+from pathlib import Path
+
+HOME = Path.home()
+CONFIG = Path(os.environ.get("XDG_CONFIG_HOME") or HOME / ".config")
+DATA = Path(os.environ.get("XDG_DATA_HOME") or HOME / ".local/share")
+STATE = Path(os.environ.get("XDG_STATE_HOME") or HOME / ".local/state")
+PENDING = STATE / "fennek-reset-pending"
+BACKUPS = DATA / "fennek" / "settings-backups"
+# Desktop settings beyond the *rc files: look, default apps, Files' sidebar, activities, Fennek's first-sign-in steps.
+CONFIG_FILES = {"kdeglobals", "mimeapps.list", "Trolltech.conf", "user-dirs.locale"}
+CONFIG_DIRS = {"kdedefaults"}
+DATA_ITEMS = {"user-places.xbel", "kactivitymanagerd", "kxmlgui5", "konsole"}
+# Fennek's own: only the first-sign-in marks; security choices (trusted programs, allowed folders) and keys stay.
+FENNEK_MARKS = {"first-login-done"}
+
+
+def items():
+    """What a reset moves away: (path, its place relative to the home folder)."""
+    out = []
+    if CONFIG.is_dir():
+        for p in CONFIG.iterdir():
+            if (p.is_file() and not p.is_symlink() and (p.name.endswith("rc") or p.name in CONFIG_FILES)) \
+                    or (p.is_dir() and p.name in CONFIG_DIRS):
+                out.append(p)
+    out += [CONFIG / "fennek" / m for m in FENNEK_MARKS if (CONFIG / "fennek" / m).exists()]
+    out += [DATA / n for n in DATA_ITEMS if (DATA / n).exists()]
+    if STATE.is_dir():
+        out += [p for p in STATE.iterdir() if p.name.endswith("staterc") or p.name == "fennek"]
+    return out
+
+
+def reset(stamp=None):
+    dest = BACKUPS / (stamp or time.strftime("%Y%m%d-%H%M%S"))
+    moved = 0
+    for p in items():
+        target = dest / p.relative_to(HOME)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(p), str(target))
+        moved += 1
+    return dest, moved
+
+
+def ask():
+    if subprocess.run(["kdialog", "--title", "Reset desktop settings", "--warningcontinuecancel",
+                       "Put the desktop back to how Fennek OS sets it up, as for a new account?\n\n"
+                       "The taskbar, Start, appearance, shortcuts and desktop settings go back to the defaults.\n"
+                       "Your files, apps and the apps' own data stay. Your old settings are kept as a backup in\n"
+                       "your home folder (.local/share/fennek/settings-backups).\n\n"
+                       "It happens when you next sign in.",
+                       "--continue-label", "Reset"]).returncode != 0:
+        return
+    PENDING.parent.mkdir(parents=True, exist_ok=True)
+    PENDING.touch()
+    if subprocess.run(["kdialog", "--title", "Reset desktop settings", "--yesno",
+                       "Sign out now to finish? (Save your work first.)", "--yes-label", "Sign out",
+                       "--no-label", "Later"]).returncode == 0:
+        subprocess.run(["dbus-send", "--session", "--type=method_call", "--dest=org.kde.Shutdown", "/Shutdown",
+                        "org.kde.Shutdown.logout"])
+
+
+def selftest():
+    import tempfile
+    global HOME, CONFIG, DATA, STATE, PENDING, BACKUPS
+    with tempfile.TemporaryDirectory() as t:
+        HOME = Path(t); CONFIG = HOME / ".config"; DATA = HOME / ".local/share"; STATE = HOME / ".local/state"
+        PENDING = STATE / "fennek-reset-pending"; BACKUPS = DATA / "fennek" / "settings-backups"
+        for f in ("kwinrc", "plasma-org.kde.plasma.desktop-appletsrc", "kdeglobals", "mimeapps.list",
+                  "fennek/first-login-done", "fennek/trusted-exes", "fennek/virustotal.key", "google-chrome/Default/x",
+                  "autostart/a.desktop", "gtk-3.0/bookmarks"):
+            (CONFIG / f).parent.mkdir(parents=True, exist_ok=True); (CONFIG / f).write_text("x")
+        for f in ("user-places.xbel", "fennek/quarantine/q", "applications/my.desktop"):
+            (DATA / f).parent.mkdir(parents=True, exist_ok=True); (DATA / f).write_text("x")
+        (STATE / "fennek").mkdir(parents=True); (STATE / "dolphinstaterc").write_text("x")
+        (HOME / "Documents").mkdir(); (HOME / "Documents/cv.odt").write_text("mine")
+        dest, n = reset("t")
+        gone = ["kwinrc", "plasma-org.kde.plasma.desktop-appletsrc", "kdeglobals", "mimeapps.list", "fennek/first-login-done"]
+        assert all(not (CONFIG / f).exists() and (dest / ".config" / f).exists() for f in gone), "desktop settings moved"
+        kept = ["fennek/trusted-exes", "fennek/virustotal.key", "google-chrome/Default/x", "autostart/a.desktop",
+                "gtk-3.0/bookmarks"]
+        assert all((CONFIG / f).exists() for f in kept), "security choices, keys, app data and autostart stay"
+        assert (DATA / "fennek/quarantine/q").exists() and (DATA / "applications/my.desktop").exists()
+        assert not (DATA / "user-places.xbel").exists() and not (STATE / "dolphinstaterc").exists()
+        assert (HOME / "Documents/cv.odt").read_text() == "mine", "files untouched"
+        assert not str(BACKUPS).startswith(str(CONFIG)), "the backup is never inside what gets reset"
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    a = sys.argv[1:]
+    if a == ["--selftest"]:
+        selftest()
+    elif a == ["--now"]:
+        if PENDING.exists():
+            dest, n = reset()
+            PENDING.unlink(missing_ok=True)
+            print(f"{n} settings moved to {dest}")
+    elif not a:
+        ask()
+    else:
+        sys.exit(__doc__)
