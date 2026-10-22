@@ -19,6 +19,8 @@ use std::sync::{Arc, Mutex};
 use std::{env, fs};
 
 const MAX_RESULTS: usize = 20;
+/// The search window (fennek-app search) lists more than Start does.
+const MAX_ALL: usize = 500;
 
 mod settings;
 
@@ -391,10 +393,19 @@ impl Runner {
                 props.insert("urls".to_string(), zbus::zvariant::Value::from(vec![format!("file://{p}")]));
                 (p, name, (if is_dir { "folder" } else { "text-x-generic" }).to_string(), 30, 0.9 - i as f64 * 0.01, props)
             })
+            // last: the whole list in the Search window (match ids are paths, so "all:" can't be one)
+            .chain((!query.trim().is_empty()).then(|| {
+                (format!("all:{query}"), format!("See all results for \u{201c}{}\u{201d}", query.trim()),
+                 "fennek-search".to_string(), 30, 0.05, HashMap::new())
+            }))
             .collect()
     }
 
     fn run(&self, match_id: &str, action_id: &str) {
+        if let Some(q) = match_id.strip_prefix("all:") {
+            let _ = std::process::Command::new("fennek-app").args(["search", q]).spawn();
+            return;
+        }
         remember(match_id);
         let _ = if action_id == "folder" {
             std::process::Command::new("dolphin").args(["--select", match_id]).spawn()
@@ -402,6 +413,40 @@ impl Runner {
             std::process::Command::new("xdg-open").arg(match_id).spawn()
         };
     }
+}
+
+/// Every match for the search window: org.fennek.Search /search FindAll(query) -> paths (best first).
+struct Finder {
+    index: Arc<Mutex<Index>>,
+}
+
+#[zbus::interface(name = "org.fennek.Search")]
+impl Finder {
+    fn find_all(&self, query: &str) -> Vec<String> {
+        let index = self.index.lock().unwrap();
+        search(index.paths.iter(), query, &load_history(), MAX_ALL)
+    }
+}
+
+/// One line per match for the window: path, size in bytes, modified (seconds since 1970), folder (1/0), tab-separated.
+/// Paths with a tab or a line break in their name are left out (they couldn't be told apart in this format).
+fn describe(paths: &[String]) -> Vec<String> {
+    paths
+        .iter()
+        .filter(|p| !p.contains('\t') && !p.contains('\n'))
+        .filter_map(|p| {
+            let m = std::fs::metadata(p).ok()?;
+            let t = m.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map(|d| d.as_secs()).unwrap_or(0);
+            Some(format!("{p}\t{}\t{t}\t{}", if m.is_dir() { 0 } else { m.len() }, if m.is_dir() { 1 } else { 0 }))
+        })
+        .collect()
+}
+
+#[cfg(target_os = "linux")]
+fn ask(query: &str) -> zbus::Result<Vec<String>> {
+    let conn = zbus::blocking::Connection::session()?;
+    let reply = conn.call_method(Some("org.fennek.Search"), "/search", Some("org.fennek.Search"), "FindAll", &(query,))?;
+    reply.body().deserialize::<Vec<String>>()
 }
 
 #[cfg(target_os = "linux")]
@@ -414,6 +459,7 @@ fn serve() -> zbus::Result<()> {
         .name("org.fennek.Search")?
         .serve_at("/runner", Runner { index: index.clone() })?
         .serve_at("/settings", settings::Runner { entries: settings::load() })?
+        .serve_at("/search", Finder { index: index.clone() })?
         .build()?;
     // The inotify fd is shared through the index; wait for events without holding the lock.
     let mut buf = vec![0u8; 64 * 1024];
@@ -515,6 +561,15 @@ fn selftest() {
         assert_eq!(names(&ix, "cat", &[]), ["Pictures/cat.jpg"], "renamed folder: old paths gone, new ones found");
     }
     let _ = fs::remove_dir_all(&t);
+    let d = std::env::temp_dir().join("fennek-search-describe");
+    let _ = std::fs::create_dir_all(&d);
+    std::fs::write(d.join("a.txt"), "12345").unwrap();
+    let lines = describe(&[d.join("a.txt").to_string_lossy().into_owned(), d.to_string_lossy().into_owned(),
+                           "/nonexistent/x".into(), "/tmp/odd\tname".into()]);
+    assert_eq!(lines.len(), 2, "missing files and odd names left out");
+    assert_eq!(lines[0].split('\t').nth(1), Some("5"), "size");
+    assert!(lines[0].ends_with("\t0"), "a file");
+    assert!(lines[1].ends_with("\t1"), "a folder");
     println!("selftest ok");
 }
 
@@ -522,6 +577,16 @@ fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
     if args == ["--selftest"] {
         selftest();
+    } else if args.first().map(String::as_str) == Some("--ask") {
+        // the search window: ask the running index (no scan of its own)
+        #[cfg(target_os = "linux")]
+        match ask(&args[1..].join(" ")) {
+            Ok(found) => describe(&found).iter().for_each(|l| println!("{l}")),
+            Err(e) => {
+                eprintln!("fennek-search: {e}");
+                std::process::exit(1);
+            }
+        }
     } else if !args.is_empty() {
         let mut ix = Index::new(skip_dirs(), false);
         ix.rebuild(&roots());

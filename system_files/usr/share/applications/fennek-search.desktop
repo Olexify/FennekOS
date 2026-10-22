@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Search
+GenericName=Find files and folders
+Comment=Every file and folder that matches, with folder, date and size (Super+S)
+Exec=fennek-app search
+Icon=fennek-search
+Categories=Utility;System;
+Keywords=search;find;files;everything;where is;

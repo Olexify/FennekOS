@@ -45,6 +45,10 @@ _launch=Meta+X
 [services][fennek-security.desktop]
 _launch=Ctrl+Alt+Del
 
+# Super+S: Search, every matching file and folder in a list with columns.
+[services][fennek-search.desktop]
+_launch=Meta+S
+
 # Super+Pause: About this computer (version, hardware), like the classic System page.
 [services][fennek-about.desktop]
 _launch=Meta+Pause
