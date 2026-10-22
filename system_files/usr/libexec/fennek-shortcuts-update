@@ -196,7 +196,7 @@ if [ "$(cat "$pl_seen" 2>/dev/null)" != 2026-10-20b ]; then   # Home is the star
     mkdir -p "${pl_seen%/*}" && echo 2026-10-20b >"$pl_seen"
 fi
 
-version=2026-10-22
+version=2026-10-23
 seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/shortcuts-version
 [ "$(cat "$seen" 2>/dev/null)" = "$version" ] && exit 0
 f=${XDG_CONFIG_HOME:-$HOME/.config}/kglobalshortcutsrc
@@ -213,6 +213,7 @@ if [ -f "$f" ]; then
     kw kwin "Fennek Maximize" "Meta+Up,Meta+Up,Maximize the window"
     kw kwin "Fennek Restore or Minimize" "Meta+Down,Meta+Down,Restore a maximized window, or minimize it"
     kw kwin MinimizeAll "Meta+M,Meta+Shift+D,Minimize all windows"                       # Super+M
+    kw kaccess "Toggle Screen Reader On and Off" $'Meta+Ctrl+Return	Meta+Alt+S,Meta+Alt+S,Toggle Screen Reader On and Off'   # Narrator
     kw kwin minimizeAllOthers "Meta+Home,Meta+Shift+O,Minimize all other windows"          # Super+Home
     kwriteconfig6 --file "$f" --group services --group org.kde.krunner.desktop --key _launch $'Alt+Space	Alt+F2	Search'   # search
     kwriteconfig6 --file "$f" --group services --group fennek-run.desktop --key _launch Meta+R                            # Super+R: Run box

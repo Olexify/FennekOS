@@ -1,5 +1,9 @@
 # Fennek OS: familiar global shortcuts (defaults; each user can change them in Settings → Keyboard shortcuts).
 # Format: active shortcuts (tab-separated), default, description.
+[kaccess]
+# Super+Ctrl+Enter turns the screen reader on and off, like the classic Narrator (Super+Alt+S keeps working).
+Toggle Screen Reader On and Off=Meta+Ctrl+Return	Meta+Alt+S,Meta+Alt+S,Toggle Screen Reader On and Off
+
 [kwin]
 Overview=Meta+Tab	Meta+W,Meta+W,Toggle Overview
 # Alt+F4 goes to the fennekaltf4 script: closes the window, or opens Shut down on the desktop.

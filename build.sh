@@ -615,6 +615,8 @@ systemctl --global enable fennek-download-guard.service
 # off sooner on battery. System-wide PowerDevil defaults, merged (kwriteconfig6), users can still change them.
 # Power profiles need a provider (Fedora's default is tuned-ppd); add it if the base has none.
 rpm -q tuned-ppd >/dev/null || rpm -q power-profiles-daemon >/dev/null || dnf -y install tuned-ppd
+# Screen reader (Super+Ctrl+Enter, like the classic Narrator; Super+Alt+S too): Orca, if the base hasn't got it.
+rpm -q orca >/dev/null || dnf -y install orca
 pd() { kwriteconfig6 --file /etc/xdg/powerdevilrc --group "$1" --group "$2" --key "$3" "$4"; }
 for p in Battery LowBattery; do
     pd "$p" Performance PowerProfile power-saver
