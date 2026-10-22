@@ -561,7 +561,7 @@ fn selftest() {
         assert_eq!(names(&ix, "cat", &[]), ["Pictures/cat.jpg"], "renamed folder: old paths gone, new ones found");
     }
     let _ = fs::remove_dir_all(&t);
-    let d = std::env::temp_dir().join("fennek-search-describe");
+    let d = std::env::temp_dir().join(format!("fennek-search-describe-{}", std::process::id()));   // own per run
     let _ = std::fs::create_dir_all(&d);
     std::fs::write(d.join("a.txt"), "12345").unwrap();
     let lines = describe(&[d.join("a.txt").to_string_lossy().into_owned(), d.to_string_lossy().into_owned(),
@@ -570,6 +570,7 @@ fn selftest() {
     assert_eq!(lines[0].split('\t').nth(1), Some("5"), "size");
     assert!(lines[0].ends_with("\t0"), "a file");
     assert!(lines[1].ends_with("\t1"), "a folder");
+    let _ = std::fs::remove_dir_all(&d);
     println!("selftest ok");
 }
 
