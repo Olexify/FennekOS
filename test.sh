@@ -350,7 +350,7 @@ rm -rf "$h"
 grep -q "^Exec=/usr/libexec/fennek-change-icon --reset" /usr/share/kio/servicemenus/fennek-change-icon.desktop \
     && cmp -s /usr/share/icons/Fennek/scalable/places/folder-documents.svg /usr/share/icons/Fennek/scalable/places/fennek-folder-documents.svg \
     || fail "Change icon on folders and shortcuts; main folders look like on This PC"
-/usr/libexec/fennek-previous-versions-helper --selftest >/dev/null && command -v kdialog numfmt >/dev/null && grep -q "exec.path\">/usr/libexec/fennek-previous-versions-helper" /usr/share/polkit-1/actions/org.fennek.previous-versions.policy || fail "Restore previous versions"
+/usr/libexec/fennek-previous-versions-helper --selftest >/dev/null && command -v kdialog numfmt >/dev/null && grep -q "exec.path\">/usr/libexec/fennek-previous-versions-helper" /usr/share/polkit-1/actions/org.fennek.previous-versions.policy && grep -q "inode/directory" /usr/share/kio/servicemenus/fennek-previous-versions.desktop || fail "Restore previous versions (files and whole folders)"
 grep -q '^Exec=fennek-firewall block %f' /usr/share/kio/servicemenus/fennek-firewall.desktop || fail "firewall menu"
 [ -f /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/metadata.json ] || fail "classic start menu (Tiled Menu)"
 grep -q 'com.github.zren.tiledmenu' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "start menu in taskbar"

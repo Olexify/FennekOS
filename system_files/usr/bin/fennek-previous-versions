@@ -1,6 +1,6 @@
 #!/usr/bin/bash
-# "Restore previous versions" for one file: pick an hourly snapshot, get that version saved next to the file
-# (the current file is never touched). Root part: /usr/libexec/fennek-previous-versions-helper via pkexec.
+# "Restore previous versions" for a file or a whole folder: pick an hourly snapshot, get that version saved next to
+# it as a copy (the current one is never touched). A folder comes back with everything that was in it. Root part: /usr/libexec/fennek-previous-versions-helper via pkexec.
 set -u
 file=${1:?usage: fennek-previous-versions FILE}
 helper=/usr/libexec/fennek-previous-versions-helper
@@ -14,7 +14,7 @@ if [ ${#items[@]} -eq 0 ]; then
     exit 0
 fi
 n=$(kdialog --title "Previous versions of $name" \
-    --radiolist "Pick a version. It is saved as a copy next to the file; your current file stays as it is." \
+    --radiolist "Pick a version. It is saved as a copy next to it; what you have now stays as it is." \
     "${items[@]}") || exit 0
 out=$(pkexec "$helper" restore "$n" "$file") || { kdialog --error "Couldn't restore that version."; exit 1; }
 kdialog --title "Previous versions" --msgbox "Saved as \"$(basename -- "$out")\"."

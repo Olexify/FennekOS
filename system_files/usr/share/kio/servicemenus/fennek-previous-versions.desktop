@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Service
-MimeType=all/allfiles;
+MimeType=all/allfiles;inode/directory;
 Actions=previous
 X-KDE-Priority=TopLevel
 

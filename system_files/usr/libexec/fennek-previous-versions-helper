@@ -1,8 +1,9 @@
 #!/usr/bin/python3 -I
 """Root half of "Restore previous versions" (run through pkexec, polkit action org.fennek.previous-versions).
 
-  list    FILE     one line per hourly snapshot holding a version of FILE: "<number>\t<date>\t<bytes>"
-  restore N FILE   copy that version next to FILE as "name (date).ext"; never overwrites anything
+  list    PATH     one line per hourly snapshot holding a version of PATH (a file or a folder): "<number>\t<date>\t<bytes>"
+  restore N PATH   copy that version next to PATH as "name (date).ext" / "Folder (date)"; never overwrites anything
+                   (a folder: its own files and subfolders; links and special files are left out)
 
 Only the calling user's own regular files inside their own home. Snapshots are read-only, so checks made on
 them can't change under us; the copy is written with the user's identity, so it can't land anywhere they
@@ -31,8 +32,9 @@ def relative(path, home):
     return p[len("/var/home/"):]
 
 
-def snapshot_file(number, rel, uid):
-    """Path of REL inside snapshot NUMBER, or None. No symlinks anywhere on the way, regular file, owned by uid."""
+def snapshot_file(number, rel, uid, folder=False):
+    """Path of REL inside snapshot NUMBER, or None. No symlinks anywhere on the way, regular file (or folder), owned
+    by uid."""
     if not re.fullmatch(r"[0-9]+", str(number)):
         return None
     p = SNAPSHOTS / str(number) / "snapshot"
@@ -44,7 +46,62 @@ def snapshot_file(number, rel, uid):
             return None
         if stat.S_ISLNK(st.st_mode):
             return None
-    return p if stat.S_ISREG(st.st_mode) and st.st_uid == uid else None
+    ok = stat.S_ISDIR(st.st_mode) if folder else stat.S_ISREG(st.st_mode)
+    return p if ok and st.st_uid == uid else None
+
+
+def copy_tree(src, dest, uid, gid):
+    """Recreate folder SRC (in a read-only snapshot) as DEST, written as the user: only the user's own regular files
+    and folders, no links or special files. Each file: opened as root (snapshots are root-only), written as the user."""
+    count = 0
+    def as_user():
+        os.setgroups([]); os.setegid(gid); os.seteuid(uid)
+    def as_root():
+        os.seteuid(0); os.setegid(0)
+    as_user()
+    try:
+        os.mkdir(dest, 0o700)
+    finally:
+        as_root()
+    for root, dirs, files in os.walk(src, followlinks=False):
+        rel = os.path.relpath(root, src)
+        target = dest if rel == "." else os.path.join(dest, rel)
+        keep = []
+        for d in dirs:
+            st = os.lstat(os.path.join(root, d))
+            if stat.S_ISDIR(st.st_mode) and st.st_uid == uid:
+                as_user()
+                try:
+                    os.mkdir(os.path.join(target, d), 0o700)
+                finally:
+                    as_root()
+                keep.append(d)
+        dirs[:] = keep
+        for f in files:
+            sp = os.path.join(root, f)
+            st = os.lstat(sp)
+            if not stat.S_ISREG(st.st_mode) or st.st_uid != uid:
+                continue
+            fd_in = os.open(sp, os.O_RDONLY | os.O_NOFOLLOW)
+            as_user()
+            try:
+                fd_out = os.open(os.path.join(target, f), os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+            finally:
+                as_root()
+            left = st.st_size
+            try:
+                while left > 0:   # the same disk: Btrfs shares the blocks with the snapshot (fast, no extra space)
+                    n = os.copy_file_range(fd_in, fd_out, left)
+                    if n == 0:
+                        break
+                    left -= n
+            except OSError:
+                os.lseek(fd_in, 0, 0); os.lseek(fd_out, 0, 0); os.ftruncate(fd_out, 0)
+                while chunk := os.read(fd_in, 1 << 20):
+                    os.write(fd_out, chunk)
+            os.close(fd_out); os.close(fd_in)
+            count += 1
+    return count
 
 
 def date_of(number):
@@ -55,9 +112,9 @@ def date_of(number):
         return "?"
 
 
-def restored_name(path, date):
+def restored_name(path, date, folder=False):
     stem, dot, ext = os.path.basename(path).rpartition(".")
-    if not stem:                                   # no extension (or a dotfile)
+    if folder or not stem:                         # a folder, no extension, or a dotfile
         stem, dot, ext = os.path.basename(path), "", ""
     label = date.replace(":", ".").removesuffix(" UTC")
     return os.path.join(os.path.dirname(os.path.abspath(path)), f"{stem} ({label}){dot}{ext}")
@@ -71,13 +128,19 @@ def main(argv):
         rel = relative(argv[1], home)
         numbers = sorted((int(d.name) for d in SNAPSHOTS.iterdir() if d.name.isdigit()), reverse=True) \
             if SNAPSHOTS.is_dir() else []
+        folder = os.path.isdir(argv[1]) and not os.path.islink(argv[1])
         for n in numbers:
-            f = snapshot_file(n, rel, pw.pw_uid)
+            f = snapshot_file(n, rel, pw.pw_uid, folder)
             if f:
                 print(f"{n}\t{date_of(n)}\t{os.lstat(f).st_size}")
         return 0
     if len(argv) == 3 and argv[0] == "restore":
         rel = relative(argv[2], home)
+        if snapshot_file(argv[1], rel, pw.pw_uid, folder=True):   # a folder: the whole folder as it was
+            dest = restored_name(argv[2], date_of(argv[1]), folder=True)
+            copy_tree(snapshot_file(argv[1], rel, pw.pw_uid, folder=True), dest, pw.pw_uid, pw.pw_gid)
+            print(dest)
+            return 0
         src = snapshot_file(argv[1], rel, pw.pw_uid)
         if not src:
             sys.exit("that version doesn't exist")
@@ -97,6 +160,21 @@ def selftest():
     assert restored_name("/var/home/u/a/Report.final.docx", "2026-10-16 09:00:01 UTC") \
         == "/var/home/u/a/Report.final (2026-10-16 09.00.01).docx"
     assert restored_name("/var/home/u/.bashrc", "2026-10-16 09:00:01 UTC") == "/var/home/u/.bashrc (2026-10-16 09.00.01)"
+    assert restored_name("/var/home/u/My.Photos", "2026-10-16 09:00:01 UTC", folder=True) \
+        == "/var/home/u/My.Photos (2026-10-16 09.00.01)"
+    if os.geteuid() == 0:   # a folder copy, as a user, leaving links and other users' files out
+        import tempfile, pwd as _pwd
+        nobody = _pwd.getpwnam("nobody")
+        with tempfile.TemporaryDirectory() as t:
+            src, dest = os.path.join(t, "src"), os.path.join(t, "out")
+            os.makedirs(src + "/sub"); open(src + "/a.txt", "w").write("A"); open(src + "/sub/b.txt", "w").write("B")
+            open(src + "/root-owned", "w").write("R"); os.symlink("/etc/shadow", src + "/link")
+            for x in (src, src + "/sub", src + "/a.txt", src + "/sub/b.txt"):
+                os.chown(x, nobody.pw_uid, nobody.pw_gid)
+            os.chmod(t, 0o777)
+            n = copy_tree(src, dest, nobody.pw_uid, nobody.pw_gid)
+            assert n == 2 and open(dest + "/sub/b.txt").read() == "B" and os.stat(dest + "/a.txt").st_uid == nobody.pw_uid
+            assert not os.path.exists(dest + "/link") and not os.path.exists(dest + "/root-owned")
     assert snapshot_file("../1", "u/x", 1000) is None and snapshot_file("1/../2", "u/x", 1000) is None
     for bad in ("/etc/shadow", "/var/home/other/x", "/var/home/u/../other/x", "/var/home/uu/x"):
         try:
