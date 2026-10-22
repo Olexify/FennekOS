@@ -14,6 +14,7 @@ already keeps (each app and service runs in its own cgroup).
   fennek-tasks kill PID        end one process of yours (asked to close, made to after 3 seconds)
   fennek-tasks freeze|thaw UNIT   pause one of your apps or background services (nothing runs, memory kept) / go on
   fennek-tasks limit|unlimit UNIT  hold one of your apps to half the processor until it restarts / no limit
+  fennek-tasks vt PID          Check with VirusTotal: the program's file, by its fingerprint only (fennek-vt-check)
   fennek-tasks block PID       no internet for the program a process runs (Fennek Firewall)
   fennek-tasks show PID        Open file location: the program's file, selected in Files
   fennek-tasks perf            counters for the Performance graphs (the window turns them into rates)
@@ -394,6 +395,34 @@ def block_target(pid):
     return path
 
 
+def program_file(pid):
+    """The file a process runs, on disk: the kernel-reported program; behind a compatibility loader (wine*), the .exe
+    it runs (Z:\\path is Wine's view of /path)."""
+    try:
+        path = os.readlink(f"/proc/{pid}/exe").removesuffix(" (deleted)")
+    except OSError:
+        return ""
+    if os.path.basename(path).startswith("wine"):
+        for arg in read(f"/proc/{pid}/cmdline").split("\0"):
+            if arg.lower().endswith((".exe", ".msi")):
+                f = arg[2:].replace("\\", "/") if re.match(r"^[zZ]:\\", arg) else arg
+                return f if os.path.isabs(f) and os.path.isfile(f) else ""
+        return ""
+    return path if os.path.isfile(path) else ""
+
+
+def vt(pid):
+    if not str(pid).isdigit() or int(pid) <= 1 or proc_info(int(pid))["uid"] != os.getuid():
+        sys.exit("only your own programs can be checked here")
+    f = program_file(int(pid))
+    if not f:
+        sys.exit("Its program file can't be found (it was updated or removed since it started).")
+    try:
+        subprocess.Popen(["fennek-vt-check", f], start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except OSError:
+        sys.exit("The VirusTotal check couldn't be started.")
+
+
 def block(pid):
     if not str(pid).isdigit() or int(pid) <= 1 or proc_info(int(pid))["uid"] != os.getuid():
         sys.exit("only your own programs can be blocked here")
@@ -438,6 +467,7 @@ def selftest():
             pass
     assert not own_unit("../x.service") and not own_unit("x;y.service")
     assert block_target(os.getpid()), "a process's program is found"
+    assert program_file(os.getpid()) == os.readlink("/proc/self/exe")
     print("selftest ok")
 
 
@@ -455,6 +485,8 @@ if __name__ == "__main__":
         freeze(a[1], a[0] == "freeze")
     elif len(a) == 2 and a[0] in ("limit", "unlimit"):
         limit(a[1], a[0] == "limit")
+    elif len(a) == 2 and a[0] == "vt":
+        vt(a[1])
     elif len(a) == 2 and a[0] == "block":
         block(a[1])
     elif len(a) == 2 and a[0] == "show":

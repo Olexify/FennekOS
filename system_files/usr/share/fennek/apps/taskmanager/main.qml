@@ -260,6 +260,11 @@ QQC2.ApplicationWindow {
             enabled: rowMenu.pid > 0
             onTriggered: root.act("block " + rowMenu.pid)
         }
+        QQC2.MenuItem {   // only the file's fingerprint goes to VirusTotal, and only on this click
+            text: "Check with VirusTotal"; icon.name: "security-medium"
+            enabled: rowMenu.pid > 0
+            onTriggered: root.act("vt " + rowMenu.pid)
+        }
         QQC2.MenuItem {
             text: "Open file location"; icon.name: "folder-open"
             enabled: rowMenu.pid > 0
