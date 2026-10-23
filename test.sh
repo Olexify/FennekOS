@@ -396,6 +396,7 @@ command -v mangohud >/dev/null || fail "MangoHud (in-game overlay)"
 if [ "${FENNEK_EDITION:-}" = nvidia ]; then
     find /usr/lib/modules -name 'nvidia.ko*' | grep -q . || fail "NVIDIA edition: no NVIDIA kernel module"
     command -v nvidia-settings >/dev/null && grep -qx 'Name=NVIDIA Settings' /usr/share/applications/*nvidia-settings*.desktop || fail "NVIDIA edition: NVIDIA Settings in Start"
+    find /usr/lib/modules -name 'v4l2loopback.ko*' | grep -q . && grep -q 'card_label="NV Broadcast Camera"' /etc/modprobe.d/fennek-vcam.conf       && python3 -c "import gi; gi.require_version('Gtk', '4.0'); gi.require_version('Adw', '1')" && command -v pw-loopback >/dev/null       || fail "NVIDIA edition: what NV Broadcast needs from the system (virtual camera module and settings, GTK 4, PipeWire tools)"
 fi
 grep -q '"rhgb", "quiet"' /usr/lib/bootc/kargs.d/10-fennek-splash.toml || fail "boot splash kernel args"
 python3 -c "import json; p=json.load(open('/etc/firefox/policies/policies.json'))['policies']; assert p['DisableTelemetry'] and p['DisableFirefoxStudies']" \

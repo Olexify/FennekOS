@@ -58,6 +58,15 @@ if [ "${FENNEK_EDITION:-}" = nvidia ]; then
     d=$(ls /usr/share/applications/*nvidia-settings*.desktop 2>/dev/null | head -1)
     [ -n "$d" ] || { echo "nvidia-settings has no Start entry: revisit"; exit 1; }
     sed -i -e 's/^Name=.*/Name=NVIDIA Settings/' -e '/^Name\[/d' -e '/^NoDisplay=/d' "$d"
+    # NV Broadcast (on request: Start > NV Broadcast, fennek-get-nvbroadcast) needs these from the system: a virtual
+    # camera (v4l2loopback, set up below), its window (GTK 4, libadwaita, GStreamer, Python GObject), the tray icon
+    # and PipeWire's tools for the virtual microphone. The app itself and its GPU libraries go in the user's home.
+    dnf -y install v4l-utils gtk4 libadwaita gstreamer1-plugins-base gstreamer1-plugins-good gstreamer1-plugins-bad-free \
+        python3-gobject python3-gobject-cairo libayatana-appindicator-gtk3 psmisc pulseaudio-utils pipewire-utils
+    find /usr/lib/modules -name 'v4l2loopback.ko*' | grep -q . || dnf -y install v4l2loopback || true
+    printf 'options v4l2loopback devices=1 video_nr=10 card_label="NV Broadcast Camera" exclusive_caps=1 max_buffers=4\n' \
+        > /etc/modprobe.d/fennek-vcam.conf
+    echo v4l2loopback > /etc/modules-load.d/fennek-vcam.conf
 fi
 # OpenSnitch's scripts only enable+start the daemon (and fail in a container); we want it off until something
 # is blocked, so install without them. Its one dependency came with the main install above.
