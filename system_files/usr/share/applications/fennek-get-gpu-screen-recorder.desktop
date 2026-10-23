@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=GPU Screen Recorder
+GenericName=Instant replay and recording (get it)
+Comment=Records the screen and keeps an instant replay of the last moments, on the graphics card's own video chip (barely any game performance). Not installed yet: one click installs it.
+Exec=/usr/libexec/fennek-get-app com.dec05eba.gpu_screen_recorder "GPU Screen Recorder" fennek-get-gpu-screen-recorder
+Icon=media-record
+Categories=AudioVideo;Video;Recorder;
+Keywords=record;recording;replay;instant replay;shadowplay;clip;stream;capture;game;
+
+Actions=hide;
+
+[Desktop Action hide]
+Name=Don't recommend this
+Icon=list-remove
+Exec=/usr/libexec/fennek-get-app --hide fennek-get-gpu-screen-recorder
