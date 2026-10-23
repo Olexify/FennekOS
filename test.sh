@@ -390,10 +390,12 @@ assert json.load(open('/etc/containers/policy.json'))['transports']['docker']['g
 assert d['type'] == 'sigstoreSigned' and d['keyPath'] == '/etc/pki/containers/fennek-cosign.pub'
 " 2>/dev/null                                                 || fail "updates must require Fennek's signature"
 grep -q 'BEGIN PUBLIC KEY' /etc/pki/containers/fennek-cosign.pub || fail "Fennek public key"
+command -v mangohud >/dev/null || fail "MangoHud (in-game overlay)"
 # Editions: the one CI asked for (FENNEK_EDITION) is the one built; the NVIDIA edition carries NVIDIA's driver.
 [ "$(cat /usr/share/fennek/edition)" = "${FENNEK_EDITION:-}" ] || fail "edition is '$(cat /usr/share/fennek/edition)', expected '${FENNEK_EDITION:-}'"
 if [ "${FENNEK_EDITION:-}" = nvidia ]; then
     find /usr/lib/modules -name 'nvidia.ko*' | grep -q . || fail "NVIDIA edition: no NVIDIA kernel module"
+    command -v nvidia-settings >/dev/null && grep -qx 'Name=NVIDIA Settings' /usr/share/applications/*nvidia-settings*.desktop || fail "NVIDIA edition: NVIDIA Settings in Start"
 fi
 grep -q '"rhgb", "quiet"' /usr/lib/bootc/kargs.d/10-fennek-splash.toml || fail "boot splash kernel args"
 python3 -c "import json; p=json.load(open('/etc/firefox/policies/policies.json'))['policies']; assert p['DisableTelemetry'] and p['DisableFirefoxStudies']" \

@@ -49,6 +49,16 @@ dnf -y install ffmpegthumbs kdegraphics-thumbnailers
 kwriteconfig6 --file /etc/xdg/kdeglobals --group PreviewSettings --key MaximumSize 4294967296
 # Printers page in Settings + print queue in the tray (KDE's printer manager; renamed in newer Plasma).
 dnf -y install plasma-print-manager || dnf -y install print-manager
+# Games: MangoHud, the in-game overlay (FPS, frame times, GPU/CPU load and temperatures), for every game incl. the
+# classic programs run through Proton (MANGOHUD=1, or Shift+F12 to show/hide in a game that has it on).
+dnf -y install mangohud
+# NVIDIA edition: NVIDIA's own control panel (GPU info, clocks, temperatures, power mode) in Start.
+if [ "${FENNEK_EDITION:-}" = nvidia ]; then
+    rpm -q nvidia-settings >/dev/null || dnf -y install nvidia-settings
+    d=$(ls /usr/share/applications/*nvidia-settings*.desktop 2>/dev/null | head -1)
+    [ -n "$d" ] || { echo "nvidia-settings has no Start entry: revisit"; exit 1; }
+    sed -i -e 's/^Name=.*/Name=NVIDIA Settings/' -e '/^Name\[/d' -e '/^NoDisplay=/d' "$d"
+fi
 # OpenSnitch's scripts only enable+start the daemon (and fail in a container); we want it off until something
 # is blocked, so install without them. Its one dependency came with the main install above.
 dnf -y install --setopt=tsflags=noscripts "$OSN_RPM"
