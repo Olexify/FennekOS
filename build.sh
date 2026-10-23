@@ -92,6 +92,9 @@ sed -i -e 's/^NAME=.*/NAME="Fennek OS"/' \
 # Fennek version (Trails): "Fennek OS 1.0 · First Light", version 1.0.12, build id. VERSION_ID stays Fedora's (44):
 # package tools read it. Milestone names come from /usr/share/fennek/milestones.json (newest first).
 fv=${FENNEK_VERSION:-0.0.0}; fb=${FENNEK_BUILD:-local}
+# Edition: "" (the main one) or "nvidia" (NVIDIA graphics: its updates come from ghcr.io/olexify/fennekos-nvidia).
+case ${FENNEK_EDITION:-} in "" | nvidia) ;; *) echo "unknown edition: $FENNEK_EDITION"; exit 1 ;; esac
+printf '%s\n' "${FENNEK_EDITION:-}" > /usr/share/fennek/edition
 fname=$(python3 -c 'import json; print(json.load(open("/usr/share/fennek/milestones.json"))[0]["name"])')
 fmajor=${fv%.*}
 sed -i -e "s/^PRETTY_NAME=.*/PRETTY_NAME=\"Fennek OS $fmajor · $fname\"/" -e "s/^VERSION=.*/VERSION=\"$fv · $fname\"/" \
@@ -674,11 +677,12 @@ python3 - <<'EOF'
 import json, os, pathlib
 p = pathlib.Path("/etc/containers/policy.json")
 policy = json.loads(p.read_text())
-policy.setdefault("transports", {}).setdefault("docker", {})["ghcr.io/olexify/fennekos"] = [{
-    "type": "sigstoreSigned",
-    "keyPath": "/etc/pki/containers/fennek-cosign.pub",
-    "signedIdentity": {"type": "matchRepository"},
-}]
+for repo in ("ghcr.io/olexify/fennekos", "ghcr.io/olexify/fennekos-nvidia"):   # both editions, one key
+    policy.setdefault("transports", {}).setdefault("docker", {})[repo] = [{
+        "type": "sigstoreSigned",
+        "keyPath": "/etc/pki/containers/fennek-cosign.pub",
+        "signedIdentity": {"type": "matchRepository"},
+    }]
 tmp = p.with_name(p.name + ".fennek-new")      # new file + rename, never in place
 tmp.write_text(json.dumps(policy, indent=2) + "\n")
 os.chmod(tmp, 0o644)

@@ -19,11 +19,24 @@ jobs:
   image:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    # Two editions from the same source: the main one, and one for NVIDIA graphics (Universal Blue's kinoite-nvidia
+    # base, with NVIDIA's open kernel driver: needed by RTX 50 cards, good for RTX 20+).
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - edition: ""
+            base: kinoite-main
+            image: fennekos
+          - edition: nvidia
+            base: kinoite-nvidia
+            image: fennekos-nvidia
     permissions:
       contents: read
       packages: write   # publish to ghcr.io (only used outside pull requests)
     env:
-      IMAGE: ghcr.io/olexify/fennekos
+      IMAGE: ghcr.io/olexify/${{ matrix.image }}
+      FENNEK_EDITION: ${{ matrix.edition }}
     steps:
       # Actions pinned to commits (tags can be moved).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -39,7 +52,7 @@ jobs:
           df -h / /mnt
 
       - name: Verify base image signature and pin its digest
-        run: echo "BASE_IMAGE=$(bash verify-base.sh)" >> "$GITHUB_ENV"
+        run: echo "BASE_IMAGE=$(bash verify-base.sh ghcr.io/ublue-os/${{ matrix.base }}:44)" >> "$GITHUB_ENV"
 
       # podman, not docker: the base has ~256 layers, docker's overlay limit is ~127.
       - name: Build image
@@ -48,10 +61,10 @@ jobs:
           v=$(python3 tools/fennek-version.py)
           b="$(date -u +%Y.%m.%d).${GITHUB_SHA::7}"
           echo "Fennek OS $v (build $b)"
-          sudo podman build --build-arg "BASE_IMAGE=$BASE_IMAGE" --build-arg "FENNEK_VERSION=$v" --build-arg "FENNEK_BUILD=$b"             -f Containerfile -t fennek:ci .
+          sudo podman build --build-arg "BASE_IMAGE=$BASE_IMAGE" --build-arg "FENNEK_VERSION=$v" --build-arg "FENNEK_BUILD=$b" --build-arg "FENNEK_EDITION=$FENNEK_EDITION"             -f Containerfile -t fennek:ci .
 
       - name: Test image
-        run: sudo podman run --rm -v "$PWD/test.sh:/t.sh:ro,z" fennek:ci bash /t.sh
+        run: sudo podman run --rm -e FENNEK_EDITION -v "$PWD/test.sh:/t.sh:ro,z" fennek:ci bash /t.sh
 
       # Content-based layers: daily updates only download what changed (see chunk/Containerfile).
       - name: Regroup layers (chunkah, signature-verified)
@@ -76,7 +89,7 @@ jobs:
       - name: Test regrouped image
         run: |
           sudo podman run --rm fennek:chunked bootc container lint
-          sudo podman run --rm -v "$PWD/test.sh:/t.sh:ro,z" fennek:chunked bash /t.sh
+          sudo podman run --rm -e FENNEK_EDITION -v "$PWD/test.sh:/t.sh:ro,z" fennek:chunked bash /t.sh
           sudo podman tag fennek:chunked fennek:publish
 
       # Publishing + signing never runs for pull requests (a stranger's PR must not publish or sign).
@@ -101,9 +114,9 @@ jobs:
           # and the way installed systems verify it (containers policy + sigstore attachments) accepts it.
           cosign verify --key keys/fennek-cosign.pub "$IMAGE:latest" > /dev/null
           mkdir -p /tmp/client/registries.d
-          printf 'docker:\n  ghcr.io/olexify/fennekos:\n    use-sigstore-attachments: true\n' > /tmp/client/registries.d/fennek.yaml
-          printf '{"default":[{"type":"reject"}],"transports":{"docker":{"ghcr.io/olexify/fennekos":[{"type":"sigstoreSigned","keyPath":"%s","signedIdentity":{"type":"matchRepository"}}]}}}' \
-            "$PWD/keys/fennek-cosign.pub" > /tmp/client/policy.json
+          printf 'docker:\n  %s:\n    use-sigstore-attachments: true\n' "$IMAGE" > /tmp/client/registries.d/fennek.yaml
+          printf '{"default":[{"type":"reject"}],"transports":{"docker":{"%s":[{"type":"sigstoreSigned","keyPath":"%s","signedIdentity":{"type":"matchRepository"}}]}}}' \
+            "$IMAGE" "$PWD/keys/fennek-cosign.pub" > /tmp/client/policy.json
           # Verification happens while reading the source; the local oci: copy just can't store signatures.
           sudo skopeo copy --remove-signatures --policy /tmp/client/policy.json --registries.d /tmp/client/registries.d \
             "docker://$IMAGE@$(cat /tmp/digest-latest)" "oci:/mnt/client-check:latest" > /dev/null

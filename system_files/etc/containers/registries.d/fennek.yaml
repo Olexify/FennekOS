@@ -2,3 +2,5 @@
 docker:
   ghcr.io/olexify/fennekos:
     use-sigstore-attachments: true
+  ghcr.io/olexify/fennekos-nvidia:
+    use-sigstore-attachments: true

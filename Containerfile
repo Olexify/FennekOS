@@ -7,6 +7,8 @@ FROM ${BASE_IMAGE}
 # Version (tools/fennek-version.py, from the milestones file) and an immutable build id (date + commit), set by CI.
 ARG FENNEK_VERSION=0.0.0
 ARG FENNEK_BUILD=local
+# "nvidia": the edition for NVIDIA graphics (built FROM Universal Blue's kinoite-nvidia, with NVIDIA's driver)
+ARG FENNEK_EDITION=
 LABEL org.opencontainers.image.version="${FENNEK_VERSION}" \
       org.fennek.build="${FENNEK_BUILD}"
 LABEL org.opencontainers.image.title="Fennek OS" \
@@ -17,5 +19,6 @@ LABEL org.opencontainers.image.title="Fennek OS" \
 # One layer for everything we add: the build context is mounted, not copied.
 RUN --mount=type=bind,source=.,target=/ctx,ro \
     cp -a --no-preserve=ownership /ctx/system_files/. / && \
-    FENNEK_VERSION="${FENNEK_VERSION}" FENNEK_BUILD="${FENNEK_BUILD}" bash /ctx/build.sh /ctx/system_files && \
+    FENNEK_VERSION="${FENNEK_VERSION}" FENNEK_BUILD="${FENNEK_BUILD}" FENNEK_EDITION="${FENNEK_EDITION}" \
+        bash /ctx/build.sh /ctx/system_files && \
     bootc container lint

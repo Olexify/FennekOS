@@ -13,6 +13,15 @@ Only builds signed with Fennek's key install (--enforce-container-sigpolicy).
 import datetime, os, re, subprocess, sys
 
 IMAGE = "ghcr.io/olexify/fennekos"
+EDITION = "/usr/share/fennek/edition"   # "nvidia": the NVIDIA edition's image; empty: the main one
+
+
+def image(path=EDITION):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return IMAGE + ("-nvidia" if f.read().strip() == "nvidia" else "")
+    except OSError:
+        return IMAGE
 MAX_AGE = 45
 CUTOFF = "/usr/share/fennek/oldest-allowed-build"
 
@@ -46,7 +55,7 @@ def allowed(tag, today, cutoff):
 
 def switch_cmd(tag, machine):
     suffix = "-arm64" if machine == "aarch64" else ""
-    return ["bootc", "switch", "--enforce-container-sigpolicy", f"{IMAGE}:{tag}{suffix}"]
+    return ["bootc", "switch", "--enforce-container-sigpolicy", f"{image()}:{tag}{suffix}"]
 
 
 def selftest():
@@ -58,8 +67,14 @@ def selftest():
     assert allowed("20261231", today, datetime.date.min) == "a build from the future"
     for bad in ("2026101", "20261340", "../evil", "latest;reboot", "20261018-arm64"):
         assert allowed(bad, today, datetime.date.min), bad
-    assert switch_cmd("20261018", "x86_64")[-1] == "ghcr.io/olexify/fennekos:20261018"
-    assert switch_cmd("latest", "aarch64")[-1] == "ghcr.io/olexify/fennekos:latest-arm64"
+    assert switch_cmd("20261018", "x86_64")[-1] == f"{image()}:20261018"
+    assert switch_cmd("latest", "aarch64")[-1] == f"{image()}:latest-arm64"
+    import tempfile
+    with tempfile.TemporaryDirectory() as t:   # the edition picks the image; anything unknown stays on the main one
+        for text, want in (("nvidia\n", IMAGE + "-nvidia"), ("\n", IMAGE), ("other\n", IMAGE)):
+            open(t + "/e", "w").write(text)
+            assert image(t + "/e") == want, text
+        assert image(t + "/missing") == IMAGE
     assert "--enforce-container-sigpolicy" in switch_cmd("latest", "x86_64"), "only signed builds"
     print("selftest ok")
 
