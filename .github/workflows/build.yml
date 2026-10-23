@@ -54,6 +54,18 @@ jobs:
       - name: Verify base image signature and pin its digest
         run: echo "BASE_IMAGE=$(bash verify-base.sh ghcr.io/ublue-os/${{ matrix.base }}:44)" >> "$GITHUB_ENV"
 
+      # NVIDIA edition: the virtual camera module (v4l2loopback) from Universal Blue's signed akmods image, same key.
+      - name: Virtual camera module (NVIDIA edition)
+        if: matrix.edition == 'nvidia'
+        run: |
+          ak=$(bash verify-base.sh ghcr.io/ublue-os/akmods:main-44)
+          c=$(sudo podman create "$ak" /none)
+          mkdir akmods
+          sudo podman cp "$c:/rpms/kmods/." akmods/ && sudo podman cp "$c:/rpms/common/." akmods/
+          sudo podman rm "$c"
+          sudo find akmods -type f ! -name '*v4l2loopback*' -delete
+          ls -l akmods
+
       # podman, not docker: the base has ~256 layers, docker's overlay limit is ~127.
       - name: Build image
         run: |

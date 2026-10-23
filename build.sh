@@ -63,7 +63,9 @@ if [ "${FENNEK_EDITION:-}" = nvidia ]; then
     # and PipeWire's tools for the virtual microphone. The app itself and its GPU libraries go in the user's home.
     dnf -y install v4l-utils gtk4 libadwaita gstreamer1-plugins-base gstreamer1-plugins-good gstreamer1-plugins-bad-free \
         python3-gobject python3-cairo libayatana-appindicator-gtk3 psmisc pulseaudio-utils pipewire-utils
-    find /usr/lib/modules -name 'v4l2loopback.ko*' | grep -q . || dnf -y install v4l2loopback || true
+    # The virtual camera's kernel module isn't in Fedora: CI puts Universal Blue's prebuilt one (from their signed akmods
+    # image, built for this exact kernel) in akmods/; the kernel-version requirement makes a mismatch fail here.
+    find /usr/lib/modules -name 'v4l2loopback.ko*' | grep -q . || dnf -y install "$files"/../akmods/*v4l2loopback*.rpm
     printf 'options v4l2loopback devices=1 video_nr=10 card_label="NV Broadcast Camera" exclusive_caps=1 max_buffers=4\n' \
         > /etc/modprobe.d/fennek-vcam.conf
     echo v4l2loopback > /etc/modules-load.d/fennek-vcam.conf

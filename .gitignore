@@ -1,3 +1,5 @@
 # Rust: versions come from Fedora's packaged crates at image build time
 src/*/Cargo.lock
 src/*/target/
+# NVIDIA edition: prebuilt kernel module RPMs fetched by CI
+akmods/
