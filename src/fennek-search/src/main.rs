@@ -362,6 +362,87 @@ mod watch {
     }
 }
 
+/// Ransomware guard, from the changes the index sees anyway (no extra watching, nothing scanned): a file that
+/// disappears and comes back with an extra ending (report.docx -> report.docx.locked), by renaming or by writing an
+/// encrypted copy and deleting the original. Many of those within a minute = an alert. Endings that ordinary tools
+/// add (compressing, backups, downloads in progress) don't count.
+struct Guard {
+    removed: std::collections::VecDeque<(u64, String)>,   // (second, path), the last minute
+    hits: std::collections::VecDeque<(u64, String)>,      // (second, folder) replacements, the last minute
+    last_alert: u64,
+}
+
+const GUARD_WINDOW: u64 = 60;
+const GUARD_LIMIT: usize = 20;
+const GUARD_QUIET: u64 = 600;
+const HARMLESS_ENDINGS: [&str; 15] =
+    ["gz", "xz", "bz2", "zst", "lz4", "zip", "7z", "bak", "old", "orig", "tmp", "part", "crdownload", "sig", "asc"];
+
+impl Guard {
+    fn new() -> Self {
+        Guard { removed: Default::default(), hits: Default::default(), last_alert: 0 }
+    }
+
+    /// Feed one batch of changes at time NOW (seconds). Returns (how many, the folder most hit) when it's time to warn.
+    fn observe(&mut self, changes: &[watch::Change], now: u64) -> Option<(usize, String)> {
+        while self.removed.front().is_some_and(|(t, _)| now.saturating_sub(*t) > GUARD_WINDOW) {
+            self.removed.pop_front();
+        }
+        while self.hits.front().is_some_and(|(t, _)| now.saturating_sub(*t) > GUARD_WINDOW) {
+            self.hits.pop_front();
+        }
+        for c in changes {
+            match c {
+                watch::Change::Removed(p) => {
+                    self.removed.push_back((now, p.clone()));
+                    if self.removed.len() > 5000 {
+                        self.removed.pop_front();
+                    }
+                }
+                watch::Change::Added(p, false) => {
+                    let Some((stem, ending)) = p.rsplit_once('.') else { continue };
+                    if ending.is_empty() || ending.len() > 16 || ending.contains('/')
+                        || HARMLESS_ENDINGS.contains(&ending.to_ascii_lowercase().as_str()) {
+                        continue;
+                    }
+                    // the file it replaces had an ending of its own: report.docx -> report.docx.locked
+                    if !stem.rsplit('/').next().is_some_and(|n| n.contains('.')) {
+                        continue;
+                    }
+                    if self.removed.iter().any(|(_, r)| r == stem) {
+                        let folder = stem.rsplit_once('/').map(|(d, _)| d.to_string()).unwrap_or_default();
+                        self.hits.push_back((now, folder));
+                    }
+                }
+                _ => {}
+            }
+        }
+        if self.hits.len() >= GUARD_LIMIT && now.saturating_sub(self.last_alert) > GUARD_QUIET {
+            self.last_alert = now;
+            let mut count: HashMap<&str, usize> = HashMap::new();
+            for (_, f) in &self.hits {
+                *count.entry(f.as_str()).or_default() += 1;
+            }
+            let folder = count.into_iter().max_by_key(|(_, n)| *n).map(|(f, _)| f.to_string()).unwrap_or_default();
+            return Some((self.hits.len(), folder));
+        }
+        None
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn warn_replaced(n: usize, folder: &str) {
+    let shown = folder.replacen(&home(), "~", 1);
+    let text = format!(
+        "{n} files in {shown} were just replaced by copies with an extra ending (like .locked). If you didn't do this, \
+         a program may be encrypting your files: close programs you don't know, then get the files back with \
+         right-click on the folder > Restore previous versions."
+    );
+    let _ = std::process::Command::new("sh")
+        .args(["-c", r#"[ "$(notify-send -a "Fennek Security" -i dialog-warning -u critical --action=show="Show the folder" --wait "Many files were just replaced" "$1")" = show ] && exec dolphin "$2""#, "sh", &text, folder])
+        .spawn();
+}
+
 struct Runner {
     index: Arc<Mutex<Index>>,
 }
@@ -463,6 +544,7 @@ fn serve() -> zbus::Result<()> {
         .build()?;
     // The inotify fd is shared through the index; wait for events without holding the lock.
     let mut buf = vec![0u8; 64 * 1024];
+    let mut guard = Guard::new();
     let fd = {
         use std::os::fd::AsRawFd;
         index.lock().unwrap().watch.as_ref().map(|w| w.inotify.as_raw_fd())
@@ -475,6 +557,10 @@ fn serve() -> zbus::Result<()> {
         let mut ix = index.lock().unwrap();
         let Some(w) = ix.watch.as_mut() else { break };
         let changes = watch::changes(w, false, &mut buf);
+        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+        if let Some((n, folder)) = guard.observe(&changes, now) {
+            warn_replaced(n, &folder);
+        }
         watch::apply(&mut ix, changes, &roots);
     }
     Ok(())
@@ -561,6 +647,27 @@ fn selftest() {
         assert_eq!(names(&ix, "cat", &[]), ["Pictures/cat.jpg"], "renamed folder: old paths gone, new ones found");
     }
     let _ = fs::remove_dir_all(&t);
+    // ransomware guard: 20 files replaced by .locked copies in a minute -> one alert, then quiet
+    use watch::Change::{Added, Removed};
+    let mut g = Guard::new();
+    let mut alerts = 0;
+    for i in 0..25 {
+        let f = format!("/h/u/Documents/report{i}.docx");
+        let batch = [Removed(f.clone()), Added(format!("{f}.locked"), false)];
+        if g.observe(&batch, 1000 + i).is_some() {
+            alerts += 1;
+        }
+    }
+    assert_eq!(alerts, 1, "one alert for a burst");
+    assert_eq!(Guard::new().observe(&[], 0), None);
+    let mut calm = Guard::new();
+    for i in 0..30 {   // compressing, a big download finishing, new files, slow changes: no alert
+        let f = format!("/h/u/logs/day{i}.txt");
+        assert!(calm.observe(&[Removed(f.clone()), Added(format!("{f}.gz"), false)], 10 + i).is_none());
+        assert!(calm.observe(&[Added(format!("/h/u/new{i}.docx.copy"), false)], 10 + i).is_none());
+        let s = format!("/h/u/slow/r{i}.pdf");
+        assert!(calm.observe(&[Removed(s.clone()), Added(format!("{s}.x9"), false)], 10_000 + i * 120).is_none());
+    }
     let d = std::env::temp_dir().join(format!("fennek-search-describe-{}", std::process::id()));   // own per run
     let _ = std::fs::create_dir_all(&d);
     std::fs::write(d.join("a.txt"), "12345").unwrap();
