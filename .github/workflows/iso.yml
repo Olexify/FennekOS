@@ -7,6 +7,9 @@ on:
       arch:
         description: "x86_64 or aarch64"
         default: x86_64
+      edition:
+        description: "empty: the main edition; nvidia: the edition for NVIDIA graphics (x86_64)"
+        default: ""
   schedule:
     - cron: "0 7 * * 1"   # weekly, Monday after the daily image build
 
@@ -18,7 +21,8 @@ jobs:
     runs-on: ${{ inputs.arch == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     env:
       TAG: ${{ inputs.arch == 'aarch64' && 'latest-arm64' || 'latest' }}
-      NAME: ${{ inputs.arch == 'aarch64' && 'fennek-os-arm64' || 'fennek-os' }}
+      NAME: ${{ inputs.arch == 'aarch64' && 'fennek-os-arm64' || (inputs.edition == 'nvidia' && 'fennek-os-nvidia' || 'fennek-os') }}
+      REPO: ghcr.io/olexify/${{ inputs.edition == 'nvidia' && 'fennekos-nvidia' || 'fennekos' }}
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -37,10 +41,10 @@ jobs:
       # Same rule as for the base: verify the signature, then use exactly the signed digest.
       - name: Verify Fennek image signature
         run: |
-          out=$(cosign verify --key keys/fennek-cosign.pub "ghcr.io/olexify/fennekos:$TAG")
+          out=$(cosign verify --key keys/fennek-cosign.pub "$REPO:$TAG")
           digest=$(jq -r '.[0].critical.image."docker-manifest-digest"' <<<"$out")
           [[ $digest == sha256:* ]]
-          echo "FENNEK_IMAGE=ghcr.io/olexify/fennekos@$digest" >> "$GITHUB_ENV"
+          echo "FENNEK_IMAGE=$REPO@$digest" >> "$GITHUB_ENV"
 
       - name: Build live/installer layer
         run: |

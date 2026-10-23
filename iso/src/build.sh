@@ -3,9 +3,12 @@
 # Titanoboa example for Bazzite). Runs inside iso/Containerfile. FENNEK_IMAGE = the exact image installed.
 set -euxo pipefail
 : "${FENNEK_IMAGE:?}"
-# Where installed systems take signed updates from (x86-64: latest, ARM64: latest-arm64).
-UPDATES_FROM=ghcr.io/olexify/fennekos:latest
-[ "$(uname -m)" = aarch64 ] && UPDATES_FROM=ghcr.io/olexify/fennekos:latest-arm64
+# Where installed systems take signed updates from: this image's own edition (the NVIDIA edition has its own image),
+# x86-64: latest, ARM64: latest-arm64.
+repo=ghcr.io/olexify/fennekos
+[ "$(cat /usr/share/fennek/edition 2>/dev/null)" = nvidia ] && repo=ghcr.io/olexify/fennekos-nvidia
+UPDATES_FROM=$repo:latest
+[ "$(uname -m)" = aarch64 ] && UPDATES_FROM=$repo:latest-arm64
 
 mkdir -p "$(realpath /root)" /var/lib/rpm-state
 mount -o remount,rw /proc/sys || true
