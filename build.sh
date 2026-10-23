@@ -62,7 +62,7 @@ if [ "${FENNEK_EDITION:-}" = nvidia ]; then
     # camera (v4l2loopback, set up below), its window (GTK 4, libadwaita, GStreamer, Python GObject), the tray icon
     # and PipeWire's tools for the virtual microphone. The app itself and its GPU libraries go in the user's home.
     dnf -y install v4l-utils gtk4 libadwaita gstreamer1-plugins-base gstreamer1-plugins-good gstreamer1-plugins-bad-free \
-        python3-gobject python3-gobject-cairo libayatana-appindicator-gtk3 psmisc pulseaudio-utils pipewire-utils
+        python3-gobject python3-cairo libayatana-appindicator-gtk3 psmisc pulseaudio-utils pipewire-utils
     find /usr/lib/modules -name 'v4l2loopback.ko*' | grep -q . || dnf -y install v4l2loopback || true
     printf 'options v4l2loopback devices=1 video_nr=10 card_label="NV Broadcast Camera" exclusive_caps=1 max_buffers=4\n' \
         > /etc/modprobe.d/fennek-vcam.conf
@@ -620,7 +620,7 @@ dracut --no-hostonly --kver "$KVER" --reproducible --add ostree -f "/usr/lib/mod
 chmod 0600 "/usr/lib/modules/$KVER/initramfs.img"
 
 # Permissions: everything we ship is 644, except our programs.
-(cd "$files" && find . -type f) | while read -r f; do chmod 644 "/${f#./}"; chown root:root "/${f#./}"; done
+(cd "$files" && find . -type f) | while read -r f; do [ -e "/${f#./}" ] || continue; chmod 644 "/${f#./}"; chown root:root "/${f#./}"; done
 # Belt and braces: everything we ship belongs to root (a build-context owner would be a local root hole).
 (cd "$files" && find . -mindepth 1 -type d) | while read -r d; do chown root:root "/${d#./}"; done
 chmod 755 /usr/bin/fennek-* /usr/libexec/fennek-*
