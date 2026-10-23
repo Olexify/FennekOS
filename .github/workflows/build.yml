@@ -64,7 +64,7 @@ jobs:
           sudo podman build --build-arg "BASE_IMAGE=$BASE_IMAGE" --build-arg "FENNEK_VERSION=$v" --build-arg "FENNEK_BUILD=$b" --build-arg "FENNEK_EDITION=$FENNEK_EDITION"             -f Containerfile -t fennek:ci .
 
       - name: Test image
-        run: sudo podman run --rm -e FENNEK_EDITION -v "$PWD/test.sh:/t.sh:ro,z" fennek:ci bash /t.sh
+        run: sudo podman run --rm -e "FENNEK_EDITION=$FENNEK_EDITION" -v "$PWD/test.sh:/t.sh:ro,z" fennek:ci bash /t.sh
 
       # Content-based layers: daily updates only download what changed (see chunk/Containerfile).
       - name: Regroup layers (chunkah, signature-verified)
@@ -89,7 +89,7 @@ jobs:
       - name: Test regrouped image
         run: |
           sudo podman run --rm fennek:chunked bootc container lint
-          sudo podman run --rm -e FENNEK_EDITION -v "$PWD/test.sh:/t.sh:ro,z" fennek:chunked bash /t.sh
+          sudo podman run --rm -e "FENNEK_EDITION=$FENNEK_EDITION" -v "$PWD/test.sh:/t.sh:ro,z" fennek:chunked bash /t.sh
           sudo podman tag fennek:chunked fennek:publish
 
       # Publishing + signing never runs for pull requests (a stranger's PR must not publish or sign).
