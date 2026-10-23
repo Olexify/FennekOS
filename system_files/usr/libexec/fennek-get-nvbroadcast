@@ -8,7 +8,7 @@
 #   fennek-get-nvbroadcast --uninstall   remove it all (the space comes back; the "get it" entry returns)
 #   fennek-get-nvbroadcast --selftest
 # The app's source is pinned: one reviewed release, checked by its SHA-256 (a newer one = update TAG/COMMIT/SHA256).
-# Its libraries come from PyPI as ready-made packages only (no package's own build code runs here); the app itself
+# Its libraries come from PyPI only, as ready-made packages from hash-locked lists (no package's own build code runs); the app itself
 # runs from the checked source, never built.
 set -euo pipefail
 TAG=v1.5.3
@@ -19,22 +19,23 @@ apps=${XDG_DATA_HOME:-$HOME/.local/share}/applications
 entry=$apps/fennek-nvbroadcast.desktop
 note() { notify-send -a "NV Broadcast" -i camera-web "$@" || true; }
 
-# The packages to install: the app's own list (pyproject.toml) plus the GPU or processor extras, for Linux.
-requirements() {   # SRC_DIR cuda|cpu
-    python3 - "$1" "$2" <<'PY'
-import sys, tomllib
-p = tomllib.load(open(sys.argv[1] + "/pyproject.toml", "rb"))["project"]
-for r in p["dependencies"] + p["optional-dependencies"][sys.argv[2]]:
-    if "sys_platform == 'darwin'" not in r:
-        print(r)
-PY
-}
+# Its libraries, locked: every package (indirect ones too) at one version with its SHA-256, made for this release and
+# Fedora's Python (uv pip compile --generate-hashes; renew with TAG/COMMIT/SHA256). pip refuses anything else.
+LOCKS=/usr/share/fennek/nvbroadcast
 
 if [ "${1:-}" = --selftest ]; then
-    t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
-    printf '[project]\ndependencies = ["numpy>=1", "x; sys_platform == '"'"'darwin'"'"'", "y; sys_platform == '"'"'linux'"'"'"]\n[project.optional-dependencies]\ncuda = ["cupy-cuda12x"]\ncpu = ["onnxruntime"]\n' > "$t/pyproject.toml"
-    [ "$(requirements "$t" cuda | tr '\n' ' ')" = "numpy>=1 y; sys_platform == 'linux' cupy-cuda12x " ] || { echo "requirements: $(requirements "$t" cuda)"; exit 1; }
-    [ "$(requirements "$t" cpu | tail -1)" = onnxruntime ] || exit 1
+    for k in cuda cpu; do   # every package pinned to one version, none without a hash
+        python3 - "$LOCKS/requirements-$k.lock" <<'PY' || exit 1
+import re, sys
+text = open(sys.argv[1]).read()
+pkgs = re.findall(r"^([A-Za-z0-9_.-]+)==([^ \\\n]+)", text, re.M)
+blocks = re.split(r"^(?=[A-Za-z0-9_.-]+==)", text, flags=re.M)[1:]
+assert len(pkgs) > 20 and len(blocks) == len(pkgs), "every package pinned"
+assert all("--hash=sha256:" in b for b in blocks), "every package with a hash"
+assert not re.search(r"^--(extra-)?index-url", text, re.M), "PyPI only"
+PY
+    done
+    grep -q '^onnxruntime-gpu==' "$LOCKS/requirements-cuda.lock" && grep -q '^onnxruntime==' "$LOCKS/requirements-cpu.lock" || exit 1
     echo "selftest ok"; exit 0
 fi
 
@@ -50,9 +51,9 @@ if command -v nvidia-smi >/dev/null && nvidia-smi -L >/dev/null 2>&1; then
 
 How should it run?" \
         cuda "On the graphics card (recommended): about 2.2 GB to download, 4–5 GB on disk" on \
-        cpu "On the processor only: about 400 MB, works without the graphics card's help" off) || exit 0
+        cpu "On the processor only: about 400 MB to download, about 1 GB on disk" off) || exit 0
 else
-    kdialog --title "NV Broadcast" --warningcontinuecancel "NVIDIA's graphics driver isn't running, so NV Broadcast can only use the processor (about 400 MB to download). Install it like that?" --continue-label "Install" || exit 0
+    kdialog --title "NV Broadcast" --warningcontinuecancel "NVIDIA's graphics driver isn't running, so NV Broadcast can only use the processor (about 400 MB to download, 1 GB on disk). Install it like that?" --continue-label "Install" || exit 0
     kind=cpu
 fi
 
@@ -67,11 +68,9 @@ mkdir "$work/src"
 tar -xzf "$work/src.tar.gz" -C "$work/src" --strip-components=1 --no-same-owner --no-same-permissions
 find "$work/src" -type l -delete   # plain files only
 python3 -m venv --system-site-packages "$work/venv" || fail "Its Python environment couldn't be made."   # system GTK bindings
-mapfile -t reqs < <(requirements "$work/src" "$kind")
-extra=()
-[ "$kind" = cuda ] && extra=(--extra-index-url https://pypi.nvidia.com)
-"$work/venv/bin/pip" install --quiet --disable-pip-version-check --only-binary=:all: "${extra[@]}" "${reqs[@]}" \
-    || fail "Its libraries couldn't be downloaded (no internet, or not enough space)."
+"$work/venv/bin/pip" install --quiet --disable-pip-version-check --only-binary=:all: --require-hashes --no-deps \
+    -r "$LOCKS/requirements-$kind.lock" \
+    || fail "Its libraries couldn't be downloaded or didn't match the checked versions (no internet, or not enough space?)."
 rm -f "$work/src.tar.gz"
 rm -rf -- "$dest"; mv -- "$work" "$dest"
 # Fennek pins the version (a newer one comes with a Fennek update), so its own GitHub update check starts off; it
