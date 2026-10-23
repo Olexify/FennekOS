@@ -1,0 +1,103 @@
+#!/usr/bin/bash
+# "NV Broadcast" in Start (NVIDIA edition): installs NV Broadcast on request (github.com/Hkshoonya/nvidia-broadcast-linux,
+# GPL-3.0, an independent open-source app, not made by NVIDIA): microphone noise removal and voice, camera background
+# blur/replace/removal, a virtual camera ("NV Broadcast Camera") and microphone for OBS, Discord, Zoom. Its system
+# parts are in the image (build.sh); the app and its libraries go to ~/.local/share/fennek/nvbroadcast, for this
+# account, no password.
+#   fennek-get-nvbroadcast               ask GPU or processor only (sizes shown), then install
+#   fennek-get-nvbroadcast --uninstall   remove it all (the space comes back; the "get it" entry returns)
+#   fennek-get-nvbroadcast --selftest
+# The app's source is pinned: one reviewed release, checked by its SHA-256 (a newer one = update TAG/COMMIT/SHA256).
+# Its libraries come from PyPI as ready-made packages only (no package's own build code runs here); the app itself
+# runs from the checked source, never built.
+set -euo pipefail
+TAG=v1.5.3
+COMMIT=048d4f4005a56e6a7b235739f0176e0264bc3fa7
+SHA256=4289e2af21a263917d92c7be3ee47d758b9be50cdb7fefa80b7bc164be94b37a
+dest=${XDG_DATA_HOME:-$HOME/.local/share}/fennek/nvbroadcast
+apps=${XDG_DATA_HOME:-$HOME/.local/share}/applications
+entry=$apps/fennek-nvbroadcast.desktop
+note() { notify-send -a "NV Broadcast" -i camera-web "$@" || true; }
+
+# The packages to install: the app's own list (pyproject.toml) plus the GPU or processor extras, for Linux.
+requirements() {   # SRC_DIR cuda|cpu
+    python3 - "$1" "$2" <<'PY'
+import sys, tomllib
+p = tomllib.load(open(sys.argv[1] + "/pyproject.toml", "rb"))["project"]
+for r in p["dependencies"] + p["optional-dependencies"][sys.argv[2]]:
+    if "sys_platform == 'darwin'" not in r:
+        print(r)
+PY
+}
+
+if [ "${1:-}" = --selftest ]; then
+    t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
+    printf '[project]\ndependencies = ["numpy>=1", "x; sys_platform == '"'"'darwin'"'"'", "y; sys_platform == '"'"'linux'"'"'"]\n[project.optional-dependencies]\ncuda = ["cupy-cuda12x"]\ncpu = ["onnxruntime"]\n' > "$t/pyproject.toml"
+    [ "$(requirements "$t" cuda | tr '\n' ' ')" = "numpy>=1 y; sys_platform == 'linux' cupy-cuda12x " ] || { echo "requirements: $(requirements "$t" cuda)"; exit 1; }
+    [ "$(requirements "$t" cpu | tail -1)" = onnxruntime ] || exit 1
+    echo "selftest ok"; exit 0
+fi
+
+if [ "${1:-}" = --uninstall ]; then
+    rm -rf -- "$dest" "$entry" "$apps/fennek-get-nvbroadcast.desktop"   # the last: the "get it" entry shows again
+    note "NV Broadcast was removed" "Its files and libraries are gone; the space is free again."
+    exit 0
+fi
+
+# GPU or processor only (GPU only with NVIDIA's driver running)
+if command -v nvidia-smi >/dev/null && nvidia-smi -L >/dev/null 2>&1; then
+    kind=$(kdialog --title "NV Broadcast" --radiolist "NV Broadcast: noise removal, voice, background effects and a virtual camera and microphone for your streams and calls.
+
+How should it run?" \
+        cuda "On the graphics card (recommended): about 2.2 GB to download, 4–5 GB on disk" on \
+        cpu "On the processor only: about 400 MB, works without the graphics card's help" off) || exit 0
+else
+    kdialog --title "NV Broadcast" --warningcontinuecancel "NVIDIA's graphics driver isn't running, so NV Broadcast can only use the processor (about 400 MB to download). Install it like that?" --continue-label "Install" || exit 0
+    kind=cpu
+fi
+
+note "Installing NV Broadcast" "This takes a few minutes; you can keep working. It tells you when it's ready."
+work=$dest.partial
+rm -rf -- "$work"; mkdir -p "$work"
+fail() { note "NV Broadcast wasn't installed" "$1 Click NV Broadcast in Start to try again."; rm -rf -- "$work"; exit 1; }
+curl -fsSL --max-time 300 --max-filesize 50000000 "https://codeload.github.com/Hkshoonya/nvidia-broadcast-linux/tar.gz/$COMMIT" -o "$work/src.tar.gz" \
+    || fail "The download didn't work (no internet?)."
+echo "$SHA256  $work/src.tar.gz" | sha256sum -c --quiet - || fail "The download didn't match the checked version."
+mkdir "$work/src"
+tar -xzf "$work/src.tar.gz" -C "$work/src" --strip-components=1 --no-same-owner --no-same-permissions
+find "$work/src" -type l -delete   # plain files only
+python3 -m venv --system-site-packages "$work/venv" || fail "Its Python environment couldn't be made."   # system GTK bindings
+mapfile -t reqs < <(requirements "$work/src" "$kind")
+extra=()
+[ "$kind" = cuda ] && extra=(--extra-index-url https://pypi.nvidia.com)
+"$work/venv/bin/pip" install --quiet --disable-pip-version-check --only-binary=:all: "${extra[@]}" "${reqs[@]}" \
+    || fail "Its libraries couldn't be downloaded (no internet, or not enough space)."
+rm -f "$work/src.tar.gz"
+rm -rf -- "$dest"; mv -- "$work" "$dest"
+# Fennek pins the version (a newer one comes with a Fennek update), so its own GitHub update check starts off; it
+# can be switched on again in the app. (Its AI models still download from the internet the first time they're used.)
+PYTHONPATH=$dest/src/src "$dest/venv/bin/python" -c '
+from nvbroadcast.core.config import load_config, save_config
+c = load_config(); c.check_for_updates = False; save_config(c)' 2>/dev/null || true
+
+mkdir -p "$apps"
+icon=$(find "$dest/src/data/icons" -name '*.svg' 2>/dev/null | head -1)
+cat > "$entry" <<EOF
+[Desktop Entry]
+Type=Application
+Name=NV Broadcast
+GenericName=Noise removal, background effects, virtual camera
+Comment=Microphone noise removal and voice, camera background blur and removal, a virtual camera and microphone for streams and calls
+Exec=env PYTHONPATH=$dest/src/src $dest/venv/bin/python -m nvbroadcast
+Icon=${icon:-camera-web}
+Categories=AudioVideo;Video;
+Keywords=broadcast;noise;background;blur;camera;microphone;stream;obs;
+Actions=uninstall;
+
+[Desktop Action uninstall]
+Name=Uninstall
+Icon=edit-delete
+Exec=/usr/libexec/fennek-get-nvbroadcast --uninstall
+EOF
+/usr/libexec/fennek-get-app --hide fennek-get-nvbroadcast   # the app itself is in Start now
+note "NV Broadcast is ready" "Find it in Start. In OBS, Discord or Zoom pick \"NV Broadcast Camera\" as the camera."

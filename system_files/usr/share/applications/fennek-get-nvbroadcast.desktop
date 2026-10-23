@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=NV Broadcast
+GenericName=Noise removal, background effects, virtual camera (get it)
+Comment=Microphone noise removal and voice, camera background blur and removal, a virtual camera and microphone for OBS, Discord, Zoom. Not installed yet: one click asks how and installs it.
+Exec=/usr/libexec/fennek-get-nvbroadcast
+Icon=camera-web
+Categories=AudioVideo;Video;
+Keywords=broadcast;nvidia broadcast;noise;background;blur;camera;microphone;stream;obs;
+
+Actions=hide;
+
+[Desktop Action hide]
+Name=Don't recommend this
+Icon=list-remove
+Exec=/usr/libexec/fennek-get-app --hide fennek-get-nvbroadcast

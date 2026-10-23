@@ -67,6 +67,8 @@ if [ "${FENNEK_EDITION:-}" = nvidia ]; then
     printf 'options v4l2loopback devices=1 video_nr=10 card_label="NV Broadcast Camera" exclusive_caps=1 max_buffers=4\n' \
         > /etc/modprobe.d/fennek-vcam.conf
     echo v4l2loopback > /etc/modules-load.d/fennek-vcam.conf
+else
+    rm -f /usr/share/applications/fennek-get-nvbroadcast.desktop   # NV Broadcast: the NVIDIA edition only
 fi
 # OpenSnitch's scripts only enable+start the daemon (and fail in a container); we want it off until something
 # is blocked, so install without them. Its one dependency came with the main install above.
