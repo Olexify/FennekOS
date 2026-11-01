@@ -8,6 +8,12 @@ arch=$(uname -m)   # x86_64 (PCs) or aarch64 (ARM laptops, Macs via a VM; native
 cp /etc/dnf/dnf.conf /tmp/dnf.conf.orig
 printf '\n# Fennek image build (temporary)\nfastestmirror=True\nmax_parallel_downloads=10\nminrate=100k\ntimeout=60\n' \
     >> /etc/dnf/dnf.conf
+# Every build starts from Fedora's latest packages, even when the base image is a day or two behind: security fixes
+# arrive the night they're out, and the source packages patched below match what's installed. (The tools installed
+# later would drag these upgrades in anyway, over edits already made.) The kernel and its modules stay the base's, they
+# belong together. An upgrade can overwrite files we ship, so ours go back on top.
+dnf -y upgrade --exclude='kernel*' --exclude='*nvidia*' --exclude='kmod-*' --exclude='akmod*'
+cp -a --no-preserve=ownership "$files"/. /
 # OpenSnitch (per-app firewall engine) isn't in Fedora repos: pinned upstream RPM per architecture, checksummed.
 OSN_VER=1.8.0
 declare -A OSN_SHA256=([x86_64]=e06e9119daf764e56455b61c319e496274c0274bb53bb94a0ff1ab72967fea7d
