@@ -626,6 +626,12 @@ chmod 0600 "/usr/lib/modules/$KVER/initramfs.img"
 # Belt and braces: everything we ship belongs to root (a build-context owner would be a local root hole).
 (cd "$files" && find . -mindepth 1 -type d) | while read -r d; do chown root:root "/${d#./}"; done
 chmod 755 /usr/bin/fennek-* /usr/libexec/fennek-*
+# KWin's data folder: newer releases load scripts from kwin/ again (kwin-wayland/ before). Ours follow KDE's own.
+if [ -d /usr/share/kwin/scripts/minimizeall ] && [ ! -d /usr/share/kwin-wayland/scripts/minimizeall ]; then
+    for d in /usr/share/kwin-wayland/scripts/fennek*; do
+        mv "$d" /usr/share/kwin/scripts/ && ln -s "/usr/share/kwin/scripts/${d##*/}" "$d"
+    done
+fi
 
 # Hourly home snapshots (ransomware undo), set up on first boot.
 systemctl enable fennek-home-snapshots.service snapper-timeline.timer snapper-cleanup.timer
@@ -801,6 +807,14 @@ from_source() (
     # The installed version's source; a fresh update's source may still sit in the testing repo only.
     dnf -y download --srpm "$pkg-$v" || true
     ls "$pkg"-*.src.rpm >/dev/null 2>&1 || dnf -y download --srpm --enablerepo=updates-testing-source "$pkg-$v" || true
+    # Or the base is a little behind and the repos only hold a newer one: Fedora's build system keeps every release
+    # (signed copies by key id), so nightly security updates don't wait. The signature check below still decides.
+    if ! ls "$pkg"-*.src.rpm >/dev/null 2>&1; then
+        koji=https://kojipkgs.fedoraproject.org/packages/$pkg/${v%-*}/${v##*-}/data/signed
+        for key in $(curl -fsSL --max-time 60 "$koji/" | grep -oE 'href="[0-9a-f]{8}/"' | cut -d'"' -f2); do
+            curl -fsSL --max-time 300 -o "$pkg-$v.src.rpm" "$koji/${key}src/$pkg-$v.src.rpm" && break || rm -f "$pkg-$v.src.rpm"
+        done
+    fi
     srpm=$(ls "$pkg"-*.src.rpm 2>/dev/null) || { echo "$pkg: no source package for the installed $v (revisit when it reaches the repos)"; exit 1; }
     rpm -K "$srpm" | grep -q 'signatures OK' || { echo "$pkg source package: signature not OK"; exit 1; }
     dnf -y builddep "./$srpm"
