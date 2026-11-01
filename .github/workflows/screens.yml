@@ -27,7 +27,10 @@ jobs:
       - name: Screenshots
         run: |
           mkdir -p out
-          sudo podman run --rm --cap-add SYS_NICE -v "$PWD/out:/out:z" -v "$PWD/tools:/t:ro,z" \
+          # KWin won't start without a graphics device since Plasma 6.8: the kernel's virtual one (software drawing).
+          sudo apt-get install -y -q "linux-modules-extra-$(uname -r)" && sudo modprobe vgem
+          ls -l /dev/dri; sudo chmod 666 /dev/dri/*
+          sudo podman run --rm --cap-add SYS_NICE --device /dev/dri -v "$PWD/out:/out:z" -v "$PWD/tools:/t:ro,z" \
             "ghcr.io/olexify/fennekos:${{ inputs.tag }}" bash /t/screens.sh
 
       - name: Check that screenshots were taken
