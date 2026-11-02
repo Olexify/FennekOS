@@ -1,0 +1,24 @@
+#!/usr/bin/bash
+# While a USB drive or SD card is attached, what's written reaches it within a second or two: a copy "ends" when the data is
+# in memory, and people pull the stick then. Otherwise the battery-friendly 15 seconds again (60-fennek-battery.conf).
+# In /run/sysctl.d because tuned re-reads that folder after a power profile switch. Not the sync mount option: it flushes on
+# every single write, which is slow and wears out the stick.
+conf=/run/sysctl.d/90-fennek-usb.conf
+attached() {
+    local d
+    for d in /sys/block/sd* /sys/block/mmcblk*; do
+        case $(readlink -f "$d") in */usb*) return 0 ;; esac
+        [ "$(cat "$d/device/type" 2>/dev/null)" = SD ] && return 0
+    done
+    return 1
+}
+if attached; then
+    mkdir -p "${conf%/*}"
+    printf 'vm.dirty_expire_centisecs = 100
+vm.dirty_writeback_centisecs = 100
+' >"$conf"
+    sysctl -q -p "$conf"
+else
+    rm -f "$conf"
+    sysctl -q -w vm.dirty_expire_centisecs=3000 vm.dirty_writeback_centisecs=1500
+fi

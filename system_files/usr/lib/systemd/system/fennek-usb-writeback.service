@@ -1,0 +1,6 @@
+[Unit]
+Description=Write to USB drives and SD cards without delay while one is attached
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/fennek-usb-writeback

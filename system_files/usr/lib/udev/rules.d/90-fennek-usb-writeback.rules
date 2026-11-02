@@ -1,0 +1,2 @@
+# A disk came or went: fennek-usb-writeback looks at what's attached now.
+ACTION=="add|remove", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", KERNEL=="sd*|mmcblk*", RUN+="/usr/bin/systemctl --no-block start fennek-usb-writeback.service"

@@ -175,6 +175,7 @@ def run(if_due=False):
         return "Backup incomplete: " + ", ".join(failed) + " (is the drive full?)"
     cfg["last"] = int(time.time())
     save(cfg)
+    os.sync()   # "Backed up" must be true when the drive is pulled right after it
     return "Backed up."
 
 

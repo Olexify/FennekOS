@@ -114,6 +114,7 @@ in_session cp /run/t/loop.raw "/home/$user/loop.raw"
 check "a file attached as a disk" in_session udisksctl loop-setup --no-user-interaction -f "/home/$user/loop.raw"
 appears() { for ((i = 0; i < 30; i++)); do [ -e "$1" ] && return 0; sleep 1; done; return 1; }
 check "USB disk plugged in" appears /dev/disk/by-label/FennekUSB
+check "USB disk: what's written reaches it within seconds" sh -c 'sleep 3; [ "$(sysctl -n vm.dirty_expire_centisecs)" = 100 ] && [ "$(sysctl -n vm.dirty_writeback_centisecs)" = 100 ]'
 check "attached file's drive there" appears /dev/disk/by-label/FennekLoop
 # Windows hibernates (Fast Startup). hiberfil.sys is only on its own drive, but it holds the other one just the same.
 closed() { for ((i = 0; i < 10; i++)); do udisksctl unmount --no-user-interaction -b "$1" && return 0; sleep 2; done; return 1; }
