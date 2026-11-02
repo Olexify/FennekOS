@@ -6,10 +6,17 @@ gui() { [ -n "${WAYLAND_DISPLAY:-}${DISPLAY:-}" ] && [ "${1:-}" != --yes ]; }
 yes=${1:-}
 
 # The previous version = the deployment that is neither running nor a downloaded update waiting for restart.
+# After the boot guard went back by itself that's the version it left because it didn't start: not a place to go back to.
 if ! when=$(rpm-ostree status --json 2>/dev/null | python3 -c '
-import json, sys, time
+import json, os, sys, time
 old = [d for d in json.load(sys.stdin)["deployments"] if not d.get("booted") and not d.get("staged")]
 old or sys.exit(1)
+try:
+    failed = json.load(open(os.environ.get("FENNEK_ROLLED_BACK", "/var/lib/fennek/boot-guard/rolled-back"))).get("digest")
+except (OSError, ValueError):
+    failed = None
+if failed and old[0].get("container-image-reference-digest") == failed:
+    sys.exit(1)
 print(time.strftime("from %d %B %Y", time.localtime(old[0]["timestamp"])) if "timestamp" in old[0] else "")' 2>/dev/null)
 then
     msg="There is no previous version to go back to yet."

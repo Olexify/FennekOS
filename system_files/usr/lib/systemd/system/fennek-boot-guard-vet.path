@@ -1,5 +1,5 @@
 [Unit]
-Description=Check each downloaded update against the ones that failed to start here
+Description=Check each downloaded update before it gets installed
 
 [Path]
 PathChanged=/run/ostree/staged-deployment
