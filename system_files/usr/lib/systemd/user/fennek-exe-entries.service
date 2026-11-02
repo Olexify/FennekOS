@@ -1,0 +1,10 @@
+[Unit]
+Description=Bring installed classic programs into Start
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/fennek-run-exe --sync
+
+[Install]
+WantedBy=graphical-session.target

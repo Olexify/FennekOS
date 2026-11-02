@@ -6,6 +6,8 @@ Usage: fennek-run-exe FILE [ARGS...]                  asks per unknown program (
        fennek-run-exe --sandbox FILE [ARGS...]        always sandboxed, no sound, no questions
        fennek-run-exe --sandbox-sound FILE [ARGS...]  sandboxed with sound (and therefore microphone)
        fennek-run-exe --trusted FILE [ARGS...]        normal run, no sandbox
+       fennek-run-exe --box SHA256|trusted ID         a program installed earlier, from its entry in Start
+       fennek-run-exe --sync                          bring programs' Start menu shortcuts into Start (at sign-in)
        fennek-run-exe --selftest
 
 Sandbox: own private home (Wine prefix inside); sees only ~/Sandbox/<program> as "Shared", its own folder
@@ -13,7 +15,7 @@ read-only, Proton through a throwaway overlay. Own network namespace (pasta): in
 sockets (X11 abstract socket, D-Bus, local services) are unreachable. Wayland display when Proton supports it,
 so no X11 snooping. No sound/microphone unless asked for. Your real home and other programs are invisible.
 """
-import hashlib, os, re, shutil, subprocess, sys, time
+import fcntl, hashlib, os, re, shutil, subprocess, sys, threading, time
 from pathlib import Path
 
 HOME = Path.home()
@@ -245,8 +247,8 @@ def placement(exe, shared):
 
 
 def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env, sound=False, wayland=False,
-               resolv=None, uid=1000, gid=1000, folders=()):
-    src, target = placement(exe, shared)
+               resolv=None, uid=1000, gid=1000, folders=(), inside=None):
+    src, target = (None, inside) if inside else placement(exe, shared)   # inside: already in its own folders
     a = ["bwrap",
          # pasta's namespace makes us "root" (mapped to the real user); map back to the user's own id,
          # umu refuses to run as root and nothing inside should look privileged.
@@ -302,40 +304,223 @@ def with_seccomp(cmd, bpf=SECCOMP):
     return ["sh", "-c", 'exec "$@" 10<"$0"', str(bpf), cmd[0], "--seccomp", "10", *cmd[1:]]
 
 
-def run_sandboxed(exe, digest, args, sound=False):
+# ---- installed programs in Start --------------------------------------------------------------------------------
+# An installer's shortcuts stay inside the program's own Windows folders. Here they become entries in Start. All of
+# that folder was written by the program, and this runs outside its sandbox: nothing there is followed if it's a link,
+# nothing from it reaches a command line, and a shortcut itself is only ever opened inside the same sandbox.
+SHORTCUT_FOLDERS = ("users/steamuser/AppData/Roaming/Microsoft/Windows/Start Menu", "ProgramData/Microsoft/Windows/Start Menu",
+                    "users/steamuser/Desktop", "users/Public/Desktop")
+NOT_A_PROGRAM = re.compile(r"(?i)uninstal|^unins|read ?me|manual|documentation|website|licen[cs]e|\bhelp\b")
+MOST_ENTRIES = 20
+
+
+def plain_folder(base, rel):
+    """base/rel if every step of it is a real folder, else None."""
+    cur = Path(base)
+    for part in Path(rel).parts:
+        cur = cur / part
+        if cur.is_symlink() or not cur.is_dir():
+            return None
+    return cur
+
+
+def shortcuts(drive_c):
+    """[(name, path inside drive_c)] of a program's shortcuts, the first of each name, at most MOST_ENTRIES."""
+    found = {}
+    for rel in SHORTCUT_FOLDERS:
+        top = plain_folder(drive_c, rel)
+        stack = [top] if top else []
+        while stack:
+            try:
+                entries = sorted(os.scandir(stack.pop()), key=lambda e: e.name)
+            except OSError:
+                continue
+            for e in entries:
+                if e.is_dir(follow_symlinks=False):
+                    stack.append(e.path)
+                elif e.is_file(follow_symlinks=False) and e.name.lower().endswith(".lnk") and e.stat(follow_symlinks=False).st_size < 1 << 20:
+                    stem = e.name[:-4]
+                    if stem and not NOT_A_PROGRAM.search(stem):
+                        found.setdefault(stem, os.path.relpath(e.path, drive_c))
+    return sorted(found.items())[:MOST_ENTRIES]
+
+
+def shortcut_id(rel):
+    return hashlib.sha256(rel.encode("utf-8", "surrogateescape")).hexdigest()[:16]
+
+
+def clean_name(stem):
+    return "".join(c for c in stem if not odd_char(c) and c not in "\\").strip()[:80] or "Program"
+
+
+def names_in_start():
+    """What's already called what in Start, without Fennek's own entries for programs."""
+    names = set()
+    for folder in (DATA / "applications", Path("/usr/share/applications"), Path("/var/lib/flatpak/exports/share/applications"),
+                   DATA / "flatpak/exports/share/applications"):
+        for f in folder.glob("*.desktop") if folder.is_dir() else []:
+            if f.name.startswith("fennek-exe-"):
+                continue
+            try:
+                m = re.search(r"^Name=(.*)$", f.read_text(encoding="utf-8", errors="replace"), re.M)
+            except OSError:
+                continue
+            if m:
+                names.add(m.group(1).strip().lower())
+    return names
+
+
+def shortcut_icon(drive_c, stem, out):
+    """The picture Wine made for this shortcut, copied out if it really is a small picture; else None."""
+    folder = plain_folder(drive_c, "proton_shortcuts")
+    try:
+        entry = folder / (stem + ".desktop") if folder else None
+        if not entry or entry.is_symlink() or not entry.is_file() or entry.stat().st_size > 1 << 16:
+            return None
+        m = re.search(r"^Icon=([\w.-]+)$", entry.read_text(encoding="utf-8", errors="replace"), re.M)
+        for size in (256, 128, 64, 48, 32) if m else ():
+            apps = plain_folder(folder, f"icons/{size}x{size}/apps")
+            png = apps / (m.group(1) + ".png") if apps else None
+            if png and not png.is_symlink() and png.is_file() and png.stat().st_size < 1 << 22:
+                data = png.read_bytes()
+                if data.startswith(b"\x89PNG\r\n\x1a\n"):
+                    out.parent.mkdir(parents=True, exist_ok=True)
+                    out.write_bytes(data)
+                    return out
+    except OSError:
+        pass
+    return None
+
+
+def sync_start(box_id, drive_c):
+    """Start's entries for one program's folder match the shortcuts in it now: new ones added, gone ones removed."""
+    apps, icons = DATA / "applications", DATA / "fennek" / "exe-icons"
+    prefix, wanted, taken = f"fennek-exe-{box_id[:16]}-", set(), None
+    for stem, rel in shortcuts(drive_c):
+        lid = shortcut_id(rel)
+        entry = apps / f"{prefix}{lid}.desktop"
+        wanted.add(entry.name)
+        if entry.exists():
+            continue
+        if taken is None:
+            taken = names_in_start()
+        name = clean_name(stem)
+        if name.lower() in taken and box_id != "trusted":
+            name += " (sandbox)"   # never passes for an app that's already here
+        icon = shortcut_icon(drive_c, stem, icons / f"{box_id[:16]}-{lid}.png") or "application-x-ms-dos-executable"
+        apps.mkdir(parents=True, exist_ok=True)
+        tmp = entry.with_name(entry.name + ".new")
+        tmp.write_text(f"[Desktop Entry]\nType=Application\nName={name}\nComment=Classic program\nIcon={icon}\n"
+                       f"Exec=fennek-run-exe --box {box_id} {lid}\nCategories=Other;\n", encoding="utf-8")
+        os.replace(tmp, entry)
+    for old in apps.glob(prefix + "*.desktop") if apps.is_dir() else []:
+        if old.name not in wanted:
+            old.unlink(missing_ok=True)
+            (icons / (old.stem.removeprefix("fennek-exe-") + ".png")).unlink(missing_ok=True)
+
+
+def trusted_drive():
+    return HOME / "Games/umu/umu-default/drive_c"
+
+
+def box_of(digest):
+    """A sandboxed program's own folder, by its fingerprint."""
+    if not re.fullmatch(r"[0-9a-f]{64}", digest) or not BOXES.is_dir():
+        return None
+    for d in BOXES.iterdir():
+        if d.name.endswith("-" + digest[:16]) and not d.is_symlink() and d.is_dir():
+            return d
+    return None
+
+
+def sync_all():
+    rows = NAMES.read_text(encoding="utf-8", errors="replace").split("\n") if NAMES.is_file() else []
+    for digest in {l.partition("\t")[0] for l in rows if l}:
+        box = box_of(digest)
+        if box:
+            sync_start(digest, box / "home/prefix/drive_c")
+    sync_start("trusted", trusted_drive())
+
+
+def keep_start_in_sync(box_id, drive_c, run):
+    """run() with Start's entries kept up to date while it runs: an installer's "Run now" stays open until the program
+    closes, and a shutdown would end this before any last step. A problem here never touches the run."""
+    done = threading.Event()
+
+    def sync():
+        try:
+            sync_start(box_id, drive_c)
+        except OSError:
+            pass
+
+    def loop():
+        while not done.wait(5):
+            sync()
+    threading.Thread(target=loop, daemon=True).start()
+    try:
+        return run()
+    finally:
+        done.set()
+        sync()
+
+
+def run_box(box_id, lid):
+    """A program installed earlier: its shortcut, in its own sandbox with that sandbox's choices. Never asks, and never
+    runs outside a sandbox unless the program's folder is the trusted one."""
+    box = None if box_id == "trusted" else box_of(box_id)
+    if box_id != "trusted" and not box:
+        return say("This program isn't there any more.", "error")
+    drive_c = trusted_drive() if not box else box / "home/prefix/drive_c"
+    rel = next((r for _, r in shortcuts(drive_c) if shortcut_id(r) == lid), None)
+    if not rel:
+        return say("This program's shortcut isn't there any more.", "error")
+    if not box:
+        return run_trusted(drive_c / rel, [])
+    return run_sandboxed(Path(rel), box_id, [], sound=remembered(box_id) == "sandbox-sound", box=box, inside=HOME / "prefix/drive_c" / rel)
+
+
+def run_sandboxed(exe, digest, args, sound=False, box=None, inside=None):
     proton = ensure_proton()
     if not proton:
         return say("Couldn't set up Windows support (no internet?).", "error")
     if not shutil.which("pasta"):
         return say("Sandbox networking (pasta) is missing; not running unsandboxed.", "error")
-    name = folder_name(exe, digest)
+    name = box.name if box else folder_name(exe, digest)
     box_home = BOXES / name / "home"
     shared = SHARED / name
     for d in (box_home, shared):
         d.mkdir(parents=True, exist_ok=True)
     if shared.resolve().parent != SHARED.resolve():   # belt and braces against path tricks
         return say(f"Refusing odd program name: {exe.name}", "error")
+    # One run per sandbox: each has its own /tmp, so a second one would be a second Windows session on the same files.
+    running = open(box_home.parent / ".running", "w")
+    try:
+        fcntl.flock(running, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        return say(f"{exe.stem} is already open.", "error")
     wayland = bool(os.environ.get("WAYLAND_DISPLAY")) and wine_wayland(proton)
     resolv = box_home.parent / "resolv.conf"
     resolv.write_text(f"nameserver {SANDBOX_DNS}\n")
     extra = granted_folders(digest)
     also = (" and " + ", ".join(f"~/{inside.name}" for _, inside in extra)) if extra else ""
-    say(f"{exe.name} runs in a sandbox and only sees ~/Sandbox/{name}{also}. "
-        "If it needs other files, move them there, or allow a folder in Settings > App permissions."
-        + old_folder_notice(exe, digest), "passivepopup")
+    if not box:
+        say(f"{exe.name} runs in a sandbox and only sees ~/Sandbox/{name}{also}. "
+            "If it needs other files, move them there, or allow a folder in Settings > App permissions."
+            + old_folder_notice(exe, digest), "passivepopup")
     cmd = bwrap_args(exe, args, box_home, shared, proton, os.environ.get("XDG_RUNTIME_DIR"), os.environ,
                      sound=sound, wayland=wayland, resolv=resolv, uid=os.getuid(), gid=os.getgid(),
-                     folders=extra)
+                     folders=extra, inside=inside)
     if not SECCOMP.is_file():   # never quietly weaker
         return say("The sandbox's system-call filter is missing; not running.", "error")
+    drive_c = box_home / "prefix/drive_c"
     if OFFLINE.is_file() and digest in OFFLINE.read_text().split():
-        return subprocess.run(with_seccomp([cmd[0], "--unshare-net", *cmd[1:]])).returncode   # firewall: no network
+        return keep_start_in_sync(digest, drive_c, lambda: subprocess.run(with_seccomp([cmd[0], "--unshare-net", *cmd[1:]])).returncode)   # firewall: no network
     # Own network namespace with internet via pasta: host-only sockets and host loopback become unreachable.
-    return subprocess.run([*PASTA, "--", *with_seccomp(cmd)]).returncode
+    return keep_start_in_sync(digest, drive_c, lambda: subprocess.run([*PASTA, "--", *with_seccomp(cmd)]).returncode)
 
 
 def run_trusted(exe, args):
-    return subprocess.run(["umu-run", *wine_cmd(exe, args)], env={**os.environ, **umu_env()}).returncode
+    return keep_start_in_sync("trusted", trusted_drive(), lambda: subprocess.run(["umu-run", *wine_cmd(exe, args)], env={**os.environ, **umu_env()}).returncode)
 
 
 def ask(exe, digest):
@@ -355,6 +540,10 @@ def ask(exe, digest):
 def main(argv):
     if argv == ["--selftest"]:
         return selftest()
+    if argv == ["--sync"]:
+        return sync_all()
+    if len(argv) == 3 and argv[0] == "--box" and re.fullmatch(r"[0-9a-f]{16}", argv[2]):
+        return run_box(argv[1], argv[2])
     mode = argv.pop(0) if argv and argv[0] in ("--sandbox", "--sandbox-sound", "--trusted", "--choose") else None
     choose = mode == "--choose"
     mode = None if choose else mode
@@ -562,6 +751,43 @@ def selftest():
     (SHARED / short).symlink_to(t)
     main(["--trusted", str(exe)])
     assert (SHARED / short).is_symlink() and not (SHARED / long).exists(), "a link is never moved"
+    # Installed programs in Start: only real shortcuts, nothing from the program on a command line, no way out by links.
+    DATA = t / "data"
+    d = t / "drive_c"
+    menu = d / "users/steamuser/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Game"
+    menu.mkdir(parents=True)
+    (menu / "My Game.lnk").write_text("x")
+    (menu / "Uninstall My Game.lnk").write_text("x")
+    (menu / "Read Me.lnk").write_text("x")
+    (menu / "notes.txt").write_text("x")
+    (menu / "Evil\\\nExec=rm -rf.lnk").write_text("x")
+    (menu / "Link.lnk").symlink_to(t / "setup.exe")
+    (d / "users/Public").mkdir(parents=True)
+    (d / "users/Public/Desktop").symlink_to(t)   # a program can point these at your real folders
+    (t / "Outside.lnk").write_text("x")
+    names = [n for n, _ in shortcuts(d)]
+    assert "My Game" in names and "Outside" not in names and "Link" not in names, names
+    assert not [n for n in names if "Uninstall" in n or "Read Me" in n], names
+    box_id = "a" * 64
+    sync_start(box_id, d)
+    made = {f.read_text(encoding="utf-8") for f in (DATA / "applications").glob("fennek-exe-*.desktop")}
+    assert len(made) == 2 and any("Name=My Game\n" in m for m in made)
+    for m in made:
+        lines = m.split("\n")
+        assert sum(l.startswith("Exec=") for l in lines) == 1 and re.fullmatch(r"Exec=fennek-run-exe --box a{64} [0-9a-f]{16}", next(l for l in lines if l.startswith("Exec="))), m
+    (DATA / "applications/org.x.desktop").write_text("[Desktop Entry]\nName=Firefox\n")
+    (menu / "firefox.lnk").write_text("x")
+    sync_start(box_id, d)
+    assert any("Name=firefox (sandbox)\n" in f.read_text(encoding="utf-8") for f in (DATA / "applications").glob("fennek-exe-*.desktop")), "never passes for another app"
+    (menu / "My Game.lnk").unlink()
+    sync_start(box_id, d)
+    assert not any("Name=My Game\n" in f.read_text(encoding="utf-8") for f in (DATA / "applications").glob("fennek-exe-*.desktop")), "gone with its shortcut"
+    for i in range(40):
+        (menu / f"p{i}.lnk").write_text("x")
+    assert len(shortcuts(d)) == MOST_ENTRIES, "a program can't flood Start"
+    assert clean_name("a\u2028b\\c") == "abc" and clean_name("\n") == "Program"
+    a = bwrap_args(Path("x"), [], Path("/b"), Path("/s"), Path("/p"), None, {}, inside=HOME / "prefix/drive_c/x.lnk")
+    assert a[-1] == "/var/home/u/prefix/drive_c/x.lnk" and "/var/home/u/App/x" not in a, "an installed program runs from inside, nothing extra mounted"
     very_long = Path("я" * 120 + ".exe")   # 240 bytes: it fitted with 8 digits, not with 16
     assert folder_name(very_long, real) == "я" * 119 + "-" + real[:16], "cut to fit, on a letter's edge"
     assert old_folder_name(very_long, real) == "я" * 120 + "-" + real[:8], "the old name stays uncut: it must still be found"

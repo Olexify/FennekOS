@@ -59,7 +59,7 @@ Item {
         parent: QQC2.Overlay.overlay
         title: root.pending ? "Remove " + root.pending.name + "?" : ""
         subtitle: !root.pending ? ""
-            : root.pending.kind === "classic" ? "Its own files and settings go. Your files in its folder under Sandbox stay."
+            : root.pending.kind === "classic" ? "Its own files and settings go, with anything you saved from inside it. Your files in its folder under Sandbox stay."
             : root.pending.kind === "store" && root.pending.data > 0 ? "It takes up " + root.size(root.pending.size) + ", and its saved data " + root.size(root.pending.data) + "."
             : "This takes it off the computer."
         standardButtons: Kirigami.Dialog.Cancel

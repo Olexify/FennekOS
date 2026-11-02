@@ -700,7 +700,7 @@ systemctl enable fennek-boot-guard.service fennek-boot-guard-vet.path
 systemctl enable fennek-detect-windows.service fennek-windows-scan.service fennek-essential-apps.service fennek-greeter-lang.service
 
 # Instant file search feeds the Start menu / KRunner.
-systemctl --global enable fennek-search.service fennek-windows-drives.service fennek-graphics-check.service fennek-usage.service fennek-update-ready.service fennek-update-ready.path fennek-shortcuts-update.service fennek-app-names.service fennek-backup.timer fennek-power-feedback.service fennek-new-apps.path fennek-new-apps.service
+systemctl --global enable fennek-search.service fennek-windows-drives.service fennek-graphics-check.service fennek-exe-entries.service fennek-usage.service fennek-update-ready.service fennek-update-ready.path fennek-shortcuts-update.service fennek-app-names.service fennek-backup.timer fennek-power-feedback.service fennek-new-apps.path fennek-new-apps.service
 
 # Classic command names (calc, notepad, control, taskmgr, ncpa.cpl...) for the Run box and the terminal.
 for c in $(sed -n 's/^    \([a-z0-9.| ]*\)) .*/\1/p' /usr/libexec/fennek-classic-command | tr -d ' ' | tr '|' ' '); do

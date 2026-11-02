@@ -54,7 +54,7 @@ var categories = [
    {"name": "App style", "kcm": "kcm_style", "icon": "fennek-set-appstyle", "desc": "How buttons and windows look", "optional": true},
    {"name": "Window frames", "kcm": "kcm_kwindecoration", "icon": "fennek-set-windowframes", "desc": "Title bars and buttons", "optional": true},
    {"name": "Desktop effects", "kcm": "kcm_kwin_effects", "icon": "fennek-set-effects", "desc": "Animations, transparency, zoom", "optional": true},
-   {"name": "Animation speed", "kcm": "kcm_workspace", "icon": "fennek-set-animation", "desc": "Animations, clicks, tooltips", "optional": true},
+   {"name": "Animation speed", "kcm": "kcm_workspace", "icon": "fennek-set-animation", "desc": "Animations, clicks, tooltips, dragging files", "optional": true},
    {"name": "Startup screen", "kcm": "kcm_splashscreen", "icon": "fennek-set-splash", "desc": "The picture while Fennek starts", "optional": true},
    {"name": "Lock screen", "kcm": "kcm_screenlocker", "icon": "fennek-set-lockscreen", "desc": "When and how the screen locks"},
    {"name": "Sign-in screen", "kcm": "kcm_sddm", "icon": "fennek-set-signin", "desc": "The screen where you sign in", "optional": true},

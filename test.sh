@@ -441,6 +441,7 @@ for l in 'Before=systemd-user-sessions.service' 'TimeoutStopSec=2' 'ExecStartPre
 v=$(systemd-analyze verify /usr/lib/systemd/system/fennek-windows-scan.service 2>&1 || true); ! grep 'fennek-windows-scan.service:[0-9]' <<<"$v" || fail "Windows drive scan: systemd doesn't take these lines"
 [ ! -e /usr/libexec/fennek-ntfs-probe ] && [ ! -e /usr/lib/udev/rules.d/90-fennek-windows-drive.rules ] && ! grep -qrE 'fennek-(ntfs|windows)' /usr/lib/udev/rules.d || fail "something still reads a drive when it's plugged in"
 grep -q 'set-local-rtc 1' /usr/libexec/fennek-detect-windows || fail "clock in step with Windows"
+[ -L /etc/systemd/user/graphical-session.target.wants/fennek-exe-entries.service ] && grep -q 'fennek-run-exe --sync' /usr/lib/systemd/user/fennek-exe-entries.service || fail "installed programs in Start"
 grep -q '^DndBehavior=MoveIfSameDevice' /etc/xdg/kdeglobals && grep -q 'Fennek Next Language' /usr/share/kwin*/scripts/fennekarrows/contents/code/main.js || fail "dragging files without a question, Alt+Shift"
 [ -x /usr/lib/NetworkManager/dispatcher.d/90-fennek-everyday-apps ] || fail "everyday apps start when the computer gets online"
 /usr/libexec/fennek-graphics-check --selftest >/dev/null && /usr/libexec/fennek-graphics-check --json | python3 -c 'import json,sys; d=json.load(sys.stdin); assert set(d) == {"edition", "nvidia", "secure_boot"}' \
