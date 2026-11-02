@@ -2,7 +2,10 @@
 # The real thing before anything is published: installs IMAGE to a disk, boots it in a VM with Secure Boot on (the
 # Microsoft-signed firmware keys of a normal PC), signs in like a person and checks the desktop that comes up.
 #   tests/vm-test.sh IMAGE OUTPUT_DIR [EXPECT_EDITION]
-# Needs: podman (image in root's storage), qemu-system-x86, ovmf, KVM. Test settings reach the VM only through
+# Also, when set to 1: FENNEK_VM_ROLLBACK a bad update undoes itself; FENNEK_VM_MOK the Secure Boot key step, from the
+# failing driver through the firmware's blue screen to the loaded driver (NVIDIA edition); FENNEK_VM_WIZARD only a picture
+# of what a first start shows with no account yet.
+# Needs: podman (image in root's storage), qemu-system-x86, ovmf, gdisk, KVM. Test settings reach the VM only through
 # systemd credentials and kernel arguments of this test install; the image itself isn't touched.
 set -uo pipefail
 image=$1 out=$2 edition=${3:-}
@@ -12,25 +15,49 @@ sudo mkdir -p "$work" "$out" && sudo chown -R "$(id -u)" "$work" "$out"
 share=$work/share; rm -rf "$share"; mkdir -p "$share/out"
 cp "$here/vm-inside.sh" "$here/vm-rollback.sh" "$share/"; printf '%s' "$edition" > "$share/edition"
 [ -n "${FENNEK_VM_ROLLBACK:-}" ] && touch "$share/rollback-wanted"
+[ -n "${FENNEK_VM_MOK:-}" ] && [ "$edition" = nvidia ] && touch "$share/mok-wanted"
+[ -n "${FENNEK_VM_MOK:-}" ] && [ "$edition" != nvidia ] && echo "::warning::The Secure Boot key step only runs on the NVIDIA edition: skipped"
+[ -n "${FENNEK_VM_WIZARD:-}" ] && touch "$share/wizard-wanted"
 stage() { echo "::group::$*"; }
 end() { echo "::endgroup::"; }
 die() { echo "::error::VM test: $*"; cp -a "$share/out/." "$out/" 2>/dev/null; [ -f "$work/serial.log" ] && tail -c 6000 "$work/serial.log" | tr -cd '[:print:]\n'; exit 1; }
 
 stage "Install to a disk"
-truncate -s 40G "$work/disk.raw"
 # The installer compares this folder through /proc/1/root: a symlink (CI moves container storage to the big disk)
 # would point nowhere from inside its container, a bind mount doesn't.
 if [ -L /var/lib/containers ]; then
     t=$(readlink -f /var/lib/containers)
     sudo rm /var/lib/containers && sudo mkdir /var/lib/containers && sudo mount --bind "$t" /var/lib/containers
 fi
+# The layout the installer makes: EFI system partition, /boot on ext4, the system on btrfs. The 1 MB partition is only for
+# --generic-image: bootupd then also installs the BIOS boot loader, and grub2-install refuses a GPT disk without one.
+rm -f "$work/disk.raw"; truncate -s 40G "$work/disk.raw"
+sgdisk -n 1:0:+1M -t 1:ef02 -n 2:0:+600M -t 2:ef00 -n 3:0:+1G -t 3:8300 -n 4:0:0 -t 4:8300 "$work/disk.raw" >/dev/null \
+    || die "couldn't partition the disk"
+loop=$(sudo losetup -Pf --show "$work/disk.raw") || die "no loop device for the disk"
+sudo udevadm settle
+# The image's own mkfs tools: what the installer runs. bootc and bootupd read UUIDs and partition types from udev's data.
+sudo podman run --rm --privileged -v /dev:/dev "$image" \
+    sh -c "mkfs.vfat -F 32 '${loop}p2' && mkfs.ext4 -q '${loop}p3' && mkfs.btrfs -q '${loop}p4'" || die "couldn't make the filesystems"
+sudo udevadm trigger --settle "${loop}p2" "${loop}p3" "${loop}p4"
+target=$work/target
+mkdir -p "$target"
+sudo mount "${loop}p4" "$target" && sudo mkdir "$target/boot" && sudo mount "${loop}p3" "$target/boot" \
+    && sudo mkdir "$target/boot/efi" && sudo mount "${loop}p2" "$target/boot/efi" || die "couldn't mount the new filesystems"
+# --skip-finalize: bootc would leave the filesystems read-only, and the file below is still to be written.
 sudo podman run --rm --privileged --pid=host --security-opt label=disable \
-    -v /var/lib/containers:/var/lib/containers -v /dev:/dev -v "$work:/work" "$image" \
-    bootc install to-disk --generic-image --via-loopback --skip-fetch-check --wipe --filesystem btrfs \
+    -v /var/lib/containers:/var/lib/containers -v /dev:/dev -v "$target:/target:rbind" "$image" \
+    bootc install to-filesystem --generic-image --skip-fetch-check --skip-finalize \
     --source-imgref "containers-storage:$image" \
     --karg console=tty0 --karg console=ttyS0,115200 --karg systemd.wants=fennek-vmtest.service \
-    /work/disk.raw || die "the image doesn't install"
-sudo chown "$(id -u)" "$work/disk.raw"
+    /target || die "the image doesn't install"
+# bootc's fstab mounts /boot read-only, and the boot guard writes there. These are the lines the installer writes.
+# Through tee, in place: the file keeps its SELinux label.
+fstab=$(sudo sh -c "ls '$target'/ostree/deploy/*/deploy/*.0/etc/fstab") \
+    && boot=$(sudo blkid -p -o value -s UUID "${loop}p3") && esp=$(sudo blkid -p -o value -s UUID "${loop}p2") \
+    && printf 'UUID=%s /boot ext4 defaults 1 2\nUUID=%s /boot/efi vfat umask=0077,shortname=winnt 0 2\n' "$boot" "$esp" | sudo tee "$fstab" \
+    || die "couldn't write the new system's fstab"
+sudo umount -R "$target" && sudo losetup -d "$loop" || die "couldn't let go of the disk"
 end
 
 # A second disk as if Windows lived on this computer: the Windows drive and a data drive, both closed cleanly (the VM
@@ -79,7 +106,7 @@ qemu-system-x86_64 -name fennek-vm -machine q35,smm=on,accel=kvm -global driver=
     -qmp "unix:$work/qmp.sock,server,nowait" &
 vm=$!
 trap 'kill $vm 2>/dev/null; true' EXIT
-qmp() { python3 "$here/vm-qmp.py" "$work/qmp.sock" "$1"; }
+qmp() { python3 "$here/vm-qmp.py" "$work/qmp.sock" "$@"; }
 shot() { qmp "{\"execute\":\"screendump\",\"arguments\":{\"filename\":\"$out/$1.png\",\"format\":\"png\"}}" >/dev/null; qmp "{\"execute\":\"screendump\",\"arguments\":{\"filename\":\"$work/$1.ppm\"}}" >/dev/null; }
 wait_for() {   # FILE SECONDS: until the VM says so
     for ((s = 0; s < $2; s += 5)); do
@@ -89,10 +116,23 @@ wait_for() {   # FILE SECONDS: until the VM says so
     done
     return 1
 }
+vm_says_ok() {   # FILE SECONDS: the VM writes "ok" there, or what went wrong
+    wait_for "$1" "$2" || { shot "$1-stuck"; die "no answer from the VM: $1"; }
+    sleep 1
+    [ "$(cat "$share/out/$1")" = ok ] || die "$(cat "$share/out/$1")"
+}
 
 stage "Boot and sign in"
 wait_for setup-done 300 || { sleep 1; shot boot-stuck; die "no sign of a booted system after 5 minutes"; }
 echo "System up"
+if [ -e "$share/wizard-wanted" ]; then
+    sleep 90
+    shot wizard-1
+    cp -a "$share/out/." "$out/"
+    end
+    echo "VM test passed: the system booted, wizard-1.png shows what it brings up."
+    exit 0
+fi
 # Sign in like a person: any key on the clock screen, then the password.
 sleep 60
 shot 0-sign-in-clock
@@ -129,6 +169,35 @@ cp -a "$share/out/." "$out/"
 cat "$out/report.txt"
 end
 [ "$(cat "$out/result" 2>/dev/null)" = pass ] || die "$(cat "$out/result" 2>/dev/null || echo 'no result')"
+
+if [ -e "$share/mok-wanted" ]; then
+    stage "Secure Boot key step"
+    vm_says_ok mok-before 120
+    qmp --wait-blue "$work/now.ppm" 300 >/dev/null || { shot mok-no-blue-screen; die "no blue screen after the restart"; }
+    sleep 3
+    shot mok-1
+    # The order shim really has (MokManager.c). Each menu starts on its top line: "Continue boot" above "Enroll MOK", then
+    # "View key 0" above "Continue", then "No" above "Yes". After them the password, and the first menu with "Reboot" on top.
+    n=1
+    for k in down ret down ret down ret; do
+        qmp --key "$k" >/dev/null
+        sleep 4
+        n=$((n + 1))
+        shot "mok-$n"
+        cmp -s "$work/mok-$((n - 1)).ppm" "$work/mok-$n.ppm" && die "the blue screen didn't react to step $n ($k)"
+    done
+    qmp --type fennek >/dev/null
+    qmp --key ret >/dev/null
+    sleep 6
+    shot mok-8
+    qmp --key ret >/dev/null
+    sleep 2
+    shot mok-9
+    vm_says_ok mok-after 300
+    cp -a "$share/out/." "$out/"
+    cat "$out/mok.log"
+    end
+fi
 
 if [ -n "${FENNEK_VM_ROLLBACK:-}" ]; then
     stage "A bad update undoes itself"
