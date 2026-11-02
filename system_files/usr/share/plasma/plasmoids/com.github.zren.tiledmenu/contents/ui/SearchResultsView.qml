@@ -8,7 +8,6 @@ GridLayout {
 	id: searchResultsView
 	rowSpacing: 0
 	property alias listView: searchResultsList
-	property bool filterViewOpen: false
 	
 	RowLayout {
 		id: searchFiltersRow
@@ -44,41 +43,6 @@ GridLayout {
 			}
 		}
 
-		Item { Layout.fillWidth: true }
-
-		FlatButton {
-			id: moreFiltersButton
-			Layout.preferredHeight: parent.Layout.preferredHeight
-			Layout.preferredWidth: moreFiltersButtonRow.implicitWidth + padding*2
-			// property int padding: (config.searchFilterRowHeight - config.flatButtonIconSize) / 2
-			padding: (config.searchFilterRowHeight - config.flatButtonIconSize) / 2
-			// enabled: false
-
-			RowLayout {
-				id: moreFiltersButtonRow
-				anchors.centerIn: parent
-				anchors.margins: parent.padding
-				
-				PlasmaComponents3.Label {
-					id: moreFiltersButtonLabel
-					text: i18n("Filters")
-				}
-				Kirigami.Icon {
-					source: "arrow-down-symbolic"
-					isMask: true
-					color: config.menuTextColor
-					rotation: searchResultsView.filterViewOpen ? 180 : 0
-					Layout.preferredHeight: config.flatButtonIconSize
-					Layout.preferredWidth: config.flatButtonIconSize
-
-					Behavior on rotation {
-						NumberAnimation { duration: Kirigami.Units.longDuration }
-					}
-				}
-			}
-
-			onClicked: searchResultsView.filterViewOpen = !searchResultsView.filterViewOpen
-		}
 	}
 
 	Rectangle {
@@ -96,17 +60,6 @@ GridLayout {
 		clip: true
 		initialItem: searchResultsListScrollView
 
-		Connections {
-			target: searchResultsView
-			function onFilterViewOpenChanged() {
-				if (searchResultsView.filterViewOpen) {
-					searchResultsViewStackView.push(searchFiltersViewScrollView)
-				} else {
-					searchResultsViewStackView.pop()
-				}
-			}
-		}
-
 		QQC2.ScrollView {
 			id: searchResultsListScrollView
 			visible: false
@@ -117,15 +70,6 @@ GridLayout {
 			}
 		}
 
-		QQC2.ScrollView {
-			id: searchFiltersViewScrollView
-			visible: false
-			QQC2.ScrollBar.vertical: FennekScrollBar {}
-
-			SearchFiltersView {
-				id: searchFiltersView
-			}
-		}
 		
 	}
 }
