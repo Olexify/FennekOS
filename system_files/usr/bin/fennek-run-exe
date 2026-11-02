@@ -353,8 +353,11 @@ def shortcut_id(rel):
 
 
 def clean_name(stem):
-    # No invisible or direction-changing characters and no long gaps: nothing may push " (sandbox)" out of sight or reorder it.
-    kept = "".join(c for c in stem if not odd_char(c) and c != "\\" and unicodedata.category(c) != "Cf")
+    # Only what shows as itself: letters, digits, punctuation, plain spaces, no long gaps. Nothing invisible may push
+    # " (sandbox)" out of sight or reorder it. (Some letters are blank: fillers and the empty Braille cell.)
+    blank = "\u115f\u1160\u3164\uffa0\u2800\\"
+    kept = "".join(c for c in unicodedata.normalize("NFKC", stem)
+                   if c not in blank and unicodedata.category(c)[0] in "LNP" or unicodedata.category(c) == "Zs")
     return " ".join(kept.split())[:40].strip() or "Program"
 
 
@@ -780,6 +783,7 @@ def selftest():
     assert clean_name("a\u2028b\\c") == "abc" and clean_name("\n") == "Program"
     assert clean_name("Fire\u202efox\u200b  \u3000 x" + " " * 200 + "y") == "Firefox x y", "nothing hides the mark"
     assert len(clean_name("x" * 200)) == 40
+    assert clean_name("\u3164\u2800\u0301") == "Program" and clean_name("Гра 2") == "Гра 2", "blank letters go, real ones stay"
     a = bwrap_args(Path("x"), [], Path("/b"), Path("/s"), Path("/p"), None, {}, inside=HOME / "prefix/drive_c/x.lnk")
     assert a[-1] == "/var/home/u/prefix/drive_c/x.lnk" and "/var/home/u/App/x" not in a, "an installed program runs from inside, nothing extra mounted"
     very_long = Path("я" * 120 + ".exe")   # 240 bytes: it fitted with 8 digits, not with 16
