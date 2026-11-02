@@ -25,7 +25,7 @@ OFFLINE = CFG / "offline-exes"           # sha256s blocked by fennek-firewall: s
 FOLDERS = CFG / "exe-folders"            # "sha256 documents|downloads|pictures|music|videos" per line: also visible
 XDG_KIND = {"documents": "DOCUMENTS", "downloads": "DOWNLOAD", "pictures": "PICTURES", "music": "MUSIC", "videos": "VIDEOS"}
 NAMES = CFG / "exe-names"               # "sha256<TAB>path" per line: what App permissions shows for each program
-OLD_RECORDS = CFG / "old-exe-records"    # the five files above before folder names got longer: see old_records
+OLD_RECORDS = CFG / "old-exe-records"    # those files, less OFFLINE, before folder names got longer: see old_records
 BOXES = DATA / "fennek" / "sandboxes"    # private home per sandboxed program
 SHARED = HOME / "Sandbox"                # ~/Sandbox/<program> = the only real folder it can see
 GUI = bool(os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY"))
@@ -141,12 +141,13 @@ def old_folder_name(exe, digest):
 def old_records(digest):
     """What was on record about programs with these 8 digits before folder names got longer: the lines starting with
     them. From a copy made once, before the first launch that could add to it, and never rewritten: a program first
-    seen later is never in it, under any name, and removing a program in Settings doesn't take it out. (Installed apps
-    reads the same copy, and makes it if it needs it first.)"""
+    seen later is never in it, under any name, and removing a program in Settings doesn't take it out. The firewall's
+    list stays out of it: a file can be blocked without ever having run. (Installed apps reads the same copy, and makes
+    it if it needs it first.)"""
     if not OLD_RECORDS.is_file():
         CFG.mkdir(parents=True, exist_ok=True)
         tmp = OLD_RECORDS.with_name(f"{OLD_RECORDS.name}.{os.getpid()}")
-        tmp.write_bytes(b"\n".join(f.read_bytes() for f in (TRUSTED, CHOICES, OFFLINE, FOLDERS, NAMES) if f.is_file()))
+        tmp.write_bytes(b"\n".join(f.read_bytes() for f in (TRUSTED, CHOICES, FOLDERS, NAMES) if f.is_file()))
         os.replace(tmp, OLD_RECORDS)
     return [l for l in OLD_RECORDS.read_text(encoding="utf-8", errors="replace").split("\n") if l.startswith(digest[:8])]
 
@@ -475,7 +476,7 @@ def selftest():
             shutil.rmtree(d, ignore_errors=True)
             (d / short).mkdir(parents=True)
             (d / short / "mine").write_text("x")
-        for f in (TRUSTED, CHOICES, OLD_RECORDS):
+        for f in (TRUSTED, CHOICES, OFFLINE, OLD_RECORDS):
             f.unlink(missing_ok=True)
         NAMES.write_text("".join(f"{r}\t/x/setup.exe\n" for r in recorded))
 
@@ -522,6 +523,14 @@ def selftest():
     CHOICES.write_text(f"{real} sandbox\n")
     launch()
     assert moved(), "a remembered choice is a record too: this file name was never written down"
+    old_folders()
+    OFFLINE.write_text(real + "\n")
+    launch()
+    assert left_alone(), "blocked in the firewall is no record: a file can be blocked without ever having run"
+    old_folders(real)
+    OFFLINE.write_text(twin + "\n")
+    launch()
+    assert moved(), "nor does a blocked file with these digits cost the program on record its files"
     old_folders(real)
     old_records(real)
     NAMES.write_text(f"{twin}\t/x/setup.exe\n")

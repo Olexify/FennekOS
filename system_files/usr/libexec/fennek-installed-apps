@@ -69,14 +69,15 @@ def safe_name(path):
 
 def old_records(digest):
     """What was on record about programs with these 8 digits before folder names got longer: fennek-run-exe's copy,
-    made once by whichever of the two needs it first and never rewritten. If the disk is too full to make it there's
-    no record: this page is where you go to free up space, it still has to open."""
+    made once by whichever of the two needs it first and never rewritten. The firewall's list stays out of it: a file
+    can be blocked without ever having run. If the disk is too full to make it there's no record: this page is where
+    you go to free up space, it still has to open."""
     copy = CFG / "old-exe-records"
     try:
         if not copy.is_file():
             CFG.mkdir(parents=True, exist_ok=True)
             tmp = copy.with_name(f"{copy.name}.{os.getpid()}")
-            tmp.write_bytes(b"\n".join((CFG / n).read_bytes() for n in RECORDS if (CFG / n).is_file()))
+            tmp.write_bytes(b"\n".join((CFG / n).read_bytes() for n in RECORDS if n != "offline-exes" and (CFG / n).is_file()))
             os.replace(tmp, copy)
         rows = copy.read_text(encoding="utf-8", errors="replace").split("\n")
     except OSError:
@@ -215,6 +216,11 @@ def selftest():
         (boxes / "exe-choices").unlink()
         on_record(f"{d}\t/x/setup.exe")
         assert box_of(d, boxes).name == "setup-" + d[:8]
+        (boxes / "offline-exes").write_text(twin + "\n")
+        on_record(f"{d}\t/x/setup.exe")
+        assert box_of(d, boxes).name == "setup-" + d[:8], "blocked in the firewall is no record: it may never have run"
+        forget(twin)
+        assert (boxes / "offline-exes").read_text() == "", "removing a program still clears its block"
         (boxes / ("setup-" + d[:16])).mkdir()
         assert box_of(d, boxes).name == "setup-" + d[:16], "longest first"
         CFG = names

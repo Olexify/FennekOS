@@ -1,7 +1,8 @@
 name: retry
 
 # A failed nightly build gets one more try the same day (a stalled mirror or a registry hiccup shouldn't cost a night's
-# security updates). Only the failed editions run again; a real break fails twice and opens an issue, which closes by
+# security updates). Only the failed editions run again; a real break fails twice and opens an issue. So does a run that
+# is stopped before it finishes: one out of time ends as cancelled, not failed, and gets no retry. The issue closes by
 # itself when a later nightly of that workflow works.
 on:
   workflow_run:
@@ -22,7 +23,8 @@ jobs:
           RUN: ${{ github.event.workflow_run.id }}
 
   alert:
-    if: github.event.workflow_run.event == 'schedule' && (github.event.workflow_run.conclusion == 'success' || (github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.run_attempt > 1))
+    # Every end of a nightly except a first failure, which is the retry job's.
+    if: github.event.workflow_run.event == 'schedule' && !(github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.run_attempt == 1)
     runs-on: ubuntu-24.04
     permissions:
       issues: write
@@ -34,9 +36,9 @@ jobs:
           issue=$(gh issue list --state open --limit 1000 --json number,title,author --jq 'map(select(.title == "Nightly build failing" and .author.login == "app/github-actions"))[0].number // empty')
           body=$([ -z "$issue" ] || gh issue view "$issue" --json body --jq .body)
           line="- $WORKFLOW: $RUN_URL"
-          if [ "$CONCLUSION" = failure ]; then
+          if [ "$CONCLUSION" != success ]; then
             if [ -z "$issue" ]; then
-              gh issue create --title "Nightly build failing" --body "A nightly build failed, and failed again after its automatic retry, so last night's updates and security fixes may not have been published. The link below shows what went wrong. This issue closes by itself when a later nightly run of that workflow works."$'\n\n'"$line"
+              gh issue create --title "Nightly build failing" --body "A nightly build failed twice or was stopped before it finished, so last night's updates and security fixes may not have been published. The link below shows what went wrong. This issue closes by itself when a later nightly run of that workflow works."$'\n\n'"$line"
             elif ! grep -q "^- $WORKFLOW: " <<<"$body"; then
               gh issue edit "$issue" --body "$body"$'\n'"$line"
             fi
