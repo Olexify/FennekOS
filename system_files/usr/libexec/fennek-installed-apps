@@ -23,6 +23,7 @@ UNITS = {"B": 1, "bytes": 1, "byte": 1, "kB": 1e3, "KB": 1e3, "MB": 1e6, "GB": 1
 GET_ENTRY = {"org.libreoffice.LibreOffice": "fennek-get-libreoffice", "io.mpv.Mpv": "fennek-get-mpv",
              "org.mozilla.Thunderbird": "fennek-get-thunderbird", "com.dec05eba.gpu_screen_recorder": "fennek-get-gpu-screen-recorder"}
 EXTRAS = {"nvbroadcast": ("NV Broadcast", DATA / "fennek" / "nvbroadcast", "camera-web", ["/usr/libexec/fennek-get-nvbroadcast", "--uninstall"])}
+RECORDS = ("trusted-exes", "exe-choices", "offline-exes", "exe-folders", "exe-names")   # what's remembered per classic program
 
 
 def parse_size(text):
@@ -60,13 +61,46 @@ def run(cmd):
     return subprocess.run(cmd, capture_output=True, text=True).stdout
 
 
+def safe_name(path):
+    """The folder name a program's file name gives, as in fennek-run-exe."""
+    stem = re.sub(r"\.(exe|msi|bat|com)$", "", Path(path).name, flags=re.I)
+    return re.sub(r"[^\w .+-]", "_", stem).strip(" .") or "program"
+
+
+def old_records(digest):
+    """What was on record about programs with these 8 digits before folder names got longer: fennek-run-exe's copy,
+    made once by whichever of the two needs it first and never rewritten. The firewall's list stays out of it: a file
+    can be blocked without ever having run. If the disk is too full to make it there's no record: this page is where
+    you go to free up space, it still has to open."""
+    copy = CFG / "old-exe-records"
+    try:
+        if not copy.is_file():
+            CFG.mkdir(parents=True, exist_ok=True)
+            tmp = copy.with_name(f"{copy.name}.{os.getpid()}")
+            tmp.write_bytes(b"\n".join((CFG / n).read_bytes() for n in RECORDS if n != "offline-exes" and (CFG / n).is_file()))
+            os.replace(tmp, copy)
+        rows = copy.read_text(encoding="utf-8", errors="replace").split("\n")
+    except OSError:
+        return []
+    return [l for l in rows if l.startswith(digest[:8])]
+
+
 def box_of(digest, boxes=BOXES):
-    """The sandboxed program's own folder: <name>-<first 8 of its fingerprint>, directly inside the boxes folder."""
+    """The sandboxed program's own folder, directly inside the boxes folder: <name>-<first 16 of its fingerprint>, or
+    <name>-<first 8> from before that. The short form only under the file name on record for the one program with those
+    8, fennek-run-exe's rule: another program's files are never shown or removed as this one's."""
     if not DIGEST.match(digest) or not boxes.is_dir():
         return None
-    for d in boxes.iterdir():
-        if d.name.endswith("-" + digest[:8]) and not d.is_symlink() and d.is_dir():
+    folders = [d for d in boxes.iterdir() if not d.is_symlink() and d.is_dir()]
+    for d in folders:
+        if d.name.endswith("-" + digest[:16]):
             return d
+    rows = old_records(digest)
+    if {l[:64] for l in rows} == {digest}:
+        short = {f"{safe_name(l[65:])}-{digest[:8]}" for l in rows if l[64:65] == "\t"}
+        for d in folders:
+            if d.name in short:
+                return d
     return None
 
 
@@ -97,7 +131,7 @@ def listing():
 
 def forget(digest):
     """A removed classic program leaves no remembered choices behind: the same file would ask again."""
-    for name in ("trusted-exes", "exe-choices", "offline-exes", "exe-folders", "exe-names"):
+    for name in RECORDS:
         f = CFG / name
         if f.is_file():
             kept = [l for l in f.read_text(encoding="utf-8", errors="replace").split("\n") if l and not l.startswith(digest)]
@@ -139,16 +173,58 @@ def selftest():
     assert parse_size("1.2 GB") == 1200000000 and parse_size("352.0 MB") == 352000000 and parse_size("") == 0 and parse_size("x") == 0
     apps = parse_flatpak("org.kde.okular\tOkular\t120.5 MB\tsystem\norg.kde.okular\tOkular\t120.5 MB\tuser\n../evil\tx\t1 MB\tuser\nshort\n")
     assert [a["id"] for a in apps] == ["org.kde.okular"] and apps[0]["size"] == 120500000 and apps[0]["where"] == "system"
+    global CFG
     with tempfile.TemporaryDirectory() as t:
-        boxes = Path(t)
-        d = "a" * 64
+        boxes = CFG = Path(t)
+        d, twin = "a" * 64, "a" * 8 + "c" * 56
+        names = boxes / "exe-names"
+
+        def on_record(*rows):   # as they stood when the folder names got longer
+            (boxes / "old-exe-records").unlink(missing_ok=True)
+            names.write_text("".join(r + "\n" for r in rows))
+
+        on_record(f"{d}\t/x/setup.exe", f"{'b' * 64}\t/x/b.exe")
         (boxes / ("setup-" + d[:8])).mkdir()
         (boxes / "other-12345678").mkdir()
         assert box_of(d, boxes).name == "setup-" + d[:8]
         assert box_of("b" * 64, boxes) is None
         assert box_of("../../" + d, boxes) is None, "only real fingerprints"
-        (boxes / "link-bbbbbbbb").symlink_to(boxes / "other-12345678")
+        (boxes / "b-bbbbbbbb").symlink_to(boxes / "other-12345678")
         assert box_of("b" * 64, boxes) is None, "a link is never followed"
+        (boxes / ("link-" + "b" * 16)).symlink_to(boxes / "other-12345678")
+        assert box_of("b" * 64, boxes) is None, "nor in the long form"
+        assert box_of(twin, boxes) is None, "not on record: the short form isn't this program's"
+        forget(d)
+        assert box_of(d, boxes).name == "setup-" + d[:8] and d not in names.read_text(), "removed from the list: still on record"
+        crafted = "e" * 64
+        (boxes / ("setup-" + crafted[:8])).mkdir()
+        names.write_text(f"{crafted}\t/x/setup.exe\n")
+        assert box_of(crafted, boxes) is None, "first seen later: nothing old can be its own, under any name"
+        on_record(f"{crafted}\t/x/x.exe")
+        assert box_of(crafted, boxes) is None, "only under the file name on record"
+        on_record(f"{crafted} sandbox")
+        assert box_of(crafted, boxes) is None, "no file name on record: which folder would it be"
+        on_record(f"{d}\t/x/setup.exe", f"{twin}\t/x/setup.exe")
+        assert box_of(d, boxes) is None and box_of(twin, boxes) is None, "two programs share those 8: nobody's"
+        forget(twin)
+        assert box_of(d, boxes) is None, "nor when one of them is removed"
+        (boxes / "exe-choices").write_text(f"{twin} sandbox\n")
+        on_record(f"{d}\t/x/setup.exe")
+        assert box_of(d, boxes) is None, "another program in any of the records counts"
+        (boxes / ("setup-" + twin[:16])).mkdir()
+        assert box_of(twin, boxes).name == "setup-" + twin[:16], "the long form always counts"
+        (boxes / "exe-choices").unlink()
+        on_record(f"{d}\t/x/setup.exe")
+        assert box_of(d, boxes).name == "setup-" + d[:8]
+        (boxes / "offline-exes").write_text(twin + "\n")
+        on_record(f"{d}\t/x/setup.exe")
+        assert box_of(d, boxes).name == "setup-" + d[:8], "blocked in the firewall is no record: it may never have run"
+        forget(twin)
+        assert (boxes / "offline-exes").read_text() == "", "removing a program still clears its block"
+        (boxes / ("setup-" + d[:16])).mkdir()
+        assert box_of(d, boxes).name == "setup-" + d[:16], "longest first"
+        CFG = names
+        assert old_records(d) == [], "the copy can't be made: no record, and no crash"
     assert uninstall(["store", "../evil"]) == 2 and uninstall(["extra", "nope"]) == 2 and uninstall(["classic", "abc"]) == 2
     print("selftest ok")
 
