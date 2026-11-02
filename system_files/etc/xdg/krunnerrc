@@ -1,3 +1,4 @@
 # Fennek's own settings search (fennek-settings) instead of KDE's, whose results open KDE's window.
 [Plugins]
 krunner_systemsettingsEnabled=false
+baloosearchEnabled=false

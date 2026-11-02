@@ -21,7 +21,7 @@ GridLayout {
 		Repeater {
 			model: [
 				{ name: i18n("All"), filters: [] },
-				{ name: i18n("Apps"), filters: ["services"] },
+				{ name: i18n("Apps"), filters: ["krunner_services"] },
 				{ name: i18n("Files"), filters: ["fennek-search"] },
 			]
 			PlasmaComponents3.ToolButton {

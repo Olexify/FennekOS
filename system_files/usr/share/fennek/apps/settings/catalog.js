@@ -6,7 +6,7 @@
 var categories = [
  {"name": "System", "icon": "fennek-settings-system", "sub": "Display, sound, notifications, power",
   "items": [
-   {"name": "Display", "kcm": "kcm_kscreen", "icon": "fennek-set-display", "desc": "Resolution, scaling, night light"},
+   {"name": "Display", "kcm": "kcm_kscreen", "keys": "monitor screen brightness", "icon": "fennek-set-display", "desc": "Resolution, scaling, night light"},
    {"name": "Night light", "kcm": "kcm_nightlight", "icon": "fennek-set-nightlight", "desc": "Warmer screen in the evening", "optional": true},
    {"name": "Sound", "kcm": "kcm_pulseaudio", "icon": "fennek-set-sound", "desc": "Speakers, microphones, volume"},
    {"name": "Notifications", "kcm": "kcm_notifications", "icon": "fennek-set-notifications", "desc": "Popups, do not disturb"},
@@ -14,7 +14,7 @@ var categories = [
    {"name": "Virtual desktops", "kcm": "kcm_kwin_virtualdesktops", "icon": "fennek-set-desktops", "desc": "Several desktops, switching between them", "optional": true},
    {"name": "Task switcher", "kcm": "kcm_kwintabbox", "icon": "fennek-set-switcher", "desc": "Alt+Tab", "optional": true},
    {"name": "Screen edges", "kcm": "kcm_kwinscreenedges", "icon": "fennek-set-edges", "desc": "Corners and edges, touch gestures", "optional": true},
-   {"name": "Power & battery", "kcm": "kcm_powerdevilprofilesconfig", "icon": "fennek-set-power", "desc": "Sleep, screen off, battery saving"},
+   {"name": "Power & battery", "kcm": "kcm_powerdevilprofilesconfig", "keys": "brightness lid power button sleep hibernate", "icon": "fennek-set-power", "desc": "Sleep, screen off, battery saving"},
    {"name": "Battery & app usage", "icon": "fennek-set-apphistory", "desc": "Which apps used the battery", "page": "apphistory"},
    {"name": "Free up space", "page": "cleanup", "icon": "fennek-set-storage", "desc": "Recycle Bin, temporary files, unused app parts; what uses space", "keys": "storage disk cleanup space cache trash temporary filelight"},
    {"name": "Recycle Bin", "kcm": "kcm_trash", "icon": "fennek-set-storage", "desc": "How big it may get, emptying it by itself", "optional": true},
@@ -39,16 +39,16 @@ var categories = [
   ]},
  {"name": "Network & Internet", "icon": "fennek-settings-network", "sub": "Wi-Fi, VPN, firewall",
   "items": [
-   {"name": "Wi-Fi & networks", "kcm": "kcm_networkmanagement", "icon": "fennek-set-wifi", "desc": "Connections, VPN, hotspot"},
+   {"name": "Wi-Fi & networks", "kcm": "kcm_networkmanagement", "keys": "wifi wireless ethernet internet lan", "icon": "fennek-set-wifi", "desc": "Connections, VPN, hotspot"},
    {"name": "Proxy", "kcm": "kcm_proxy", "icon": "fennek-set-proxy", "desc": "Proxy server"},
    {"name": "Phone link", "kcm": "kcm_kdeconnect", "icon": "fennek-set-phone", "desc": "Your phone: files, notifications, clipboard", "optional": true}
   ]},
  {"name": "Appearance", "icon": "fennek-settings-appearance", "sub": "Background, colors, themes, fonts",
   "items": [
    {"name": "Personalize", "icon": "fennek-set-themes", "desc": "Theme, text size and typeface", "page": "personalize"},
-   {"name": "Background", "kcm": "kcm_wallpaper", "icon": "fennek-set-background", "desc": "Desktop picture"},
+   {"name": "Background", "kcm": "kcm_wallpaper", "keys": "wallpaper desktop picture", "icon": "fennek-set-background", "desc": "Desktop picture"},
    {"name": "Themes", "kcm": "kcm_lookandfeel", "icon": "fennek-set-themes", "desc": "Whole look of Fennek OS"},
-   {"name": "Colors", "kcm": "kcm_colors", "icon": "fennek-set-colors", "desc": "Light, dark, accent color"},
+   {"name": "Colors", "kcm": "kcm_colors", "keys": "dark mode light mode", "icon": "fennek-set-colors", "desc": "Light, dark, accent color"},
    {"name": "Fonts", "kcm": "kcm_fonts", "icon": "fennek-set-fonts", "desc": "Size and style of text"},
    {"name": "Icons", "kcm": "kcm_icons", "icon": "fennek-set-icons", "desc": "Icon style and size", "optional": true},
    {"name": "App style", "kcm": "kcm_style", "icon": "fennek-set-appstyle", "desc": "How buttons and windows look", "optional": true},
@@ -56,7 +56,7 @@ var categories = [
    {"name": "Desktop effects", "kcm": "kcm_kwin_effects", "icon": "fennek-set-effects", "desc": "Animations, transparency, zoom", "optional": true},
    {"name": "Animation speed", "kcm": "kcm_workspace", "icon": "fennek-set-animation", "desc": "Animations, clicks, tooltips, dragging files", "optional": true},
    {"name": "Startup screen", "kcm": "kcm_splashscreen", "icon": "fennek-set-splash", "desc": "The picture while Fennek starts", "optional": true},
-   {"name": "Lock screen", "kcm": "kcm_screenlocker", "icon": "fennek-set-lockscreen", "desc": "When and how the screen locks"},
+   {"name": "Lock screen", "kcm": "kcm_screenlocker", "keys": "screen saver screensaver", "icon": "fennek-set-lockscreen", "desc": "When and how the screen locks"},
    {"name": "Sign-in screen", "kcm": "kcm_sddm", "icon": "fennek-set-signin", "desc": "The screen where you sign in", "optional": true},
    {"name": "Pointers & launch feedback", "kcm": "kcm_cursortheme", "icon": "fennek-set-pointer", "desc": "Pointer style and size; busy pointer or bouncing icon while an app starts"},
    {"name": "Restore taskbar & Start", "cmd": "/usr/libexec/fennek-reset-layout", "icon": "fennek-set-restore", "desc": "Back to the default layout if something got moved or removed"}
@@ -88,7 +88,7 @@ var categories = [
  {"name": "Accessibility", "icon": "fennek-settings-accessibility", "sub": "Assistive features, keyboard shortcuts",
   "items": [
    {"name": "Make text bigger", "icon": "fennek-set-fonts", "desc": "Text size for everything on the screen", "page": "personalize"},
-   {"name": "Assistive features", "kcm": "kcm_access", "icon": "fennek-set-access", "desc": "Sticky keys, visual bell"},
+   {"name": "Assistive features", "kcm": "kcm_access", "keys": "screen reader narrator magnifier zoom", "icon": "fennek-set-access", "desc": "Sticky keys, visual bell"},
    {"name": "On-screen keyboard", "kcm": "kcm_virtualkeyboard", "icon": "fennek-set-keyboard", "desc": "A keyboard on the screen", "optional": true},
    {"name": "Keyboard shortcuts", "kcm": "kcm_keys", "icon": "fennek-set-shortcuts", "desc": "Change shortcuts"},
    {"name": "Activities", "kcm": "kcm_activities", "icon": "fennek-set-activities", "desc": "Separate sets of windows for work and play", "optional": true}

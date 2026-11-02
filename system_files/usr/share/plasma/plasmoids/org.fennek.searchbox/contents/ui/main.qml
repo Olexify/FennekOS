@@ -53,8 +53,11 @@ PlasmoidItem {
         appletInterface: root
         mergeResults: true
         runners: root.tab.runners
-        query: root.query.length ? (root.tab.prefix || "") + root.filters + root.query : ""
     }
+    // Another tab: a new list alone doesn't search again, and neither does the same text.
+    readonly property string fullQuery: query.length ? (tab.prefix || "") + filters + query : ""
+    onFullQueryChanged: runnerModel.query = fullQuery
+    onTabChanged: { runnerModel.query = ""; runnerModel.clear(); runnerModel.runners = tab.runners; runnerModel.query = fullQuery }
     Kicker.RecentUsageModel {
         id: recentModel
         shownItems: Kicker.RecentUsageModel.OnlyDocs

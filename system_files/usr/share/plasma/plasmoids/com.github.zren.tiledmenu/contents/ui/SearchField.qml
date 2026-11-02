@@ -93,7 +93,7 @@ PlasmaComponents3.TextField {
 		} else if (event.key == Qt.Key_Return || event.key == Qt.Key_Enter) {
 			event.accepted = true; listView.currentItem.trigger()
 		} else if (event.modifiers & Qt.MetaModifier && event.key == Qt.Key_R) {
-			event.accepted = true; search.filters = ['shell']
+			event.accepted = true; search.filters = ['krunner_shell']
 		} else if (event.key == Qt.Key_Escape) {
 			plasmoid.expanded = false
 		}

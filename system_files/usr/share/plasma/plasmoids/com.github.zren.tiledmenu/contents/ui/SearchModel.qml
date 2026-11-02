@@ -17,10 +17,13 @@ Item {
 	//     find /usr/share/kservices5/ -iname "plasma-runner-*.desktop" -print0 | xargs -0 grep "PluginInfo-Name" | sort
 	property var filters: []
 	onFiltersChanged: {
-		// runnerModel.deleteWhenEmpty = !runnerModel.deleteWhenEmpty // runnerModel.clear()
-		// runnerModel.runners = filters
+		// Fennek OS: the tabs really filter. A new list alone doesn't search again, and neither does the same text.
 		clearQueryPrefix()
-		runnerModel.query = search.query
+		const q = search.query
+		runnerModel.query = ""
+		runnerModel.clear()
+		runnerModel.runners = filters
+		runnerModel.query = q
 	}
 
 	Kicker.RunnerModel {
@@ -79,8 +82,8 @@ Item {
 	function isFilter(runnerId) {
 		return filters.length == 1 && filters[0] == runnerId
 	}
-	property bool isDefaultFilter: filters == defaultFilters
-	property bool isAppsFilter: isFilter('services')
+	property bool isDefaultFilter: filters.length === 0 // what Settings > Search has switched on
+	property bool isAppsFilter: isFilter('krunner_services')
 	property bool isFileFilter: isFilter('fennek-search')
 	property bool isBookmarksFilter: isFilter('bookmarks')
 
@@ -89,7 +92,7 @@ Item {
 	}
 
 	function applyDefaultFilters() {
-		filters = defaultFilters
+		filters = []
 	}
 
 	function setQueryPrefix(prefix) {

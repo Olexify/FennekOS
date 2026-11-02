@@ -85,7 +85,7 @@ QQC2.ApplicationWindow {
     function words(i) {
         if (!i.kcm) return i.keys || ""   // Fennek pages: their own keywords
         if (wordCache[i.kcm] === undefined) wordCache[i.kcm] = pageView.keywords(i.kcm)
-        return wordCache[i.kcm]
+        return (i.keys || "") + " " + wordCache[i.kcm]
     }
     function matches() {
         const q = query.toLowerCase().trim()
