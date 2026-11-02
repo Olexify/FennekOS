@@ -34,20 +34,23 @@ save() {
 }
 if [ "$1" = save ]; then
     save
-    a=$(notify-send -a "Screenshot" -i "$dest" -h "string:image-path:$dest" --action=folder="Show in folder" \
+    a=$(notify-send -a "Screenshot" -i "$dest" -h "string:image-path:$dest" --action=default=Open --action=folder="Show in folder" \
         --wait "Screenshot saved" "In ${dir##*/}.")
-    [ "$a" = folder ] && exec dolphin --select "$dest"
+    case $a in
+        default) xdg-open "$dest" ;;
+        folder) dolphin --select "$dest" ;;
+    esac
     exit 0
 fi
 
-# The latest one, for the notice's picture and its buttons: in memory (/run), replaced by the next one.
+# For the notice's picture and its buttons: in memory (/run), for as long as the notice stays in the action center.
 latest=${XDG_RUNTIME_DIR:-/tmp}/fennek-screenshot-$$.png
-cp -- "$tmp" "$latest"; trap 'rm -f "$tmp" "$latest"' EXIT
+mv -- "$tmp" "$latest"; tmp=$latest
 wl-copy --type image/png <"$latest"
-a=$(notify-send -a "Screenshot" -i "$latest" -h "string:image-path:$latest" --action=save=Save --action=edit=Annotate \
+a=$(notify-send -a "Screenshot" -i "$latest" -h "string:image-path:$latest" --action=default=Open --action=save=Save --action=edit=Annotate \
     --wait "Screenshot copied" "Paste it anywhere.")
 case $a in
     save) save; notify-send -a "Screenshot" -i "$dest" -t 4000 "Screenshot saved" "In ${dir##*/}." ;;
-    edit) save; exec spectacle --edit-existing "$dest" ;;
+    edit | default) save; spectacle --edit-existing "$dest" ;;
 esac
 exit 0

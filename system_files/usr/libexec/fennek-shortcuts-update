@@ -124,6 +124,23 @@ if [ "$(cat "$panel_seen" 2>/dev/null)" != 2026-10-18 ]; then
     mkdir -p "${panel_seen%/*}" && echo 2026-10-18 >"$panel_seen"
 fi
 
+# Power button, once: a laptop sleeps (the system-wide default), a desktop PC or virtual machine shuts down as it always
+# did. A hold of a second still brings up the full choice. An own choice stays.
+power_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/power-button-version
+if [ "$(cat "$power_seen" 2>/dev/null)" != 2026-11-02 ]; then
+    case $(hostnamectl chassis 2>/dev/null) in
+        laptop | convertible | tablet) ;;
+        *)
+            cfg=${XDG_CONFIG_HOME:-$HOME/.config}
+            for p in AC Battery LowBattery; do
+                [ -z "$(kreadconfig6 --file "$cfg/powerdevilrc" --group "$p" --group SuspendAndShutdown --key PowerButtonAction)" ] \
+                    && kwriteconfig6 --file powerdevilrc --group "$p" --group SuspendAndShutdown --key PowerButtonAction 8
+            done
+            ;;
+    esac
+    mkdir -p "${power_seen%/*}" && echo 2026-11-02 >"$power_seen"
+fi
+
 # Virtual machine, once: no 3D card there, so every frame is drawn by the processor. Blur behind panels and long
 # animations make it feel slow; switch them off (real PCs keep them). An own choice stays.
 vm_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/vm-speed-version

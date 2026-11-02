@@ -320,7 +320,10 @@ assert m, "lock screen clock block changed upstream: revisit the greeting"
 greeting = '''
         // Fennek OS: a personal greeting under the clock (time of day, in English or Ukrainian).
         PlasmaComponents3.Label {
-            readonly property int hour: new Date().getHours()
+            id: fennekGreeting
+            // The lock screen starts when the lid closes: a lid closed in the evening mustn't say good evening next morning.
+            property int hour: new Date().getHours()
+            Timer { interval: 30000; running: true; repeat: true; onTriggered: fennekGreeting.hour = new Date().getHours() }
             readonly property bool uk: Qt.locale().name.startsWith("uk")
             readonly property string who: kscreenlocker_userName.charAt(0).toUpperCase() + kscreenlocker_userName.slice(1)
             anchors.horizontalCenter: parent.horizontalCenter
@@ -679,6 +682,8 @@ done
 pd AC Performance PowerProfile balanced
 pd AC Display TurnOffDisplayWhenIdle true
 pd AC Display TurnOffDisplayIdleTimeoutSec 600
+# The power button sleeps, as on a classic laptop (fennek-shortcuts-update: other computers shut down). Held: the full choice.
+for p in AC Battery LowBattery; do pd "$p" SuspendAndShutdown PowerButtonAction 1; done
 # Critical battery: sleep (open work stays; plug in and continue) instead of shutting down. No hibernation:
 # Fedora has no swap partition to hibernate into.
 kwriteconfig6 --file /etc/xdg/powerdevilrc --group BatteryManagement --key BatteryCriticalAction 1

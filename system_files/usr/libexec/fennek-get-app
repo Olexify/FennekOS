@@ -22,7 +22,7 @@ if [ "${1:-}" = --sync ]; then
         | grep -qv fennek-get && hide fennek-get-leonote
     exit 0
 fi
-id=${1:?app id} name=${2:?name} entry=${3:?entry}
+id=${1:?app id} name=${2:?name} entry=${3:?entry}; shift 3   # the rest goes to the app
 [[ $id =~ ^[A-Za-z0-9._-]+$ && $entry =~ ^[a-z0-9-]+$ ]] || exit 2
 note() { notify-send -a "$name" -i "$id" "$@" || true; }
 
@@ -34,4 +34,4 @@ if ! flatpak info "$id" >/dev/null 2>&1; then
 fi
 # The "get it" entry has done its job: hidden for this account (Start shows the app itself).
 hide "$entry"
-exec flatpak run "$id"
+exec flatpak run "$id" "$@"

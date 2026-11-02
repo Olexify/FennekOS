@@ -160,12 +160,29 @@ PlasmoidItem {
             spacing: Kirigami.Units.smallSpacing
             model: root.expanded ? history : null
             delegate: Rectangle {
+                id: noteCard
                 required property var model
                 required property int index
+                // An app that doesn't close its own notification would otherwise keep buttons that no longer do anything.
+                readonly property int closeAfter: model.resident ? NotificationManager.Notifications.None : NotificationManager.Notifications.Close
                 width: ListView.view.width
                 height: card.implicitHeight + Kirigami.Units.largeSpacing * 2
                 radius: 8
-                color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.06)
+                color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, noteMouse.containsMouse ? 0.12 : 0.06)
+                MouseArea {   // a click opens what it's about
+                    id: noteMouse
+                    anchors.fill: parent
+                    enabled: noteCard.model.hasDefaultAction || (noteCard.model.urls || []).length === 1
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        if (noteCard.model.hasDefaultAction)
+                            history.invokeDefaultAction(history.index(noteCard.index, 0), noteCard.closeAfter)
+                        else
+                            Qt.openUrlExternally(noteCard.model.urls[0])
+                        root.expanded = false
+                    }
+                }
                 RowLayout {
                     id: card
                     anchors { fill: parent; margins: Kirigami.Units.largeSpacing }
@@ -194,6 +211,30 @@ PlasmoidItem {
                             horizontalAlignment: Image.AlignLeft
                             asynchronous: true
                             sourceSize.height: Kirigami.Units.gridUnit * 14
+                        }
+                        // A snip only on the clipboard has no file: the picture the notification itself carries.
+                        KQuickAddons.QImageItem {
+                            visible: nativeWidth > 0
+                            image: noteCard.model.image
+                            fillMode: KQuickAddons.QImageItem.PreserveAspectFit
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: visible ? Kirigami.Units.gridUnit * 7 : 0
+                        }
+                        Flow {   // its buttons (Save, Annotate, ...) stay usable after the pop-up has gone
+                            Layout.fillWidth: true
+                            spacing: Kirigami.Units.smallSpacing
+                            Repeater {
+                                model: noteCard.model.actionNames || []
+                                PC3.ToolButton {
+                                    required property int index
+                                    required property string modelData
+                                    text: noteCard.model.actionLabels[index]
+                                    onClicked: {
+                                        history.invokeAction(history.index(noteCard.index, 0), modelData, noteCard.closeAfter)
+                                        root.expanded = false
+                                    }
+                                }
+                            }
                         }
                     }
                     PC3.ToolButton {

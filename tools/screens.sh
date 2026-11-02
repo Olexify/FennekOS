@@ -88,6 +88,8 @@ click 78 122; shot 19-start-letters 2
 xdo key Escape; sleep 1; xdo key Escape; sleep 1
 # A notification popup and the volume on-screen display.
 notify-send -a "Fennek OS" -i system-software-update "Update ready" "It's installed on the next restart." ; shot 15-notification 2
+notify-send -a "Screenshot" -i spectacle --action=default=Open --action=save=Save --action=edit=Annotate "Screenshot copied" "Paste it anywhere." & sleep 1
+click 1560 880; shot 15b-action-center-notes; click 1560 880; sleep 1
 call org.kde.plasmashell /org/kde/osdService org.kde.osdService.volumeChanged 60 100; shot 16-volume-osd 1
 # File Explorer from the sidebar's This PC, with the classic menu bar.
 dolphin >/dev/null 2>&1 & shot 17-file-explorer-home 6; close

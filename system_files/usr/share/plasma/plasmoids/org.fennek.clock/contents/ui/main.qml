@@ -6,6 +6,7 @@ import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.components as PC3
 import org.kde.plasma.plasma5support as P5Support
+import org.kde.plasma.clock
 import org.kde.kirigami as Kirigami
 
 PlasmoidItem {
@@ -14,11 +15,11 @@ PlasmoidItem {
     property date shown: new Date(now.getFullYear(), now.getMonth(), 1)   // month on display
     readonly property var locale: Qt.locale()
 
-    Timer {
-        // Seconds only while the panel is open; once a minute otherwise (battery).
-        interval: root.expanded ? 1000 : (60 - root.now.getSeconds()) * 1000
-        running: true; repeat: true; triggeredOnStart: true
-        onTriggered: root.now = new Date()
+    Clock {
+        // Seconds only while the panel is open. Follows the real time: a plain Timer doesn't count sleep, so the taskbar
+        // would show the time from before it for up to a minute.
+        trackSeconds: root.expanded
+        onTimeChanged: root.now = new Date()
     }
     onExpandedChanged: if (expanded) { now = new Date(); shown = new Date(now.getFullYear(), now.getMonth(), 1) }
 
@@ -133,12 +134,20 @@ PlasmoidItem {
             }
         }
 
-        PC3.ToolButton {
-            icon.color: Kirigami.Theme.textColor   // symbolic icons follow the panel's text colour
+        RowLayout {
             Layout.margins: Kirigami.Units.smallSpacing
-            text: "Date and time settings"
-            icon.name: "preferences-system-time"
-            onClicked: { run.connectSource("fennek-app settings kcm_clock"); root.expanded = false }
+            PC3.ToolButton {
+                icon.color: Kirigami.Theme.textColor   // symbolic icons follow the panel's text colour
+                text: "Date and time settings"
+                icon.name: "preferences-system-time"
+                onClicked: { run.connectSource("fennek-app settings kcm_clock"); root.expanded = false }
+            }
+            PC3.ToolButton {
+                icon.color: Kirigami.Theme.textColor
+                text: "Open calendar"
+                icon.name: "view-calendar"
+                onClicked: { run.connectSource("/usr/libexec/fennek-get-app org.mozilla.Thunderbird Thunderbird fennek-get-thunderbird -calendar"); root.expanded = false }
+            }
         }
     }
 }
