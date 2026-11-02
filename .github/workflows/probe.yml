@@ -31,4 +31,4 @@ jobs:
         env:
           SCRIPT: ${{ inputs.script }}
           IMAGE: ghcr.io/olexify/${{ inputs.image }}:${{ inputs.tag }}
-        run: sudo podman run --rm -e SCRIPT "$IMAGE" bash -c 'eval "$SCRIPT"' 2>&1
+        run: sudo podman run --rm -e "SCRIPT=$SCRIPT" "$IMAGE" bash -c 'eval "$SCRIPT"' 2>&1 | grep -v 'Copying blob'
