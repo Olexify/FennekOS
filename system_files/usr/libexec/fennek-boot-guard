@@ -223,7 +223,10 @@ def wait_for_desktop(running=desktop_running, wait=WAIT, steady=STEADY, sleep=ti
 
 def clean_stop(*_):
     """SIGTERM during the watch: a clean restart or shutdown, which isn't a failed try."""
-    editenv("set", f"fennek_tries={TRIES}")
+    for _ in range(3):
+        if editenv("set", f"fennek_tries={TRIES}"):
+            break
+        time.sleep(0.2)
     print("stopped cleanly during the watch: this start doesn't count")
     sys.exit(0)
 

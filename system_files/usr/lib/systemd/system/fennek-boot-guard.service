@@ -9,6 +9,8 @@ RequiresMountsFor=/boot
 [Service]
 # Started and running in the background while it watches: nothing waits for it.
 Type=exec
+# At a stop only the guard itself gets the signal: it starts one last command then, which systemd would kill as well.
+KillMode=mixed
 ExecStart=/usr/libexec/fennek-boot-guard check
 
 [Install]
