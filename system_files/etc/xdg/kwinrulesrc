@@ -1,7 +1,7 @@
 # Fennek OS window rules (defaults; rules you make in Settings > Window rules replace this list).
 [General]
-count=2
-rules=fennek-resizable-games,fennek-own-apps
+count=1
+rules=fennek-resizable-games
 
 # Windows programs and games (they often fix their window size): resizable, so they get a maximize button and
 # can be maximized by dragging to the top of the screen, also after F11 gave them a window.
@@ -13,11 +13,3 @@ minsize=1,1
 minsizerule=2
 maxsize=32767,32767
 maxsizerule=2
-
-# Opened again from a key or a tile, which can't hand over the right to take the focus: Fennek's own apps come forward.
-[fennek-own-apps]
-Description=Fennek's own apps come forward when opened again
-wmclass=^fennek-
-wmclassmatch=3
-fsplevel=0
-fsplevelrule=2

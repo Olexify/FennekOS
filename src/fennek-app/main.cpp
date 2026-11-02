@@ -8,11 +8,14 @@
 #include <KDBusService>
 #include <KWindowSystem>
 #include <QApplication>
+#include <QDBusConnection>
+#include <QDBusMessage>
 #include <QFile>
 #include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
 #include <QRegularExpression>
+#include <QTimer>
 #include <QWindow>
 
 int main(int argc, char *argv[])
@@ -52,6 +55,13 @@ int main(int argc, char *argv[])
         if (auto *window = qobject_cast<QWindow *>(root)) {
             KWindowSystem::updateStartupId(window);
             KWindowSystem::activateWindow(window);
+            // Without a token from whoever opened it, that only flashes in the taskbar: KWin's part in fennekarrows.
+            QTimer::singleShot(200, [] {
+                auto call = QDBusMessage::createMethodCall(QStringLiteral("org.kde.kglobalaccel"), QStringLiteral("/component/kwin"),
+                                                           QStringLiteral("org.kde.kglobalaccel.Component"), QStringLiteral("invokeShortcut"));
+                call << QStringLiteral("Fennek Bring Forward");
+                QDBusConnection::sessionBus().asyncCall(call);
+            });
         }
     });
     const int code = app.exec();

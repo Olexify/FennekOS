@@ -24,6 +24,20 @@ registerShortcut("Fennek Next Language", "Next input language", "Alt+Shift", fun
     callDBus("org.kde.keyboard", "/Layouts", "org.kde.KeyboardLayouts", "switchToNextLayout");
 });
 
+// A Fennek app opened again from a key or a tile, which can't hand over the right to take the focus: it only flashes in the
+// taskbar, and asks here (src/fennek-app). Not a window rule: a program picks its own window class, and a sandboxed one
+// could take the focus with it. It has no way to ask here, as it has no session bus.
+registerShortcut("Fennek Bring Forward", "Bring forward the Fennek app that was just opened again", "", function () {
+    var windows = workspace.windowList();
+    for (var i = 0; i < windows.length; i++) {
+        var w = windows[i];
+        if (w.demandsAttention && String(w.resourceClass).indexOf("fennek-") === 0) {
+            workspace.activeWindow = w;
+            return;
+        }
+    }
+});
+
 // Super+Ctrl+D: a new virtual desktop, switched to. Super+Ctrl+F4: close this one (its windows move to the
 // neighbour). Super+Ctrl+Left / Right switch between them (KWin's own).
 registerShortcut("Fennek New Desktop", "Add a virtual desktop and switch to it", "Meta+Ctrl+D", function () {
