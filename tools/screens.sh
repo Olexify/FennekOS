@@ -13,6 +13,8 @@ mkdir -p "$XDG_RUNTIME_DIR" && chown anna: "$XDG_RUNTIME_DIR" && chmod 700 "$XDG
 cat >/tmp/session.sh <<'EOF'
 set -u
 export SHELL=/bin/zsh LANG=C.UTF-8 XDG_SESSION_TYPE=wayland XDG_CURRENT_DESKTOP=KDE KDE_FULL_SESSION=true QT_FORCE_STDERR_LOGGING=1 QT_LOGGING_RULES="spectacle*.debug=true;kwin_screenshot*.debug=true"
+# Like a real session (startplasma): global themes write their values to kdedefaults, read through this path.
+mkdir -p "$HOME/.config/kdedefaults"; export XDG_CONFIG_DIRS="$HOME/.config/kdedefaults:/etc/xdg"
 # KWin's own screenshot (allowed by its test switch below; software rendering).
 shot() { sleep "${2:-3}"; timeout 20 spectacle -b -n -f -o "/out/$1.png" >>/out/shot.log 2>&1 || echo "no screenshot: $1 (exit $?)"; }
 call() { timeout 10 gdbus call --session --dest "$1" --object-path "$2" --method "$3" "${@:4}" >/dev/null 2>&1; }

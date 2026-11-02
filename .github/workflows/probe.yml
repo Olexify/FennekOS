@@ -1,0 +1,34 @@
+name: probe
+
+# Look inside a published image: runs one script in it and shows the output. Manual only; nothing is published.
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: "Image name"
+        default: fennekos
+      tag:
+        description: "Image tag"
+        default: latest
+      script:
+        description: "Commands to run inside"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
+          sudo mkdir -p /mnt/containers && sudo rm -rf /var/lib/containers && sudo ln -s /mnt/containers /var/lib/containers
+
+      - name: Run
+        env:
+          SCRIPT: ${{ inputs.script }}
+          IMAGE: ghcr.io/olexify/${{ inputs.image }}:${{ inputs.tag }}
+        run: sudo podman run --rm -e SCRIPT "$IMAGE" bash -c 'eval "$SCRIPT"' 2>&1
