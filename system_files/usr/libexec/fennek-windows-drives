@@ -39,6 +39,11 @@ fi
 
 mapfile -t list < <(drives /run/fennek/windows-drives.json)
 read_only=""
+# From the installer USB, clean drives stay closed: the installer can't measure a mounted drive and greys out shrinking it.
+# A hibernated one still opens read-only, so that shrinking stays off for it.
+if grep -qw rd.live.image /proc/cmdline && [ "${list[0]:-}" != read-only ]; then
+    list=("${list[0]:-}")
+fi
 for uuid in "${list[@]:1}"; do
     # The real device: a plugged-in drive with a copy of this UUID can take over the link (it doesn't get the scan's mark),
     # and by the link's name udisksctl could pick that one even when the link is ours.
