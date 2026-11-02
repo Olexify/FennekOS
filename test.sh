@@ -56,7 +56,7 @@ for app in org.kde.kmenuedit systemsettings kdesystemsettings org.kde.khelpcente
     f=/usr/share/applications/$app.desktop; [ ! -f "$f" ] || { [ "$(grep -c '^NoDisplay=' "$f")" = 1 ] && grep -q '^NoDisplay=true' "$f"; } || fail "Start list still shows $app"
 done
 grep -q '^Name=Terminal$' /usr/share/applications/org.kde.konsole.desktop && grep -q '^Name=Store$' /usr/share/applications/org.kde.discover.desktop && ! grep -q '^Name\[en_GB\]=' /usr/share/applications/org.kde.konsole.desktop || fail "plain app names in Start"
-grep -q 'tray.writeConfig("extraItems", shown.concat(hidden))' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js && [ -f /usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/fennek-2026-11-02b-tray.js ] && ! grep -rq "SystrayContainmentId" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts /usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates || fail "tray shown/hidden icons, on the tray widget itself (new accounts and existing desktops)"
+grep -q 'tray.writeConfig("extraItems", shown.concat(hidden))' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js && [ -f /usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/fennek-2026-11-02b-tray.js ] && ! grep -q "SystrayContainmentId" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/*.js /usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/fennek-*.js || fail "tray shown/hidden icons, on the tray widget itself (new accounts and existing desktops)"
 for p in org.fennek.searchbox org.fennek.showdesktop org.fennek.clock org.fennek.actioncenter org.fennek.keyboard; do
     python3 -c "import json; json.load(open('/usr/share/plasma/plasmoids/$p/metadata.json'))" && [ -s /usr/share/plasma/plasmoids/$p/contents/ui/main.qml ] \
         && grep -q "\"$p\"" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js \
@@ -134,11 +134,12 @@ python3 -c "import json; d=json.load(open('/usr/share/kwin-wayland/scripts/fenne
 sh=$(mktemp -d) && printf '[kwin]\nOverview=Meta+W,Meta+W,Toggle Overview\nWindow Close=Alt+F4,Alt+F4,Close Window\n' >"$sh/kglobalshortcutsrc" \
   &&XDG_CONFIG_HOME=$sh XDG_STATE_HOME=$sh /usr/libexec/fennek-shortcuts-update   && [ "$(kreadconfig6 --file "$sh/kglobalshortcutsrc" --group kwin --key 'Window Close')" = "none,Alt+F4,Close Window" ]   && [ "$(kreadconfig6 --file "$sh/kglobalshortcutsrc" --group kwin --key Overview | cut -f1)" = Meta+Tab ]   && [ -L /etc/systemd/user/plasma-workspace.target.wants/fennek-shortcuts-update.service ] || fail "shortcut update for existing users"
 rm -rf "$sh"
-# Desktop right-click for existing accounts: nothing before the desktop made its own settings, KDE's menu becomes Fennek's once, a later own choice stays.
+# Desktop right-click for existing accounts: nothing before the desktop made its own settings, KDE's menu becomes Fennek's once, a later own choice stays, a menu Plasma dropped comes back.
 dm=$(mktemp -d) && dmk=(--file "$dm/plasma-org.kde.plasma.desktop-appletsrc" --group ActionPlugins --group 0 --key 'RightButton;NoModifier') \
   && XDG_CONFIG_HOME=$dm XDG_STATE_HOME=$dm /usr/libexec/fennek-shortcuts-update && [ -z "$(kreadconfig6 "${dmk[@]}")" ] \
   && kwriteconfig6 "${dmk[@]}" org.kde.contextmenu && XDG_CONFIG_HOME=$dm XDG_STATE_HOME=$dm /usr/libexec/fennek-shortcuts-update && [ "$(kreadconfig6 "${dmk[@]}")" = org.fennek.desktopmenu ] \
   && kwriteconfig6 "${dmk[@]}" org.kde.contextmenu && XDG_CONFIG_HOME=$dm XDG_STATE_HOME=$dm /usr/libexec/fennek-shortcuts-update && [ "$(kreadconfig6 "${dmk[@]}")" = org.kde.contextmenu ] \
+  && kwriteconfig6 "${dmk[@]}" --delete && XDG_CONFIG_HOME=$dm XDG_STATE_HOME=$dm /usr/libexec/fennek-shortcuts-update && [ "$(kreadconfig6 "${dmk[@]}")" = org.fennek.desktopmenu ] \
   || fail "desktop right-click menu for existing accounts"
 rm -rf "$dm"
 [ "$(kreadconfig6 --file /etc/xdg/ksmserverrc --group General --key confirmLogout)" = false ] || fail "power menu acts without a second confirmation"

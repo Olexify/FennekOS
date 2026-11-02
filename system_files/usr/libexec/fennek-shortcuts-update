@@ -66,11 +66,13 @@ fi
 
 # Desktop right-click, once: Fennek's classic menu (src/desktop-menu) instead of KDE's; a menu someone picked stays.
 dm_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/desktop-menu-version
-# Repair (2026-10-18 build): a first sign-in got only these settings and no menu; give the desktop its menu back.
+# Repair: the desktop has settings but no menu in them, so the shell's defaults stay out and right-click does nothing.
+# Plasma deletes a menu it can't load (Go back to a version without this one); the 2026-10-18 build left accounts so too.
+# ponytail: a menu someone removed on purpose in Mouse Actions comes back as well; nothing in the settings tells them apart.
 arc=${XDG_CONFIG_HOME:-$HOME/.config}/plasma-org.kde.plasma.desktop-appletsrc
-if grep -qF '[ActionPlugins][0][RightButton;NoModifier]' "$arc" 2>/dev/null \
+if grep -qF '[ActionPlugins][0]' "$arc" 2>/dev/null \
    && [ -z "$(kreadconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'RightButton;NoModifier')" ]; then
-    kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'RightButton;NoModifier' org.kde.contextmenu
+    kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'RightButton;NoModifier' org.fennek.desktopmenu
 fi
 # Only once the desktop has made its own menu settings: written earlier, they would stand in for the shell's defaults
 # (which give a new account this menu from its first sign-in) and leave the desktop with no menu at all.

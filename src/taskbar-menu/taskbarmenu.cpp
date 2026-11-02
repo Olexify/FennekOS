@@ -27,8 +27,9 @@ class TaskbarMenu : public Plasma::ContainmentActions
 {
     Q_OBJECT
 public:
-    TaskbarMenu(QObject *parent, const QVariantList &)
-        : Plasma::ContainmentActions(parent)
+    // Passes the plugin's metadata on: the desktop's Mouse Actions settings page loads a copy of the plugin by its id.
+    TaskbarMenu(QObject *parent, const QVariantList &args)
+        : Plasma::ContainmentActions(parent, args)
     {
     }
 
