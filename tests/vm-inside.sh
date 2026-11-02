@@ -6,6 +6,7 @@ user=anna
 if [ "${1:-}" = setup ]; then
     exec >"$out/setup.log" 2>&1
     useradd -m -c "Anna" "$user" && echo "$user:fennek-vm-test" | chpasswd
+    touch /etc/plasma-setup-done   # the account exists: no first-run account wizard
     mkdir -p /etc/plasmalogin.conf.d
     printf '[Autologin]\nUser=%s\nSession=plasma\n' "$user" > /etc/plasmalogin.conf.d/10-vmtest.conf
     touch "$out/setup-done"

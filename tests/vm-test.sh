@@ -17,6 +17,12 @@ die() { echo "::error::VM test: $*"; cp -a "$share/out/." "$out/" 2>/dev/null; [
 
 stage "Install to a disk"
 truncate -s 40G "$work/disk.raw"
+# The installer compares this folder through /proc/1/root: a symlink (CI moves container storage to the big disk)
+# would point nowhere from inside its container, a bind mount doesn't.
+if [ -L /var/lib/containers ]; then
+    t=$(readlink -f /var/lib/containers)
+    sudo rm /var/lib/containers && sudo mkdir /var/lib/containers && sudo mount --bind "$t" /var/lib/containers
+fi
 sudo podman run --rm --privileged --pid=host --security-opt label=disable \
     -v /var/lib/containers:/var/lib/containers -v /dev:/dev -v "$work:/work" "$image" \
     bootc install to-disk --generic-image --via-loopback --skip-fetch-check --wipe --filesystem btrfs \

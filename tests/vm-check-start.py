@@ -6,7 +6,7 @@
 import sys
 
 BOX = (410, 163, 530, 283)   # Firefox's tile
-MIN_COLOURS = 300
+MIN_COLOURS = 1000
 
 
 def read_ppm(path):
