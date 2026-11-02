@@ -1,7 +1,10 @@
 name: vm
 
-# The real-VM test on an already published image, on demand. Nightly builds run the same test before publishing.
+# The real-VM test on an already published image: on demand, and every Sunday (after that day's nightly) with the rollback
+# test on the standard image. Nightly builds run the same test before publishing.
 on:
+  schedule:
+    - cron: "23 14 * * 0"
   workflow_dispatch:
     inputs:
       image:
@@ -17,6 +20,14 @@ on:
         description: "Also test that a bad update undoes itself (adds ~20 minutes)"
         type: boolean
         default: false
+      mok:
+        description: "Also test the Secure Boot key step (needs image fennekos-nvidia and edition nvidia, adds ~5 minutes)"
+        type: boolean
+        default: false
+      wizard:
+        description: "Only a picture of the first-run wizard (wizard-1.png): no account, no other checks"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -24,7 +35,8 @@ permissions:
 jobs:
   vm:
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    # ~10 minutes plus what's asked for. The rollback test gives itself up to 40: it stops with its own message before this.
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
@@ -36,9 +48,12 @@ jobs:
 
       - name: Test in a VM
         env:
-          IMAGE: ghcr.io/olexify/${{ inputs.image }}:${{ inputs.tag }}
-          EDITION: ${{ inputs.edition }}
-          FENNEK_VM_ROLLBACK: ${{ inputs.rollback && '1' || '' }}
+          # On schedule there are no inputs: the published standard image, with the rollback test.
+          IMAGE: ghcr.io/olexify/${{ inputs.image || 'fennekos' }}:${{ inputs.tag || 'latest' }}
+          EDITION: ${{ inputs.edition || '' }}
+          FENNEK_VM_ROLLBACK: ${{ (inputs.rollback || github.event_name == 'schedule') && '1' || '' }}
+          FENNEK_VM_MOK: ${{ inputs.mok && '1' || '' }}
+          FENNEK_VM_WIZARD: ${{ inputs.wizard && '1' || '' }}
         run: |
           sudo podman pull -q "$IMAGE"
           bash tests/vm-test.sh "$IMAGE" "$PWD/vm-out" "$EDITION"

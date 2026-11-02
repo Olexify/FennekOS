@@ -8,11 +8,51 @@ if [ "${1:-}" = setup ]; then
         systemd-run --unit=fennek-vmtest-rollback --no-block bash /run/t/vm-rollback.sh
         exit 0
     fi
+    if [ -e "$out/mok-before" ]; then   # back from the firmware's blue screen
+        systemd-run --unit=fennek-vmtest-mok --no-block bash /run/t/vm-inside.sh mok-after
+        exit 0
+    fi
     exec >"$out/setup.log" 2>&1
+    if [ -e /run/t/wizard-wanted ]; then   # only a look at the first start: no account, the wizard isn't skipped
+        touch "$out/setup-done"
+        exit 0
+    fi
     useradd -m -c "Anna" -G wheel "$user" && echo "$user:fennektest" | chpasswd   # the host types this at the sign-in screen
     touch /etc/plasma-setup-done   # the account exists: no first-run account wizard
     touch "$out/setup-done"
     systemd-run --unit=fennek-vmtest-watch --no-block bash /run/t/vm-inside.sh watch
+    exit 0
+fi
+
+# The Secure Boot key step as a person does it (NVIDIA edition). Between the two halves the host goes through the firmware's
+# blue screen. Each half ends by writing "ok", or what went wrong, to the file named after it.
+if [ "${1:-}" = mok-before ] || [ "${1:-}" = mok-after ]; then
+    half=$1 key=/etc/pki/akmods/certs/akmods-ublue.der
+    exec >>"$out/mok.log" 2>&1
+    set -x
+    no() { echo "$1" > "$out/$half"; exit 1; }
+    state() { /usr/libexec/fennek-graphics-check --json | python3 -c 'import json,sys; print(json.load(sys.stdin)["secure_boot"])'; }   # "nvidia" is false in a VM
+    if [ "$half" = mok-before ]; then
+        said=$(modprobe v4l2loopback 2>&1) && no "v4l2loopback loaded with its key not trusted"
+        grep -q 'Key was rejected' <<<"$said" || no "v4l2loopback didn't fail with a key rejection: $said"
+        [ "$(state)" = needs-key ] || no "graphics check before the key step: $(state)"
+        /usr/libexec/fennek-secure-boot-helper || no "the Secure Boot helper failed"
+        mokutil --list-new | tr -d : | grep -qi "$(sha1sum "$key" | cut -d' ' -f1)" || no "mokutil --list-new doesn't show the key"
+        [ "$(state)" = pending ] || no "graphics check after the helper: $(state)"
+        echo ok > "$out/$half"
+        sync; sleep 2
+        systemctl reboot
+    else
+        mokutil --test-key "$key" | grep -q 'already enrolled' || no "the key isn't enrolled: $(mokutil --test-key "$key" 2>&1)"
+        modprobe v4l2loopback || no "v4l2loopback doesn't load with its key enrolled"
+        lsmod | grep -q '^v4l2loopback ' || no "v4l2loopback isn't in lsmod"
+        [ "$(state)" = ok ] || no "graphics check after the key step: $(state)"
+        echo ok > "$out/$half"
+        if [ -e /run/t/rollback-wanted ]; then
+            echo 0 > "$out/phase"
+            bash /run/t/vm-rollback.sh
+        fi
+    fi
     exit 0
 fi
 
@@ -47,6 +87,7 @@ check "dark look saved" grep -q '^LookAndFeelPackage=org.fennek.dark.desktop' "/
 check "edition" test "$(cat /usr/share/fennek/edition 2>/dev/null)" = "$(cat /run/t/edition)"
 check "file search running" as_user systemctl --user is-active -q fennek-search.service
 check "Secure Boot on" sh -c 'mokutil --sb-state | grep -q "SecureBoot enabled"'
+check "/boot is its own ext4, writable, and grub.cfg reads custom.cfg" sh -c 'findmnt -n -o FSTYPE /boot | grep -qx ext4 && [ -w /boot/grub2 ] && grep -q custom.cfg /boot/grub2/grub.cfg'
 check "SELinux enforcing" sh -c '[ "$(getenforce)" = Enforcing ]'
 # The Windows-like disk: open by themselves at sign-in, named, writable when Windows closed it cleanly, read-only when not.
 opt() { findmnt -n -S "$1" -o OPTIONS 2>/dev/null; }
@@ -73,12 +114,13 @@ echo "$crashes" | grep -Eq 'kwin_wayland|plasmashell|plasmalogin|startplasma' &&
     echo "== Windows-like disk"; findmnt -S /dev/vdb1; findmnt -S /dev/vdb2; udevadm info -q property /dev/vdb1 | grep -E 'FENNEK|ID_FS_LABEL|UDISKS'; udevadm info -q property /dev/vdb2 | grep -E 'FENNEK|ID_FS_LABEL|UDISKS'
     echo "== tray"; as_user gdbus call --session --dest org.kde.plasmashell --object-path /PlasmaShell --method org.kde.PlasmaShell.evaluateScript "panels().forEach(function (p) { print(p.widgets().map(function (w) { return w.type }).join(' ')); p.widgets().forEach(function (w) { if (w.type === 'org.kde.plasma.systemtray') print(desktopById(w.readConfig('SystrayContainmentId')).widgets().map(function (t) { return t.type }).join(' ')) }) })"
     echo "== sign-in processes"; cat "$out/greeter-ps.txt" 2>/dev/null
-    echo "== boot"; findmnt /boot; ls -la /boot/grub2 | head -20; grub2-editenv list 2>&1; ls /boot/loader/entries 2>&1; bootc status --json 2>/dev/null | head -c 600; echo
+    echo "== boot"; findmnt /boot; findmnt /boot/efi; ls -la /boot/grub2 | head -20; grub2-editenv list 2>&1; ls /boot/loader/entries 2>&1; efibootmgr 2>&1; bootc status --json 2>/dev/null | head -c 600; echo
 } > "$out/report.txt" 2>&1
 journalctl -b --no-pager > "$out/journal.txt" 2>&1
 as_user journalctl --user -b --no-pager > "$out/journal-user.txt" 2>&1
 if [ ${#problems[@]} -eq 0 ]; then echo pass > "$out/result"; else printf '%s; ' "${problems[@]}" > "$out/result"; fi
 touch "$out/report-done"
+[ -e /run/t/mok-wanted ] && [ ${#problems[@]} -eq 0 ] && exec bash /run/t/vm-inside.sh mok-before
 if [ -e /run/t/rollback-wanted ] && [ ${#problems[@]} -eq 0 ]; then
     echo 0 > "$out/phase"
     bash /run/t/vm-rollback.sh

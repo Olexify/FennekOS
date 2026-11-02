@@ -1,12 +1,17 @@
 name: build
 
 # Not on every push: small changes are batched. Builds run nightly (base security fixes + the day's work)
-# and on demand (Actions > build > Run workflow). Pull requests are built and tested, never published.
+# and on demand (Actions > build > Run workflow). Pull requests and other branches are built and tested, never published.
 on:
   pull_request:
   schedule:
     - cron: "30 5 * * *"
   workflow_dispatch:
+    inputs:
+      rollback:
+        description: "Also test that a bad update undoes itself (adds ~20 minutes)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -18,7 +23,8 @@ concurrency:
 jobs:
   image:
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    # A build with its VM test takes ~45 minutes. The rollback test gives itself up to 40 more, and publishing comes after it.
+    timeout-minutes: ${{ inputs.rollback && 120 || 90 }}
     # Two editions from the same source: the main one, and one for NVIDIA graphics (Universal Blue's kinoite-nvidia
     # base, with NVIDIA's open kernel driver: needed by RTX 50 cards, good for RTX 20+).
     strategy:
@@ -106,6 +112,8 @@ jobs:
 
       # Exactly what users get: install it to a disk, start it with Secure Boot on, sign in, check the desktop.
       - name: Test in a real VM
+        env:
+          FENNEK_VM_ROLLBACK: ${{ inputs.rollback && '1' || '' }}
         run: |
           sudo apt-get update -q && sudo apt-get install -y -q qemu-system-x86 ovmf ntfs-3g gdisk
           bash tests/vm-test.sh localhost/fennek:publish "$PWD/vm-out" "$FENNEK_EDITION"
