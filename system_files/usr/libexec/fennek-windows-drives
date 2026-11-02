@@ -18,12 +18,18 @@ if [ "${1:-}" = --selftest ]; then
     echo "selftest ok"; exit 0
 fi
 
-read_only=""
+read_only="" hibernated=""
+drives=()
 for dev in $(lsblk -nrpo PATH,FSTYPE | awk '$2 == "ntfs" { print $1 }'); do
     props=$(udevadm info -q property "$dev") || continue
     ours "$props" || continue
+    drives+=("$dev")
+    read_only_from_start "$props" && hibernated=1
+done
+for dev in "${drives[@]}"; do
     [ -n "$(lsblk -nro MOUNTPOINTS "$dev" | tr -d '[:space:]')" ] && continue
-    if read_only_from_start "$props"; then
+    # The hibernation file is only on the Windows drive, but hibernated Windows holds all its drives in that state.
+    if [ -n "$hibernated" ]; then
         udisksctl mount --no-user-interaction -b "$dev" -o ro >/dev/null 2>&1 && read_only=1
     elif ! udisksctl mount --no-user-interaction -b "$dev" >/dev/null 2>&1; then
         # Not cleanly closed by Windows: the kernel won't write to it. Reading is still safe.
