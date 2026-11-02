@@ -15,7 +15,7 @@ read-only, Proton through a throwaway overlay. Own network namespace (pasta): in
 sockets (X11 abstract socket, D-Bus, local services) are unreachable. Wayland display when Proton supports it,
 so no X11 snooping. No sound/microphone unless asked for. Your real home and other programs are invisible.
 """
-import fcntl, hashlib, os, re, shutil, subprocess, sys, threading, time
+import fcntl, hashlib, itertools, os, re, shutil, subprocess, sys, threading, time
 from pathlib import Path
 
 HOME = Path.home()
@@ -312,6 +312,7 @@ SHORTCUT_FOLDERS = ("users/steamuser/AppData/Roaming/Microsoft/Windows/Start Men
                     "users/steamuser/Desktop", "users/Public/Desktop")
 NOT_A_PROGRAM = re.compile(r"(?i)uninstal|^unins|read ?me|manual|documentation|website|licen[cs]e|\bhelp\b")
 MOST_ENTRIES = 20
+MOST_LOOKED_AT = 5000   # the walk stops there: the program made these folders, and could make them endless
 
 
 def plain_folder(base, rel):
@@ -326,15 +327,17 @@ def plain_folder(base, rel):
 
 def shortcuts(drive_c):
     """[(name, path inside drive_c)] of a program's shortcuts, the first of each name, at most MOST_ENTRIES."""
-    found = {}
+    found, budget = {}, MOST_LOOKED_AT
     for rel in SHORTCUT_FOLDERS:
         top = plain_folder(drive_c, rel)
         stack = [top] if top else []
-        while stack:
+        while stack and budget > 0:
             try:
-                entries = sorted(os.scandir(stack.pop()), key=lambda e: e.name)
+                with os.scandir(stack.pop()) as it:
+                    entries = sorted(itertools.islice(it, budget), key=lambda e: e.name)
             except OSError:
                 continue
+            budget -= len(entries) + 1
             for e in entries:
                 if e.is_dir(follow_symlinks=False):
                     stack.append(e.path)
@@ -351,23 +354,6 @@ def shortcut_id(rel):
 
 def clean_name(stem):
     return "".join(c for c in stem if not odd_char(c) and c not in "\\").strip()[:80] or "Program"
-
-
-def names_in_start():
-    """What's already called what in Start, without Fennek's own entries for programs."""
-    names = set()
-    for folder in (DATA / "applications", Path("/usr/share/applications"), Path("/var/lib/flatpak/exports/share/applications"),
-                   DATA / "flatpak/exports/share/applications"):
-        for f in folder.glob("*.desktop") if folder.is_dir() else []:
-            if f.name.startswith("fennek-exe-"):
-                continue
-            try:
-                m = re.search(r"^Name=(.*)$", f.read_text(encoding="utf-8", errors="replace"), re.M)
-            except OSError:
-                continue
-            if m:
-                names.add(m.group(1).strip().lower())
-    return names
 
 
 def shortcut_icon(drive_c, stem, out):
@@ -395,18 +381,15 @@ def shortcut_icon(drive_c, stem, out):
 def sync_start(box_id, drive_c):
     """Start's entries for one program's folder match the shortcuts in it now: new ones added, gone ones removed."""
     apps, icons = DATA / "applications", DATA / "fennek" / "exe-icons"
-    prefix, wanted, taken = f"fennek-exe-{box_id[:16]}-", set(), None
+    prefix, wanted = f"fennek-exe-{box_id[:16]}-", set()
     for stem, rel in shortcuts(drive_c):
         lid = shortcut_id(rel)
         entry = apps / f"{prefix}{lid}.desktop"
         wanted.add(entry.name)
         if entry.exists():
             continue
-        if taken is None:
-            taken = names_in_start()
-        name = clean_name(stem)
-        if name.lower() in taken and box_id != "trusted":
-            name += " (sandbox)"   # never passes for an app that's already here
+        # A sandboxed program chose this name itself: it always says what it is, so it never passes for another app.
+        name = clean_name(stem) + ("" if box_id == "trusted" else " (sandbox)")
         icon = shortcut_icon(drive_c, stem, icons / f"{box_id[:16]}-{lid}.png") or "application-x-ms-dos-executable"
         apps.mkdir(parents=True, exist_ok=True)
         tmp = entry.with_name(entry.name + ".new")
@@ -771,20 +754,27 @@ def selftest():
     box_id = "a" * 64
     sync_start(box_id, d)
     made = {f.read_text(encoding="utf-8") for f in (DATA / "applications").glob("fennek-exe-*.desktop")}
-    assert len(made) == 2 and any("Name=My Game\n" in m for m in made)
+    assert len(made) == 2 and any("Name=My Game (sandbox)\n" in m for m in made)
     for m in made:
         lines = m.split("\n")
         assert sum(l.startswith("Exec=") for l in lines) == 1 and re.fullmatch(r"Exec=fennek-run-exe --box a{64} [0-9a-f]{16}", next(l for l in lines if l.startswith("Exec="))), m
-    (DATA / "applications/org.x.desktop").write_text("[Desktop Entry]\nName=Firefox\n")
-    (menu / "firefox.lnk").write_text("x")
-    sync_start(box_id, d)
-    assert any("Name=firefox (sandbox)\n" in f.read_text(encoding="utf-8") for f in (DATA / "applications").glob("fennek-exe-*.desktop")), "never passes for another app"
+    sync_start("trusted", d)
+    assert any("Name=My Game\n" in f.read_text(encoding="utf-8") for f in (DATA / "applications").glob("fennek-exe-trusted*")), "only sandboxed ones are marked"
+    for f in (DATA / "applications").glob("fennek-exe-trusted*"):
+        f.unlink()
     (menu / "My Game.lnk").unlink()
     sync_start(box_id, d)
-    assert not any("Name=My Game\n" in f.read_text(encoding="utf-8") for f in (DATA / "applications").glob("fennek-exe-*.desktop")), "gone with its shortcut"
+    assert not any("Name=My Game (sandbox)\n" in f.read_text(encoding="utf-8") for f in (DATA / "applications").glob("fennek-exe-*.desktop")), "gone with its shortcut"
     for i in range(40):
         (menu / f"p{i}.lnk").write_text("x")
     assert len(shortcuts(d)) == MOST_ENTRIES, "a program can't flood Start"
+    global MOST_LOOKED_AT
+    deep = t / "deep"
+    for i in range(30):
+        (deep / "users/Public/Desktop" / f"f{i}").mkdir(parents=True)
+    MOST_LOOKED_AT = 10
+    assert shortcuts(deep) == [], "the walk ends even if the folders don't"
+    MOST_LOOKED_AT = 5000
     assert clean_name("a\u2028b\\c") == "abc" and clean_name("\n") == "Program"
     a = bwrap_args(Path("x"), [], Path("/b"), Path("/s"), Path("/p"), None, {}, inside=HOME / "prefix/drive_c/x.lnk")
     assert a[-1] == "/var/home/u/prefix/drive_c/x.lnk" and "/var/home/u/App/x" not in a, "an installed program runs from inside, nothing extra mounted"
