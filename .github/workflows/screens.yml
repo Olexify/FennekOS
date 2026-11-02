@@ -27,10 +27,12 @@ jobs:
       - name: Screenshots
         run: |
           mkdir -p out
-          # KWin won't start without a graphics device since Plasma 6.8: the kernel's virtual one (software drawing).
-          sudo apt-get install -y -q "linux-modules-extra-$(uname -r)" && sudo modprobe vgem
-          ls -l /dev/dri; sudo chmod 666 /dev/dri/*
-          sudo podman run --rm --cap-add SYS_NICE --device /dev/dri -v "$PWD/out:/out:z" -v "$PWD/tools:/t:ro,z" \
+          # KWin won't start without a graphics device since Plasma 6.8; on a machine without one it draws in software
+          # into memory shared through the kernel's udmabuf device.
+          sudo apt-get update -q && sudo apt-get install -y -q "linux-modules-extra-$(uname -r)" || true
+          sudo modprobe udmabuf || true
+          ls -l /dev/udmabuf && sudo chmod 666 /dev/udmabuf
+          sudo podman run --rm --cap-add SYS_NICE --device /dev/udmabuf -v "$PWD/out:/out:z" -v "$PWD/tools:/t:ro,z" \
             "ghcr.io/olexify/fennekos:${{ inputs.tag }}" bash /t/screens.sh
 
       - name: Check that screenshots were taken
