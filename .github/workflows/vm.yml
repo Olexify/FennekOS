@@ -1,0 +1,46 @@
+name: vm
+
+# The real-VM test on an already published image, on demand. Nightly builds run the same test before publishing.
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: "Image name"
+        default: fennekos
+      tag:
+        description: "Image tag"
+        default: latest
+      edition:
+        description: "Expected edition (empty or nvidia)"
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  vm:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Disk space and tools
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
+          sudo mkdir -p /mnt/containers && sudo rm -rf /var/lib/containers && sudo ln -s /mnt/containers /var/lib/containers
+          sudo apt-get update -q && sudo apt-get install -y -q qemu-system-x86 ovmf
+
+      - name: Test in a VM
+        env:
+          IMAGE: ghcr.io/olexify/${{ inputs.image }}:${{ inputs.tag }}
+          EDITION: ${{ inputs.edition }}
+        run: |
+          sudo podman pull -q "$IMAGE"
+          bash tests/vm-test.sh "$IMAGE" "$PWD/vm-out" "$EDITION"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        if: always()
+        with:
+          name: vm
+          path: vm-out/
+          retention-days: 7
