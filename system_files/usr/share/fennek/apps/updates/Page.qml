@@ -20,6 +20,11 @@ Item {
     readonly property string releaseCmd: "cat /usr/lib/os-release"
     readonly property string milestonesCmd: "cat /usr/share/fennek/milestones.json"
     readonly property string tagsCmd: "skopeo list-tags docker://ghcr.io/olexify/fennekos"
+    readonly property string graphicsCmd: "/usr/libexec/fennek-graphics-check --json"
+    property var graphics: ({ edition: "", nvidia: false, secure_boot: "off" })
+    readonly property string switchHelper: "pkexec /usr/libexec/fennek-switch-version "
+    property bool switching: false      // installing another build or edition
+    property string pendingEdition: ""
 
     property var release: ({})          // os-release: PRETTY_NAME, IMAGE_VERSION, BUILD_ID
     property var milestones: []
@@ -54,7 +59,7 @@ Item {
     function set(args) { run.connectSource("pkexec " + helper + " set " + args) }
     function refresh() {
         run.connectSource(settingsCmd); run.connectSource(statusCmd)
-        run.connectSource(releaseCmd); run.connectSource(milestonesCmd)
+        run.connectSource(releaseCmd); run.connectSource(milestonesCmd); run.connectSource(graphicsCmd)
     }
     // Changing the installed version: a clear question first, then the separate helper (fresh password every time).
     property string pendingTag: ""
@@ -68,7 +73,16 @@ Item {
             : "This earlier build misses newer security fixes and gets no updates until you return to the latest. "
               + "Your files and apps are kept. It takes effect after a restart."
         standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
-        onAccepted: run.connectSource("pkexec /usr/libexec/fennek-switch-version " + root.pendingTag)
+        onAccepted: { root.switching = true; run.connectSource(root.switchHelper + root.pendingTag) }
+    }
+    Kirigami.PromptDialog {
+        parent: QQC2.Overlay.overlay
+        id: confirmEdition
+        title: root.pendingEdition === "nvidia" ? "Install the NVIDIA edition?" : "Install the standard edition?"
+        subtitle: "It downloads now (a few GB) and takes effect after a restart. Your files, apps and settings are kept, "
+                  + "and updates keep coming for the new edition."
+        standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
+        onAccepted: { root.switching = true; run.connectSource(root.switchHelper + "--edition " + root.pendingEdition) }
     }
     function tagDate(t) { return t.slice(0, 4) + "-" + t.slice(4, 6) + "-" + t.slice(6, 8) }
 
@@ -89,6 +103,12 @@ Item {
                     if (busy && root.state !== "installing") { root.autoRun = true; root.state = "installing" }
                     else if (!busy && root.autoRun) { root.autoRun = false; root.state = "idle" }
                 } catch (e) {}
+            } else if (source === root.graphicsCmd) {
+                try { root.graphics = JSON.parse(data.stdout) } catch (e) {}
+            } else if (source.startsWith(root.switchHelper)) {
+                root.switching = false
+                if (code !== 0) { root.state = "failed"; root.detail = (data.stderr || data.stdout).trim() }
+                connectSource(root.statusCmd)
             } else if (source === root.releaseCmd) {
                 const r = {}
                 data.stdout.split("\n").forEach(l => { const m = l.match(/^(\w+)="?([^"]*)"?$/); if (m) r[m[1]] = m[2] })
@@ -439,6 +459,41 @@ Item {
                 }
             }
 
+            // Graphics: only when the card and the installed edition don't match yet, or Secure Boot's step is open.
+            ColumnLayout {
+                id: graphicsBox
+                readonly property bool needsKey: root.graphics.nvidia && root.graphics.edition === "nvidia" && root.graphics.secure_boot === "needs-key"
+                visible: !root.arm && (root.graphics.nvidia !== (root.graphics.edition === "nvidia") || needsKey)
+                Layout.fillWidth: true
+                Layout.leftMargin: Kirigami.Units.gridUnit * 2
+                Layout.rightMargin: Kirigami.Units.gridUnit * 2
+                spacing: Kirigami.Units.largeSpacing
+                Kirigami.Heading { text: "Graphics"; level: 2 }
+                QQC2.Label {
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    opacity: 0.8
+                    text: graphicsBox.needsKey
+                          ? "Secure Boot is on, so this computer first has to trust the NVIDIA driver's signature. It takes a minute and one restart."
+                          : root.graphics.nvidia
+                            ? "This computer has an NVIDIA graphics card. The NVIDIA edition of Fennek OS brings NVIDIA's own driver: full speed for games and video apps, NVIDIA Settings and NV Broadcast."
+                            : "This computer has no NVIDIA graphics card, so the standard edition of Fennek OS suits it better."
+                }
+                RowLayout {
+                    QQC2.Button {
+                        enabled: !root.switching
+                        text: graphicsBox.needsKey ? "Set it up" : root.graphics.nvidia ? "Install the NVIDIA edition" : "Install the standard edition"
+                        onClicked: {
+                            if (graphicsBox.needsKey) { run.connectSource("/usr/libexec/fennek-secure-boot-setup"); return }
+                            root.pendingEdition = root.graphics.nvidia ? "nvidia" : "standard"
+                            confirmEdition.open()
+                        }
+                    }
+                    QQC2.BusyIndicator { visible: root.switching; running: visible }
+                    QQC2.Label { visible: root.switching; opacity: 0.8; text: "Downloading. This can take a while; you can keep working." }
+                }
+            }
+
             // Advanced: an earlier signed nightly build (last ~30 days). Going back to the latest always works.
             ColumnLayout {
                 Layout.fillWidth: true
@@ -460,7 +515,7 @@ Item {
                         enabled: !root.loadingEarlier
                         onClicked: { root.loadingEarlier = true; run.connectSource(root.tagsCmd) }
                     }
-                    QQC2.BusyIndicator { visible: root.loadingEarlier; running: visible }
+                    QQC2.BusyIndicator { visible: root.loadingEarlier || root.switching; running: visible }
                 }
                 Flow {
                     Layout.fillWidth: true

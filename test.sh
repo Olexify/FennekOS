@@ -233,6 +233,10 @@ grep -q '^Exec=fennek-app settings kcm_about-distro' /usr/share/applications/fen
 command -v orca >/dev/null && grep -q "^Toggle Screen Reader On and Off=Meta+Ctrl+Return" /etc/xdg/kglobalshortcutsrc || fail "screen reader on Super+Ctrl+Enter"
 [ -s /usr/share/fennek/apps/search/main.qml ] && grep -A1 "fennek-search.desktop" /etc/xdg/kglobalshortcutsrc | grep -q "^_launch=Meta+S" && /usr/libexec/fennek-search --selftest >/dev/null || fail "Search window (Super+S), with its index's full results"
 grep -q '^minimizeallEnabled=true' /etc/xdg/kwinrc && grep -q '^MinimizeAll=Meta+M,' /etc/xdg/kglobalshortcutsrc && { [ -d /usr/share/kwin/scripts/minimizeall ] || [ -d /usr/share/kwin-wayland/scripts/minimizeall ]; } || fail "Super+M minimizes all windows"
+/usr/libexec/fennek-boot-guard --selftest >/dev/null && [ -s /usr/share/fennek/boot-guard.cfg ] && grep -q 'fennek-boot-guard arm' /usr/lib/systemd/system/ostree-finalize-staged.service.d/fennek-boot-guard.conf \
+    && [ -L /etc/systemd/system/multi-user.target.wants/fennek-boot-guard.service ] && [ -L /etc/systemd/system/multi-user.target.wants/fennek-boot-guard-vet.path ] && command -v grub2-editenv ostree >/dev/null \
+    && grep -q 'custom.cfg' /usr/lib/bootupd/grub2-static/configs.d/41_custom.cfg || fail "boot guard: a new version that doesn't start undoes itself"
+/usr/libexec/fennek-installed-apps --selftest >/dev/null && [ -s /usr/share/fennek/apps/installedapps/Page.qml ] && grep -q '"page": "installedapps"' /usr/share/fennek/apps/settings/catalog.js || fail "Installed apps page"
 /usr/libexec/fennek-cleanup --selftest >/dev/null && [ -s /usr/share/fennek/apps/cleanup/Page.qml ] && grep -q '"page": "cleanup"' /usr/share/fennek/apps/settings/catalog.js || fail "Free up space (Recycle Bin, thumbnails, old caches, unused app parts)"
 [ "$(wc -l < /usr/share/fennek/settings-index.tsv)" -ge 40 ] && grep -q '^X-Plasma-DBusRunner-Path=/settings' /usr/share/krunner/dbusplugins/fennek-settings.desktop && grep -q 'krunner_services,fennek-settings' /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/config/main.xml || fail "Settings found from Start open in Fennek Settings"
 [ -L /etc/systemd/user/graphical-session.target.wants/fennek-new-apps.path ] && grep -q '^PathChanged=/var/lib/flatpak/app' /usr/lib/systemd/user/fennek-new-apps.path || fail "new apps: a notice with what they may reach"
@@ -399,6 +403,9 @@ command -v mangohud >/dev/null || fail "MangoHud (in-game overlay)"
 if [ "${FENNEK_EDITION:-}" = nvidia ]; then
     find /usr/lib/modules -name 'nvidia.ko*' | grep -q . || fail "NVIDIA edition: no NVIDIA kernel module"
     command -v nvidia-settings >/dev/null && grep -qx 'Name=NVIDIA Settings' /usr/share/applications/*nvidia-settings*.desktop || fail "NVIDIA edition: NVIDIA Settings in Start"
+    # GPU Control: its service off until someone asks; Secure Boot's one key, nothing else the helper can be told
+    grep -qx 'Name=GPU Control' /usr/share/applications/io.github.ilya_zlobintsev.LACT.desktop && grep -q 'fennek-gpu-control' /usr/share/applications/io.github.ilya_zlobintsev.LACT.desktop \
+        && command -v lact >/dev/null && ! systemctl is-enabled -q lactd.service && [ -f /etc/pki/akmods/certs/akmods-ublue.der ] || fail "NVIDIA edition: GPU Control, Secure Boot key"
     find /usr/lib/modules -name 'v4l2loopback.ko*' | grep -q . && grep -q 'card_label="NV Broadcast Camera"' /etc/modprobe.d/fennek-vcam.conf       && python3 -c "import gi; gi.require_version('Gtk', '4.0'); gi.require_version('Adw', '1')" && command -v pw-loopback >/dev/null       && /usr/libexec/fennek-get-nvbroadcast --selftest >/dev/null && [ -f /usr/share/applications/fennek-get-nvbroadcast.desktop ]       || fail "NVIDIA edition: what NV Broadcast needs from the system (virtual camera module and settings, GTK 4, PipeWire tools)"
 fi
 grep -q '"rhgb", "quiet"' /usr/lib/bootc/kargs.d/10-fennek-splash.toml || fail "boot splash kernel args"
@@ -411,6 +418,12 @@ su fquar -c "fennek-quarantine --selftest" >/dev/null           || fail "quarant
 command -v efibootmgr >/dev/null                             || fail "efibootmgr (Restart to Windows)"
 /usr/libexec/fennek-reboot-windows-helper --selftest >/dev/null || fail "reboot-windows selftest"
 systemctl is-enabled -q fennek-detect-windows.service         || fail "windows detection not enabled"
+# Windows' own drives: read by the probe only, opened read-only when hibernated, no password for admins, USB untouched.
+/usr/libexec/fennek-windows-drives --selftest >/dev/null && command -v ntfsls ntfscat udisksctl >/dev/null && grep -q 'ENV{ID_BUS}=="usb", GOTO' /usr/lib/udev/rules.d/90-fennek-windows-drive.rules     && grep -q 'UDISKS_MOUNT_OPTIONS_DEFAULTS}="ro"' /usr/lib/udev/rules.d/90-fennek-windows-drive.rules && grep -q 'id.type") == "ntfs"' /usr/share/polkit-1/rules.d/60-fennek-windows-drive.rules     && [ -L /etc/systemd/user/graphical-session.target.wants/fennek-windows-drives.service ] || fail "Windows drives in Files"
+grep -q 'set-local-rtc 1' /usr/libexec/fennek-detect-windows || fail "clock in step with Windows"
+/usr/libexec/fennek-graphics-check --selftest >/dev/null && /usr/libexec/fennek-graphics-check --json | python3 -c 'import json,sys; d=json.load(sys.stdin); assert set(d) == {"edition", "nvidia", "secure_boot"}' \
+    && grep -q 'exec.path">/usr/libexec/fennek-secure-boot-helper' /usr/share/polkit-1/actions/org.fennek.secure-boot.policy && grep -q '<allow_active>auth_admin</allow_active>' /usr/share/polkit-1/actions/org.fennek.secure-boot.policy \
+    && command -v mokutil >/dev/null && [ -L /etc/systemd/user/graphical-session.target.wants/fennek-graphics-check.service ] || fail "graphics card check, Secure Boot step"
 grep -q 'exec.path">/usr/libexec/fennek-reboot-windows-helper' /usr/share/polkit-1/actions/org.fennek.reboot-windows.policy \
                                                               || fail "reboot-windows polkit action"
 # Sign-in screen: SDDM is THE display manager, uses the Fennek theme, and the theme loads without QML errors
@@ -448,7 +461,7 @@ grep -q '^X-KDE-Shortcuts=Print$' /usr/share/applications/fennek-printscreen.des
 grep -q '^_launch=Ctrl+Alt+Del' /etc/xdg/kglobalshortcutsrc && grep -q '^Log Out=none,Ctrl+Alt+Del' /etc/xdg/kglobalshortcutsrc && grep -q 'fennek-security' /usr/share/kwin-wayland/scripts/fennekwinx/contents/code/main.js || fail "Ctrl+Alt+Del: security options screen"
 t=$(mktemp -d); HOME=$t /usr/libexec/fennek-text set 13 Inter && [ "$(HOME=$t /usr/libexec/fennek-text get)" = "13 Inter" ] && ! HOME=$t /usr/libexec/fennek-text set 13 'Inter;rm' 2>/dev/null || fail "Personalize: text size and typeface (fennek-text)"; rm -rf "$t"
 grep -q 'Inter,11,' /etc/xdg/kdeglobals && grep -q '"page": "personalize"' /usr/share/fennek/apps/settings/catalog.js || fail "Text 11 points by default; Personalize in Settings"
-for a in settings firewall welcome apphistory backup live updates quarantine winx power run security personalize permissions taskmanager cleanup; do   # starts off-screen and keeps running = the QML loads
+for a in settings firewall welcome apphistory backup live updates quarantine winx power run security personalize permissions taskmanager cleanup installedapps; do   # starts off-screen and keeps running = the QML loads
     rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-app "$a" >/tmp/app-$a.log 2>&1 || rc=$?
     [ $rc -eq 124 ] || { tail -5 /tmp/app-$a.log; fail "app $a does not start (exit $rc)"; }
 done

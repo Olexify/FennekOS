@@ -27,3 +27,19 @@ new = """    PlasmaExtras.MenuItem {   // Fennek OS: this app's permissions in S
 """ + old
 assert t.count(old) == 1, f"ContextMenu.qml: expected 1 of: {old[:80]!r}"
 p.write_text(t.replace(old, new), encoding="utf-8")
+
+# The taskbar's right-click menu is the taskbar's own (src/taskbar-menu): no "Configure Icons-Only Task Manager" and
+# "Show Alternatives" on top of it. (Edit mode still reaches the settings.)
+p = pathlib.Path(sys.argv[1]) / "applets" / "taskmanager" / "qml" / "main.qml"
+t = p.read_text(encoding="utf-8")
+old = """        requestLayout.connect(iconGeometryTimer.restart);
+"""
+new = old + """        Qt.callLater(() => {   // Fennek OS
+            for (const name of ["configure", "alternatives"]) {
+                const action = Plasmoid.internalAction(name);
+                if (action) action.visible = false;
+            }
+        });
+"""
+assert t.count(old) == 1, f"main.qml: expected 1 of: {old[:80]!r}"
+p.write_text(t.replace(old, new), encoding="utf-8")

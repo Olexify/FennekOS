@@ -104,6 +104,21 @@ jobs:
           sudo podman run --rm -e "FENNEK_EDITION=$FENNEK_EDITION" -v "$PWD/test.sh:/t.sh:ro,z" fennek:chunked bash /t.sh
           sudo podman tag fennek:chunked fennek:publish
 
+      # Exactly what users get: install it to a disk, start it with Secure Boot on, sign in, check the desktop.
+      - name: Test in a real VM
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q qemu-system-x86 ovmf ntfs-3g gdisk
+          bash tests/vm-test.sh localhost/fennek:publish "$PWD/vm-out" "$FENNEK_EDITION"
+          sudo rm -rf /mnt/vmtest
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        if: always()
+        with:
+          name: vm-${{ matrix.image }}
+          path: vm-out/
+          if-no-files-found: ignore
+          retention-days: 7
+
       # Publishing + signing never runs for pull requests (a stranger's PR must not publish or sign).
       - name: Publish and sign
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

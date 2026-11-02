@@ -1,0 +1,10 @@
+[Unit]
+Description=Open the computer's Windows drives so they show in Files
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/fennek-windows-drives
+
+[Install]
+WantedBy=graphical-session.target

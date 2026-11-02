@@ -4,6 +4,7 @@ pkexec under its own polkit action (org.fennek.switch-version): a fresh password
 
   fennek-switch-version latest
   fennek-switch-version YYYYMMDD        a nightly build at most MAX_AGE days old and not before the cutoff date
+  fennek-switch-version --edition nvidia|standard    the latest build of that edition (x86-64)
   fennek-switch-version --selftest
 
 Refused: anything that isn't "latest" or a date, builds older than MAX_AGE days, and builds before the cutoff in
@@ -22,6 +23,15 @@ def image(path=EDITION):
             return IMAGE + ("-nvidia" if f.read().strip() == "nvidia" else "")
     except OSError:
         return IMAGE
+
+
+EDITIONS = {"standard": "", "nvidia": "-nvidia"}
+
+
+def edition_cmd(name):
+    return ["bootc", "switch", "--enforce-container-sigpolicy", f"{IMAGE}{EDITIONS[name]}:latest"]
+
+
 MAX_AGE = 45
 CUTOFF = "/usr/share/fennek/oldest-allowed-build"
 
@@ -76,12 +86,16 @@ def selftest():
             assert image(t + "/e") == want, text
         assert image(t + "/missing") == IMAGE
     assert "--enforce-container-sigpolicy" in switch_cmd("latest", "x86_64"), "only signed builds"
+    assert edition_cmd("nvidia")[-1] == IMAGE + "-nvidia:latest" and edition_cmd("standard")[-1] == IMAGE + ":latest"
+    assert "--enforce-container-sigpolicy" in edition_cmd("nvidia"), "only signed builds"
     print("selftest ok")
 
 
 if __name__ == "__main__":
     if sys.argv[1:] == ["--selftest"]:
         selftest()
+    elif len(sys.argv) == 3 and sys.argv[1] == "--edition" and sys.argv[2] in EDITIONS and os.uname().machine == "x86_64":
+        sys.exit(subprocess.run(edition_cmd(sys.argv[2])).returncode)
     elif len(sys.argv) == 2:
         why = allowed(sys.argv[1], datetime.date.today(), cutoff_date())
         if why:

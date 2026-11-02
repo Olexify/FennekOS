@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 # One quiet notification per downloaded system update: "Update ready, restart when it suits you".
 # Started at sign-in and whenever an update finishes downloading (fennek-update-ready.path).
+# And once, when an update didn't start on this computer and Fennek OS went back by itself (fennek-boot-guard).
+back=${FENNEK_ROLLED_BACK:-/var/lib/fennek/boot-guard/rolled-back}
+back_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/rolled-back-notified
+if [ -e "$back" ] && [ "$(cat "$back_seen" 2>/dev/null)" != "$(sha256sum "$back" | cut -c1-16)" ]; then
+    mkdir -p "${back_seen%/*}" && sha256sum "$back" | cut -c1-16 >"$back_seen"
+    [ -z "${FENNEK_DRY_RUN:-}" ] && notify-send -a "Fennek OS" -i fennek-set-updates "The last update didn't start properly" \
+        "Fennek OS went back to the version you had, so nothing is lost. A fixed update will come by itself."
+fi
 staged=${FENNEK_STAGED:-/run/ostree/staged-deployment}
 [ -e "$staged" ] || exit 0
 id=$(sha256sum "$staged" | cut -c1-16)

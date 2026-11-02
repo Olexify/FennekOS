@@ -1,0 +1,206 @@
+#!/usr/bin/python3
+"""Boot guard: an update that doesn't start properly on this computer undoes itself, without anyone having to do a thing.
+
+A new version gets two tries. The boot loader counts them (boot-guard.cfg), so even a version that never gets as far as
+starting anything falls back by itself; a version that starts but brings up no desktop is caught here. Only ever acts on
+a freshly installed update, and only on a computer whose desktop has been seen working before: a PC that never shows a
+desktop (no screen, say) isn't "broken", and an old version is never rolled back on its own.
+
+  fennek-boot-guard arm        at shutdown, right after an update was put in place: give it its tries
+  fennek-boot-guard check      at every start: did this version come up? (no-op on ordinary starts)
+  fennek-boot-guard vet        after an update was downloaded: one that already failed here isn't installed again
+  fennek-boot-guard --selftest
+"""
+import json, os, shutil, subprocess, sys, time
+
+GRUB = "/boot/grub2"
+STATE = "/var/lib/fennek/boot-guard"
+WORKED = STATE + "/desktop-worked"
+ROLLED_BACK = STATE + "/rolled-back"   # JSON {"digest", "version", "when"}: the sign-in notice and "vet" read it
+TRIES = 2
+WAIT = 300        # seconds a new version has to bring up the sign-in screen or a desktop
+STEADY = 30       # ... and keep it up this long
+
+
+def sh(*cmd):
+    return subprocess.run(cmd, capture_output=True, text=True)
+
+
+def parse_env(text):
+    return dict(l.split("=", 1) for l in text.splitlines() if "=" in l and not l.startswith("#"))
+
+
+def read_env():
+    try:
+        with open(GRUB + "/grubenv", encoding="utf-8", errors="replace") as f:
+            return parse_env(f.read())
+    except OSError:
+        return {}
+
+
+def editenv(*args):
+    return sh("grub2-editenv", GRUB + "/grubenv", *args).returncode == 0
+
+
+def install_grub_part(grub=GRUB, ours="/usr/share/fennek/boot-guard.cfg"):
+    """The boot loader's part. custom.cfg is the one file its configuration always reads and updates leave alone."""
+    shutil.copyfile(ours, grub + "/fennek-boot-guard.cfg")
+    custom, line = grub + "/custom.cfg", "source $prefix/fennek-boot-guard.cfg"
+    old = open(custom, encoding="utf-8").read() if os.path.exists(custom) else ""
+    if line not in old:
+        with open(custom, "a", encoding="utf-8") as f:
+            f.write(("" if old.endswith("\n") or not old else "\n") + line + "\n")
+
+
+def deployments():
+    """rpm-ostree's list, in boot order."""
+    try:
+        return json.loads(sh("rpm-ostree", "status", "--json").stdout)["deployments"]
+    except (ValueError, KeyError):
+        return []
+
+
+def plan_back(deps):
+    """Which deployment to make the default again, and what it replaces: (index, the failed one) or None.
+    The previous version: never a downloaded update waiting for its restart."""
+    live = [d for d in deps if not d.get("staged")]
+    booted = next((i for i, d in enumerate(live) if d.get("booted")), None)
+    if booted is None:
+        return None
+    if booted > 0:                 # the boot loader already fell back to this one
+        return booted, live[0]
+    return (1, live[0]) if len(live) > 1 else None
+
+
+def remember_failed(dep):
+    os.makedirs(STATE, exist_ok=True)
+    tmp = ROLLED_BACK + ".new"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump({"digest": dep.get("container-image-reference-digest", ""), "version": dep.get("version", ""),
+                   "when": int(time.time())}, f)
+    os.chmod(tmp, 0o644)
+    os.replace(tmp, ROLLED_BACK)
+
+
+def go_back():
+    """True if the failed version is off the boot order. Clears the tries either way: it had its chance."""
+    plan = plan_back(deployments())
+    done = False
+    if plan:
+        remember_failed(plan[1])
+        done = sh("ostree", "admin", "set-default", str(plan[0])).returncode == 0
+    editenv("unset", "fennek_tries", "fennek_fell_back")
+    return done
+
+
+def desktop_running():
+    """The sign-in screen or someone's desktop: the login service up without restarts, and its compositor running."""
+    props = dict(l.split("=", 1) for l in sh("systemctl", "show", "plasmalogin.service", "-p", "ActiveState", "-p", "NRestarts").stdout.splitlines() if "=" in l)
+    if props.get("ActiveState") != "active" or props.get("NRestarts", "0") not in ("0", ""):
+        return None
+    return sh("pgrep", "-o", "-x", "kwin_wayland").stdout.strip() or None
+
+
+def wait_for_desktop(running=desktop_running, wait=WAIT, steady=STEADY, sleep=time.sleep):
+    """True once the same compositor has stayed up for `steady` seconds."""
+    seen, since, t = None, 0, 0
+    while t <= wait:
+        now = running()
+        if now and now == seen:
+            if t - since >= steady:
+                return True
+        else:
+            seen, since = now, t
+        sleep(5)
+        t += 5
+    return False
+
+
+def check():
+    env = read_env()
+    if "fennek_fell_back" in env:   # the boot loader gave up on the new version: this is the previous one
+        print("the new version didn't start: staying on this one")
+        go_back()
+        return
+    armed = "fennek_tries" in env
+    known = os.path.exists(WORKED)
+    if known and not armed:
+        return
+    if wait_for_desktop():
+        os.makedirs(STATE, exist_ok=True)
+        open(WORKED, "w").close()
+        if armed:
+            editenv("unset", "fennek_tries")
+            print("the new version came up fine")
+    elif armed and known:
+        print("the new version brought up no desktop: going back")
+        if go_back():
+            sh("systemctl", "reboot")
+    elif armed:
+        editenv("unset", "fennek_tries")   # never seen working here: nothing to compare with, nothing to undo
+
+
+def arm():
+    install_grub_part()
+    if not os.path.exists(GRUB + "/grubenv"):
+        editenv("create")
+    editenv("set", f"fennek_tries={TRIES}")
+    editenv("unset", "fennek_fell_back")
+
+
+def vet():
+    try:
+        with open(ROLLED_BACK, encoding="utf-8") as f:
+            bad = json.load(f).get("digest")
+    except (OSError, ValueError):
+        return
+    staged = next((d for d in deployments() if d.get("staged")), None)
+    if bad and staged and staged.get("container-image-reference-digest") == bad:
+        print("this update already failed to start here: not installing it again")
+        sh("rpm-ostree", "cleanup", "--pending")
+
+
+def selftest():
+    import tempfile
+    assert parse_env("# GRUB Environment Block\nfennek_tries=1\nmenu_auto_hide=1\n######\n") == {"fennek_tries": "1", "menu_auto_hide": "1"}
+    new, old, staged = {"version": "new"}, {"version": "old"}, {"version": "next", "staged": True}
+    assert plan_back([dict(new, booted=True), old]) == (1, dict(new, booted=True)), "running the new one: back to the previous"
+    assert plan_back([new, dict(old, booted=True)]) == (1, new), "the boot loader fell back: keep this one"
+    assert plan_back([staged, dict(new, booted=True), old]) == (1, dict(new, booted=True)), "a waiting update doesn't count"
+    assert plan_back([dict(new, booted=True)]) is None, "nothing to go back to"
+    assert plan_back([]) is None
+    # Steady for STEADY seconds: a compositor that keeps restarting (a new process each time) never counts.
+    ticks = {"t": 0}
+    def sleep(s): ticks["t"] += s
+    assert wait_for_desktop(lambda: "100", 60, 30, sleep)
+    ticks["t"] = 0
+    assert not wait_for_desktop(lambda: None, 60, 30, sleep), "never up"
+    ticks["t"] = 0
+    assert not wait_for_desktop(lambda: str(ticks["t"]), 60, 30, sleep), "crashing again and again"
+    ticks["t"] = 0
+    assert wait_for_desktop(lambda: None if ticks["t"] < 20 else "7", 120, 30, sleep), "up a little later"
+    with tempfile.TemporaryDirectory() as t:
+        ours = t + "/ours.cfg"
+        open(ours, "w").write("# guard\n")
+        install_grub_part(t, ours)
+        install_grub_part(t, ours)
+        assert open(t + "/custom.cfg").read().count("fennek-boot-guard.cfg") == 1, "added once"
+        assert open(t + "/fennek-boot-guard.cfg").read() == "# guard\n"
+        open(t + "/custom.cfg", "w").write("menuentry 'mine' {}")   # someone's own entry stays
+        install_grub_part(t, ours)
+        assert open(t + "/custom.cfg").read() == "menuentry 'mine' {}\nsource $prefix/fennek-boot-guard.cfg\n"
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    a = sys.argv[1:]
+    if a == ["--selftest"]:
+        selftest()
+    elif a == ["arm"]:
+        arm()
+    elif a == ["check"]:
+        check()
+    elif a == ["vet"]:
+        vet()
+    else:
+        sys.exit(__doc__)

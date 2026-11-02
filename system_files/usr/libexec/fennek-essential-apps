@@ -6,11 +6,19 @@ stamp=/var/lib/fennek/essential-apps.v3   # new name when the list grows: existi
 declare -A apps=([gwenview]=org.kde.gwenview [okular]=org.kde.okular [haruna]=org.kde.haruna [elisa]=org.kde.elisa
                  [kcalc]=org.kde.kcalc [kwrite]=org.kde.kwrite [ark]=org.kde.ark [kolourpaint]=org.kde.kolourpaint
                  [skanpage]=org.kde.skanpage [kamoso]=org.kde.kamoso [kclock]=org.kde.kclock)
+# Offered once each: one you removed yourself doesn't come back when the list grows. (Computers that got the list
+# before this file existed were offered the eleven above.)
+offered=/var/lib/fennek/essential-apps.offered
+if [ ! -e "$offered" ] && [ -e /var/lib/fennek/essential-apps.v3 ]; then
+    mkdir -p "${offered%/*}" && printf '%s\n' "${apps[@]}" > "$offered"
+fi
 want=()
 for cmd in "${!apps[@]}"; do
+    grep -qsx "${apps[$cmd]}" "$offered" && continue
     command -v "$cmd" >/dev/null || flatpak info --system "${apps[$cmd]}" >/dev/null 2>&1 || want+=("${apps[$cmd]}")
 done
 [ "${1:-}" = --list ] && { printf '%s\n' "${want[@]}"; exit 0; }
 flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || exit 1
 [ ${#want[@]} -eq 0 ] || flatpak install --system -y --noninteractive flathub "${want[@]}" || exit 1
 mkdir -p "${stamp%/*}" && touch "$stamp"
+printf '%s\n' "${apps[@]}" >> "$offered"

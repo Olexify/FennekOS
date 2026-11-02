@@ -64,6 +64,17 @@ if [ "${FENNEK_EDITION:-}" = nvidia ]; then
     d=$(ls /usr/share/applications/*nvidia-settings*.desktop 2>/dev/null | head -1)
     [ -n "$d" ] || { echo "nvidia-settings has no Start entry: revisit"; exit 1; }
     sed -i -e 's/^Name=.*/Name=NVIDIA Settings/' -e '/^Name\[/d' -e '/^NoDisplay=/d' "$d"
+    # GPU Control (LACT): fan curves, power limit, clocks. Not in Fedora: pinned upstream RPM, checksummed. Its system
+    # service stays off until someone opens GPU Control and agrees (fennek-gpu-control).
+    LACT_VER=0.10.1
+    LACT_SHA256=a5d91090ec1dc4333bf70d889f0af8484b77b104038db860b9d424c4bdd15b30
+    curl -fsSL -o /tmp/lact.rpm "https://github.com/ilya-zlobintsev/LACT/releases/download/v${LACT_VER}/lact-${LACT_VER}-0.x86_64.fedora-44.rpm"
+    echo "${LACT_SHA256}  /tmp/lact.rpm" | sha256sum -c -
+    dnf -y install /tmp/lact.rpm && rm /tmp/lact.rpm
+    d=/usr/share/applications/io.github.ilya_zlobintsev.LACT.desktop
+    [ -f "$d" ] || { echo "GPU Control has no Start entry: revisit"; exit 1; }
+    sed -i -e 's/^Name=.*/Name=GPU Control/' -e '/^Name\[/d' -e 's|^Exec=.*|Exec=/usr/libexec/fennek-gpu-control|' \
+        -e 's/^Keywords=.*/Keywords=GPU;graphics;NVIDIA;fan;clock;overclock;undervolt;power limit;/' "$d"
     # NV Broadcast (on request: Start > NV Broadcast, fennek-get-nvbroadcast) needs these from the system: a virtual
     # camera (v4l2loopback, set up below), its window (GTK 4, libadwaita, GStreamer, Python GObject), the tray icon
     # and PipeWire's tools for the virtual microphone. The app itself and its GPU libraries go in the user's home.
@@ -683,10 +694,11 @@ CursorTheme=Fennek-Cursors
 EOF
 
 # Dual boot: "Restart to Windows" appears when a Windows boot entry exists.
+systemctl enable fennek-boot-guard.service fennek-boot-guard-vet.path
 systemctl enable fennek-detect-windows.service fennek-essential-apps.service fennek-greeter-lang.service
 
 # Instant file search feeds the Start menu / KRunner.
-systemctl --global enable fennek-search.service fennek-usage.service fennek-update-ready.service fennek-update-ready.path fennek-shortcuts-update.service fennek-app-names.service fennek-backup.timer fennek-power-feedback.service fennek-new-apps.path fennek-new-apps.service
+systemctl --global enable fennek-search.service fennek-windows-drives.service fennek-graphics-check.service fennek-usage.service fennek-update-ready.service fennek-update-ready.path fennek-shortcuts-update.service fennek-app-names.service fennek-backup.timer fennek-power-feedback.service fennek-new-apps.path fennek-new-apps.service
 
 # Classic command names (calc, notepad, control, taskmgr, ncpa.cpl...) for the Run box and the terminal.
 for c in $(sed -n 's/^    \([a-z0-9.| ]*\)) .*/\1/p' /usr/libexec/fennek-classic-command | tr -d ' ' | tr '|' ' '); do

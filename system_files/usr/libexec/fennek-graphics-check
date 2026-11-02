@@ -1,0 +1,116 @@
+#!/usr/bin/python3
+"""What this computer's graphics card still needs. Says something only when there's something to do.
+  fennek-graphics-check           at sign-in: a notice, at most (NVIDIA edition: Secure Boot's one-time step; main
+                                  edition on a computer with an NVIDIA card: tells about the NVIDIA edition, once)
+  fennek-graphics-check --json    for the Updates page: {"edition", "nvidia", "secure_boot"}
+  fennek-graphics-check --selftest
+secure_boot: off | ok (the driver's signing key is trusted) | needs-key | pending (asked; a restart finishes it)
+"""
+import glob, json, os, re, subprocess, sys
+
+EDITION = "/usr/share/fennek/edition"
+KEY = "/etc/pki/akmods/certs/akmods-ublue.der"
+PCI = "/sys/bus/pci/devices"
+
+
+def has_nvidia(pci=PCI):
+    for dev in glob.glob(pci + "/*"):
+        try:
+            with open(dev + "/vendor") as v, open(dev + "/class") as c:
+                if v.read().strip() == "0x10de" and c.read().strip().startswith("0x03"):
+                    return True
+        except OSError:
+            pass
+    return False
+
+
+def edition(path=EDITION):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read().strip()
+    except OSError:
+        return ""
+
+
+def secure_boot_state(sb_text, key_text):
+    if "SecureBoot enabled" not in sb_text:
+        return "off"
+    if "enrollment request" in key_text:
+        return "pending"
+    if "is already enrolled" in key_text:
+        return "ok"
+    return "needs-key"
+
+
+def mokutil(*args):
+    try:
+        r = subprocess.run(["mokutil", *args], capture_output=True, text=True, timeout=30)
+        return r.stdout + r.stderr
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def secure_boot():
+    return secure_boot_state(mokutil("--sb-state"), mokutil("--test-key", KEY))
+
+
+def notify(title, text, action=None):
+    cmd = ["notify-send", "-a", "Fennek OS", "-i", "fennek-set-display"]
+    if action:
+        cmd.append(f"--action=go={action}")
+    r = subprocess.run(cmd + [title, text], capture_output=True, text=True)
+    return r.stdout.strip() == "go"
+
+
+def at_sign_in():
+    if not has_nvidia():
+        return
+    if edition() == "nvidia":
+        state = secure_boot()
+        if state == "needs-key" and notify("One step left for your NVIDIA card",
+                                           "Secure Boot is on, so this computer first has to trust the NVIDIA driver's "
+                                           "signature. It takes a minute and one restart.", "Set it up"):
+            os.execv("/usr/libexec/fennek-secure-boot-setup", ["fennek-secure-boot-setup"])
+        if state == "pending":
+            notify("Restart to finish your NVIDIA setup", "A blue screen asks you to confirm the driver's key: "
+                   "Enroll MOK, Continue, Yes, then the password fennek.")
+        return
+    stamp = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state"), "fennek/nvidia-edition-noticed")
+    if os.path.exists(stamp):
+        return
+    os.makedirs(os.path.dirname(stamp), exist_ok=True)
+    open(stamp, "w").close()
+    if notify("This computer has an NVIDIA graphics card", "The NVIDIA edition of Fennek OS brings NVIDIA's own driver: "
+              "full speed for games and video apps.", "Show me"):
+        subprocess.run(["fennek-app", "updates"])
+
+
+def selftest():
+    import tempfile
+    assert secure_boot_state("SecureBoot disabled\n", "") == "off"
+    assert secure_boot_state("", "") == "off", "no answer: nothing to ask of anyone"
+    assert secure_boot_state("SecureBoot enabled\n", "k.der is not enrolled\n") == "needs-key"
+    assert secure_boot_state("SecureBoot enabled\n", "k.der is already enrolled\n") == "ok"
+    assert secure_boot_state("SecureBoot enabled\n", "k.der is already in the enrollment request\n") == "pending"
+    with tempfile.TemporaryDirectory() as t:
+        for name, vendor, cls in (("a", "0x8086", "0x030000"), ("b", "0x10de", "0x040300")):   # Intel graphics, NVIDIA sound
+            os.makedirs(f"{t}/{name}")
+            open(f"{t}/{name}/vendor", "w").write(vendor + "\n")
+            open(f"{t}/{name}/class", "w").write(cls + "\n")
+        assert not has_nvidia(t)
+        os.makedirs(f"{t}/c")
+        open(f"{t}/c/vendor", "w").write("0x10de\n")
+        open(f"{t}/c/class", "w").write("0x030200\n")   # 3D controller: laptops' NVIDIA cards
+        assert has_nvidia(t)
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["--selftest"]:
+        selftest()
+    elif sys.argv[1:] == ["--json"]:
+        print(json.dumps({"edition": edition(), "nvidia": has_nvidia(), "secure_boot": secure_boot()}))
+    elif not sys.argv[1:]:
+        at_sign_in()
+    else:
+        sys.exit(__doc__)

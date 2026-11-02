@@ -1,0 +1,13 @@
+[Unit]
+Description=Did this version of Fennek OS start properly? If a new one didn't, go back
+ConditionPathExists=/run/ostree-booted
+ConditionKernelCommandLine=!rd.live.image
+After=plasmalogin.service
+
+[Service]
+# Started and running in the background while it watches: nothing waits for it.
+Type=exec
+ExecStart=/usr/libexec/fennek-boot-guard check
+
+[Install]
+WantedBy=multi-user.target

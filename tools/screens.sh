@@ -71,6 +71,7 @@ fennek-app run >/dev/null 2>&1 & sleep 4; xdo type --delay 80 "c"; shot 34-run 2
 fennek-app settings kcm_mouse >/dev/null 2>&1 & shot 33-settings-page 8; close
 fennek-app settings personalize >/dev/null 2>&1 & shot 35-personalize 8; close
 fennek-app settings permissions >/dev/null 2>&1 & shot 38-permissions 8; close
+fennek-app settings installedapps >/dev/null 2>&1 & shot 43-installed-apps 8; close
 fennek-app taskmanager >/dev/null 2>&1 & shot 39-task-manager 8; close
 fennek-app taskmanager performance >/dev/null 2>&1 & shot 40-task-manager-performance 10; close
 fennek-app taskmanager details >/dev/null 2>&1 & shot 41-task-manager-details 8; close

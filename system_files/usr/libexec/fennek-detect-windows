@@ -1,0 +1,15 @@
+#!/usr/bin/bash
+# At every start, on dual-boot computers: "Restart to Windows" shows in Start (TryExec in its Start entry).
+# Once: the hardware clock keeps local time the way Windows expects, so the time doesn't jump when you switch between
+# the two. (Change it back any time: timedatectl set-local-rtc 0. Fennek leaves it alone after this first time.)
+mkdir -p /run/fennek
+if ! /usr/libexec/fennek-reboot-windows-helper --check; then
+    rm -f /run/fennek/has-windows
+    exit 0
+fi
+ln -sf /usr/bin/true /run/fennek/has-windows
+stamp=/var/lib/fennek/windows-clock-set
+if [ ! -e "$stamp" ]; then
+    timedatectl set-local-rtc 1 && mkdir -p "${stamp%/*}" && touch "$stamp"
+fi
+exit 0

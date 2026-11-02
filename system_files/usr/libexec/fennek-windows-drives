@@ -1,0 +1,47 @@
+#!/usr/bin/bash
+# At sign-in: the computer's own NTFS drives (Windows (C:) and its data partitions) open by themselves and show in Files
+# like any other drive, for people allowed to administer this computer. Read-only when Windows isn't fully shut down:
+# then it keeps files open in hibernation (Fast Startup), and writing to the drive now could damage them.
+#   fennek-windows-drives
+#   fennek-windows-drives --selftest
+state=${XDG_STATE_HOME:-$HOME/.local/state}/fennek
+
+# stdout of: udevadm info -q property DEVICE -> does this drive open read-only from the start?
+read_only_from_start() { grep -qx 'FENNEK_NTFS_READONLY=1' <<<"$1"; }
+ours() { grep -qx 'FENNEK_NTFS=1' <<<"$1"; }
+
+if [ "${1:-}" = --selftest ]; then
+    p=$'DEVNAME=/dev/sda3\nFENNEK_NTFS=1\nFENNEK_NTFS_READONLY=1'
+    ours "$p" && read_only_from_start "$p" || exit 1
+    ! ours $'DEVNAME=/dev/sdb1\nID_FS_TYPE=ntfs' || exit 1
+    ! read_only_from_start $'FENNEK_NTFS=1' || exit 1
+    echo "selftest ok"; exit 0
+fi
+
+read_only=""
+for dev in $(lsblk -nrpo PATH,FSTYPE | awk '$2 == "ntfs" { print $1 }'); do
+    props=$(udevadm info -q property "$dev") || continue
+    ours "$props" || continue
+    [ -n "$(lsblk -nro MOUNTPOINTS "$dev" | tr -d '[:space:]')" ] && continue
+    if read_only_from_start "$props"; then
+        udisksctl mount --no-user-interaction -b "$dev" -o ro >/dev/null 2>&1 && read_only=1
+    elif ! udisksctl mount --no-user-interaction -b "$dev" >/dev/null 2>&1; then
+        # Not cleanly closed by Windows: the kernel won't write to it. Reading is still safe.
+        udisksctl mount --no-user-interaction -b "$dev" -o ro >/dev/null 2>&1 && read_only=1
+    fi
+done
+
+# Once per start of the computer, not at every sign-in.
+boot=$(cat /proc/sys/kernel/random/boot_id)
+if [ -n "$read_only" ] && [ "$(cat "$state/windows-read-only-noticed" 2>/dev/null)" != "$boot" ]; then
+    mkdir -p "$state" && echo "$boot" >"$state/windows-read-only-noticed"
+    notify-send -a "Files" -i drive-harddisk "Windows drive is read-only for now" \
+        "Windows wasn't fully shut down, so you can open its files here but not change them. To change them: start Windows, hold Shift and click Shut down." || true
+fi
+# BitLocker: once ever. The drive is there, and Files asks for its recovery key when you open it.
+if [ ! -e "$state/bitlocker-noticed" ] && lsblk -nro FSTYPE | grep -qx crypto_BITLK; then
+    mkdir -p "$state" && touch "$state/bitlocker-noticed"
+    notify-send -a "Files" -i drive-harddisk-encrypted "A drive is locked with BitLocker" \
+        "To open it here, click it in Files and type its BitLocker recovery key." || true
+fi
+exit 0

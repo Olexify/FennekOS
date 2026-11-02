@@ -16,7 +16,7 @@ QQC2.ApplicationWindow {
     color: Kirigami.Theme.backgroundColor
 
     readonly property var links: [
-        ["Install or remove apps", "plasmadiscover", "plasma-discover"],
+        ["Installed apps", "fennek-set-defaultapps", "fennek-app installedapps"],
         ["Power options", "preferences-system-power-management", "fennek-app settings kcm_powerdevilprofilesconfig"],
         ["System", "hwinfo", "kinfocenter"],
         ["Network connections", "network-wired", "fennek-app settings kcm_networkmanagement"],

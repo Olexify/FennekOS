@@ -1,0 +1,165 @@
+#!/usr/bin/python3
+"""Settings > Apps > Installed apps: everything you installed yourself, how big it is, one button to remove it.
+
+  fennek-installed-apps list                              JSON: [{"id", "name", "kind", "size", "data", "icon"}]
+                                                          kind: store | extra | classic
+  fennek-installed-apps uninstall store APP-ID [--data]   --data: its settings and saved data go too
+  fennek-installed-apps uninstall extra NAME              (NV Broadcast)
+  fennek-installed-apps uninstall classic SHA256          a sandboxed classic program: its box, what it remembered;
+                                                          ~/Sandbox/<program> stays: that's your own files
+  fennek-installed-apps --selftest
+"""
+import json, os, re, shutil, subprocess, sys
+from pathlib import Path
+
+HOME = Path.home()
+DATA = Path(os.environ.get("XDG_DATA_HOME") or HOME / ".local/share")
+CFG = Path(os.environ.get("XDG_CONFIG_HOME") or HOME / ".config") / "fennek"
+BOXES = DATA / "fennek" / "sandboxes"
+APP_ID = re.compile(r"^[A-Za-z0-9_.-]{3,255}$")
+DIGEST = re.compile(r"^[0-9a-f]{64}$")
+UNITS = {"B": 1, "bytes": 1, "byte": 1, "kB": 1e3, "KB": 1e3, "MB": 1e6, "GB": 1e9, "TB": 1e12}
+# Removed: its "get it" entry comes back to Start, so it can be installed again.
+GET_ENTRY = {"org.libreoffice.LibreOffice": "fennek-get-libreoffice", "io.mpv.Mpv": "fennek-get-mpv",
+             "org.mozilla.Thunderbird": "fennek-get-thunderbird", "com.dec05eba.gpu_screen_recorder": "fennek-get-gpu-screen-recorder"}
+EXTRAS = {"nvbroadcast": ("NV Broadcast", DATA / "fennek" / "nvbroadcast", "camera-web", ["/usr/libexec/fennek-get-nvbroadcast", "--uninstall"])}
+
+
+def parse_size(text):
+    """Flatpak's "1.2 GB" (with a normal or a non-breaking space) -> bytes."""
+    m = re.fullmatch(r"\s*([\d.,]+)[\s ]*([A-Za-z]+)\s*", text or "")
+    if not m or m.group(2) not in UNITS:
+        return 0
+    return int(float(m.group(1).replace(",", ".")) * UNITS[m.group(2)])
+
+
+def parse_flatpak(output):
+    """`flatpak list --app --columns=application,name,size,installation` -> apps, one per id."""
+    apps = {}
+    for line in output.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 4 or not APP_ID.match(parts[0]) or parts[0] in apps:
+            continue
+        apps[parts[0]] = {"id": parts[0], "name": parts[1] or parts[0], "kind": "store", "size": parse_size(parts[2]),
+                          "icon": parts[0], "where": parts[3]}
+    return list(apps.values())
+
+
+def folder_size(path):
+    total = 0
+    for base, dirs, files in os.walk(path):
+        for f in files:
+            try:
+                total += os.lstat(os.path.join(base, f)).st_size
+            except OSError:
+                pass
+    return total
+
+
+def run(cmd):
+    return subprocess.run(cmd, capture_output=True, text=True).stdout
+
+
+def box_of(digest, boxes=BOXES):
+    """The sandboxed program's own folder: <name>-<first 8 of its fingerprint>, directly inside the boxes folder."""
+    if not DIGEST.match(digest) or not boxes.is_dir():
+        return None
+    for d in boxes.iterdir():
+        if d.name.endswith("-" + digest[:8]) and not d.is_symlink() and d.is_dir():
+            return d
+    return None
+
+
+def classic_programs():
+    out = []
+    names = CFG / "exe-names"
+    if not names.is_file():
+        return out
+    for line in names.read_text(encoding="utf-8", errors="replace").split("\n"):
+        digest, _, path = line.partition("\t")
+        box = box_of(digest)
+        if box and path.startswith("/"):
+            out.append({"id": digest, "name": Path(path).name, "kind": "classic", "size": folder_size(box),
+                        "icon": "application-x-ms-dos-executable"})
+    return out
+
+
+def listing():
+    apps = parse_flatpak(run(["flatpak", "list", "--app", "--columns=application,name,size,installation"]))
+    for a in apps:
+        a["data"] = folder_size(HOME / ".var/app" / a["id"])
+    for key, (name, path, icon, _) in EXTRAS.items():
+        if path.is_dir():
+            apps.append({"id": key, "name": name, "kind": "extra", "size": folder_size(path), "icon": icon})
+    apps += classic_programs()
+    return sorted(apps, key=lambda a: a["name"].lower())
+
+
+def forget(digest):
+    """A removed classic program leaves no remembered choices behind: the same file would ask again."""
+    for name in ("trusted-exes", "exe-choices", "offline-exes", "exe-folders", "exe-names"):
+        f = CFG / name
+        if f.is_file():
+            kept = [l for l in f.read_text(encoding="utf-8", errors="replace").split("\n") if l and not l.startswith(digest)]
+            tmp = f.with_name(name + ".new")
+            tmp.write_text("".join(l + "\n" for l in kept), encoding="utf-8")
+            os.replace(tmp, f)
+
+
+def uninstall(args):
+    if len(args) >= 2 and args[0] == "store" and APP_ID.match(args[1]) and args[2:] in ([], ["--data"]):
+        app = args[1]
+        info = run(["flatpak", "list", "--app", "--columns=application,installation"])
+        where = "--user" if f"{app}\tuser" in info and f"{app}\tsystem" not in info else "--system"
+        cmd = ["flatpak", "uninstall", where, "--noninteractive", "-y", app]
+        if subprocess.run(cmd).returncode:
+            return 1
+        if args[2:] == ["--data"]:
+            data = HOME / ".var/app" / app
+            if data.is_dir() and not data.is_symlink():
+                shutil.rmtree(data)
+        entry = GET_ENTRY.get(app)
+        if entry:
+            (DATA / "applications" / (entry + ".desktop")).unlink(missing_ok=True)
+        return 0
+    if len(args) == 2 and args[0] == "extra" and args[1] in EXTRAS:
+        return subprocess.run(EXTRAS[args[1]][3]).returncode
+    if len(args) == 2 and args[0] == "classic" and DIGEST.match(args[1]):
+        box = box_of(args[1])
+        if box:
+            shutil.rmtree(box)
+        forget(args[1])
+        return 0
+    print(__doc__, file=sys.stderr)
+    return 2
+
+
+def selftest():
+    import tempfile
+    assert parse_size("1.2 GB") == 1200000000 and parse_size("352.0 MB") == 352000000 and parse_size("") == 0 and parse_size("x") == 0
+    apps = parse_flatpak("org.kde.okular\tOkular\t120.5 MB\tsystem\norg.kde.okular\tOkular\t120.5 MB\tuser\n../evil\tx\t1 MB\tuser\nshort\n")
+    assert [a["id"] for a in apps] == ["org.kde.okular"] and apps[0]["size"] == 120500000 and apps[0]["where"] == "system"
+    with tempfile.TemporaryDirectory() as t:
+        boxes = Path(t)
+        d = "a" * 64
+        (boxes / ("setup-" + d[:8])).mkdir()
+        (boxes / "other-12345678").mkdir()
+        assert box_of(d, boxes).name == "setup-" + d[:8]
+        assert box_of("b" * 64, boxes) is None
+        assert box_of("../../" + d, boxes) is None, "only real fingerprints"
+        (boxes / "link-bbbbbbbb").symlink_to(boxes / "other-12345678")
+        assert box_of("b" * 64, boxes) is None, "a link is never followed"
+    assert uninstall(["store", "../evil"]) == 2 and uninstall(["extra", "nope"]) == 2 and uninstall(["classic", "abc"]) == 2
+    print("selftest ok")
+
+
+if __name__ == "__main__":
+    a = sys.argv[1:]
+    if a == ["--selftest"]:
+        selftest()
+    elif a == ["list"]:
+        print(json.dumps(listing()))
+    elif a[:1] == ["uninstall"]:
+        sys.exit(uninstall(a[1:]))
+    else:
+        sys.exit(__doc__)

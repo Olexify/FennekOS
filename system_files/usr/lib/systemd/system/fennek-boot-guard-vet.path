@@ -1,0 +1,9 @@
+[Unit]
+Description=Check each downloaded update against the ones that failed to start here
+
+[Path]
+PathChanged=/run/ostree/staged-deployment
+Unit=fennek-boot-guard-vet.service
+
+[Install]
+WantedBy=multi-user.target

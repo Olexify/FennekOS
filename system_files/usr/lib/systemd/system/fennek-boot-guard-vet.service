@@ -1,0 +1,6 @@
+[Unit]
+Description=Don't install again an update that already failed to start here
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/fennek-boot-guard vet

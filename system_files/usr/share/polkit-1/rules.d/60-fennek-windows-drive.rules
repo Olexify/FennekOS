@@ -1,0 +1,9 @@
+// People who administer this computer open its own NTFS drives (Windows and its data partitions) without a password,
+// like the C: drive on a classic desktop. Other accounts still can't: their files are only protected by Windows itself.
+polkit.addRule(function (action, subject) {
+    if (action.id == "org.freedesktop.udisks2.filesystem-mount-system"
+            && action.lookup("id.type") == "ntfs"
+            && subject.local && subject.active && subject.isInGroup("wheel")) {
+        return polkit.Result.YES;
+    }
+});

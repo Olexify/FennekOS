@@ -1,10 +1,11 @@
 [Unit]
-Description=Show "Restart to Windows" on dual-boot computers
+Description=Dual-boot computers: "Restart to Windows" in Start, clock in step with Windows
 ConditionPathExists=/sys/firmware/efi
+After=dbus.service
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c 'mkdir -p /run/fennek && if /usr/libexec/fennek-reboot-windows-helper --check; then ln -sf /usr/bin/true /run/fennek/has-windows; else rm -f /run/fennek/has-windows; fi'
+ExecStart=/usr/libexec/fennek-detect-windows
 
 [Install]
 WantedBy=multi-user.target

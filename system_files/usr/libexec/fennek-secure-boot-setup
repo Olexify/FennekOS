@@ -1,0 +1,21 @@
+#!/usr/bin/bash
+# NVIDIA edition with Secure Boot on: the computer only loads drivers it trusts, and NVIDIA's driver here is signed with
+# Universal Blue's key. This explains the one-time step, asks the firmware to trust that key at the next start, and
+# offers the restart. Started from the notice at sign-in and from Settings > Updates.
+title="NVIDIA graphics"
+kdialog --title "$title" --continue-label "Continue" --warningcontinuecancel "Secure Boot is on, so this computer only starts drivers it trusts. To trust the NVIDIA driver's signature:
+
+1. Click Continue and enter your password.
+2. Restart. A blue screen appears: press a key to start.
+3. Choose Enroll MOK, then Continue, then Yes.
+4. Type the password: fennek
+5. Choose Reboot.
+
+You only do this once. The password is only for this blue screen: it isn't your account's." || exit 0
+if ! pkexec /usr/libexec/fennek-secure-boot-helper; then
+    kdialog --title "$title" --sorry "That didn't work, nothing was changed. You can try again from Settings > Update & Recovery > Updates."
+    exit 1
+fi
+kdialog --title "$title" --yes-label "Restart now" --no-label "Later" --yesno "All set. After the restart, on the blue screen: press a key, Enroll MOK, Continue, Yes, type fennek, Reboot." \
+    && exec systemctl reboot
+exit 0

@@ -1,0 +1,9 @@
+#!/usr/bin/bash
+# Root (polkit action org.fennek.secure-boot, a fresh password every time). No arguments: only ever this one key, the one
+# that signs the drivers in this image. The firmware's own blue screen (MokManager) asks for confirmation at the next
+# start, with a person at the keyboard; the password only confirms that screen and isn't a secret.
+set -eu
+key=/etc/pki/akmods/certs/akmods-ublue.der
+[ "$#" -eq 0 ] && [ -f "$key" ]
+mokutil --timeout -1   # the blue screen waits for a person, instead of moving on after 10 seconds
+printf 'fennek\nfennek\n' | mokutil --import "$key"

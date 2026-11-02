@@ -1,0 +1,11 @@
+#!/usr/bin/bash
+# "GPU Control" in Start (NVIDIA edition; LACT): fan curves, power limit, clocks. Its small system service (the part that
+# may change the card's settings) doesn't run until someone wants it: the first time, this asks, and then it stays on so
+# your settings apply at every start.
+if ! systemctl is-active -q lactd.service; then
+    kdialog --title "GPU Control" --continue-label "Turn it on" --warningcontinuecancel "GPU Control needs a small system service to read your graphics card and apply fan and power settings.
+
+It stays on from now on, so your settings apply at every start. To turn it off again, in a terminal: systemctl disable --now lactd" || exit 0
+    systemctl enable --now lactd.service || exit 1   # asks for your password
+fi
+exec lact gui

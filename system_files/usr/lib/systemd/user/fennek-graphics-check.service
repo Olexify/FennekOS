@@ -1,0 +1,9 @@
+[Unit]
+Description=Tell when the graphics card still needs something
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/libexec/fennek-graphics-check
+
+[Install]
+WantedBy=graphical-session.target

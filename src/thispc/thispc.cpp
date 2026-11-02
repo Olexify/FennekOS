@@ -166,7 +166,8 @@ QList<Item> items()
         if (!s.isValid() || !s.isReady() || s.device() == mine.device()
             || !(root.startsWith(QLatin1String("/run/media/")) || root.startsWith(QLatin1String("/media/")) || root.startsWith(QLatin1String("/mnt/"))))
             continue;
-        const QString label = s.name().isEmpty() ? QDir(root).dirName() : s.name();
+        const QString dir = QDir(root).dirName();
+        const QString label = s.name().isEmpty() || dir.startsWith(QLatin1String("Windows (")) ? dir : s.name();
         out.append({QStringLiteral("@drive-%1").arg(++n), describe(label, s), usageIcon(s),
                     QStringLiteral("inode/x-fennek-drive"), root});
     }

@@ -10,7 +10,8 @@ here=$(cd "$(dirname "$0")" && pwd)
 work=${FENNEK_VM_WORK:-/mnt/vmtest}
 sudo mkdir -p "$work" "$out" && sudo chown -R "$(id -u)" "$work" "$out"
 share=$work/share; rm -rf "$share"; mkdir -p "$share/out"
-cp "$here/vm-inside.sh" "$share/"; printf '%s' "$edition" > "$share/edition"
+cp "$here/vm-inside.sh" "$here/vm-rollback.sh" "$share/"; printf '%s' "$edition" > "$share/edition"
+[ -n "${FENNEK_VM_ROLLBACK:-}" ] && touch "$share/rollback-wanted"
 stage() { echo "::group::$*"; }
 end() { echo "::endgroup::"; }
 die() { echo "::error::VM test: $*"; cp -a "$share/out/." "$out/" 2>/dev/null; [ -f "$work/serial.log" ] && tail -c 6000 "$work/serial.log" | tr -cd '[:print:]\n'; exit 1; }
@@ -32,6 +33,19 @@ sudo podman run --rm --privileged --pid=host --security-opt label=disable \
 sudo chown "$(id -u)" "$work/disk.raw"
 end
 
+# A second disk as if Windows lived on this computer: the Windows drive, closed cleanly, and a data drive it left
+# hibernated (Fast Startup).
+stage "Windows-like disk"
+truncate -s 400M "$work/ntfs.raw"
+sgdisk -n 1:0:+180M -t 1:0700 -n 2:0:+180M -t 2:0700 "$work/ntfs.raw" >/dev/null
+loop=$(sudo losetup -Pf --show "$work/ntfs.raw") && sudo mkntfs -Q -L OS "${loop}p1" >/dev/null && sudo mkntfs -Q -L Data "${loop}p2" >/dev/null \
+    || die "couldn't make the test disk"
+mkdir -p "$work/m"
+sudo mount -t ntfs-3g "${loop}p1" "$work/m" && sudo mkdir -p "$work/m/Windows/System32" && sudo umount "$work/m" || die "test disk: Windows folder"
+sudo mount -t ntfs-3g "${loop}p2" "$work/m" && printf 'HIBR\0\0\0\0' | sudo tee "$work/m/hiberfil.sys" >/dev/null && sudo umount "$work/m" || die "test disk: hibernation file"
+sudo losetup -d "$loop"
+end
+
 cat > "$work/vmtest.service" <<'EOF'
 [Unit]
 Description=Fennek VM test
@@ -49,7 +63,7 @@ qemu-system-x86_64 -name fennek-vm -machine q35,smm=on,accel=kvm -global driver=
     -cpu host -m 8192 -smp 4 -display none -serial "file:$work/serial.log" -nic none \
     -drive "if=pflash,format=raw,unit=0,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.secboot.fd" \
     -drive "if=pflash,format=raw,unit=1,file=$work/vars.fd" \
-    -drive "if=virtio,format=raw,file=$work/disk.raw" \
+    -drive "if=virtio,format=raw,file=$work/disk.raw" -drive "if=virtio,format=raw,file=$work/ntfs.raw" \
     -device virtio-vga,xres=1600,yres=900,edid=on -device qemu-xhci -device usb-tablet -device usb-kbd \
     -virtfs "local,path=$share,mount_tag=t,security_model=none" \
     -smbios "type=11,value=io.systemd.credential.binary:systemd.extra-unit.fennek-vmtest.service=$cred" \
@@ -103,4 +117,17 @@ cp -a "$share/out/." "$out/"
 cat "$out/report.txt"
 end
 [ "$(cat "$out/result" 2>/dev/null)" = pass ] || die "$(cat "$out/result" 2>/dev/null || echo 'no result')"
+
+if [ -n "${FENNEK_VM_ROLLBACK:-}" ]; then
+    stage "A bad update undoes itself"
+    for ((s = 0; s < 2400; s += 15)); do
+        [ -e "$share/out/rollback-ok" ] && break
+        [ -e "$share/out/rollback-failed" ] && { shot rollback-failed; die "$(cat "$share/out/rollback-failed")"; }
+        kill -0 $vm 2>/dev/null || die "the VM stopped during the rollback test"
+        sleep 15
+    done
+    [ -e "$share/out/rollback-ok" ] || { shot rollback-stuck; die "rollback test stuck at phase $(cat "$share/out/phase")"; }
+    cp -a "$share/out/." "$out/"
+    end
+fi
 echo "VM test passed."

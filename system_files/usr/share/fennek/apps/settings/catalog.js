@@ -61,8 +61,9 @@ var categories = [
    {"name": "Pointers & launch feedback", "kcm": "kcm_cursortheme", "icon": "fennek-set-pointer", "desc": "Pointer style and size; busy pointer or bouncing icon while an app starts"},
    {"name": "Restore taskbar & Start", "cmd": "/usr/libexec/fennek-reset-layout", "icon": "fennek-set-restore", "desc": "Back to the default layout if something got moved or removed"}
   ]},
- {"name": "Apps", "icon": "fennek-settings-apps", "sub": "Default apps, startup apps",
+ {"name": "Apps", "icon": "fennek-settings-apps", "sub": "Installed apps, default apps, startup apps",
   "items": [
+   {"name": "Installed apps", "page": "installedapps", "icon": "fennek-set-defaultapps", "desc": "See what you added, how big it is, remove it", "keys": "uninstall remove delete programs features add installed size"},
    {"name": "Default apps", "kcm": "kcm_componentchooser", "icon": "fennek-set-defaultapps", "desc": "Browser, email, music player"},
    {"name": "File types", "kcm": "kcm_filetypes", "icon": "fennek-set-filetypes", "desc": "Which app opens which file", "optional": true},
    {"name": "Startup apps", "kcm": "kcm_autostart", "icon": "fennek-set-startup", "desc": "Apps that start when you sign in"},
@@ -71,7 +72,7 @@ var categories = [
    {"name": "Spell check", "kcm": "kcm_spellchecking", "icon": "fennek-set-spellcheck", "desc": "Languages, autocorrect", "optional": true},
    {"name": "Search", "kcm": "kcm_plasmasearch", "icon": "fennek-set-search", "desc": "What Start and the Run box find", "optional": true},
    {"name": "Web search shortcuts", "kcm": "kcm_webshortcuts", "icon": "fennek-set-search", "desc": "Type gg:fennek to search the web from Start", "optional": true},
-   {"name": "Install or remove apps", "cmd": "plasma-discover", "icon": "plasmadiscover", "desc": "Store"}
+   {"name": "Get more apps", "cmd": "plasma-discover", "icon": "plasmadiscover", "desc": "Store"}
   ]},
  {"name": "Accounts", "icon": "fennek-settings-accounts", "sub": "Your account, other people",
   "items": [
