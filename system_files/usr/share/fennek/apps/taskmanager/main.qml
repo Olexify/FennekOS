@@ -144,9 +144,10 @@ QQC2.ApplicationWindow {
             onTriggered: root.refresh() }
     property var seen: [0]          // tabs shown so far (their pages are loaded then)
     // fennek-app taskmanager performance|app-history|startup|users|details|services: opens on that tab
-    Component.onCompleted: {
-        const i = ["processes", "performance", "app-history", "startup", "users", "details", "services"].indexOf(Qt.application.arguments[2] || "")
-        if (i > 0) tabs.currentIndex = i
+    Component.onCompleted: openArguments(Qt.application.arguments)
+    function openArguments(args) {
+        const i = ["processes", "performance", "app-history", "startup", "users", "details", "services"].indexOf(args[2] || "")
+        if (i >= 0) tabs.currentIndex = i
     }
     onTabChanged: { message = ""; if (seen.indexOf(tab) < 0) seen = seen.concat([tab]); refresh() }
 

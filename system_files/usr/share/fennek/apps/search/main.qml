@@ -65,8 +65,9 @@ QQC2.ApplicationWindow {
         }
     }
     Timer { id: later; interval: 220; onTriggered: root.run() }
-    Component.onCompleted: {
-        const start = Qt.application.arguments.slice(2).join(" ")
+    Component.onCompleted: openArguments(Qt.application.arguments)
+    function openArguments(args) {
+        const start = args.slice(2).join(" ")
         if (start) { query.text = start; run() }
         query.forceActiveFocus()
     }

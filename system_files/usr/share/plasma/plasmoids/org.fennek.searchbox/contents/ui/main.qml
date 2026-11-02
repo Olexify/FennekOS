@@ -26,7 +26,7 @@ PlasmoidItem {
         { name: "All", runners: [] },
         { name: "Apps", runners: ["krunner_services"] },
         { name: "Documents", runners: ["fennek-search", "krunner_recentdocuments"] },
-        { name: "Settings", runners: ["krunner_systemsettings"] }
+        { name: "Settings", runners: ["fennek-settings"] }
     ]
     readonly property var moreTabs: [
         { name: "Folders", runners: ["fennek-search", "krunner_placesrunner"], prefix: "type:folder " },

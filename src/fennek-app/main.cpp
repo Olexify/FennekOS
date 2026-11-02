@@ -3,13 +3,17 @@
 // The apps are QML files in /usr/share/fennek/apps/NAME/main.qml. They can show KDE settings pages inside
 // (import Fennek; KcmView), saved without Apply. A page with no window of its own (Updates, Firewall, Quarantine,
 // Backup, App history: only Page.qml) opens in Settings: fennek-app firewall = fennek-app settings firewall.
+// One window per app: opened again, the open one comes forward and gets the new arguments (openArguments in its QML).
 #include "kcmview.h"
+#include <KDBusService>
+#include <KWindowSystem>
 #include <QApplication>
 #include <QFile>
 #include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
 #include <QRegularExpression>
+#include <QWindow>
 
 int main(int argc, char *argv[])
 {
@@ -31,6 +35,7 @@ int main(int argc, char *argv[])
     app.setApplicationName(id);
     app.setDesktopFileName(id);
     app.setWindowIcon(QIcon::fromTheme(id, QIcon::fromTheme(QStringLiteral("fennek"))));
+    KDBusService service(KDBusService::Unique | KDBusService::NoExitOnFailure);   // already open: hands over and ends here
     if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE"))
         QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
 
@@ -40,6 +45,15 @@ int main(int argc, char *argv[])
     engine->load(QUrl::fromLocalFile(QStringLiteral("/usr/share/fennek/apps/%1/main.qml").arg(name)));
     if (engine->rootObjects().isEmpty())
         return 1;
+    QObject::connect(&service, &KDBusService::activateRequested, &app, [engine](const QStringList &args) {
+        QObject *root = engine->rootObjects().constFirst();
+        if (root->metaObject()->indexOfMethod("openArguments(QVariant)") >= 0)
+            QMetaObject::invokeMethod(root, "openArguments", Q_ARG(QVariant, QVariant(args)));
+        if (auto *window = qobject_cast<QWindow *>(root)) {
+            KWindowSystem::updateStartupId(window);
+            KWindowSystem::activateWindow(window);
+        }
+    });
     const int code = app.exec();
     KcmView::engine.reset();
     return code;

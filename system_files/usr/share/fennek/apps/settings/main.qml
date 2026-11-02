@@ -26,14 +26,19 @@ QQC2.ApplicationWindow {
     onCategoryChanged: page = null
     onQueryChanged: if (query !== "") page = null
     // fennek-app settings kcm_NAME: open right on that page (the action center's right-click, links elsewhere).
-    Component.onCompleted: {
-        const want = Qt.application.arguments[2] || ""
+    Component.onCompleted: openArguments(Qt.application.arguments)
+    // Also when opened again with Settings already open (src/fennek-app): nothing asked for, it just comes forward.
+    function openArguments(args) {
+        const want = args[2] || ""
+        if (want === "") return
+        let found = null, inCategory = null
         for (const c of Catalog.categories)
             for (const i of c.items)
-                if (page === null && want !== "" && (i.kcm === want || i.page === want)) { category = c; page = i }   // the first entry for it
+                if (found === null && (i.kcm === want || i.page === want)) { found = i; inCategory = c }   // the first entry for it
+        if (found) { query = ""; category = inCategory; page = found }
         // A KDE page that isn't in the catalog: shown inside anyway (its own name in the header).
-        if (page === null && /^kcm_[a-z0-9_-]+$/.test(want) && pageView.has(want))
-            page = { name: "", kcm: want, icon: "" }
+        else if (/^kcm_[a-z0-9_-]+$/.test(want) && pageView.has(want)) page = { name: "", kcm: want, icon: "" }
+        if (ownPage.item && ownPage.item.open !== undefined) ownPage.item.open = String(args[3] || "").replace(/^fennek-permissions:/, "")
     }
 
     P5Support.DataSource {
@@ -232,6 +237,7 @@ QQC2.ApplicationWindow {
                 Kirigami.Separator { Layout.fillWidth: true }
                 // Fennek's own pages (Updates...): the same page its own window shows.
                 Loader {
+                    id: ownPage
                     visible: !!(root.page && root.page.page)
                     Layout.fillWidth: true
                     Layout.fillHeight: visible

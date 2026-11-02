@@ -1,0 +1,6 @@
+#!/usr/bin/sh
+# /usr/bin/systemsettings (build.sh): a settings page goes to Fennek's Settings. KDE's window itself stays reachable.
+case ${1-} in
+    kcm_*) exec fennek-app settings "$1" ;;
+esac
+exec /usr/libexec/fennek/systemsettings "$@"

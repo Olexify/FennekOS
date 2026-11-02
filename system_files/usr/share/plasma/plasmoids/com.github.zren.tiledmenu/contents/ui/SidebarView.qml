@@ -115,7 +115,7 @@ Item {
 					PlasmaExtras.MenuItem {
 						icon: 'system-users'
 						text: i18n("User Manager")
-						onClicked: KCM.KCMLauncher.open('kcm_users')
+						onClicked: KCM.KCMLauncher.openSystemSettings('kcm_users')
 						visible: KConfig.KAuthorized.authorizeControlModule('kcm_users')
 					}
 

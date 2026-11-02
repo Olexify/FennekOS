@@ -554,6 +554,14 @@ for name in ("systemsettings.desktop",):
             replace_file(p, t)
 EOF
 
+# One Settings: KDE's applets open a page with `systemsettings kcm_NAME`, which lands in Fennek's. With nothing else asked,
+# it's KDE's window ("All KDE settings"). kinfocenter is the same program under another name: it stays that.
+mkdir -p /usr/libexec/fennek
+mv /usr/bin/systemsettings /usr/libexec/fennek/systemsettings
+ln -sf /usr/libexec/fennek/systemsettings /usr/bin/kinfocenter
+install -m755 /usr/libexec/fennek-systemsettings /usr/bin/systemsettings
+rm /usr/libexec/fennek-systemsettings
+
 # Dolphin shows up as "Files" (English name; translations keep their own).
 sed -i -e 's/^Name=Dolphin$/Name=Files/' -e '/^Name\[en_[A-Za-z@]*\]=/d' /usr/share/applications/org.kde.dolphin.desktop
 # Start list without admin clutter: these still open from Settings and Start's right-click menu.
@@ -783,7 +791,7 @@ systemctl enable flatpak-system-update.timer
 
 # Fennek's compiled plugins (src/): classic taskbar and desktop right-click menus, Home page for Files.
 # Compiled here; the build tools are removed again.
-tools=(cmake extra-cmake-modules gcc-c++ libplasma-devel kf6-kcoreaddons-devel kf6-kconfig-devel kf6-kwindowsystem-devel
+tools=(cmake extra-cmake-modules gcc-c++ libplasma-devel kf6-kcoreaddons-devel kf6-kconfig-devel kf6-kwindowsystem-devel kf6-kdbusaddons-devel
        kf6-kpackage-devel kf6-kservice-devel kf6-kirigami-devel kf6-kio-devel kf6-kcmutils-devel qt6-qtbase-devel qt6-qtdeclarative-devel
        rust cargo 'rust-zbus+default-devel' 'rust-inotify+default-devel' librsvg2-tools xcursorgen cpio dnf5-plugins)
 missing=(); for p in "${tools[@]}"; do rpm -q "$p" >/dev/null 2>&1 || missing+=("$p"); done
