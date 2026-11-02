@@ -86,6 +86,11 @@ check "first sign-in finished" test -e "/home/$user/.config/fennek/first-login-d
 check "dark look saved" grep -q '^LookAndFeelPackage=org.fennek.dark.desktop' "/home/$user/.config/kdeglobals"
 check "edition" test "$(cat /usr/share/fennek/edition 2>/dev/null)" = "$(cat /run/t/edition)"
 check "file search running" as_user systemctl --user is-active -q fennek-search.service
+# The tray's lists are the tray widget's own settings.
+tray_list() { as_user gdbus call --session --dest org.kde.plasmashell --object-path /PlasmaShell --method org.kde.PlasmaShell.evaluateScript "panels().forEach(function (p) { p.widgets('org.kde.plasma.systemtray').forEach(function (w) { w.currentConfigGroup = ['General']; print(w.readConfig('$1')) }) })"; }
+check "tray has its list, without Brightness" bash -c '[[ $1 == *org.kde.plasma.networkmanagement* && $1 != *org.kde.plasma.brightness* ]]' _ "$(tray_list extraItems)"
+# Plasma drops a menu plugin it can't load from these settings, and the desktop has no right-click menu then.
+check "desktop right-click menu loaded" grep -q '^RightButton;NoModifier=org.fennek.desktopmenu' "/home/$user/.config/plasma-org.kde.plasma.desktop-appletsrc"
 check "Secure Boot on" sh -c 'mokutil --sb-state | grep -q "SecureBoot enabled"'
 check "/boot is its own ext4, writable, and grub.cfg reads custom.cfg" sh -c 'findmnt -n -o FSTYPE /boot | grep -qx ext4 && [ -w /boot/grub2 ] && grep -q custom.cfg /boot/grub2/grub.cfg'
 check "SELinux enforcing" sh -c '[ "$(getenforce)" = Enforcing ]'
@@ -161,7 +166,7 @@ echo "$crashes" | grep -Eq 'kwin_wayland|plasmashell|plasmalogin|startplasma' &&
     echo "== Windows drives"; cat /run/fennek/windows-drives.json /run/udev/rules.d/90-fennek-windows-drives.rules; findmnt -S /dev/vdb1; findmnt -S /dev/vdb2
     for d in /dev/vdb1 /dev/vdb2 /dev/vdc1 /dev/disk/by-label/FennekUSB /dev/disk/by-label/FennekLoop; do echo "$d"; udevadm info -q property "$d" | grep -E 'FENNEK|ID_FS_LABEL|ID_FS_TYPE|ID_PART_ENTRY_TYPE|ID_BUS|ID_USB_VENDOR_ID|UDISKS'; done
     journalctl -b --no-pager -u fennek-windows-scan.service | tail -30
-    echo "== tray"; as_user gdbus call --session --dest org.kde.plasmashell --object-path /PlasmaShell --method org.kde.PlasmaShell.evaluateScript "panels().forEach(function (p) { print(p.widgets().map(function (w) { return w.type }).join(' ')); p.widgets().forEach(function (w) { if (w.type === 'org.kde.plasma.systemtray') print(desktopById(w.readConfig('SystrayContainmentId')).widgets().map(function (t) { return t.type }).join(' ')) }) })"
+    echo "== tray"; as_user gdbus call --session --dest org.kde.plasmashell --object-path /PlasmaShell --method org.kde.PlasmaShell.evaluateScript "panels().forEach(function (p) { print(p.widgets().map(function (w) { return w.type }).join(' ')) })"; for k in extraItems shownItems hiddenItems knownItems; do echo "$k: $(tray_list "$k")"; done
     echo "== sign-in processes"; cat "$out/greeter-ps.txt" 2>/dev/null
     echo "== boot"; findmnt /boot; findmnt /boot/efi; ls -la /boot/grub2 | head -20; grub2-editenv list 2>&1; ls /boot/loader/entries 2>&1; efibootmgr 2>&1; bootc status --json 2>/dev/null | head -c 600; echo
 } > "$out/report.txt" 2>&1

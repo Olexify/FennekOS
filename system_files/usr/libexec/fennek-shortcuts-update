@@ -64,23 +64,23 @@ if [ "$(cat "$tb_seen" 2>/dev/null)" != 2026-10-18 ]; then
     mkdir -p "${tb_seen%/*}" && echo 2026-10-18 >"$tb_seen"
 fi
 
-# Desktop right-click, once: classic and short (New, Paste, Icons, Terminal, Wallpaper, Display); lock and sign
-# out stay in Start, editing the desktop layout in its own menu.
+# Desktop right-click, once: Fennek's classic menu (src/desktop-menu) instead of KDE's; a menu someone picked stays.
 dm_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/desktop-menu-version
-# Repair (2026-10-18 build): a first sign-in got only these settings and no menu; give the desktop its menu back.
+# Repair: the desktop has settings but no menu in them, so the shell's defaults stay out and right-click does nothing.
+# Plasma deletes a menu it can't load (Go back to a version without this one); the 2026-10-18 build left accounts so too.
+# ponytail: a menu someone removed on purpose in Mouse Actions comes back as well; nothing in the settings tells them apart.
 arc=${XDG_CONFIG_HOME:-$HOME/.config}/plasma-org.kde.plasma.desktop-appletsrc
-if grep -qF '[ActionPlugins][0][RightButton;NoModifier]' "$arc" 2>/dev/null \
+if grep -qF '[ActionPlugins][0]' "$arc" 2>/dev/null \
    && [ -z "$(kreadconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'RightButton;NoModifier')" ]; then
-    kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'RightButton;NoModifier' org.kde.contextmenu
+    kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'RightButton;NoModifier' org.fennek.desktopmenu
 fi
-# Only once the desktop has made its own menu settings: written earlier, they would stand in for KDE's defaults and
-# leave the desktop with no right-click menu at all (first sign-in). Then it simply happens at the next sign-in.
-if [ "$(cat "$dm_seen" 2>/dev/null)" != 2026-10-18b ]    && [ "$(kreadconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'RightButton;NoModifier')" = org.kde.contextmenu ]; then
-    for a in _lock_screen _logout "edit mode"; do
-        kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 \
-            --group 'RightButton;NoModifier' --key "$a" false
-    done
-    mkdir -p "${dm_seen%/*}" && echo 2026-10-18b >"$dm_seen"
+# Only once the desktop has made its own menu settings: written earlier, they would stand in for the shell's defaults
+# (which give a new account this menu from its first sign-in) and leave the desktop with no menu at all.
+dm=$(kreadconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'RightButton;NoModifier')
+if [ "$(cat "$dm_seen" 2>/dev/null)" != 2026-11-02 ] && [ -n "$dm" ]; then
+    [ "$dm" = org.kde.contextmenu ] \
+        && kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'RightButton;NoModifier' org.fennek.desktopmenu
+    mkdir -p "${dm_seen%/*}" && echo 2026-11-02 >"$dm_seen"
 fi
 
 # Widget style, once: Breeze -> Fennek (Breeze plus: the wheel scrolls the page, not the drop-down under it).
@@ -140,8 +140,7 @@ fi
 
 # Desktop Ctrl + mouse wheel = display size, once; only after the desktop made its own settings (as above).
 zoom_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/desktop-zoom-version
-if [ "$(cat "$zoom_seen" 2>/dev/null)" != 2026-10-18 ] \
-   && [ "$(kreadconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'RightButton;NoModifier')" = org.kde.contextmenu ]; then
+if [ "$(cat "$zoom_seen" 2>/dev/null)" != 2026-10-18 ] && [ -n "$dm" ]; then
     [ -z "$(kreadconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'wheel:Vertical;ControlModifier')" ] \
         && kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc --group ActionPlugins --group 0 --key 'wheel:Vertical;ControlModifier' org.fennek.uiscale
     mkdir -p "${zoom_seen%/*}" && echo 2026-10-18 >"$zoom_seen"

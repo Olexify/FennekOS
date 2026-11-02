@@ -774,14 +774,14 @@ EOF
 fi
 systemctl enable flatpak-system-update.timer
 
-# Fennek's compiled plugins (src/): classic taskbar right-click menu, Home page for Files.
+# Fennek's compiled plugins (src/): classic taskbar and desktop right-click menus, Home page for Files.
 # Compiled here; the build tools are removed again.
 tools=(cmake extra-cmake-modules gcc-c++ libplasma-devel kf6-kcoreaddons-devel kf6-kconfig-devel kf6-kwindowsystem-devel
        kf6-kpackage-devel kf6-kservice-devel kf6-kirigami-devel kf6-kio-devel kf6-kcmutils-devel qt6-qtbase-devel qt6-qtdeclarative-devel
        rust cargo 'rust-zbus+default-devel' 'rust-inotify+default-devel' librsvg2-tools xcursorgen cpio dnf5-plugins)
 missing=(); for p in "${tools[@]}"; do rpm -q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 dnf -y install "${missing[@]}"
-for plugin in taskbar-menu ui-scale thispc fennek-app fennek-style fennek-kcm; do
+for plugin in taskbar-menu desktop-menu ui-scale thispc fennek-app fennek-style fennek-kcm; do
     cmake -S "$files/../src/$plugin" -B "/tmp/$plugin" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
     cmake --build "/tmp/$plugin" -j"$(nproc)"
     cmake --install "/tmp/$plugin"
@@ -930,10 +930,11 @@ p = sys.argv[1]; s = open(p).read()
 old = "[Panel][ContainmentActions]\nRightButton;NoModifier=org.kde.contextmenu"
 assert old in s, "Plasma shell defaults changed: revisit the taskbar menu"
 s = s.replace(old, "[Panel][ContainmentActions]\nRightButton;NoModifier=org.fennek.taskbarmenu")
-# Desktop: Ctrl + mouse wheel = the whole display bigger / smaller (src/ui-scale).
-desk = "[Desktop][ContainmentActions]\n"
-assert desk in s, "Plasma shell defaults changed: revisit the desktop Ctrl+wheel"
-s = s.replace(desk, desk + "wheel:Vertical;ControlModifier=org.fennek.uiscale\n")
+# Desktop: the classic right-click menu (src/desktop-menu); Ctrl + mouse wheel = the whole display bigger / smaller
+# (src/ui-scale).
+desk = "[Desktop][ContainmentActions]\nRightButton;NoModifier=org.kde.contextmenu\n"
+assert desk in s, "Plasma shell defaults changed: revisit the desktop menu and Ctrl+wheel"
+s = s.replace(desk, "[Desktop][ContainmentActions]\nRightButton;NoModifier=org.fennek.desktopmenu\nwheel:Vertical;ControlModifier=org.fennek.uiscale\n")
 open(p + ".fennek-new", "w").write(s)
 os.chmod(p + ".fennek-new", 0o644); os.replace(p + ".fennek-new", p)
 EOF

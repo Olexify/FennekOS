@@ -1,0 +1,8 @@
+{
+    "KPlugin": {
+        "Authors": [{ "Name": "Fennek OS" }],
+        "Description": "Classic desktop right-click menu",
+        "License": "GPL-3.0-only",
+        "Name": "Desktop menu"
+    }
+}
