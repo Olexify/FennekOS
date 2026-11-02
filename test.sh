@@ -368,6 +368,7 @@ grep -q 'com.github.zren.tiledmenu' /usr/share/plasma/look-and-feel/org.fennek.d
 ! grep -q '^countme=1' /etc/yum.repos.d/*.repo                || fail "countme in repos"
 ! systemctl is-enabled -q dnf-makecache.timer 2>/dev/null      || fail "dnf-makecache timer (needless daily download)"
 ! systemctl is-enabled -q unbound-anchor.timer 2>/dev/null     || fail "unbound-anchor timer"
+! systemctl is-enabled -q fwupd-refresh.timer 2>/dev/null && ! systemctl is-enabled -q smb.service 2>/dev/null && ! systemctl is-enabled -q nmb.service 2>/dev/null || fail "firmware list check and folder sharing stay off until asked for (PRIVACY.md)"
 rpm -q firefox >/dev/null && grep -q '"DisableTelemetry": true' /etc/firefox/policies/policies.json || fail "Firefox + privacy policy"
 grep -q '^Name=Files$' /usr/share/applications/org.kde.dolphin.desktop || fail "Files name"
 grep -q '^Name=Task Manager$' /usr/share/applications/org.kde.plasma-systemmonitor.desktop || fail "Task Manager name"
