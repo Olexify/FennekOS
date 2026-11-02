@@ -34,23 +34,22 @@ tasks.currentConfigGroup = ["General"]   // pinned: Fennek Settings (not KDE's f
 tasks.writeConfig("launchers", ["applications:fennek-settings.desktop", "applications:org.kde.discover.desktop",
                                 "preferred://filemanager", "preferred://browser"])
 panel.addWidget("org.kde.plasma.marginsseparator")
-// Tray: network, sound and battery always visible; everything else behind the ^ arrow.
-var systray = panel.addWidget("org.kde.plasma.systemtray")
-var tray = desktopById(systray.readConfig("SystrayContainmentId"))
-if (tray) {
-    tray.currentConfigGroup = ["General"]
-    var shown = ["org.kde.plasma.networkmanagement", "org.kde.plasma.volume", "org.kde.plasma.battery"]
-    var hidden = ["org.kde.plasma.notifications", "org.kde.plasma.clipboard", "org.kde.plasma.devicenotifier", "org.kde.kdeconnect",
-                  "org.kde.plasma.bluetooth", "org.kde.plasma.printmanager",
-                  "org.kde.plasma.mediacontroller",
-                  "org.kde.plasma.cameraindicator", "org.kde.plasma.manage-inputmethod",
-                  "org.kde.plasma.keyboardindicator"]
-    tray.writeConfig("shownItems", shown)
-    tray.writeConfig("hiddenItems", hidden)
-    // Exactly these tray items exist: the stock language indicator never loads (Fennek's sits next to the clock),
-    // nor Brightness & Color (brightness, Night light and Dark mode are in the action center).
-    tray.writeConfig("extraItems", shown.concat(hidden))
-}
+// Tray: network, sound and battery always visible; everything else behind the ^ arrow. The lists are the tray widget's
+// own settings. Notifications must stay loaded: that item shows the pop-ups (the action center only lists them).
+var tray = panel.addWidget("org.kde.plasma.systemtray")
+tray.currentConfigGroup = ["General"]
+var shown = ["org.kde.plasma.networkmanagement", "org.kde.plasma.volume", "org.kde.plasma.battery"]
+var hidden = ["org.kde.plasma.notifications", "org.kde.plasma.clipboard", "org.kde.plasma.devicenotifier", "org.kde.kdeconnect",
+              "org.kde.plasma.bluetooth", "org.kde.plasma.printmanager",
+              "org.kde.plasma.mediacontroller",
+              "org.kde.plasma.cameraindicator", "org.kde.plasma.manage-inputmethod",
+              "org.kde.plasma.keyboardindicator"]
+tray.writeConfig("shownItems", shown)
+tray.writeConfig("hiddenItems", hidden)
+// Exactly these tray items exist: the stock language indicator never loads (Fennek's sits next to the clock),
+// nor Brightness & Color (brightness, Night light and Dark mode are in the action center). A new tray has just enabled
+// every stock item and marked it known, so this takes the others out and they stay out at the next sign-in.
+tray.writeConfig("extraItems", shown.concat(hidden))
 // Input language (ENG, УКР) next to the clock, like the classic taskbar; hidden with only one language.
 panel.addWidget("org.fennek.keyboard")
 // Clock: time with the date underneath; click for the calendar panel.

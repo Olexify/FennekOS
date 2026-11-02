@@ -56,7 +56,7 @@ for app in org.kde.kmenuedit systemsettings kdesystemsettings org.kde.khelpcente
     f=/usr/share/applications/$app.desktop; [ ! -f "$f" ] || { [ "$(grep -c '^NoDisplay=' "$f")" = 1 ] && grep -q '^NoDisplay=true' "$f"; } || fail "Start list still shows $app"
 done
 grep -q '^Name=Terminal$' /usr/share/applications/org.kde.konsole.desktop && grep -q '^Name=Store$' /usr/share/applications/org.kde.discover.desktop && ! grep -q '^Name\[en_GB\]=' /usr/share/applications/org.kde.konsole.desktop || fail "plain app names in Start"
-grep -q "SystrayContainmentId" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "tray shown/hidden icons"
+grep -q 'tray.writeConfig("extraItems", shown.concat(hidden))' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js && [ -f /usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/fennek-2026-11-02b-tray.js ] && ! grep -rq "SystrayContainmentId" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts /usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates || fail "tray shown/hidden icons, on the tray widget itself (new accounts and existing desktops)"
 for p in org.fennek.searchbox org.fennek.showdesktop org.fennek.clock org.fennek.actioncenter org.fennek.keyboard; do
     python3 -c "import json; json.load(open('/usr/share/plasma/plasmoids/$p/metadata.json'))" && [ -s /usr/share/plasma/plasmoids/$p/contents/ui/main.qml ] \
         && grep -q "\"$p\"" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js \
@@ -134,6 +134,13 @@ python3 -c "import json; d=json.load(open('/usr/share/kwin-wayland/scripts/fenne
 sh=$(mktemp -d) && printf '[kwin]\nOverview=Meta+W,Meta+W,Toggle Overview\nWindow Close=Alt+F4,Alt+F4,Close Window\n' >"$sh/kglobalshortcutsrc" \
   &&XDG_CONFIG_HOME=$sh XDG_STATE_HOME=$sh /usr/libexec/fennek-shortcuts-update   && [ "$(kreadconfig6 --file "$sh/kglobalshortcutsrc" --group kwin --key 'Window Close')" = "none,Alt+F4,Close Window" ]   && [ "$(kreadconfig6 --file "$sh/kglobalshortcutsrc" --group kwin --key Overview | cut -f1)" = Meta+Tab ]   && [ -L /etc/systemd/user/plasma-workspace.target.wants/fennek-shortcuts-update.service ] || fail "shortcut update for existing users"
 rm -rf "$sh"
+# Desktop right-click for existing accounts: nothing before the desktop made its own settings, KDE's menu becomes Fennek's once, a later own choice stays.
+dm=$(mktemp -d) && dmk=(--file "$dm/plasma-org.kde.plasma.desktop-appletsrc" --group ActionPlugins --group 0 --key 'RightButton;NoModifier') \
+  && XDG_CONFIG_HOME=$dm XDG_STATE_HOME=$dm /usr/libexec/fennek-shortcuts-update && [ -z "$(kreadconfig6 "${dmk[@]}")" ] \
+  && kwriteconfig6 "${dmk[@]}" org.kde.contextmenu && XDG_CONFIG_HOME=$dm XDG_STATE_HOME=$dm /usr/libexec/fennek-shortcuts-update && [ "$(kreadconfig6 "${dmk[@]}")" = org.fennek.desktopmenu ] \
+  && kwriteconfig6 "${dmk[@]}" org.kde.contextmenu && XDG_CONFIG_HOME=$dm XDG_STATE_HOME=$dm /usr/libexec/fennek-shortcuts-update && [ "$(kreadconfig6 "${dmk[@]}")" = org.kde.contextmenu ] \
+  || fail "desktop right-click menu for existing accounts"
+rm -rf "$dm"
 [ "$(kreadconfig6 --file /etc/xdg/ksmserverrc --group General --key confirmLogout)" = false ] || fail "power menu acts without a second confirmation"
 grep -q 'Fennek OS: no line over an open button' /usr/share/plasma/shells/org.kde.plasma.desktop/contents/applet/CompactApplet.qml || fail "no line over open taskbar buttons"
 # Everyday apps get plain names in Start (Okular -> PDF Reader); the copy goes when the app goes.
@@ -189,6 +196,7 @@ grep -q "^startPage=applications.page" /etc/xdg/systemmonitorrc || fail "Task Ma
 [ -f /usr/share/icons/Fennek/scalable/places/folder.svg ] && [ -f /usr/share/icons/Fennek/scalable/apps/org.kde.dolphin.svg ] && [ -f /usr/share/icons/hicolor/scalable/apps/fennek-firewall.svg ] && [ "$(kreadconfig6 --file /etc/xdg/kdeglobals --group Icons --key Theme)" = Fennek ] && grep -q "^Theme=Fennek" /usr/share/plasma/look-and-feel/org.fennek.dark.desktop/contents/defaults || fail "Fennek icons"
 grep -q "Ctrl+Shift+V; Ctrl+V" /usr/share/kxmlgui5/konsole/sessionui.rc && grep -q "hidden=\"true\" name=\"sessionToolbar\"" /usr/share/kxmlgui5/konsole/sessionui.rc && grep -q "hidden=\"true\" name=\"mainToolBar\"" /usr/share/kxmlgui5/konsole/konsoleui.rc && grep -q "^TabBarVisibility=AlwaysShowTabBar" /etc/xdg/konsolerc || fail "Terminal: classic tabs, no toolbars"
 ls /usr/lib64/qt6/plugins/plasma/containmentactions/org.fennek.taskbarmenu.so /usr/lib64/qt6/plugins/kf6/kio/kio_thispc.so >/dev/null && grep -q "^RightButton;NoModifier=org.fennek.taskbarmenu" /usr/share/plasma/shells/org.kde.plasma.desktop/contents/defaults && ! rpm -q gcc-c++ >/dev/null || fail "taskbar menu + This PC plugins (and no compiler left in the image)"
+ls /usr/lib64/qt6/plugins/plasma/containmentactions/org.fennek.desktopmenu.so >/dev/null && grep -q "^RightButton;NoModifier=org.fennek.desktopmenu" /usr/share/plasma/shells/org.kde.plasma.desktop/contents/defaults || fail "desktop right-click: Fennek's classic menu"
 grep -q "^AccentColor=109,69,184" /etc/xdg/kdeglobals && grep -q "sidebarFollowsTheme\", true" /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "Fennek accent colour + visible Start strip"
 grep -q "^ExpandableFolders=false" /etc/xdg/dolphinrc && grep -q "browser.tabs.inTitlebar" /etc/firefox/policies/policies.json || fail "classic details rows + Firefox system title bar"
 for c in left_ptr pointer xterm watch left_ptr_watch sb_h_double_arrow; do [ "$(head -c4 "/usr/share/icons/Fennek-Cursors/cursors/$c" 2>/dev/null)" = Xcur ] || fail "Fennek pointer $c"; done

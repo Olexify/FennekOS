@@ -1,21 +1,10 @@
-// Fennek OS update for existing desktops (once per user): the input language (ENG, УКР) moves out of the tray to
-// sit next to the clock, like the classic taskbar; its panel then fits its rows. The stock indicator goes for good.
+// Fennek OS update for existing desktops (once per user): the input language (ENG, УКР) sits next to the clock, like
+// the classic taskbar; its panel fits its rows.
 panels().forEach(function (panel) {
     var hasTray = false, hasLang = false
     panel.widgets().forEach(function (w) {
         if (w.type === "org.fennek.keyboard") hasLang = true
-        if (w.type !== "org.kde.plasma.systemtray") return
-        hasTray = true
-        var tray = desktopById(w.readConfig("SystrayContainmentId"))
-        if (!tray) return
-        var gone = ["org.fennek.keyboard", "org.kde.plasma.keyboardlayout"]
-        tray.widgets().forEach(function (t) { if (gone.indexOf(t.type) >= 0) t.remove() })
-        tray.currentConfigGroup = ["General"]
-        ;["shownItems", "hiddenItems", "extraItems"].forEach(function (key) {
-            var l = tray.readConfig(key)
-            if (typeof l === "string") l = l ? l.split(",") : []
-            tray.writeConfig(key, (l || []).filter(function (id) { return gone.indexOf(id) < 0 }))
-        })
+        if (w.type === "org.kde.plasma.systemtray") hasTray = true
     })
     if (!hasTray || hasLang) return
     // Panels add at the end: add the language, then put the widgets after the tray back behind it (they have no

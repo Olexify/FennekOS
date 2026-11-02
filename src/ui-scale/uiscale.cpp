@@ -9,8 +9,9 @@ class UiScale : public Plasma::ContainmentActions
 {
     Q_OBJECT
 public:
-    UiScale(QObject *parent, const QVariantList &)
-        : Plasma::ContainmentActions(parent)
+    // Passes the plugin's metadata on: the desktop's Mouse Actions settings page loads a copy of the plugin by its id.
+    UiScale(QObject *parent, const QVariantList &args)
+        : Plasma::ContainmentActions(parent, args)
     {
     }
     // Wheel up = bigger, wheel down = smaller.
