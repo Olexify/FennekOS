@@ -36,6 +36,18 @@ public:
     {
         qDeleteAll(m_actions);
         m_actions.clear();
+        // The taskbar's own menu only: Plasma puts the clicked applet's entries on top, and keeps showing "Show
+        // Alternatives" again by itself, so they're hidden each time, right before the menu opens.
+        if (Plasma::Containment *panel = containment()) {
+            const auto applets = panel->applets();
+            for (Plasma::Applet *applet : applets) {
+                if (QAction *alternatives = applet->internalAction(QStringLiteral("alternatives")))
+                    alternatives->setVisible(false);
+                if (applet->pluginName() == QLatin1String("org.kde.plasma.icontasks"))
+                    if (QAction *configure = applet->internalAction(QStringLiteral("configure")))
+                        configure->setVisible(false);
+            }
+        }
         auto add = [this](const char *icon, const QString &text, auto slot) {
             auto *a = new QAction(QIcon::fromTheme(QString::fromLatin1(icon)), text, this);
             connect(a, &QAction::triggered, this, slot);
