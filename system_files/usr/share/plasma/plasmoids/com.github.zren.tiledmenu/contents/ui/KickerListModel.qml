@@ -155,7 +155,7 @@ ListModel {
 	function hasApp(favoriteId) {
 		for (var i = 0; i < count; i++) {
 			var item = get(i)
-			if (item.favoriteId == favoriteId) {
+			if (String(item.favoriteId).replace(/^applications:/, "") == String(favoriteId).replace(/^applications:/, "")) {   // Fennek OS: Plasma 6.8 ids
 				return true
 			}
 		}

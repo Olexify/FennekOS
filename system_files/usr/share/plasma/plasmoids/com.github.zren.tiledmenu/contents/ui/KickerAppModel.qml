@@ -37,11 +37,15 @@ Kicker.SimpleFavoritesModel {
 	// DisabledRole           Qt.UserRole + 11        @since: Plasma 5.20
 	// IsMultilineTextRole    Qt.UserRole + 12        @since: Plasma 5.24
 	// DisplayWrappedRole     Qt.UserRole + 13        @since: Plasma 6.0
+	// Fennek OS: since Plasma 6.8 the model's ids are "applications:x.desktop"; tiles keep the plain "x.desktop".
+	function bareId(id) {
+		return String(id).replace(/^applications:/, "")
+	}
 	function getApp(url) {
 		for (var i = 0; i < count; i++) {
 			var modelIndex = kickerAppModel.index(i, 0)
 			var favoriteId = kickerAppModel.data(modelIndex, Qt.UserRole + 3)
-			if (favoriteId == url) {
+			if (bareId(favoriteId) == bareId(url)) {
 				var app = {}
 				app.indexInModel = i
 				app.favoriteId = favoriteId
@@ -63,7 +67,7 @@ Kicker.SimpleFavoritesModel {
 		for (var i = 0; i < count; i++) {
 			var modelIndex = kickerAppModel.index(i, 0)
 			var favoriteId = kickerAppModel.data(modelIndex, Qt.UserRole + 3)
-			if (favoriteId == url) {
+			if (bareId(favoriteId) == bareId(url)) {
 				kickerAppModel.triggerIndex(i)
 				return
 			}

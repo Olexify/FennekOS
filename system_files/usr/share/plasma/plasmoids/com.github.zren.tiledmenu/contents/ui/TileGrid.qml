@@ -820,6 +820,7 @@ DropArea {
 	}
 
 	function removeApp(url) {
+		url = Utils.parseDropUrl(url)   // Fennek OS: Plasma 6.8 hands over "applications:x.desktop"
 		var removedCount = 0
 		for (var i = tileModel.length - 1; i >= 0; i--) {
 			var tile = tileModel[i]
@@ -875,6 +876,7 @@ DropArea {
 	}
 
 	function hasAppTile(url) {
+		url = Utils.parseDropUrl(url)   // Fennek OS: Plasma 6.8 hands over "applications:x.desktop"
 		for (var i = 0; i < tileModel.length; i++) {
 			var tile = tileModel[i]
 			if (tile.url == url) {

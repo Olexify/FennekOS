@@ -47,10 +47,11 @@ int main(int argc, char **argv) {
         if (!strcmp(c, "mousemove")) {
             org_kde_kwin_fake_input_pointer_motion_absolute(fi, wl_fixed_from_int(atoi(argv[i + 1])), wl_fixed_from_int(atoi(argv[i + 2])));
             wl_display_roundtrip(dpy);
+            usleep(200000);   // let the window under the pointer notice it first
             i += 2;
         } else if (!strcmp(c, "click")) {
             int n = atoi(argv[++i]);
-            button(n, 1); usleep(30000); button(n, 0);
+            button(n, 1); usleep(100000); button(n, 0);
         } else if (!strcmp(c, "mousedown")) button(atoi(argv[++i]), 1);
         else if (!strcmp(c, "mouseup")) button(atoi(argv[++i]), 0);
         else if (!strcmp(c, "sleep")) usleep(atof(argv[++i]) * 1e6);

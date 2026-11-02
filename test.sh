@@ -357,6 +357,8 @@ grep -q "^Exec=/usr/libexec/fennek-change-icon --reset" /usr/share/kio/serviceme
 /usr/libexec/fennek-previous-versions-helper --selftest >/dev/null && command -v kdialog numfmt >/dev/null && grep -q "exec.path\">/usr/libexec/fennek-previous-versions-helper" /usr/share/polkit-1/actions/org.fennek.previous-versions.policy && grep -q "inode/directory" /usr/share/kio/servicemenus/fennek-previous-versions.desktop || fail "Restore previous versions (files and whole folders)"
 grep -q '^Exec=fennek-firewall block %f' /usr/share/kio/servicemenus/fennek-firewall.desktop || fail "firewall menu"
 [ -f /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/metadata.json ] || fail "classic start menu (Tiled Menu)"
+# Start tiles find their app whichever way Plasma writes its ids (without this they have no icon and don't open).
+u=/usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui; [ "$(grep -c "bareId(favoriteId) == bareId(url)" $u/KickerAppModel.qml)" = 2 ] && [ "$(grep -c "url = Utils.parseDropUrl(url)" $u/TileGrid.qml)" -ge 3 ] || fail "Start tiles: app ids"
 grep -q 'com.github.zren.tiledmenu' /usr/share/plasma/look-and-feel/org.fennek.desktop/contents/layouts/org.kde.plasma.desktop-layout.js || fail "start menu in taskbar"
 [ "$(systemctl is-enabled rpm-ostree-countme.timer 2>&1)" = masked ] || fail "countme telemetry timer"
 ! grep -q '^countme=1' /etc/yum.repos.d/*.repo                || fail "countme in repos"
