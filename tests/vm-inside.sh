@@ -48,11 +48,10 @@ check "edition" test "$(cat /usr/share/fennek/edition 2>/dev/null)" = "$(cat /ru
 check "file search running" as_user systemctl --user is-active -q fennek-search.service
 check "Secure Boot on" sh -c 'mokutil --sb-state | grep -q "SecureBoot enabled"'
 check "SELinux enforcing" sh -c '[ "$(getenforce)" = Enforcing ]'
-# The Windows-like disk: open by themselves at sign-in, named, writable when Windows closed it cleanly, read-only when not.
+# The Windows-like disk: open by themselves at sign-in, named. The test disk is hibernated: every drive read-only.
 opt() { findmnt -n -S "$1" -o OPTIONS 2>/dev/null; }
-check "Windows (C:) open and writable" sh -c "findmnt -n -S /dev/vdb1 -o TARGET | grep -qx '/run/media/$user/Windows (C:)' && opt=\$(findmnt -n -S /dev/vdb1 -o OPTIONS) && case ,\$opt, in *,rw,*) ;; *) exit 1 ;; esac"
+check "Windows (C:) open, read-only like all drives of a hibernated Windows" sh -c "findmnt -n -S /dev/vdb1 -o TARGET | grep -qx '/run/media/$user/Windows (C:)' && opt=\$(findmnt -n -S /dev/vdb1 -o OPTIONS) && case ,\$opt, in *,ro,*) ;; *) exit 1 ;; esac"
 check "a hibernated drive opens read-only" sh -c "opt=\$(findmnt -n -S /dev/vdb2 -o OPTIONS) && case ,\$opt, in *,ro,*) ;; *) exit 1 ;; esac"
-check "writing to Windows (C:)" as_user touch "/run/media/$user/Windows (C:)/fennek-vm-test"
 # A dual-boot computer: "Restart to Windows" shows, the clock follows.
 efibootmgr -q -c -d /dev/vda -p 2 -L "Windows Boot Manager" -l '\EFI\Microsoft\Boot\bootmgfw.efi' 2>&1
 systemctl restart fennek-detect-windows.service
