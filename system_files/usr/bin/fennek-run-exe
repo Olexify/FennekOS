@@ -25,6 +25,7 @@ OFFLINE = CFG / "offline-exes"           # sha256s blocked by fennek-firewall: s
 FOLDERS = CFG / "exe-folders"            # "sha256 documents|downloads|pictures|music|videos" per line: also visible
 XDG_KIND = {"documents": "DOCUMENTS", "downloads": "DOWNLOAD", "pictures": "PICTURES", "music": "MUSIC", "videos": "VIDEOS"}
 NAMES = CFG / "exe-names"               # "sha256<TAB>path" per line: what App permissions shows for each program
+OLD_RECORDS = CFG / "old-exe-records"    # the five files above before folder names got longer: see old_records
 BOXES = DATA / "fennek" / "sandboxes"    # private home per sandboxed program
 SHARED = HOME / "Sandbox"                # ~/Sandbox/<program> = the only real folder it can see
 GUI = bool(os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY"))
@@ -127,31 +128,61 @@ def safe_name(exe):
 
 def folder_name(exe, digest):
     """Per program, not per file name: a malicious setup.exe must not share a folder with a real setup.exe.
-    16 digits of its fingerprint: a crafted file can be made to match 8 in no time."""
-    return f"{safe_name(exe)}-{digest[:16]}"
+    16 digits of its fingerprint: a crafted file can be made to match 8 in no time. A very long file name is cut, on a
+    letter's edge: a folder name holds 255 bytes."""
+    return f"{safe_name(exe).encode()[:255 - 17].decode(errors='ignore')}-{digest[:16]}"
+
+
+def old_folder_name(exe, digest):
+    """From when the names had 8 digits and nothing was cut."""
+    return f"{safe_name(exe)}-{digest[:8]}"
+
+
+def old_records(digest):
+    """What was on record about programs with these 8 digits before folder names got longer: the lines starting with
+    them. From a copy made once, before the first launch that could add to it, and never rewritten: a program first
+    seen later is never in it, under any name, and removing a program in Settings doesn't take it out. (Installed apps
+    reads the same copy, and makes it if it needs it first.)"""
+    if not OLD_RECORDS.is_file():
+        CFG.mkdir(parents=True, exist_ok=True)
+        tmp = OLD_RECORDS.with_name(f"{OLD_RECORDS.name}.{os.getpid()}")
+        tmp.write_bytes(b"\n".join(f.read_bytes() for f in (TRUSTED, CHOICES, OFFLINE, FOLDERS, NAMES) if f.is_file()))
+        os.replace(tmp, OLD_RECORDS)
+    return [l for l in OLD_RECORDS.read_text(encoding="utf-8", errors="replace").split("\n") if l.startswith(digest[:8])]
 
 
 def move_old_folders(exe, digest):
-    """Folders from when the names had 8 digits move to the long name, so a program keeps its files. Returns where the
-    program is now: it may have been inside. Only for a program recorded on an earlier launch that shares those 8 with
-    no other recorded program: anything else could be a crafted file, so the old folder stays and the program starts
-    fresh, for good, because this launch gets recorded next and must not pass for that earlier one the next time."""
-    rows = NAMES.read_text(encoding="utf-8", errors="replace").split("\n") if NAMES.is_file() else []
-    ours = {l.partition("\t")[0] for l in rows if l.startswith(digest[:8])} == {digest}
+    """Folders from when the names had 8 digits move to the long name, so a program keeps its files; in ~/Sandbox a
+    link stays at the old name, for shortcuts to what's inside. Returns where the program is now: it may have been
+    inside. Only for the one program on record with those 8 digits, under this file name if the record has one (the
+    old folder's name came from it): anything else could be a crafted file, so the old folder stays and the program
+    starts fresh (old_folder_notice tells where that folder is)."""
+    rows = old_records(digest)
+    if {l[:64] for l in rows} != {digest} or any(l[64:65] == "\t" and safe_name(Path(l[65:])) != safe_name(exe) for l in rows):
+        return exe
     for parent in (BOXES.resolve(), SHARED.resolve()):
-        old, new = parent / f"{safe_name(exe)}-{digest[:8]}", parent / folder_name(exe, digest)
-        if old.is_symlink() or not old.is_dir() or os.path.lexists(new):
+        old, new = parent / old_folder_name(exe, digest), parent / folder_name(exe, digest)
+        if os.path.islink(old) or not os.path.isdir(old) or os.path.lexists(new):
             continue
         try:
-            if ours:
-                old.rename(new)
-                if exe.is_relative_to(old):
-                    exe = new / exe.relative_to(old)
-            else:
-                new.mkdir()
+            old.rename(new)
+            if exe.is_relative_to(old):
+                exe = new / exe.relative_to(old)
+            if parent == SHARED.resolve():
+                old.symlink_to(new.name)
         except OSError:   # it stays where it is (something mounted there?): nothing lost
             pass
     return exe
+
+
+def old_folder_notice(exe, digest):
+    """For a program that starts fresh beside an old folder: where its earlier files may be, without promising they're
+    its own."""
+    old = SHARED / old_folder_name(exe, digest)
+    if os.path.islink(old) or not os.path.isdir(old):
+        return ""
+    return (f" An older folder, ~/Sandbox/{old.name}, stays as it was: it may hold this program's earlier files, "
+            "or those of another program with the same name.")
 
 
 def wine_cmd(target, args):
@@ -289,7 +320,8 @@ def run_sandboxed(exe, digest, args, sound=False):
     extra = granted_folders(digest)
     also = (" and " + ", ".join(f"~/{inside.name}" for _, inside in extra)) if extra else ""
     say(f"{exe.name} runs in a sandbox and only sees ~/Sandbox/{name}{also}. "
-        "If it needs other files, move them there, or allow a folder in Settings > App permissions.", "passivepopup")
+        "If it needs other files, move them there, or allow a folder in Settings > App permissions."
+        + old_folder_notice(exe, digest), "passivepopup")
     cmd = bwrap_args(exe, args, box_home, shared, proton, os.environ.get("XDG_RUNTIME_DIR"), os.environ,
                      sound=sound, wayland=wayland, resolv=resolv, uid=os.getuid(), gid=os.getgid(),
                      folders=extra)
@@ -426,9 +458,10 @@ def selftest():
     assert "UMU_RUNTIME_UPDATE" not in umu_env(now=time.time() + 2 * 86400), "next day: check again"
     subprocess.run(["rm", "-rf", str(DATA)])
 
-    global NAMES, BOXES, SHARED, run_trusted
+    global NAMES, BOXES, SHARED, OFFLINE, FOLDERS, OLD_RECORDS, run_trusted
     t = Path(tempfile.mkdtemp())
     CFG, NAMES, BOXES, SHARED = t, t / "exe-names", t / "boxes", t / "Sandbox"
+    TRUSTED, CHOICES, OFFLINE, FOLDERS, OLD_RECORDS = (t / n for n in ("trusted-exes", "exe-choices", "offline-exes", "exe-folders", "old-exe-records"))
     exe = t / "setup.exe"
     exe.write_text("program")
     real = sha256(exe)
@@ -442,26 +475,64 @@ def selftest():
             shutil.rmtree(d, ignore_errors=True)
             (d / short).mkdir(parents=True)
             (d / short / "mine").write_text("x")
+        for f in (TRUSTED, CHOICES, OLD_RECORDS):
+            f.unlink(missing_ok=True)
         NAMES.write_text("".join(f"{r}\t/x/setup.exe\n" for r in recorded))
 
+    def launch():
+        main(["--trusted", str(exe)])
+
     def left_alone():
-        return all((d / short / "mine").exists() and not list((d / long).iterdir()) for d in (BOXES, SHARED))
+        return all((d / short / "mine").exists() and not (d / long).exists() for d in (BOXES, SHARED))
+
+    def moved():
+        return all((d / long / "mine").exists() for d in (BOXES, SHARED)) and not os.path.lexists(BOXES / short) \
+            and os.readlink(SHARED / short) == long
 
     old_folders()
-    main(["--trusted", str(exe)])
-    main(["--trusted", str(exe)])
-    assert left_alone() and real in NAMES.read_text(), "not recorded before: could be crafted, on its second launch too"
+    launch()
+    launch()
+    assert left_alone() and real in NAMES.read_text() and real not in OLD_RECORDS.read_text(), "first seen now: could be crafted, on its second launch too"
+    assert f"~/Sandbox/{short}," in old_folder_notice(exe, real), "starting fresh: it hears where the old folder is"
+    old_folders()
+    other = t / "x.exe"
+    other.write_text("program")
+    main(["--trusted", str(other)])
+    launch()
+    assert left_alone(), "the same under another name first"
     old_folders(twin)
-    main(["--trusted", str(exe)])
-    assert left_alone(), "another program claims these 8 digits, this one doesn't"
+    launch()
+    assert left_alone(), "another program is on record with these 8 digits, this one isn't"
     old_folders(real, twin)
-    main(["--trusted", str(exe)])
-    assert left_alone(), "two recorded programs share these 8 digits: whose it is can't be told"
+    launch()
+    assert left_alone(), "two programs on record with these 8 digits: whose it is can't be told"
+    NAMES.write_text(f"{real}\t/x/setup.exe\n")
+    launch()
+    assert left_alone(), "nor later, when one of them is gone from the list"
+    old_folders()
+    NAMES.write_text(f"{real}\t/x/other.exe\n")
+    launch()
+    assert left_alone(), "on record under another file name: that one's folder is another folder"
+    old_folders()
+    CHOICES.write_text(f"{real} sandbox\n")
+    TRUSTED.write_text(twin + "\n")
+    launch()
+    assert left_alone(), "another program in any of the records counts"
+    old_folders()
+    CHOICES.write_text(f"{real} sandbox\n")
+    launch()
+    assert moved(), "a remembered choice is a record too: this file name was never written down"
     old_folders(real)
-    main(["--trusted", str(exe)])
-    main(["--trusted", str(exe)])
-    assert all((d / long / "mine").exists() and not (d / short).exists() for d in (BOXES, SHARED)), "the one recorded program keeps its files"
+    old_records(real)
+    NAMES.write_text(f"{twin}\t/x/setup.exe\n")
+    launch()
+    assert moved(), "a crafted file run first doesn't cost the program on record its files, nor does removing it in Settings"
+    old_folders(real)
+    launch()
+    launch()
+    assert moved(), "the one program on record keeps its files, and a link stays at the old name in ~/Sandbox"
     assert ran[-1] == exe.resolve(), "a program elsewhere stays where it is"
+    assert old_folder_notice(exe, real) == "", "nothing to tell"
     old_folders(real)
     inside = SHARED / short / "bin/setup.exe"
     inside.parent.mkdir()
@@ -469,6 +540,9 @@ def selftest():
     main(["--trusted", str(inside)])
     assert ran[-1] == SHARED.resolve() / long / "bin/setup.exe" and ran[-1].is_file(), "it was inside its folder: it moved along"
     assert str(ran[-1]) in NAMES.read_text(), "and is recorded at the new place"
+    ran.clear()
+    main(["--trusted", str(inside)])
+    assert ran == [SHARED.resolve() / long / "bin/setup.exe"], "a shortcut made before the move still starts it"
     old_folders(real)
     (SHARED / long).mkdir()
     main(["--trusted", str(exe)])
@@ -479,6 +553,10 @@ def selftest():
     (SHARED / short).symlink_to(t)
     main(["--trusted", str(exe)])
     assert (SHARED / short).is_symlink() and not (SHARED / long).exists(), "a link is never moved"
+    very_long = Path("я" * 120 + ".exe")   # 240 bytes: it fitted with 8 digits, not with 16
+    assert folder_name(very_long, real) == "я" * 119 + "-" + real[:16], "cut to fit, on a letter's edge"
+    assert old_folder_name(very_long, real) == "я" * 120 + "-" + real[:8], "the old name stays uncut: it must still be found"
+    assert len(folder_name(Path("x" * 251 + ".exe"), real).encode()) == 255
     shutil.rmtree(t)
     print("selftest ok")
 

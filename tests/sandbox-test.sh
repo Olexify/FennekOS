@@ -13,10 +13,11 @@ export XDG_RUNTIME_DIR=/tmp/xdg-tester; mkdir -p -m 700 "$XDG_RUNTIME_DIR"
 win() { echo "Z:$(echo "$1" | tr / '\\')"; }   # Linux path -> Wine path
 echo "top secret" > ~/secret.txt
 mkdir -p ~/Downloads && cp /fixtures/probe.exe ~/Downloads/probe.exe
-rm -rf ~/Sandbox ~/trusted-result.txt ~/.config/fennek/offline-exes
+rm -rf ~/Sandbox ~/trusted-result.txt ~/.config/fennek/offline-exes ~/.config/fennek/old-exe-records
 id=$(sha256sum ~/Downloads/probe.exe | cut -c1-16)   # each program gets ~/Sandbox/<name>-<id>
 
-# A program recorded from before the long names keeps its files: ~/Sandbox/probe-<first 8> moves to the long name.
+# A program on record from before the long names keeps its files: ~/Sandbox/probe-<first 8> moves to the long name,
+# a link stays at the old one.
 old=~/Sandbox/probe-${id:0:8}
 mkdir -p "$old" ~/.config/fennek && echo mine > "$old/mine.txt"
 printf '%s\t%s\n' "$(sha256sum ~/Downloads/probe.exe | cut -d' ' -f1)" ~/Downloads/probe.exe > ~/.config/fennek/exe-names
@@ -30,12 +31,16 @@ echo "== sandboxed =="; cat "$box/result.txt" 2>/dev/null || { echo "FAIL: sandb
 echo "== trusted ==";   cat ~/trusted-result.txt 2>/dev/null || { echo "FAIL: trusted run wrote no result"; tail -20 /tmp/trusted.log; exit 1; }
 grep -q "^BLOCKED " "$box/result.txt" || { echo "FAIL: sandboxed program could read the secret"; exit 1; }
 grep -q "^OK " ~/trusted-result.txt   || { echo "FAIL: trusted program couldn't read the secret"; exit 1; }
-[ -e "$box/mine.txt" ] && [ ! -e "$old" ] || { echo "FAIL: the old short-named folder didn't move to the long name"; exit 1; }
+[ -e "$box/mine.txt" ] && [ -L "$old" ] || { echo "FAIL: the old short-named folder didn't move to the long name"; exit 1; }
 
 # A program placed inside its own folder runs from there (portable apps that need their files).
 cp ~/Downloads/probe.exe "$box/probe.exe"; rm -f "$box/from-shared.txt"
 fennek-run-exe --sandbox "$box/probe.exe" "$(win "$HOME/Shared/from-shared.txt")" >/tmp/inbox.log 2>&1 || true
 [ -e "$box/from-shared.txt" ] || { echo "FAIL: program in its own folder didn't run"; tail -20 /tmp/inbox.log; exit 1; }
+# The same through the old name, as a shortcut made before the move does.
+rm -f "$box/from-shared.txt"
+fennek-run-exe --sandbox "$old/probe.exe" "$(win "$HOME/Shared/from-shared.txt")" >/tmp/oldname.log 2>&1 || true
+[ -e "$box/from-shared.txt" ] || { echo "FAIL: program didn't run through the old folder name"; tail -20 /tmp/oldname.log; exit 1; }
 
 # Firewall-blocked sandboxed program: runs with no network at all (no pasta) and still works.
 mkdir -p ~/.config/fennek && sha256sum ~/Downloads/probe.exe | cut -d' ' -f1 > ~/.config/fennek/offline-exes

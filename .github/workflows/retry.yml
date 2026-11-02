@@ -29,8 +29,9 @@ jobs:
     concurrency: nightly-alert   # build and build-arm can finish together: still one issue
     steps:
       # The issue has one "- workflow: link" line per failing workflow and closes when the last of them works again.
+      # Only this job's own issue counts: anyone can open one with that title, and that must not switch the alert off.
       - run: |
-          issue=$(gh issue list --state open --limit 1000 --json number,title --jq 'map(select(.title == "Nightly build failing"))[0].number // empty')
+          issue=$(gh issue list --state open --limit 1000 --json number,title,author --jq 'map(select(.title == "Nightly build failing" and .author.login == "app/github-actions"))[0].number // empty')
           body=$([ -z "$issue" ] || gh issue view "$issue" --json body --jq .body)
           line="- $WORKFLOW: $RUN_URL"
           if [ "$CONCLUSION" = failure ]; then
