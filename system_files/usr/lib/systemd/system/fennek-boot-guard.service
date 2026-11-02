@@ -2,7 +2,9 @@
 Description=Did this version of Fennek OS start properly? If a new one didn't, go back
 ConditionPathExists=/run/ostree-booted
 ConditionKernelCommandLine=!rd.live.image
-After=plasmalogin.service
+After=display-manager.service
+# A clean stop changes the boot loader's settings: /boot stays until this service has stopped.
+RequiresMountsFor=/boot
 
 [Service]
 # Started and running in the background while it watches: nothing waits for it.
