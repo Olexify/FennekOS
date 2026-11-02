@@ -8,7 +8,9 @@ there: nothing a person plugs in later gets read by anything here.
   fennek-windows-scan --selftest
 
 Hibernation (Fast Startup) holds all of Windows' drives, though hiberfil.sys lives only on its own one. If any drive shows
-it, or one can't be read or wasn't looked at, every drive opens read-only, also when someone clicks one in Files later.
+it, or one can't be read or wasn't looked at, every NTFS drive inside the computer opens read-only, also when someone
+clicks one in Files later. A drive locked with BitLocker can't be looked at and doesn't count, or the others could never
+be written to: there ntfs-3g's own check of each drive's log is what's left (see /etc/udisks2/mount_options.conf).
 """
 import json, os, re, select, stat, subprocess, sys, time
 
@@ -20,10 +22,15 @@ RULES = "/run/udev/rules.d/90-fennek-windows-drives.rules"
 PARTITION = re.compile(r"(?:sd[a-z]+|vd[a-z]+)[0-9]+|(?:nvme[0-9]+n[0-9]+|mmcblk[0-9]+)p[0-9]+")
 UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 BASIC_DATA = "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7"   # Microsoft basic data: not Windows' recovery partition
+OLD_STYLE_NTFS = "0x7"                                # the same on an old-style (MBR) table, where nothing has a real UUID
 PLUGGED_IN = {"usb", "thunderbolt", "firewire", "pcmcia", "memstick"}
 HIBERNATED = {b"hibr", b"HIBR", b"wake", b"WAKE"}
 TOOL_WAIT = 15    # seconds one tool gets on one drive
-SCAN_WAIT = 25    # seconds after which no further drive is started: with TOOL_WAIT, under the service's 60
+SCAN_WAIT = 25    # seconds after which no further drive is started: with three tools at TOOL_WAIT, under the service's 75
+# While Windows is hibernated, also what the list can't name: an old-style table, RAID, an unlocked BitLocker drive, a disk
+# that showed up late. Reads nothing, goes by what udev already knows. USB disks and attached files stay writable.
+HOLD_ALL = ('ACTION!="remove", SUBSYSTEM=="block", KERNEL!="loop*", ENV{ID_FS_TYPE}=="ntfs", ENV{ID_USB_VENDOR_ID}!="?*", '
+            'ENV{UDISKS_MOUNT_OPTIONS_DEFAULTS}="ro"\n')
 
 
 def attribute(folder, name):
@@ -53,31 +60,37 @@ def built_in(path, sysfs=SYSFS):
     return True
 
 
+def parse_properties(out):
+    # Newlines only: text from a disk (a label, a partition name) can hold what splitlines() would start a new line at.
+    return dict(l.split("=", 1) for l in out.decode(errors="replace").split("\n") if "=" in l)
+
+
 def properties(name):
-    out = subprocess.run(["udevadm", "info", "-q", "property", "/dev/" + name],
-                         capture_output=True, text=True, errors="replace").stdout
-    return dict(l.split("=", 1) for l in out.splitlines() if "=" in l)
+    return parse_properties(subprocess.run(["udevadm", "info", "-q", "property", "/dev/" + name], capture_output=True).stdout)
 
 
 def partitions(sysfs=SYSFS, props=properties):
-    """[(kernel name, partition UUID)] of the NTFS basic data partitions on built-in disks."""
+    """[(kernel name, partition UUID)] of the NTFS basic data partitions on built-in disks. An old-style table's get None
+    for the UUID: looked at for hibernation like the others, but never opened at sign-in."""
     found = []
     for name in sorted(os.listdir(sysfs + "/class/block")):
         path = os.path.realpath(f"{sysfs}/class/block/{name}")
         if not PARTITION.fullmatch(name) or not os.path.exists(path + "/partition") or not built_in(path, sysfs):
             continue
         p = props(name)
-        if p.get("ID_FS_TYPE") == "ntfs" and p.get("ID_PART_ENTRY_TYPE") == BASIC_DATA \
-                and UUID.fullmatch(p.get("ID_PART_ENTRY_UUID", "")):
+        if p.get("ID_FS_TYPE") != "ntfs":
+            continue
+        if p.get("ID_PART_ENTRY_TYPE") == OLD_STYLE_NTFS:
+            found.append((name, None))
+        elif p.get("ID_PART_ENTRY_TYPE") == BASIC_DATA and UUID.fullmatch(p.get("ID_PART_ENTRY_UUID", "")):
             found.append((name, p["ID_PART_ENTRY_UUID"]))
     return found
 
 
-def windows_folder(dev):
-    """ntfsls's exit code for Windows' system folder: 0 it's there, 3 it isn't, others the drive can't be read. None if
-    it takes too long. Never waits for a killed tool: one stuck on a dying disk can't hold this up."""
-    p = subprocess.Popen(["ntfsls", "-f", dev, "-p", "/Windows/System32"],
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+def there(dev, path):
+    """ntfsls's exit code for a path on a drive: 0 it's there, 3 it isn't, others the drive can't be read. None if it
+    takes too long. Never waits for a killed tool: one stuck on a dying disk can't hold this up."""
+    p = subprocess.Popen(["ntfsls", "-f", dev, "-p", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         return p.wait(TOOL_WAIT)
     except subprocess.TimeoutExpired:
@@ -107,23 +120,29 @@ def hiberfil_start(dev):
     return first_bytes(["ntfscat", "-f", dev, "hiberfil.sys"], 4)
 
 
-def look(dev, folder=windows_folder, start=hiberfil_start):
+def look(dev, find=there, start=hiberfil_start):
     """(Windows is installed here, hibernated or can't tell)"""
-    code = folder(dev)
-    if code not in (0, 3):   # can't be read: it might be the drive that says Windows is hibernated
+    windows = find(dev, "/Windows/System32")
+    if windows not in (0, 3):   # can't be read: it might be the drive that says Windows is hibernated
         return False, True
-    head = start(dev)
-    return code == 0, head is None or head in HIBERNATED
+    hiberfil = find(dev, "/hiberfil.sys")
+    if hiberfil == 3:
+        return windows == 0, False
+    # There, but its start can't be read or is cut short: can't tell. (ntfs-3g refuses a file that short as well.)
+    head = start(dev) if hiberfil == 0 else None
+    return windows == 0, head is None or len(head) < 4 or head in HIBERNATED
 
 
 def scan(parts, see=look, now=time.monotonic):
-    """The sandboxed half: what the drives say. A drive not reached in time stays out of it."""
+    """The sandboxed half: what the drives say. A drive not reached in time stays out of it, and then nothing opens for
+    writing."""
     end, drives, read_only = now() + SCAN_WAIT, [], False
     for name, uuid in parts:
         if now() > end:
-            break
+            return {"read_only": True, "drives": drives}
         windows, hibernated = see("/dev/" + name)
-        drives.append({"uuid": uuid, "windows": windows})
+        if uuid:
+            drives.append({"uuid": uuid, "windows": windows})
         read_only = read_only or hibernated
     return {"read_only": read_only, "drives": drives}
 
@@ -171,11 +190,12 @@ def rule(name, uuid, windows, read_only):
 def plan(parts, raw):
     """What's really there (parts, looked up again as root) and what the sandbox says (raw) -> (the list, the udev rule).
     Only partitions that are really there get in, whatever the sandbox names."""
-    read_only, windows = validated(raw) or (False, {})
+    read_only, windows = validated(raw) or (bool(parts), {})
+    listed = [(name, uuid) for name, uuid in parts if uuid]
     # Not looked at (the scan failed or ran out of time): can't tell, so nothing opens for writing.
-    read_only = read_only or any(uuid not in windows for _, uuid in parts)
-    rules = "".join(rule(name, uuid, windows.get(uuid, False), read_only) for name, uuid in parts)
-    drives = [{"uuid": uuid, "windows": windows.get(uuid, False)} for uuid in dict.fromkeys(uuid for _, uuid in parts)]
+    read_only = read_only or any(uuid not in windows for _, uuid in listed)
+    rules = (HOLD_ALL if read_only else "") + "".join(rule(name, uuid, windows.get(uuid, False), read_only) for name, uuid in listed)
+    drives = [{"uuid": uuid, "windows": windows.get(uuid, False)} for uuid in dict.fromkeys(uuid for _, uuid in listed)]
     return json.dumps({"read_only": read_only, "drives": drives}) + "\n", rules
 
 
@@ -192,8 +212,7 @@ def udevadm(*args):
 
 
 def apply():
-    parts = partitions()
-    listing, rules = plan(parts, read_result())
+    listing, rules = plan(partitions(), read_result())
     had_rules = os.path.exists(RULES)
     if rules:
         write(RULES, rules)
@@ -201,8 +220,7 @@ def apply():
         os.remove(RULES)
     if rules or had_rules:
         udevadm("control", "--reload")
-        if parts:
-            udevadm("trigger", "--action=change", *("/dev/" + name for name, _ in parts))
+        udevadm("trigger", "--action=change", "--subsystem-match=block", "--property-match=ID_FS_TYPE=ntfs")
         udevadm("settle", "--timeout=30")
     write(LIST, listing)
     print(listing, end="")
@@ -233,6 +251,8 @@ def selftest():
         partition("sda2", sata + "/block/sda")      # its recovery partition
         partition("sda3", sata + "/block/sda")      # Linux
         partition("sda4", sata + "/block/sda")      # a UUID that isn't one
+        partition("sda5", sata + "/block/sda")      # NTFS on an old-style table
+        partition("sda6", sata + "/block/sda")      # recovery on an old-style table
         device(f"{pci}/0000:00:1d.0/0000:3d:00.0", "pci", removable="fixed")
         partition("nvme0n1p3", f"{pci}/0000:00:1d.0/0000:3d:00.0/nvme/nvme0/nvme0n1")
         partition("vdb1", f"{pci}/0000:00:03.0/virtio3/block/vdb")
@@ -263,21 +283,32 @@ def selftest():
                     "sda2": dict(ntfs, ID_PART_ENTRY_UUID=b, ID_PART_ENTRY_TYPE="de94bba4-06d1-4d40-a16a-bfd50179d6ac"),
                     "sda3": dict(ntfs, ID_PART_ENTRY_UUID=b, ID_FS_TYPE="ext4"),
                     "sda4": dict(ntfs, ID_PART_ENTRY_UUID=a.upper()),
+                    "sda5": dict(ntfs, ID_PART_ENTRY_UUID="1234abcd-01", ID_PART_ENTRY_TYPE="0x7"),
+                    "sda6": dict(ntfs, ID_PART_ENTRY_UUID="1234abcd-02", ID_PART_ENTRY_TYPE="0x27"),
                     "nvme0n1p3": dict(ntfs, ID_PART_ENTRY_UUID=b),
                     "vdb1": dict(ntfs, ID_PART_ENTRY_UUID=c),
                     "mmcblk1p1": {}}.get(name, dict(ntfs, ID_PART_ENTRY_UUID=c))
-        assert partitions(sysfs, props) == [("nvme0n1p3", b), ("sda1", a), ("vdb1", c)], partitions(sysfs, props)
+        assert partitions(sysfs, props) == [("nvme0n1p3", b), ("sda1", a), ("sda5", None), ("vdb1", c)], partitions(sysfs, props)
         assert partitions(sysfs, lambda name: dict(ntfs, ID_PART_ENTRY_UUID=a))[0] == ("mmcblk1p1", a), "built-in eMMC stays"
+        # A label can't fake a line of udev's: what ends one is only a newline.
+        out = "ID_FS_TYPE=ntfs\nID_FS_LABEL=x\nDEVLINKS=/dev/disk/by-label/x\u2028ID_FS_TYPE=ext4\u2028\x1cID_FS_TYPE=ext4\n"
+        assert parse_properties(out.encode())["ID_FS_TYPE"] == "ntfs"
 
         # Looking at a drive: exit codes as in ntfsls.c
-        assert look("d", lambda d: 0, lambda d: b"\0\0\0\0") == (True, False), "Windows, shut down"
-        assert look("d", lambda d: 3, lambda d: b"") == (False, False), "data drive, no such file"
+        def found(system32, hiberfil):
+            return lambda d, path: system32 if path == "/Windows/System32" else hiberfil
+        assert look("d", found(0, 0), lambda d: b"\0\0\0\0") == (True, False), "Windows, shut down"
+        assert look("d", found(0, 3), lambda d: b"") == (True, False), "Windows, no such file"
+        assert look("d", found(3, 3), lambda d: b"") == (False, False), "data drive, no such file"
         for magic in (b"hibr", b"HIBR", b"wake", b"WAKE"):
-            assert look("d", lambda d: 0, lambda d: magic) == (True, True), magic
-        assert look("d", lambda d: 3, lambda d: b"HIB") == (False, False), "a short file says nothing"
-        assert look("d", lambda d: 0, lambda d: None) == (True, True), "too slow: can't tell"
-        assert look("d", lambda d: 2, lambda d: b"") == (False, True), "can't be read: can't tell"
-        assert look("d", lambda d: None, lambda d: b"") == (False, True), "too slow: can't tell"
+            assert look("d", found(0, 0), lambda d: magic) == (True, True), magic
+        assert look("d", found(3, 0), lambda d: b"HIB") == (False, True), "a short file: can't tell"
+        assert look("d", found(0, 0), lambda d: b"") == (True, True), "there, but nothing can be read from it: can't tell"
+        assert look("d", found(0, 0), lambda d: None) == (True, True), "too slow: can't tell"
+        assert look("d", found(0, 2), lambda d: b"\0\0\0\0") == (True, True), "can't be read: can't tell"
+        assert look("d", found(0, None), lambda d: b"\0\0\0\0") == (True, True), "too slow: can't tell"
+        assert look("d", found(2, 3), lambda d: b"") == (False, True), "can't be read: can't tell"
+        assert look("d", found(None, 3), lambda d: b"") == (False, True), "too slow: can't tell"
 
         # hiberfil.sys on one drive holds them all, also the one without it.
         says = {"/dev/sda1": (True, True), "/dev/sdb1": (False, False)}
@@ -286,6 +317,8 @@ def selftest():
         listing, rules = plan([("sda1", a), ("sdb1", b)], json.dumps(r))
         assert json.loads(listing) == r
         assert rules.splitlines() == [
+            'ACTION!="remove", SUBSYSTEM=="block", KERNEL!="loop*", ENV{ID_FS_TYPE}=="ntfs", ENV{ID_USB_VENDOR_ID}!="?*", '
+            'ENV{UDISKS_MOUNT_OPTIONS_DEFAULTS}="ro"',
             f'ACTION!="remove", SUBSYSTEM=="block", KERNEL=="sda1", ENV{{ID_PART_ENTRY_UUID}}=="{a}", ENV{{FENNEK_NTFS}}="1", '
             'ENV{ID_FS_LABEL}="Windows (C:)", ENV{ID_FS_LABEL_ENC}="Windows\\x20(C:)", ENV{UDISKS_MOUNT_OPTIONS_DEFAULTS}="ro"',
             f'ACTION!="remove", SUBSYSTEM=="block", KERNEL=="sdb1", ENV{{ID_PART_ENTRY_UUID}}=="{b}", ENV{{FENNEK_NTFS}}="1", '
@@ -297,12 +330,23 @@ def selftest():
         says["/dev/sda1"] = (True, False)
         listing, rules = plan([("sda1", a), ("sdb1", b)], json.dumps(scan([("sda1", a), ("sdb1", b)], says.get)))
         assert json.loads(listing)["read_only"] is False and "UDISKS" not in rules and rules.count("FENNEK_NTFS") == 2
+        # On an old-style table it counts just the same, though that drive never gets on the list.
+        says = {"/dev/sda1": (True, False), "/dev/sda5": (True, True)}
+        r = scan([("sda1", a), ("sda5", None)], says.get)
+        assert r == {"read_only": True, "drives": [{"uuid": a, "windows": True}]}, r
+        listing, rules = plan([("sda1", a), ("sda5", None)], json.dumps(r))
+        assert json.loads(listing) == r and rules.count("FENNEK_NTFS") == 1 and rules.startswith(HOLD_ALL) and rules.count('DEFAULTS}="ro"') == 2
+        listing, rules = plan([("sda5", None)], None)   # the only drive, and the scan failed: nothing to list, but still held
+        assert json.loads(listing) == {"read_only": True, "drives": []} and rules == HOLD_ALL
+        assert plan([("sda5", None)], json.dumps({"read_only": False, "drives": []})) == ('{"read_only": false, "drives": []}\n', "")
         # Out of time before the last drive: it stays out of the scan, and then nothing opens for writing.
+        says = {"/dev/sda1": (True, False), "/dev/sdb1": (False, False)}
         ticks = iter([0, 1, SCAN_WAIT + 1])
         r = scan([("sda1", a), ("sdb1", b)], says.get, lambda: next(ticks))
-        assert r["drives"] == [{"uuid": a, "windows": True}] and r["read_only"] is False, r
-        listing, rules = plan([("sda1", a), ("sdb1", b)], json.dumps(r))
-        assert json.loads(listing)["read_only"] is True and rules.count('DEFAULTS}="ro"') == 2 and rules.count("Windows (C:)") == 1
+        assert r == {"read_only": True, "drives": [{"uuid": a, "windows": True}]}, r
+        # And should it leave a drive out without saying so.
+        listing, rules = plan([("sda1", a), ("sdb1", b)], json.dumps(dict(r, read_only=False)))
+        assert json.loads(listing)["read_only"] is True and rules.count('DEFAULTS}="ro"') == 3 and rules.count("Windows (C:)") == 1
         # The scan failed or lies: drives open read-only without the Windows name, and it can't add a drive to the list.
         for bad in (None, b"", b"garbage", b"[]", b"[" * 60000, b'{"read_only": false}',
                     '{"read_only": 0, "drives": []}', '{"read_only": "no", "drives": []}', '{"read_only": false, "drives": {}}',

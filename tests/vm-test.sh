@@ -43,14 +43,16 @@ loop=$(sudo losetup -Pf --show "$work/ntfs.raw") && sudo mkntfs -Q -L OS "${loop
 mkdir -p "$work/m"
 sudo mount -t ntfs-3g "${loop}p1" "$work/m" && sudo mkdir -p "$work/m/Windows/System32" && sudo umount "$work/m" || die "test disk: Windows folder"
 sudo losetup -d "$loop"
-# The same kind of partition on what isn't this computer's own: a USB disk and a file the test account attaches as a disk.
-other_disk() {   # FILE LABEL
+other_disk() {   # FILE LABEL [more for sgdisk]
     truncate -s 64M "$1"
-    sgdisk -n 1:0:0 -t 1:0700 "$1" >/dev/null
+    sgdisk -n 1:0:0 -t 1:0700 "${@:3}" "$1" >/dev/null
     loop=$(sudo losetup -Pf --show "$1") && sudo mkntfs -Q -L "$2" "${loop}p1" >/dev/null && sudo losetup -d "$loop" || die "couldn't make the test disk $2"
 }
+# The same kind of partition on what isn't this computer's own: a USB disk and a file the test account attaches as a disk.
 other_disk "$work/usb.raw" FennekUSB
 other_disk "$share/loop.raw" FennekLoop
+# A data disk with an old-style (MBR) table: inside the computer, so hibernation holds it, but it doesn't open at sign-in.
+other_disk "$work/old.raw" FennekOld --gpttombr=1
 end
 
 cat > "$work/vmtest.service" <<'EOF'
@@ -70,7 +72,7 @@ qemu-system-x86_64 -name fennek-vm -machine q35,smm=on,accel=kvm -global driver=
     -cpu host -m 8192 -smp 4 -display none -serial "file:$work/serial.log" -nic none \
     -drive "if=pflash,format=raw,unit=0,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.secboot.fd" \
     -drive "if=pflash,format=raw,unit=1,file=$work/vars.fd" \
-    -drive "if=virtio,format=raw,file=$work/disk.raw" -drive "if=virtio,format=raw,file=$work/ntfs.raw" \
+    -drive "if=virtio,format=raw,file=$work/disk.raw" -drive "if=virtio,format=raw,file=$work/ntfs.raw" -drive "if=virtio,format=raw,file=$work/old.raw" \
     -device virtio-vga,xres=1600,yres=900,edid=on -device qemu-xhci -device usb-tablet -device usb-kbd \
     -virtfs "local,path=$share,mount_tag=t,security_model=none" \
     -smbios "type=11,value=io.systemd.credential.binary:systemd.extra-unit.fennek-vmtest.service=$cred" \

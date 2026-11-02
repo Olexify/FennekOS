@@ -59,6 +59,10 @@ check "Windows (C:) open and writable" opened_as /dev/vdb1 "Windows (C:)" rw
 check "data drive open and writable" opened_as /dev/vdb2 Data rw
 check "writing to Windows (C:)" as_user touch "/run/media/$user/Windows (C:)/fennek-vm-test"
 check "writing to the data drive" as_user touch "/run/media/$user/Data/fennek-vm-test"
+check "told not to wipe a log Windows left unclean" sh -c "journalctl -b -t ntfs-3g | grep 'Cmdline options' | grep -q norecover"
+# The drive on an old-style table: not opened at sign-in, and with Windows closed cleanly nothing holds it.
+old_drive_alone() { ! findmnt -n -S /dev/vdc1 && ! marked /dev/vdc1 FENNEK_NTFS=1 && ! marked /dev/vdc1 UDISKS_MOUNT_OPTIONS_DEFAULTS=ro; }
+check "the drive on an old-style table left alone" old_drive_alone
 # Neither of these is the computer's own: a USB disk (the host just plugged it in) and a file this account attaches as a disk.
 in_session cp /run/t/loop.raw "/home/$user/loop.raw"
 check "a file attached as a disk" in_session udisksctl loop-setup --no-user-interaction -f "/home/$user/loop.raw"
@@ -78,18 +82,21 @@ check "hibernated: Windows (C:) opens read-only" opened_as /dev/vdb1 "Windows (C
 check "hibernated: the drive without the file opens read-only too" opened_as /dev/vdb2 Data ro
 check "hibernated: Windows (C:) read-only in udev" marked /dev/vdb1 UDISKS_MOUNT_OPTIONS_DEFAULTS=ro
 check "hibernated: the data drive read-only in udev" marked /dev/vdb2 UDISKS_MOUNT_OPTIONS_DEFAULTS=ro
+check "hibernated: the drive on an old-style table read-only in udev" marked /dev/vdc1 UDISKS_MOUNT_OPTIONS_DEFAULTS=ro
 # Files asks for no options when someone clicks a drive: read-only has to come from udev.
 click_data_drive() { closed /dev/vdb2 && in_session udisksctl mount --no-user-interaction -b /dev/vdb2; }
 check "clicking a drive in Files" click_data_drive
 check "hibernated: clicked in Files, the drive opens read-only" opened_as /dev/vdb2 Data ro
-# All this time the USB disk and the attached file were there, with the same kind of partition: no mark, not open.
+check "clicking the drive on an old-style table" in_session udisksctl mount --no-user-interaction -b /dev/vdc1
+check "hibernated: clicked in Files, the drive on an old-style table opens read-only" opened_as /dev/vdc1 FennekOld ro
+# All this time the USB disk and the attached file were there, with the same kind of partition: no mark, not held, not open.
 not_ours() {
     local dev props
     dev=$(readlink -f "$1") && props=$(udevadm info -q property "$dev") || return 1
     grep -qx ID_FS_TYPE=ntfs <<<"$props" && grep -qx ID_PART_ENTRY_TYPE=ebd0a0a2-b9e5-4433-87c0-68b6b72699c7 <<<"$props" \
-        && ! grep -qx FENNEK_NTFS=1 <<<"$props" && ! findmnt -n -S "$dev"
+        && ! grep -qx FENNEK_NTFS=1 <<<"$props" && ! grep -q '^UDISKS_MOUNT_OPTIONS_DEFAULTS=' <<<"$props" && ! findmnt -n -S "$dev"
 }
-check "USB disk really on USB" marked /dev/disk/by-label/FennekUSB ID_BUS=usb
+check "USB disk really on USB" marked /dev/disk/by-label/FennekUSB 'ID_USB_VENDOR_ID=.*'
 check "USB disk not taken for the computer's own, not opened" not_ours /dev/disk/by-label/FennekUSB
 check "attached file not taken for the computer's own, not opened" not_ours /dev/disk/by-label/FennekLoop
 check "the list holds just the computer's own two drives, read-only" as_user python3 -c 'import json; d = json.load(open("/run/fennek/windows-drives.json")); assert d["read_only"] is True and len(d["drives"]) == 2'
@@ -111,7 +118,7 @@ echo "$crashes" | grep -Eq 'kwin_wayland|plasmashell|plasmalogin|startplasma' &&
     echo "== errors"; journalctl -b -p err --no-pager | tail -60
     echo "== graphics"; lsmod | grep -E 'nvidia|nouveau|virtio_gpu|v4l2loopback'; ls -l /dev/dri 2>&1; /usr/libexec/fennek-graphics-check --json
     echo "== Windows drives"; cat /run/fennek/windows-drives.json /run/udev/rules.d/90-fennek-windows-drives.rules; findmnt -S /dev/vdb1; findmnt -S /dev/vdb2
-    for d in /dev/vdb1 /dev/vdb2 /dev/disk/by-label/FennekUSB /dev/disk/by-label/FennekLoop; do echo "$d"; udevadm info -q property "$d" | grep -E 'FENNEK|ID_FS_LABEL|ID_FS_TYPE|ID_BUS|UDISKS'; done
+    for d in /dev/vdb1 /dev/vdb2 /dev/vdc1 /dev/disk/by-label/FennekUSB /dev/disk/by-label/FennekLoop; do echo "$d"; udevadm info -q property "$d" | grep -E 'FENNEK|ID_FS_LABEL|ID_FS_TYPE|ID_PART_ENTRY_TYPE|ID_BUS|ID_USB_VENDOR_ID|UDISKS'; done
     journalctl -b --no-pager -u fennek-windows-scan.service | tail -30
     echo "== tray"; as_user gdbus call --session --dest org.kde.plasmashell --object-path /PlasmaShell --method org.kde.PlasmaShell.evaluateScript "panels().forEach(function (p) { print(p.widgets().map(function (w) { return w.type }).join(' ')); p.widgets().forEach(function (w) { if (w.type === 'org.kde.plasma.systemtray') print(desktopById(w.readConfig('SystrayContainmentId')).widgets().map(function (t) { return t.type }).join(' ')) }) })"
     echo "== sign-in processes"; cat "$out/greeter-ps.txt" 2>/dev/null

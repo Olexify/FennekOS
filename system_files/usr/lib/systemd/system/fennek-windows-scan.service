@@ -6,7 +6,9 @@ Before=systemd-user-sessions.service
 [Service]
 Type=oneshot
 # Only ever at the start of the computer, for the disks already there. Sign-in comes after it, but doesn't depend on it.
-TimeoutStartSec=60
+TimeoutStartSec=75
+# A tool stuck on a dying disk outlives being killed, and systemd waits for it four times over before sign-in can go on.
+TimeoutStopSec=2
 # The disks known to udev. As root: only that way does settle ask udev itself, not just look at its queue.
 ExecStartPre=-+/usr/bin/udevadm settle --timeout=30
 # The NTFS tools read whatever is on a disk, so they stay in this box. If it fails, the next step opens all drives read-only.

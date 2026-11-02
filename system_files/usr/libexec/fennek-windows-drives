@@ -19,10 +19,14 @@ for e in d["drives"]:
 }
 # stdout of: udevadm info -q property DEVICE -> is this really the drive the scan found?
 ours() { grep -qx 'FENNEK_NTFS=1' <<<"$1"; }
+# A mount's options -> is it read-only?
+read_only_mount() { case ,$1, in *,ro,*) ;; *) false ;; esac; }
 
 if [ "${1:-}" = --selftest ]; then
     ours $'DEVNAME=/dev/sda3\nFENNEK_NTFS=1' || exit 1
     ! ours $'DEVNAME=/dev/sdb1\nID_FS_TYPE=ntfs' || exit 1
+    read_only_mount ro,nosuid,nodev || exit 1
+    ! read_only_mount rw,nosuid,errors=remount-ro || exit 1
     t=$(mktemp) || exit 1
     echo '{"read_only": true, "drives": [{"uuid": "a", "windows": true}, {"uuid": "b", "windows": false}]}' >"$t"
     [ "$(drives "$t" | paste -sd' ')" = "read-only a b" ] || exit 1
@@ -36,16 +40,19 @@ fi
 mapfile -t list < <(drives /run/fennek/windows-drives.json)
 read_only=""
 for uuid in "${list[@]:1}"; do
-    dev=/dev/disk/by-partuuid/$uuid
-    # A plugged-in drive with a copy of this UUID can take over the link: it doesn't get the scan's mark.
+    # The real device: a plugged-in drive with a copy of this UUID can take over the link (it doesn't get the scan's mark),
+    # and by the link's name udisksctl could pick that one even when the link is ours.
+    dev=$(readlink -f "/dev/disk/by-partuuid/$uuid")
     ours "$(udevadm info -q property "$dev" 2>/dev/null)" || continue
     [ -n "$(lsblk -nro MOUNTPOINTS "$dev" | tr -d '[:space:]')" ] && continue
+    open=(udisksctl mount --no-user-interaction -b "$dev")
     if [ "${list[0]}" = read-only ]; then
-        udisksctl mount --no-user-interaction -b "$dev" -o ro >/dev/null 2>&1 && read_only=1
-    elif ! udisksctl mount --no-user-interaction -b "$dev" >/dev/null 2>&1; then
-        # Not cleanly closed by Windows: the kernel won't write to it. Reading is still safe.
-        udisksctl mount --no-user-interaction -b "$dev" -o ro >/dev/null 2>&1 && read_only=1
+        "${open[@]}" -o ro >/dev/null 2>&1 || continue
+    else
+        "${open[@]}" >/dev/null 2>&1 || "${open[@]}" -o ro >/dev/null 2>&1 || continue
     fi
+    # Asked for read-write, a drive Windows didn't close cleanly opens read-only all the same, without a word.
+    read_only_mount "$(findmnt -no OPTIONS -S "$dev")" && read_only=1
 done
 
 # Once per start of the computer, not at every sign-in.
@@ -56,7 +63,7 @@ if [ -n "$read_only" ] && [ "$(cat "$state/windows-read-only-noticed" 2>/dev/nul
         "Windows wasn't fully shut down, so you can open its files here but not change them. To change them: start Windows, hold Shift and click Shut down." || true
 fi
 # BitLocker: once ever. The drive is there, and Files asks for its recovery key when you open it.
-if [ ! -e "$state/bitlocker-noticed" ] && lsblk -nro FSTYPE | grep -qx crypto_BITLK; then
+if [ ! -e "$state/bitlocker-noticed" ] && lsblk -nro FSTYPE | grep -qx BitLocker; then
     mkdir -p "$state" && touch "$state/bitlocker-noticed"
     notify-send -a "Files" -i drive-harddisk-encrypted "A drive is locked with BitLocker" \
         "To open it here, click it in Files and type its BitLocker recovery key." || true
