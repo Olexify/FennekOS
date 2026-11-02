@@ -7,8 +7,6 @@ if [ "${1:-}" = setup ]; then
     exec >"$out/setup.log" 2>&1
     useradd -m -c "Anna" -G wheel "$user" && echo "$user:fennektest" | chpasswd   # the host types this at the sign-in screen
     touch /etc/plasma-setup-done   # the account exists: no first-run account wizard
-    mkdir -p /etc/plasmalogin.conf.d
-    printf '[Autologin]\nUser=%s\nSession=plasma\n' "$user" > /etc/plasmalogin.conf.d/10-vmtest.conf
     touch "$out/setup-done"
     systemd-run --unit=fennek-vmtest-watch --no-block bash /run/t/vm-inside.sh watch
     exit 0

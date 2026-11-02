@@ -70,7 +70,19 @@ wait_for() {   # FILE SECONDS: until the VM says so
 stage "Boot and sign in"
 wait_for setup-done 300 || { sleep 1; shot boot-stuck; die "no sign of a booted system after 5 minutes"; }
 echo "System up"
-wait_for session-up 300 || { shot no-session; die "no desktop 5 minutes after boot"; }
+# Sign in like a person: any key on the clock screen, then the password.
+sleep 60
+shot 0-sign-in-clock
+for try in 1 2 3; do
+    python3 "$here/vm-qmp.py" "$work/qmp.sock" --key ret >/dev/null
+    sleep 4
+    [ "$try" = 1 ] && shot 0-sign-in
+    python3 "$here/vm-qmp.py" "$work/qmp.sock" --type fennektest >/dev/null
+    python3 "$here/vm-qmp.py" "$work/qmp.sock" --key ret >/dev/null
+    wait_for session-up 90 && break
+    shot "no-session-$try"
+done
+[ -e "$share/out/session-up" ] || die "no desktop after signing in"
 echo "Desktop up"
 wait_for desktop-settled 240 || { shot not-settled; die "the first sign-in didn't finish"; }
 shot 1-first-sign-in

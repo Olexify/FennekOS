@@ -1,6 +1,6 @@
 #!/usr/bin/python3
-"""One command to QEMU's control socket: vm-qmp.py SOCKET JSON"""
-import json, socket, sys
+"""QEMU's control socket: vm-qmp.py SOCKET JSON | --key NAME | --type LOWERCASE_TEXT"""
+import json, socket, sys, time
 
 s = socket.socket(socket.AF_UNIX)
 s.connect(sys.argv[1])
@@ -17,7 +17,18 @@ def cmd(o):
             return r
 
 
+def key(name):
+    return cmd({"execute": "send-key", "arguments": {"keys": [{"type": "qcode", "data": name}]}})
+
+
 cmd({"execute": "qmp_capabilities"})
-r = cmd(json.loads(sys.argv[2]))
+if sys.argv[2] == "--key":
+    r = key(sys.argv[3])
+elif sys.argv[2] == "--type":
+    for c in sys.argv[3]:
+        r = key(c)
+        time.sleep(0.08)
+else:
+    r = cmd(json.loads(sys.argv[2]))
 print(r)
 sys.exit("error" in r)
