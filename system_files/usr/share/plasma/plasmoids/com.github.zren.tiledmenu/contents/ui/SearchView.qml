@@ -112,7 +112,6 @@ Item {
 					if (search.query.length > 0 && stackView.currentItem != searchResultsView) {
 						stackView.replace(searchResultsView)
 					}
-					searchResultsView.filterViewOpen = false
 				}
 			}
 
