@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
                 auto call = QDBusMessage::createMethodCall(QStringLiteral("org.kde.kglobalaccel"), QStringLiteral("/component/kwin"),
                                                            QStringLiteral("org.kde.kglobalaccel.Component"), QStringLiteral("invokeShortcut"));
                 call << QStringLiteral("Fennek Bring Forward");
-                QDBusConnection::sessionBus().asyncCall(call);
+                QDBusConnection::sessionBus().send(call);
             });
         }
     });
