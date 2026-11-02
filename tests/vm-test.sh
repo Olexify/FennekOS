@@ -33,17 +33,24 @@ sudo podman run --rm --privileged --pid=host --security-opt label=disable \
 sudo chown "$(id -u)" "$work/disk.raw"
 end
 
-# A second disk as if Windows lived on this computer: the Windows drive, closed cleanly, and a data drive it left
-# hibernated (Fast Startup).
-stage "Windows-like disk"
+# A second disk as if Windows lived on this computer: the Windows drive and a data drive, both closed cleanly (the VM
+# hibernates Windows itself later on).
+stage "Windows drives"
 truncate -s 400M "$work/ntfs.raw"
 sgdisk -n 1:0:+180M -t 1:0700 -n 2:0:+180M -t 2:0700 "$work/ntfs.raw" >/dev/null
 loop=$(sudo losetup -Pf --show "$work/ntfs.raw") && sudo mkntfs -Q -L OS "${loop}p1" >/dev/null && sudo mkntfs -Q -L Data "${loop}p2" >/dev/null \
     || die "couldn't make the test disk"
 mkdir -p "$work/m"
 sudo mount -t ntfs-3g "${loop}p1" "$work/m" && sudo mkdir -p "$work/m/Windows/System32" && sudo umount "$work/m" || die "test disk: Windows folder"
-sudo mount -t ntfs-3g "${loop}p2" "$work/m" && printf 'HIBR\0\0\0\0' | sudo tee "$work/m/hiberfil.sys" >/dev/null && sudo umount "$work/m" || die "test disk: hibernation file"
 sudo losetup -d "$loop"
+# The same kind of partition on what isn't this computer's own: a USB disk and a file the test account attaches as a disk.
+other_disk() {   # FILE LABEL
+    truncate -s 64M "$1"
+    sgdisk -n 1:0:0 -t 1:0700 "$1" >/dev/null
+    loop=$(sudo losetup -Pf --show "$1") && sudo mkntfs -Q -L "$2" "${loop}p1" >/dev/null && sudo losetup -d "$loop" || die "couldn't make the test disk $2"
+}
+other_disk "$work/usb.raw" FennekUSB
+other_disk "$share/loop.raw" FennekLoop
 end
 
 cat > "$work/vmtest.service" <<'EOF'
@@ -107,6 +114,9 @@ stage "Start menu"
 wait_for start-open 60 || die "Start didn't open"
 sleep 6
 shot 2-start
+# Plugged in now, for the checks that come next.
+qmp "{\"execute\":\"blockdev-add\",\"arguments\":{\"driver\":\"raw\",\"node-name\":\"usbdisk\",\"file\":{\"driver\":\"file\",\"filename\":\"$work/usb.raw\"}}}" >/dev/null \
+    && qmp '{"execute":"device_add","arguments":{"driver":"usb-storage","id":"usbdisk0","drive":"usbdisk"}}' >/dev/null || die "couldn't plug in the USB disk"
 python3 "$here/vm-check-start.py" "$work/2-start.ppm" "$work/1-first-sign-in.ppm" || { touch "$share/out/go-report"; wait_for report-done 120; die "Start's tiles have no icons"; }
 touch "$share/out/go-report"
 end

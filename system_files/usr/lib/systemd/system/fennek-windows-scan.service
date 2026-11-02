@@ -1,0 +1,50 @@
+[Unit]
+Description=Find this computer's own Windows drives before anyone signs in
+After=systemd-udevd.service systemd-udev-trigger.service
+Before=systemd-user-sessions.service
+
+[Service]
+Type=oneshot
+# Only ever at the start of the computer, for the disks already there. Sign-in comes after it, but doesn't depend on it.
+TimeoutStartSec=60
+# The disks known to udev. As root: only that way does settle ask udev itself, not just look at its queue.
+ExecStartPre=-+/usr/bin/udevadm settle --timeout=30
+# The NTFS tools read whatever is on a disk, so they stay in this box. If it fails, the next step opens all drives read-only.
+ExecStart=-/usr/libexec/fennek-windows-scan --scan
+# Outside the box, as root: takes the box's result as untrusted, hands it on to udev and to sign-in.
+ExecStartPost=+/usr/libexec/fennek-windows-scan --apply
+RuntimeDirectory=fennek-windows-scan
+RuntimeDirectoryMode=0700
+# An ordinary user, or it could still reach systemd and D-Bus as root through their sockets, however few capabilities it has.
+DynamicUser=yes
+SupplementaryGroups=disk
+# Read-only, and just these kinds of disk (blkext: NVMe, and the highest partition numbers of the others).
+DevicePolicy=closed
+DeviceAllow=block-sd r
+DeviceAllow=block-blkext r
+DeviceAllow=block-virtblk r
+DeviceAllow=block-mmc r
+CapabilityBoundingSet=
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateNetwork=yes
+PrivateIPC=yes
+ProtectProc=invisible
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target

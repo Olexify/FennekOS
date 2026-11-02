@@ -1,29 +1,46 @@
 #!/usr/bin/bash
-# At sign-in: the computer's own NTFS drives (Windows (C:) and its data partitions) open by themselves and show in Files
-# like any other drive, for people allowed to administer this computer. Read-only when Windows isn't fully shut down:
-# then it keeps files open in hibernation (Fast Startup), and writing to the drive now could damage them.
+# At sign-in: the computer's own NTFS drives (Windows (C:) and its data partitions, as found by fennek-windows-scan at the
+# start of the computer) open by themselves and show in Files like any other drive, for people allowed to administer this
+# computer. Read-only when Windows isn't fully shut down: then it keeps files open in hibernation (Fast Startup), and
+# writing to a drive now could damage them.
 #   fennek-windows-drives
 #   fennek-windows-drives --selftest
 state=${XDG_STATE_HOME:-$HOME/.local/state}/fennek
 
-# stdout of: udevadm info -q property DEVICE -> does this drive open read-only from the start?
-read_only_from_start() { grep -qx 'FENNEK_NTFS_READONLY=1' <<<"$1"; }
+# The scan's list (a file) -> first line read-only or read-write, then each drive's partition UUID. Nothing if there's no list.
+drives() {
+    python3 -I -c '
+import json, sys
+d = json.load(open(sys.argv[1]))
+print("read-only" if d["read_only"] else "read-write")
+for e in d["drives"]:
+    print(e["uuid"])
+' "$1" 2>/dev/null
+}
+# stdout of: udevadm info -q property DEVICE -> is this really the drive the scan found?
 ours() { grep -qx 'FENNEK_NTFS=1' <<<"$1"; }
 
 if [ "${1:-}" = --selftest ]; then
-    p=$'DEVNAME=/dev/sda3\nFENNEK_NTFS=1\nFENNEK_NTFS_READONLY=1'
-    ours "$p" && read_only_from_start "$p" || exit 1
+    ours $'DEVNAME=/dev/sda3\nFENNEK_NTFS=1' || exit 1
     ! ours $'DEVNAME=/dev/sdb1\nID_FS_TYPE=ntfs' || exit 1
-    ! read_only_from_start $'FENNEK_NTFS=1' || exit 1
+    t=$(mktemp) || exit 1
+    echo '{"read_only": true, "drives": [{"uuid": "a", "windows": true}, {"uuid": "b", "windows": false}]}' >"$t"
+    [ "$(drives "$t" | paste -sd' ')" = "read-only a b" ] || exit 1
+    echo '{"read_only": false, "drives": []}' >"$t"
+    [ "$(drives "$t")" = read-write ] || exit 1
+    rm -f "$t"
+    [ -z "$(drives "$t")" ] || exit 1
     echo "selftest ok"; exit 0
 fi
 
+mapfile -t list < <(drives /run/fennek/windows-drives.json)
 read_only=""
-for dev in $(lsblk -nrpo PATH,FSTYPE | awk '$2 == "ntfs" { print $1 }'); do
-    props=$(udevadm info -q property "$dev") || continue
-    ours "$props" || continue
+for uuid in "${list[@]:1}"; do
+    dev=/dev/disk/by-partuuid/$uuid
+    # A plugged-in drive with a copy of this UUID can take over the link: it doesn't get the scan's mark.
+    ours "$(udevadm info -q property "$dev" 2>/dev/null)" || continue
     [ -n "$(lsblk -nro MOUNTPOINTS "$dev" | tr -d '[:space:]')" ] && continue
-    if read_only_from_start "$props"; then
+    if [ "${list[0]}" = read-only ]; then
         udisksctl mount --no-user-interaction -b "$dev" -o ro >/dev/null 2>&1 && read_only=1
     elif ! udisksctl mount --no-user-interaction -b "$dev" >/dev/null 2>&1; then
         # Not cleanly closed by Windows: the kernel won't write to it. Reading is still safe.
