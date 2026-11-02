@@ -5,4 +5,4 @@ SortRole=type
 GroupedSorting=true
 SortFoldersFirst=false
 VisibleRoles=Icons_text
-PreviewsShown=false
+PreviewsShown=true

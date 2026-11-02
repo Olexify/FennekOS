@@ -282,6 +282,8 @@ grep -q "^theme=__aurorae__svg__FennekClassicDark" /usr/share/plasma/look-and-fe
 for x in org.kde.breeze.desktop org.kde.breezedark.desktop org.kde.breezetwilight.desktop; do [ ! -e "/usr/share/plasma/look-and-feel/$x" ] || fail "KDE global theme still listed: $x"; done
 # The log out screen: in the theme until Plasma 6.7, in the desktop's own package since 6.8.
 for x in org.fennek.dark.desktop/contents/logout org.fennek.amber.desktop/contents/logout; do [ -d "/usr/share/plasma/look-and-feel/$x" ] || find /usr/share/plasma/shells/org.kde.plasma.desktop/contents -ipath '*logout*' | grep -q . || fail "Fennek's theme misses a screen: $x ($(ls /usr/share/plasma/look-and-feel/${x%%/*}/contents | xargs))"; done
+[ "$(kreadconfig6 --file /etc/xdg/kdeglobals --group PreviewSettings --key MaximumRemoteSize)" = 26214400 ] && grep -q '^PreviewsShown=true' /etc/skel/.local/share/dolphin/view_properties/remote/.directory || fail "Files: pictures on network shares"
+grep -q '^BorderActivate=9' /etc/xdg/kwinrc || fail "no hot corner in the top left"
 rpm -q ffmpegthumbs kdegraphics-thumbnailers >/dev/null && [ "$(kreadconfig6 --file /etc/xdg/kdeglobals --group PreviewSettings --key MaximumSize)" = 4294967296 ] || fail "Files: thumbnails for videos, PDFs and camera photos, big files too"
 grep -aq fennekCollapsedGroups "$(ls /usr/lib64/libdolphinprivate.so.*.* | head -1)" || fail "Files: Fennek's patched view (no group lines, groups fold)"
 python3 -c 'import sys; sys.exit("Files".encode("utf-16-le") not in open("/usr/bin/dolphin", "rb").read())' || fail "Files: its windows are titled Files, not Dolphin"

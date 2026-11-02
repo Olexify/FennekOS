@@ -254,6 +254,43 @@ t = tips.read_text(encoding="utf-8")
 old = "    m_showToolTipTimer->setInterval(500);\n"
 assert t.count(old) == 1, "tooltipmanager.cpp: the pop-up delay moved"
 tips.write_text(t.replace(old, "    m_showToolTipTimer->setInterval(900); // Fennek OS: on purpose, not in passing\n"), encoding="utf-8")
+# 6. Pictures and Videos open with big thumbnails, subfolders too, unless a view was saved there or "apply to all folders" was used.
+props = views / "viewproperties.cpp"
+t = props.read_text(encoding="utf-8")
+old = """    // default values for special directories
+    if (useDefaultSettings) {
+"""
+assert t.count(old) == 1, "viewproperties.cpp: the default values moved"
+t = t.replace(old, """    const bool fennekMedia = [&] { // Fennek OS
+        if (useGlobalViewProps || settings->viewPropsTimestamp().isValid() || !url.isLocalFile()) {
+            return false;
+        }
+        const QString path = url.toLocalFile();
+        for (const auto where : {QStandardPaths::PicturesLocation, QStandardPaths::MoviesLocation}) {
+            const QString folder = QStandardPaths::writableLocation(where); // home itself: that folder is switched off
+            if (folder != QDir::homePath() && (path == folder || path.startsWith(folder + QLatin1Char('/')))) {
+                return true;
+            }
+        }
+        return false;
+    }();
+
+""" + old)
+old = """        } else {
+            m_changedProps = false;
+        }
+        setZoomLevel(-1);
+"""
+assert t.count(old) == 1, "viewproperties.cpp: the end of the default values moved"
+props.write_text(t.replace(old, """        } else if (fennekMedia) { // Fennek OS: big thumbnails
+            setViewMode(DolphinView::IconsView);
+            setPreviewsShown(true);
+        } else {
+            m_changedProps = false;
+        }
+        setZoomLevel(fennekMedia ? 6 : -1); // 96 px, the classic Large icons
+"""), encoding="utf-8")
+
 # 5. Its name is Files (window titles "Home — Files", About): the program, built from main.cpp.
 main = pathlib.Path(sys.argv[1]) / "src" / "main.cpp"
 t = main.read_text(encoding="utf-8")

@@ -18,6 +18,10 @@ BorderlessMaximizedWindows=false
 # Alt+Tab shows a grid of window previews.
 LayoutName=thumbnail_grid
 
+# No hot corner: flicking the pointer to the top left (the Recycle Bin, a window's menu) mustn't zoom out to Overview.
+[Effect-overview]
+BorderActivate=9
+
 [Plugins]
 # Alt+F4 on the desktop opens Shut down (/usr/share/kwin-wayland/scripts/fennekaltf4).
 fennekaltf4Enabled=true

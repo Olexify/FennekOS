@@ -53,6 +53,8 @@ dnf -y install \
 # besides pictures. Big files too (a film is GBs; only a few frames are read).
 dnf -y install ffmpegthumbs kdegraphics-thumbnailers
 kwriteconfig6 --file /etc/xdg/kdeglobals --group PreviewSettings --key MaximumSize 4294967296
+# On a network share each file is copied whole for its picture: phone and camera photos, not a folder of RAW files.
+kwriteconfig6 --file /etc/xdg/kdeglobals --group PreviewSettings --key MaximumRemoteSize 26214400
 # Printers page in Settings + print queue in the tray (KDE's printer manager; renamed in newer Plasma).
 dnf -y install plasma-print-manager || dnf -y install print-manager
 # Games: MangoHud, the in-game overlay (FPS, frame times, GPU/CPU load and temperatures), for every game incl. the

@@ -124,6 +124,13 @@ if [ "$(cat "$panel_seen" 2>/dev/null)" != 2026-10-18 ]; then
     mkdir -p "${panel_seen%/*}" && echo 2026-10-18 >"$panel_seen"
 fi
 
+# Pictures on network shares, once (new accounts have it). Home's view is this file too, and shows the same.
+remote_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/remote-previews-version
+if [ "$(cat "$remote_seen" 2>/dev/null)" != 2026-11-02 ]; then
+    sed -i 's/^PreviewsShown=false$/PreviewsShown=true/' "${XDG_DATA_HOME:-$HOME/.local/share}/dolphin/view_properties/remote/.directory" 2>/dev/null
+    mkdir -p "${remote_seen%/*}" && echo 2026-11-02 >"$remote_seen"
+fi
+
 # Power button, once: a laptop sleeps (the system-wide default), a desktop PC or virtual machine shuts down as it always
 # did. A hold of a second still brings up the full choice. An own choice stays.
 power_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/power-button-version
