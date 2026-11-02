@@ -8,12 +8,18 @@ desktop (no screen, say) isn't "broken", and an old version is never rolled back
 
 Crashes, panics and power cuts use up a try. A clean restart during the watch doesn't (the sign-in screen's Restart button
 needs no account): the tries are put back on the way down. Someone signed in proves the desktop came up, there and then.
+Starting an older version from the boot menu proves nothing about the new one: it stays first, with the tries it has left.
+With none left that start is where the boot loader would fall back to anyway, so it goes back there and then.
+
+Going back can be cut short at any moment. The tries are full before the list of versions changes, so whatever comes first
+afterwards simply starts and gets checked: the boot loader never takes "menu entry 1" from a list that has moved.
 
 /boot can be read-only for the whole system: this process writes to it through a private view, nobody else sees a change.
 
   fennek-boot-guard arm        at shutdown: if an update was really put in place, give it its tries
   fennek-boot-guard check      at every start: did this version come up? (no-op on ordinary starts)
-  fennek-boot-guard vet        after an update was downloaded: one that already failed here isn't installed again
+  fennek-boot-guard vet        after an update was downloaded: one that already failed here isn't installed again, and none
+                               while the running version is unproven: it would push out the one that's known to work
   fennek-boot-guard --selftest
 """
 import json, os, shutil, signal, subprocess, sys, time
@@ -108,15 +114,26 @@ def keep_trying(attempt, wait=BUSY, sleep=time.sleep):
     return attempt()
 
 
-def plan_back(deps):
+def in_menu(deps):
+    """The boot menu, in order: a waiting update isn't in it yet."""
+    return [d for d in deps if not d.get("staged")]
+
+
+def not_default(deps):
+    """Is something other than the running version first in the boot menu? False if that can't be told."""
+    menu = in_menu(deps)
+    return bool(menu) and not menu[0].get("booted")
+
+
+def plan_back(deps, fell_back):
     """Which deployment has to be the default again and which one failed: (back_to, failed) or None.
     A waiting update is neither: it has never run."""
-    live = [d for d in deps if not d.get("staged")]
+    live = in_menu(deps)
     booted = next((i for i, d in enumerate(live) if d.get("booted")), None)
     if booted is None:
         return None
-    if booted > 0:                 # the boot loader already fell back to this one
-        return live[booted], live[0]
+    if booted > 0:                 # the boot loader already fell back to this one, or else someone chose another default
+        return (live[booted], live[0]) if fell_back else None
     return (live[1], live[0]) if len(live) > 1 else None
 
 
@@ -138,22 +155,33 @@ def remember_failed(dep):
         print(f"couldn't remember which version failed: {e}")
 
 
-def go_back():
-    """True if the failed version is off the boot order. If that fails the tries stay, and the next start tries again."""
+def go_back(fell_back=False):
+    """True if the failed version is off the boot order. If not, the next start tries again."""
+    # During a transaction rpm-ostree refuses, and set-default waits for the end and then applies its index to a list that
+    # has changed. So nothing is touched until it's over, however long that takes. A restart before then: the tries decide.
+    while status().get("transaction"):
+        time.sleep(15)
     deps = deployments()
-    plan = plan_back(deps)
+    plan = plan_back(deps, fell_back)
     if plan:
         back_to, failed = plan
+        # The boot loader takes tries=0 as "menu entry 1", which stops being the previous version (or any version) as soon
+        # as the list changes. With full tries, whatever comes first after an interruption just starts and gets checked.
+        if not editenv("set", f"fennek_tries={TRIES}") or not editenv("unset", "fennek_fell_back"):
+            return False
+        remember_failed(failed)
         # Everything ahead of the running version goes: a waiting update and, once the boot loader fell back, the failed
         # version itself. So the index comes from the list as it is now. If this was refused, set-default also drops a
         # waiting update when something else becomes the default.
-        if not keep_trying(lambda: sh("rpm-ostree", "cleanup", "--pending").returncode == 0):
-            print("couldn't discard a waiting update")
+        sh("rpm-ostree", "cleanup", "--pending")
         index = index_of(deployments(), back_to)
-        if index is None or (index > 0 and sh("ostree", "admin", "set-default", str(index)).returncode):
+        if index:
+            sh("ostree", "admin", "set-default", str(index))
+        # The list decides, not set-default's exit code: it can fail after the swap, and a transaction that started just
+        # now can move the index while it waits for the lock.
+        if index_of(in_menu(deployments()), back_to) != 0:
             print("couldn't make the previous version the default again")
             return False
-        remember_failed(failed)
     elif not deps:
         print("couldn't read the list of installed versions")
         return False
@@ -203,16 +231,25 @@ def clean_stop(*_):
 def check():
     hold_boot()
     env = read_env()
-    if "fennek_fell_back" in env:   # the boot loader gave up on the new version: this is the previous one
+    fell_back = "fennek_fell_back" in env
+    armed = "fennek_tries" in env and not fell_back
+    if armed:
+        signal.signal(signal.SIGTERM, clean_stop)
+    picked = armed and not_default(deployments())   # the boot menu's other entry: says nothing about the new version
+    # The boot loader gave up on the new version, or would on the next start: this is the previous one. A session must not
+    # go on with no tries left: the list can change in it ("Go back"), and then 0 means the wrong boot menu entry.
+    if fell_back or (picked and env["fennek_tries"] == "0"):
+        signal.signal(signal.SIGTERM, signal.SIG_DFL)
         print("the new version didn't start: staying on this one")
-        go_back()
+        go_back(fell_back=True)
         return
-    armed = "fennek_tries" in env
+    if picked:
+        print("an older version was picked at the start: the new one keeps the tries it has left")
+        return
     known = os.path.exists(WORKED)
     if known and not armed:
         return
     if armed:
-        signal.signal(signal.SIGTERM, clean_stop)
         print("a new version: watching whether it comes up")
     came_up = wait_for_desktop()
     signal.signal(signal.SIGTERM, signal.SIG_DFL)   # the watch is over: going back's own restart must not put tries back
@@ -260,12 +297,18 @@ def vet_once(bad):
     st = status()
     if not st or st.get("transaction"):
         return False
-    staged = next((d for d in st.get("deployments", []) if d.get("staged")), None)
-    if not staged or staged.get("container-image-reference-digest") != bad:
+    deps = st.get("deployments", [])
+    staged = next((d for d in deps if d.get("staged")), None)
+    if not staged or not_default(deps):   # the cleanup takes everything ahead of the running version, not just this update
+        return True
+    failed_here = bad and staged.get("container-image-reference-digest") == bad
+    # Put in place now, it would replace the version that's known to work, and the running one is still unproven.
+    if not failed_here and "fennek_tries" not in read_env():
         return True
     if sh("rpm-ostree", "cleanup", "--pending").returncode:
         return False
-    print("this update already failed to start here: not installing it again")
+    print("this update already failed to start here: not installing it again" if failed_here
+          else "the running version isn't proven yet: this update comes again later")
     return True
 
 
@@ -274,9 +317,9 @@ def vet():
         with open(ROLLED_BACK, encoding="utf-8") as f:
             bad = json.load(f).get("digest")
     except (OSError, ValueError):
-        return
-    if bad and not keep_trying(lambda: vet_once(bad)):
-        print("rpm-ostree stayed busy or refused: a downloaded update that failed here before may still be waiting")
+        bad = None
+    if not keep_trying(lambda: vet_once(bad)):
+        print("rpm-ostree stayed busy or refused: a downloaded update that shouldn't be installed yet may still be waiting")
 
 
 def selftest():
@@ -286,12 +329,15 @@ def selftest():
     assert parse_env("# GRUB Environment Block\nfennek_tries=1\nmenu_auto_hide=1\n######\n") == {"fennek_tries": "1", "menu_auto_hide": "1"}
     new, old, waiting = {"id": "new", "version": "new", "container-image-reference-digest": "sha"}, {"id": "old"}, {"id": "next", "staged": True}
     run_new, run_old = dict(new, booted=True), dict(old, booted=True)
-    assert plan_back([run_new, old]) == (old, run_new), "running the new one: back to the previous"
-    assert plan_back([new, run_old]) == (run_old, new), "the boot loader fell back: keep this one"
-    assert plan_back([waiting, run_new, old]) == (old, run_new), "a waiting update neither failed nor is the way back"
-    assert plan_back([waiting, new, run_old]) == (run_old, new)
-    assert plan_back([run_new]) is None and plan_back([waiting, run_new]) is None, "nothing to go back to"
-    assert plan_back([]) is None
+    assert plan_back([run_new, old], False) == (old, run_new), "running the new one: back to the previous"
+    assert plan_back([new, run_old], True) == (run_old, new), "the boot loader fell back: keep this one"
+    assert plan_back([old, run_new], False) is None, "no fall back and something else is first: someone chose that"
+    assert plan_back([waiting, run_new, old], False) == (old, run_new), "a waiting update neither failed nor is the way back"
+    assert plan_back([waiting, new, run_old], True) == (run_old, new)
+    assert plan_back([run_new], False) is None and plan_back([waiting, run_new], False) is None, "nothing to go back to"
+    assert plan_back([], True) is None
+    assert not_default([new, run_old]) and not_default([waiting, new, run_old])
+    assert not not_default([run_new, old]) and not not_default([waiting, run_new, old]) and not not_default([]), "can't tell: no"
     assert index_of([run_new, old], old) == 1 and index_of([waiting, run_new, old], old) == 2, "a waiting update counts"
     assert index_of([run_old], run_old) == 0 and index_of([run_new], old) is None and index_of([{}], {}) is None
     # `ostree admin status`, as ot-admin-builtin-status.c prints it.
@@ -327,17 +373,41 @@ def selftest():
     tried.clear()
     assert not keep_trying(lambda: tried.append(1), 30, lambda s: None) and len(tried) == 3, "gives up in the end"
     # Everything else with the commands answered from here: what runs, in what order, and what's left behind.
-    ran, answers, at_reboot, during_watch, desktop, writable, retried = [], {}, [], [], [True], [], []
+    ran, answers, at_reboot, at_read, during_watch, desktop, writable, retried, mid_watch = [], {}, [], [], [], [True], [], [], []
+    world, read = {"deps": [], "transaction": None}, "rpm-ostree status --json"   # the list, as rpm-ostree and ostree treat it
+    def save_env(env):
+        with open(GRUB + "/grubenv", "w", encoding="utf-8") as f:
+            f.writelines(f"{k}={v}\n" for k, v in env.items())
     def fake_sh(*cmd):
         line = " ".join(cmd)
         ran.append(line)
         assert writable or not line.startswith("grub2-editenv"), "/boot isn't writable yet"
-        if line == "systemctl reboot":
-            at_reboot.append(signal.getsignal(signal.SIGTERM))
+        if line in ("systemctl reboot", read):
+            (at_reboot if line != read else at_read).append(signal.getsignal(signal.SIGTERM))
         for start, (rc, out) in answers.items():
             if line.startswith(start):
                 return subprocess.CompletedProcess(cmd, rc, out() if callable(out) else out, "")
-        return subprocess.CompletedProcess(cmd, 0, "", "")
+        rc, out, deps = 0, "", world["deps"]
+        if line == read:
+            out = json.dumps({"deployments": deps, "transaction": world["transaction"]})
+        elif line == "rpm-ostree cleanup --pending":   # refused during a transaction; drops all that's ahead of the running one
+            rc = 1 if world["transaction"] else 0
+            if not rc:
+                world["deps"] = deps[next(i for i, d in enumerate(deps) if d.get("booted")):]
+        elif line.startswith("ostree admin set-default "):   # gets the lock first, then counts a waiting update too and drops it
+            if "at_lock" in world:
+                deps.insert(0, world.pop("at_lock"))
+            chosen = deps[int(cmd[-1])]
+            world["deps"] = [chosen] + [d for d in deps if d is not chosen and not d.get("staged")]
+            rc = world.pop("rc_after_swap", 0)
+        elif cmd[0] == "grub2-editenv":
+            env = read_env()
+            for arg in cmd[3:]:
+                env.pop(arg.partition("=")[0], None)
+                if cmd[2] == "set":
+                    env[arg.partition("=")[0]] = arg.partition("=")[2]
+            save_env(env)
+        return subprocess.CompletedProcess(cmd, rc, out, "")
     sh = fake_sh
     answers.update({"ps -C kwin_wayland": (0, "  959  2345\n"), "systemctl is-active display-manager.service": (3, "inactive\n")})
     assert desktop_running() is None, "the display manager has to be active"
@@ -359,6 +429,8 @@ def selftest():
     keep_trying = lambda attempt: retried.append(1) or attempt()
     def fake_wait():
         during_watch.append(signal.getsignal(signal.SIGTERM))
+        while mid_watch:
+            mid_watch.pop()()
         return desktop[0]
     wait_for_desktop = fake_wait
     with tempfile.TemporaryDirectory() as t:
@@ -375,9 +447,8 @@ def selftest():
         GRUB, STATE, WENT_BACK = t, t + "/state", t + "/went-back"
         WORKED, ROLLED_BACK = STATE + "/desktop-worked", STATE + "/rolled-back"
         edit, cleanup, armed, fell_back = f"grub2-editenv {t}/grubenv ", "rpm-ostree cleanup --pending", "fennek_tries=1\n", "fennek_tries=0\nfennek_fell_back=1\n"
-        def listed(*lists):   # what `rpm-ostree status` says, one list per asking; the last one stays
-            queue = list(lists)
-            answers["rpm-ostree status"] = (0, lambda: json.dumps({"deployments": queue.pop(0) if len(queue) > 1 else queue[0], "transaction": None}))
+        def ids():
+            return [d["id"] for d in world["deps"]]
         def start(grubenv, up, known=True):
             shutil.rmtree(STATE, ignore_errors=True)
             if os.path.exists(WENT_BACK):
@@ -387,66 +458,116 @@ def selftest():
                 open(WORKED, "w").close()
             open(t + "/grubenv", "w").write(grubenv)
             desktop[0] = up
-            for seen in (ran, at_reboot, during_watch, writable, retried):
+            for seen in (ran, at_reboot, at_read, during_watch, writable, retried):
                 seen.clear()
             check()
-            assert signal.getsignal(signal.SIGTERM) == signal.SIG_DFL
+            signal.signal(signal.SIGTERM, signal.SIG_DFL)
         # An ordinary start, and a first one.
         start("", True)
         assert not ran and not during_watch
         start("", True, known=False)
         assert not ran and during_watch == [signal.SIG_DFL] and os.path.exists(WORKED)
-        # A new version comes up. Only an armed start puts the tries back when stopped.
+        # A new version comes up. Only an armed start puts the tries back when stopped, from the first moment.
+        world["deps"] = [run_new, old]
         start(armed, True)
-        assert during_watch == [clean_stop] and ran == [edit + "unset fennek_tries"] and not at_reboot
+        assert during_watch == [clean_stop] and at_read == [clean_stop] and ran == [read, edit + "unset fennek_tries"] and not at_reboot
         start(armed, True, known=False)
-        assert during_watch == [clean_stop] and ran == [edit + "unset fennek_tries"] and os.path.exists(WORKED)
-        # It doesn't, here where a desktop has been seen working.
-        listed([run_new, old])
+        assert during_watch == [clean_stop] and ran == [read, edit + "unset fennek_tries"] and os.path.exists(WORKED)
+        # It doesn't, here where a desktop has been seen working. The tries are safe before the list changes.
         start(armed, False)
-        assert ran.index(cleanup) < ran.index("ostree admin set-default 1") < ran.index(edit + "unset fennek_tries fennek_fell_back") < ran.index("systemctl reboot")
+        assert [c for c in ran if c != read] == [edit + "set fennek_tries=2", edit + "unset fennek_fell_back", cleanup, "ostree admin set-default 1",
+                                                 edit + "unset fennek_tries fennek_fell_back", "systemctl reboot"]
         assert at_reboot == [signal.SIG_DFL], "its own restart doesn't put the tries back"
-        assert retried, "rpm-ostree may be busy"
         assert os.path.exists(WENT_BACK) and json.load(open(ROLLED_BACK))["digest"] == "sha"
+        assert ids() == ["old", "new"] and read_env() == {}
         # A waiting update: the index is the one set-default understands, whether the cleanup worked or not.
-        listed([waiting, run_new, old], [run_new, old])
+        world["deps"] = [waiting, run_new, old]
         start(armed, False)
-        assert "ostree admin set-default 1" in ran and at_reboot
+        assert "ostree admin set-default 1" in ran and at_reboot and ids() == ["old", "new"]
         answers[cleanup] = (1, "")
-        listed([waiting, run_new, old])
+        world["deps"] = [waiting, run_new, old]
         start(armed, False)
-        assert "ostree admin set-default 2" in ran and at_reboot
+        assert "ostree admin set-default 2" in ran and at_reboot and ids() == ["old", "new"], "that drops the waiting one too"
         del answers[cleanup]
-        # Nowhere to go, or no way to get there: the tries stay unless there really is nothing to go back to.
-        for broken in ("set-default", "first list", "second list"):
-            listed([run_new, old]) if broken != "second list" else listed([run_new, old], [])
-            if broken == "set-default":
-                answers["ostree admin set-default"] = (1, "")
-            if broken == "first list":
-                answers["rpm-ostree status"] = (1, "")
-            start(armed, False)
-            assert not at_reboot and not [c for c in ran if c.startswith(edit)], broken
-            assert not os.path.exists(ROLLED_BACK) and not os.path.exists(WENT_BACK), broken
-            answers.pop("ostree admin set-default", None)
-        listed([run_new])
+        # During a transaction nothing is touched, however long it takes: a restart meanwhile leaves it to the tries.
+        naps = []
+        time.sleep = lambda _: naps.append((set(ran), read_env(), ids(), os.path.exists(ROLLED_BACK))) or world.update(transaction=None)
+        world.update(deps=[run_new, old], transaction=["upgrade", ":1.5", "/path"])
         start(armed, False)
-        assert edit + "unset fennek_tries fennek_fell_back" in ran and not at_reboot and not os.path.exists(ROLLED_BACK)
-        # Never seen working here: nothing to compare with, nothing to undo.
-        start(armed, False, known=False)
-        assert ran == [edit + "unset fennek_tries"] and not at_reboot
-        # The boot loader fell back: the cleanup takes the failed version too, or set-default moves it behind.
-        listed([new, run_old], [run_old])
+        assert naps == [({read}, {"fennek_tries": "1"}, ["new", "old"], False)] and at_reboot and ids() == ["old", "new"]
+        naps.clear()
+        world.update(deps=[new, run_old], transaction=["upgrade", ":1.5", "/path"])
         start(fell_back, True)
-        assert cleanup in ran and not [c for c in ran if "set-default" in c] and edit + "unset fennek_tries fennek_fell_back" in ran
+        assert naps == [({read}, {"fennek_tries": "0", "fennek_fell_back": "1"}, ["new", "old"], False)] and ids() == ["old"]
+        # One that starts just after that look and ends with an update waiting: set-default gets the lock then, and its index
+        # is the running version's by now. The list shows it: not gone back, and full tries for the next start.
+        answers[cleanup] = (1, "")
+        world.update(deps=[run_new, old], at_lock=waiting)
+        start(armed, False)
+        assert "ostree admin set-default 1" in ran and not at_reboot and not os.path.exists(WENT_BACK) and read_env() == {"fennek_tries": "2"}
+        del answers[cleanup]
+        # set-default's last step can fail after the swap: it did go back.
+        world.update(deps=[run_new, old], rc_after_swap=1)
+        start(armed, False)
+        assert at_reboot and ids() == ["old", "new"] and read_env() == {}
+        # No way to get there: the next start tries again.
+        world["deps"] = [run_new, old]
+        answers["ostree admin set-default"] = (1, "")
+        start(armed, False)
+        assert not at_reboot and not os.path.exists(WENT_BACK) and ids() == ["new", "old"] and read_env() == {"fennek_tries": "2"}
+        answers.clear()
+        answers[cleanup] = (0, lambda: answers.update({read: (1, "")}) or "")   # after this the list can't be read
+        start(armed, False)
+        assert not at_reboot and not os.path.exists(WENT_BACK) and not [c for c in ran if "set-default" in c] and read_env() == {"fennek_tries": "2"}
+        answers.clear()
+        answers[read] = (1, "")
+        start(armed, False)
+        assert not at_reboot and not [c for c in ran if c.startswith(edit)] and not os.path.exists(ROLLED_BACK) and not os.path.exists(WENT_BACK)
+        answers.clear()
+        # The tries can't be made safe: the list stays as it is.
+        for refused in (edit + "set fennek_tries", edit + "unset fennek_fell_back"):
+            answers[refused] = (1, "")
+            start(armed, False)
+            assert ids() == ["new", "old"] and cleanup not in ran and not at_reboot and not os.path.exists(ROLLED_BACK), refused
+            del answers[refused]
+        # Nothing to go back to: the tries go, on either path.
+        world["deps"] = [run_new]
+        start(armed, False)
+        assert edit + "unset fennek_tries fennek_fell_back" in ran and read_env() == {} and not at_reboot and not os.path.exists(ROLLED_BACK)
+        world["deps"] = [run_old]
+        start(fell_back, True)
+        assert read_env() == {} and cleanup not in ran and not os.path.exists(ROLLED_BACK)
+        # Someone made another version the default during the watch: nothing to undo, and a stale 0 would mean the wrong entry.
+        world["deps"] = [run_new, old]
+        mid_watch.append(lambda: world.update(deps=[old, run_new]))
+        start(armed, False)
+        assert ids() == ["old", "new"] and cleanup not in ran and read_env() == {} and not at_reboot and not os.path.exists(ROLLED_BACK)
+        # The older version picked in the boot menu: nothing watched, accepted or undone, the new one keeps what it has left.
+        world["deps"] = [new, run_old]
+        start(armed, True)
+        assert ran == [read] and not during_watch and read_env() == {"fennek_tries": "1"} and not os.path.exists(ROLLED_BACK)
+        # With nothing left it goes back there and then: a session with tries at 0 and a list that can change is a trap.
+        start("fennek_tries=0\n", True)
+        assert not during_watch and ids() == ["old"] and read_env() == {} and json.load(open(ROLLED_BACK))["version"] == "new" and not at_reboot
+        # Never seen working here: nothing to compare with, nothing to undo.
+        world["deps"] = [run_new, old]
+        start(armed, False, known=False)
+        assert ran == [read, edit + "unset fennek_tries"] and not at_reboot
+        # The boot loader fell back: the cleanup takes the failed version too, or set-default moves it behind.
+        world["deps"] = [new, run_old]
+        start(fell_back, True)
+        assert cleanup in ran and not [c for c in ran if "set-default" in c] and ids() == ["old"] and read_env() == {}
         assert json.load(open(ROLLED_BACK))["version"] == "new", "remembered from before the cleanup"
         assert not at_reboot and not os.path.exists(WENT_BACK) and not during_watch
+        assert set(at_read) == {signal.SIG_DFL}, "a clean stop here must leave the tries alone: they lead back to this version"
         answers[cleanup] = (1, "")
-        listed([new, run_old])
+        world["deps"] = [new, run_old]
         start(fell_back, True)
-        assert "ostree admin set-default 1" in ran
+        assert "ostree admin set-default 1" in ran and ids() == ["old", "new"] and read_env() == {}
         answers.clear()
         # A real SIGTERM during the watch: the tries go back, and that's the end of it.
         wait_for_desktop = lambda: signal.raise_signal(signal.SIGTERM)
+        world["deps"] = [run_new, old]
         open(t + "/grubenv", "w").write(armed)
         ran.clear(), writable.clear()
         try:
@@ -454,7 +575,7 @@ def selftest():
             assert False, "it ends here"
         except SystemExit as stop:
             assert not stop.code
-        assert ran == [edit + "set fennek_tries=2"]
+        assert ran == [read, edit + "set fennek_tries=2"]
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
         # arm: only for a version really put in place.
         for text, rc in ((running, 0), ("  default bbb.0 (staged)\n" + running, 0), ("  default bbb.0 (pending)\n" + running, 1), ("", 0)):
@@ -474,32 +595,101 @@ def selftest():
         ran.clear()
         arm()
         assert not ran, "going back's own restart"
+        answers.clear()
         # vet: not while busy, and not without trying to remove the one that failed here.
         bad_update, other_update = dict(waiting, **{"container-image-reference-digest": "bad"}), dict(waiting, **{"container-image-reference-digest": "ok"})
-        def says(deps, transaction=None): answers["rpm-ostree status"] = (0, json.dumps({"deployments": deps, "transaction": transaction}))
-        answers[cleanup] = (0, "")
-        says([bad_update, run_new], ["upgrade", ":1.5", "/path"])
-        ran.clear()
+        def waits(*deps, transaction=None):
+            world.update(deps=list(deps), transaction=transaction)
+            ran.clear()
+        save_env({})
+        waits(bad_update, run_new, transaction=["upgrade", ":1.5", "/path"])
         assert not vet_once("bad") and cleanup not in ran, "a transaction is running"
-        answers["rpm-ostree status"] = (1, "")
+        answers[read] = (1, "")
+        waits(bad_update, run_new)
         assert not vet_once("bad") and cleanup not in ran, "no answer"
-        says([other_update, run_new])
+        del answers[read]
+        waits(other_update, run_new)
         assert vet_once("bad") and cleanup not in ran, "another update is fine"
-        says([run_new, old])
+        waits(run_new, old)
         assert vet_once("bad") and cleanup not in ran, "nothing waiting"
-        says([bad_update, run_new])
-        assert vet_once("bad") and cleanup in ran
+        waits(bad_update, run_new)
+        assert vet_once("bad") and cleanup in ran and ids() == ["new"]
         answers[cleanup] = (1, "")
+        waits(bad_update, run_new)
         assert not vet_once("bad"), "refused: ask again"
+        del answers[cleanup]
+        # While the running version is unproven nothing else gets in: put in place, it would push out the proven one.
+        save_env({"fennek_tries": "1"})
+        waits(other_update, run_new, old)
+        assert vet_once(None) and cleanup in ran and ids() == ["new", "old"]
+        answers[cleanup] = (1, "")
+        waits(other_update, run_new, old)
+        assert not vet_once(None), "refused: ask again"
+        del answers[cleanup]
+        # With the older version picked in the boot menu it can: and the cleanup would take the new one along with it.
+        waits(other_update, new, run_old)
+        assert vet_once(None) and cleanup not in ran
+        waits(bad_update, new, run_old)
+        assert vet_once("bad") and cleanup not in ran
+        save_env({})
         shutil.rmtree(STATE)
-        ran.clear()
+        waits(bad_update, run_new)
         vet()
-        assert not ran, "nothing failed here"
+        assert cleanup not in ran, "nothing failed here"
         os.makedirs(STATE)
         open(ROLLED_BACK, "w").write(json.dumps({"digest": "bad"}))
         retried.clear()
+        waits(bad_update, run_new)
         vet()
         assert retried and cleanup in ran
+        # Cut off after any command at all, then started again from there as often as it takes. The boot loader never lands on
+        # the wrong version or on none (that's the firmware settings), and it ends on the good one, with the bad one remembered.
+        wait_for_desktop = fake_wait
+        class Cut(BaseException):
+            pass
+        left = [0]
+        def cut_sh(*cmd):
+            done = fake_sh(*cmd)
+            left[0] -= 1
+            if left[0] < 0:
+                raise Cut
+            return done
+        def boot_loader():   # boot-guard.cfg
+            env, entry = read_env(), 0
+            if env.get("fennek_tries") in ("2", "1"):
+                env["fennek_tries"] = str(int(env["fennek_tries"]) - 1)
+            elif "fennek_tries" in env:
+                entry, env["fennek_fell_back"] = 1, "1"
+            save_env(env)
+            return entry
+        for grubenv, deps, panics in (("fennek_tries=1\n", [run_new, old], False), ("fennek_tries=0\n", [run_new, old], False),
+                                      ("fennek_tries=0\n", [waiting, run_new, old], False), (fell_back, [new, run_old], True),
+                                      (fell_back, [waiting, new, run_old], True), (fell_back, [new, run_old], False),
+                                      ("fennek_tries=0\n", [new, run_old], True)):
+            for cut_after in range(30):
+                world["deps"], left[0], sh = deps, cut_after, cut_sh
+                try:
+                    start(grubenv, deps[-1] is run_old)
+                    whole = True
+                except Cut:
+                    whole = False
+                sh = fake_sh
+                signal.signal(signal.SIGTERM, signal.SIG_DFL)
+                for _ in range(12):
+                    if not read_env():
+                        break
+                    menu, entry = in_menu(world["deps"]), boot_loader()   # a waiting update doesn't survive this
+                    assert entry < len(menu) and "old" in ids(), (grubenv, cut_after, "the firmware settings or no good version", ids())
+                    world["deps"] = [dict(d, booted=i == entry) for i, d in enumerate(menu)]
+                    if not panics or menu[entry]["id"] != "new":
+                        desktop[0] = menu[entry]["id"] == "old"
+                        check()
+                        signal.signal(signal.SIGTERM, signal.SIG_DFL)
+                assert in_menu(world["deps"])[0]["id"] == "old" and not read_env(), (grubenv, cut_after, ids(), read_env())
+                assert json.load(open(ROLLED_BACK))["digest"] == "sha", (grubenv, cut_after)
+                if whole:
+                    break
+            assert whole, "more commands than this test expects"
     print("selftest ok")
 
 

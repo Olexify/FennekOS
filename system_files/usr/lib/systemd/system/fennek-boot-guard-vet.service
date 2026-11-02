@@ -1,5 +1,5 @@
 [Unit]
-Description=Don't install again an update that already failed to start here
+Description=Don't install an update that already failed to start here, or one over a version still unproven
 
 [Service]
 Type=oneshot

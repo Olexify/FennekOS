@@ -118,6 +118,9 @@ gb=$(mktemp -d) && printf '#!/bin/sh\necho "$GB_JSON"\n' >"$gb/rpm-ostree" && pr
   && [[ $(GB_JSON='{"deployments":[{"booted":true,"timestamp":1760000000}]}' PATH="$gb:$PATH" fennek-go-back --yes 2>&1) == *"no previous version"* ]] \
   && [[ $(GB_JSON='{"deployments":[{"staged":true},{"booted":true},{"timestamp":1760000000}]}' PATH="$gb:$PATH" fennek-go-back --yes) == *"pkexec bootc rollback"* ]] \
   && ! GB_JSON='{"deployments":[{"booted":true},{"timestamp":1}]}' PATH="$gb:$PATH" fennek-go-back >/dev/null 2>&1 || fail "go back (rollback) logic"
+echo '{"digest": "bad"}' >"$gb/failed" \
+  && [[ $(FENNEK_ROLLED_BACK="$gb/failed" GB_JSON='{"deployments":[{"booted":true},{"timestamp":1,"container-image-reference-digest":"bad"}]}' PATH="$gb:$PATH" fennek-go-back --yes 2>&1) == *"no previous version"* ]] \
+  && [[ $(FENNEK_ROLLED_BACK="$gb/failed" GB_JSON='{"deployments":[{"booted":true},{"timestamp":1,"container-image-reference-digest":"ok"}]}' PATH="$gb:$PATH" fennek-go-back --yes) == *"pkexec bootc rollback"* ]] || fail "go back: never to a version that failed to start here"
 rm -rf "$gb"
 # Everyday apps: installed once after the first start (never in the live session); --list = what's still missing.
 ea=$(/usr/libexec/fennek-essential-apps --list) && echo "everyday apps to fetch: $ea" | tr '\n' ' ' && echo \
