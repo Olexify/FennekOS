@@ -188,6 +188,8 @@ kwriteconfig6 --file /etc/xdg/kdeglobals --group General --key smallestReadableF
 kwriteconfig6 --file /etc/xdg/kdeglobals --group WM --key activeFont "Inter,11,-1,5,500,0,0,0,0,0,0,0,0,0,0,1"
 # Snappy: every animation (menus, pop-ups, windows) at half its length.
 kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key AnimationDurationFactor 0.5
+# Dragging files: moves on the same drive without a question, the classic way (Settings > Appearance > Animation speed has "Always ask").
+kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key DndBehavior MoveIfSameDevice
 # Widget style "Fennek" (src/fennek-style): Breeze as it is, but the wheel scrolls the page instead of changing a
 # drop-down or slider under the pointer. Both themes use it.
 kwriteconfig6 --file /etc/xdg/kdeglobals --group KDE --key widgetStyle Fennek
@@ -642,7 +644,7 @@ chmod 0600 "/usr/lib/modules/$KVER/initramfs.img"
 (cd "$files" && find . -type f) | while read -r f; do [ -e "/${f#./}" ] || continue; chmod 644 "/${f#./}"; chown root:root "/${f#./}"; done
 # Belt and braces: everything we ship belongs to root (a build-context owner would be a local root hole).
 (cd "$files" && find . -mindepth 1 -type d) | while read -r d; do chown root:root "/${d#./}"; done
-chmod 755 /usr/bin/fennek-* /usr/libexec/fennek-*
+chmod 755 /usr/bin/fennek-* /usr/libexec/fennek-* /usr/lib/NetworkManager/dispatcher.d/90-fennek-everyday-apps
 # KWin's data folder: newer releases load scripts from kwin/ again (kwin-wayland/ before). Ours follow KDE's own.
 if [ -d /usr/share/kwin/scripts/minimizeall ] && [ ! -d /usr/share/kwin-wayland/scripts/minimizeall ]; then
     for d in /usr/share/kwin-wayland/scripts/fennek*; do
@@ -837,8 +839,8 @@ from_source() (
     rpm -K "$srpm" | grep -q 'signatures OK' || { echo "$pkg source package: signature not OK"; exit 1; }
     dnf -y builddep "./$srpm"
     rpm2cpio "$srpm" | cpio -idm --quiet
-    tar xf "$pkg"-*.tar.xz
-    srcdir=$(find . -maxdepth 1 -type d -name "$pkg-*" | head -1)
+    tar xf "$(ls ./*.tar.xz | head -1)"
+    srcdir=$(find . -maxdepth 1 -mindepth 1 -type d | head -1)
     python3 "$patcher" "$srcdir"
     cmake -S "$srcdir" -B build -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
     for ft in "$@"; do
@@ -860,6 +862,8 @@ from_source() (
 from_source dolphin "$files/../src/dolphin-fennek/patch.py" "$(ls /usr/lib64/libdolphinprivate.so.*.* 2>/dev/null | head -1):dolphinprivate" /usr/bin/dolphin:dolphin
 # Taskbar, src/taskmanager-fennek/patch.py: "App permissions" in a taskbar button's right-click menu.
 from_source plasma-desktop "$files/../src/taskmanager-fennek/patch.py" /usr/lib64/qt6/plugins/plasma/applets/org.kde.plasma.taskmanager.so:org.kde.plasma.taskmanager
+# Opening an .exe: always through fennek-run-exe, whichever way it's opened and wherever it lies (src/kio-fennek).
+from_source kf6-kio "$files/../src/kio-fennek/patch.py" "$(ls /usr/lib64/libKF6KIOGui.so.*.* 2>/dev/null | head -1):KF6KIOGui"
 # Settings in Start search (fennek-search's /settings runner): Settings' catalog as a plain list, only pages that
 # exist in this image (optional KDE pages may be missing, e.g. on ARM).
 python3 - <<'EOF'

@@ -24,6 +24,12 @@ QQC2.ApplicationWindow {
         ["Task Manager", "fennek-app taskmanager"]
     ]
 
+    property bool hasWindows: false
+    P5Support.DataSource {
+        engine: "executable"
+        connectedSources: ["test -e /run/fennek/has-windows"]
+        onNewData: (source, data) => { root.hasWindows = data["exit code"] === 0; disconnectSource(source) }
+    }
     // Started detached, so it keeps running after this screen closes.
     P5Support.DataSource { id: run; engine: "executable"; onNewData: source => { disconnectSource(source); Qt.quit() } }
     function open(cmd) { root.visible = false; bye.start(); run.connectSource("setsid -f " + cmd) }
@@ -85,6 +91,7 @@ QQC2.ApplicationWindow {
             QQC2.MenuItem { text: "Sleep"; icon.name: "system-suspend"; onTriggered: root.open("systemctl suspend") }
             QQC2.MenuItem { text: "Shut down"; icon.name: "system-shutdown"; onTriggered: root.open(root.ksm + "logoutAndShutdown") }
             QQC2.MenuItem { text: "Restart"; icon.name: "system-reboot"; onTriggered: root.open(root.ksm + "logoutAndReboot") }
+            QQC2.MenuItem { visible: root.hasWindows; height: visible ? implicitHeight : 0; text: "Restart to Windows"; icon.name: "system-reboot"; onTriggered: root.open("fennek-reboot-windows") }
         }
     }
 }

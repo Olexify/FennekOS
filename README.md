@@ -39,7 +39,7 @@ What's in it so far:
 7. **Install:** click **Install Fennek OS** on the desktop.
    - **Keep your current system** (recommended): at *Installation Destination*, pick your drive, then
      **Free up space** and **Shrink** your current system's partition (leave it at least 30 GB free). Fennek OS goes
-     into the freed space. When the PC starts you choose which system to use.
+     into the freed space. Fennek OS then starts by default; to use the other system, pick **Restart to Windows** in Start, or use your PC's boot menu key.
    - **Replace it:** pick your drive and **Delete all**. Everything on that drive is gone.
 8. Restart, take out the stick, and you are in Fennek OS. Updates arrive by themselves; the previous version
    always stays in the start menu in case one goes wrong.

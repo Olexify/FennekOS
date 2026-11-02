@@ -18,6 +18,12 @@ registerShortcut("Fennek Restore or Minimize", "Restore a maximized window, or m
     else if (w.minimizable) w.minimized = true;
 });
 
+// Alt+Shift: the next input language, the classic way. It fires when the keys are let go; with any other key in between
+// (Alt+Shift+Tab) it doesn't.
+registerShortcut("Fennek Next Language", "Next input language", "Alt+Shift", function () {
+    callDBus("org.kde.keyboard", "/Layouts", "org.kde.KeyboardLayouts", "switchToNextLayout");
+});
+
 // Super+Ctrl+D: a new virtual desktop, switched to. Super+Ctrl+F4: close this one (its windows move to the
 // neighbour). Super+Ctrl+Left / Right switch between them (KWin's own).
 registerShortcut("Fennek New Desktop", "Add a virtual desktop and switch to it", "Meta+Ctrl+D", function () {

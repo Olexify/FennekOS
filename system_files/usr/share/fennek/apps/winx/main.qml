@@ -15,6 +15,12 @@ QQC2.ApplicationWindow {
     height: list.implicitHeight + Kirigami.Units.smallSpacing * 2
     color: Kirigami.Theme.backgroundColor
 
+    property bool hasWindows: false
+    P5Support.DataSource {
+        engine: "executable"
+        connectedSources: ["test -e /run/fennek/has-windows"]
+        onNewData: (source, data) => { root.hasWindows = data["exit code"] === 0; disconnectSource(source) }
+    }
     readonly property var links: [
         ["Installed apps", "fennek-set-defaultapps", "fennek-app installedapps"],
         ["Power options", "preferences-system-power-management", "fennek-app settings kcm_powerdevilprofilesconfig"],
@@ -29,6 +35,7 @@ QQC2.ApplicationWindow {
         ["File Explorer", "system-file-manager", "dolphin"],
         ["Launch", "system-search", "fennek-app run"],
         [],
+        ...(hasWindows ? [["Restart to Windows", "system-reboot", "fennek-reboot-windows"]] : []),
         ["Shut down or sign out", "system-shutdown", "dbus-send --session --dest=org.kde.LogoutPrompt --type=method_call /LogoutPrompt org.kde.LogoutPrompt.promptAll"],
         ["Desktop", "user-desktop", "dbus-send --session --dest=org.kde.kglobalaccel --type=method_call /component/kwin org.kde.kglobalaccel.Component.invokeShortcut string:'Fennek Show Desktop'"]
     ]

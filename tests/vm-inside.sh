@@ -151,6 +151,12 @@ efibootmgr -q -c -d /dev/vda -p 2 -L "Windows Boot Manager" -l '\EFI\Microsoft\B
 systemctl restart fennek-detect-windows.service
 check "Restart to Windows offered" test -e /run/fennek/has-windows
 check "clock in step with Windows" sh -c '[ "$(timedatectl show -p LocalRTC --value)" = yes ]'
+# An .exe with the executable flag (what a Windows drive or a stick gives every .exe), opened the way Start search does.
+printf 'MZ' > "/home/$user/fennek-vm-test.exe"; chown "$user:" "/home/$user/fennek-vm-test.exe"; chmod 755 "/home/$user/fennek-vm-test.exe"
+as_user systemd-run --user --quiet --collect kde-open "/home/$user/fennek-vm-test.exe"
+exe_opens() { for ((i = 0; i < 20; i++)); do pgrep -u "$user" -f 'fennek-run-exe.*fennek-vm-test' >/dev/null && return 0; sleep 1; done; return 1; }
+check "an .exe opens through fennek-run-exe" exe_opens
+pkill -u "$user" -f 'fennek-vm-test' ; pkill -u "$user" kdialog
 crashes=$(coredumpctl --no-pager --no-legend list 2>/dev/null)
 echo "$crashes" | grep -Eq 'kwin_wayland|plasmashell|plasmalogin|startplasma' && problems+=("the desktop crashed")
 

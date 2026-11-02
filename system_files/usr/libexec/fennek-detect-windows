@@ -10,6 +10,6 @@ fi
 ln -sf /usr/bin/true /run/fennek/has-windows
 stamp=/var/lib/fennek/windows-clock-set
 if [ ! -e "$stamp" ]; then
-    timedatectl set-local-rtc 1 && mkdir -p "${stamp%/*}" && touch "$stamp"
+    timedatectl set-local-rtc 1 --adjust-system-clock && mkdir -p "${stamp%/*}" && touch "$stamp"
 fi
 exit 0

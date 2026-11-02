@@ -1,0 +1,6 @@
+#!/usr/bin/bash
+# The computer just got online and the everyday apps haven't come yet: fetch them now, not at the next retry.
+case "$2" in up|connectivity-change) ;; *) exit 0 ;; esac
+[ -e /var/lib/fennek/essential-apps.v3 ] && exit 0
+systemctl is-enabled -q fennek-essential-apps.service && systemctl --no-block start fennek-essential-apps.service
+exit 0

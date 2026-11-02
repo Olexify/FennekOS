@@ -433,7 +433,7 @@ command -v efibootmgr >/dev/null                             || fail "efibootmgr
 /usr/libexec/fennek-reboot-windows-helper --selftest >/dev/null || fail "reboot-windows selftest"
 systemctl is-enabled -q fennek-detect-windows.service         || fail "windows detection not enabled"
 # Windows' own drives: read at the start of the computer by a sandboxed scan, never when a drive is plugged in; one hibernated drive makes them all read-only; no password for admins.
-/usr/libexec/fennek-windows-scan --selftest >/dev/null && /usr/libexec/fennek-windows-drives --selftest >/dev/null || fail "Windows drives selftests"
+grep -q 'rd.live.image' /usr/libexec/fennek-windows-drives && grep -q 'adjust-system-clock' /usr/libexec/fennek-detect-windows && /usr/libexec/fennek-windows-scan --selftest >/dev/null && /usr/libexec/fennek-windows-drives --selftest >/dev/null || fail "Windows drives selftests"
 for c in ntfsls ntfscat udisksctl /usr/bin/udevadm; do command -v "$c" >/dev/null || fail "Windows drives: $c"; done
 systemctl is-enabled -q fennek-windows-scan.service && [ -L /etc/systemd/user/graphical-session.target.wants/fennek-windows-drives.service ] && grep -q 'id.type") == "ntfs"' /usr/share/polkit-1/rules.d/60-fennek-windows-drive.rules || fail "Windows drives in Files"
 grep -qxF 'ntfs_defaults=uid=$UID,gid=$GID,windows_names,norecover' /etc/udisks2/mount_options.conf || fail "Windows drives: a log Windows left unclean stays as it is"
@@ -441,6 +441,8 @@ for l in 'Before=systemd-user-sessions.service' 'TimeoutStopSec=2' 'ExecStartPre
 v=$(systemd-analyze verify /usr/lib/systemd/system/fennek-windows-scan.service 2>&1 || true); ! grep 'fennek-windows-scan.service:[0-9]' <<<"$v" || fail "Windows drive scan: systemd doesn't take these lines"
 [ ! -e /usr/libexec/fennek-ntfs-probe ] && [ ! -e /usr/lib/udev/rules.d/90-fennek-windows-drive.rules ] && ! grep -qrE 'fennek-(ntfs|windows)' /usr/lib/udev/rules.d || fail "something still reads a drive when it's plugged in"
 grep -q 'set-local-rtc 1' /usr/libexec/fennek-detect-windows || fail "clock in step with Windows"
+grep -q '^DndBehavior=MoveIfSameDevice' /etc/xdg/kdeglobals && grep -q 'Fennek Next Language' /usr/share/kwin*/scripts/fennekarrows/contents/code/main.js || fail "dragging files without a question, Alt+Shift"
+[ -x /usr/lib/NetworkManager/dispatcher.d/90-fennek-everyday-apps ] || fail "everyday apps start when the computer gets online"
 /usr/libexec/fennek-graphics-check --selftest >/dev/null && /usr/libexec/fennek-graphics-check --json | python3 -c 'import json,sys; d=json.load(sys.stdin); assert set(d) == {"edition", "nvidia", "secure_boot"}' \
     && grep -q 'exec.path">/usr/libexec/fennek-secure-boot-helper' /usr/share/polkit-1/actions/org.fennek.secure-boot.policy && grep -q '<allow_active>auth_admin</allow_active>' /usr/share/polkit-1/actions/org.fennek.secure-boot.policy \
     && command -v mokutil >/dev/null && [ -L /etc/systemd/user/graphical-session.target.wants/fennek-graphics-check.service ] || fail "graphics card check, Secure Boot step"
