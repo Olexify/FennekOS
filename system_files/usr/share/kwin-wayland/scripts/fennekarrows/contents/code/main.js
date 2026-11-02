@@ -51,7 +51,7 @@ registerShortcut("Fennek Bring Forward", "Bring forward the Fennek app that was 
     workspace.windowList().forEach(function (w) {
         var app = String(w.resourceClass);
         if (!w.demandsAttention || app.indexOf("fennek-") !== 0) return;
-        callDBus("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "GetConnectionUnixProcessID", "org.kde." + app, function (pid) {
+        callDBus("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "GetConnectionUnixProcessID", "local." + app, function (pid) {
             if (pid === w.pid) workspace.activeWindow = w;
         });
     });
