@@ -93,6 +93,9 @@ click 1560 880; shot 15b-action-center-notes; click 1560 880; sleep 1
 call org.kde.plasmashell /org/kde/osdService org.kde.osdService.volumeChanged 60 100; shot 16-volume-osd 1
 # File Explorer from the sidebar's This PC, with the classic menu bar.
 dolphin >/dev/null 2>&1 & shot 17-file-explorer-home 6; close
+# Opened again while another window is in front: Settings comes forward on the new page, and no second copy starts.
+fennek-app settings >/dev/null 2>&1 & first=$!; sleep 5; dolphin >/dev/null 2>&1 & other=$!; sleep 5
+fennek-app settings kcm_mouse >/dev/null 2>&1; shot 17b-settings-again 3; pgrep -c -x fennek-app; kill $first $other 2>/dev/null; sleep 1
 # Right-click on the desktop: what a classic user looks for (View, Sort, Refresh, New, Display, Personalise).
 xdo mousemove 700 400 click 3; shot 26-desktop-menu 2
 xdo key Escape; sleep 1
