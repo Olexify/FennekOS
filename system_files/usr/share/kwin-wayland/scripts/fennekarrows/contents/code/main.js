@@ -28,6 +28,8 @@ registerShortcut("Fennek Next Language", "Next input language", "Alt+Shift", fun
 // taskbar, and asks here (src/fennek-app). Not a window rule: a program picks its own window class, and a sandboxed one
 // could take the focus with it. So the window's process must also own the app's name on the session bus (KDBusService
 // there), which a sandboxed program can't: it has no session bus. If anything doesn't match, the flash is all that happens.
+// ponytail: an X11 window states its own process id and scripts can't tell X11 from Wayland here. A sandboxed X11 program
+// would have to guess a process id it can't see, flash at the moment the app is reopened, and gets the focus once.
 registerShortcut("Fennek Bring Forward", "Bring forward the Fennek app that was just opened again", "", function () {
     workspace.windowList().forEach(function (w) {
         var app = String(w.resourceClass);
