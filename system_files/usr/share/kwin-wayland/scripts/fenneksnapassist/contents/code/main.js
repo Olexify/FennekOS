@@ -16,19 +16,32 @@ function halfOf(w) {
 
 function others(w) {
     return workspace.windowList().filter(function (o) {
-        return o !== w && o.normalWindow && !o.skipTaskbar && o.output === w.output;
+        return o !== w && o.normalWindow && !o.skipTaskbar && o.output === w.output
+            && (o.onAllDesktops || o.desktops.indexOf(workspace.currentDesktop) >= 0);
     });
+}
+
+// Is the window view up? Esc and clicking elsewhere send a script nothing, so ask KWin.
+function viewOpen(then) {
+    callDBus("org.kde.KWin", "/Effects", "org.freedesktop.DBus.Properties", "Get", "org.kde.kwin.Effects", "activeEffects",
+        function (list) { then(list.indexOf("windowview") >= 0); });
+}
+function toggleView() {
+    callDBus("org.kde.kglobalaccel", "/component/kwin", "org.kde.kglobalaccel.Component", "invokeShortcut", "Expose");
 }
 
 function watch(w) {
     if (!w.normalWindow || !w.tileChanged) return;
     w.tileChanged.connect(function () {
         if (w === placed) { placed = null; return; }
-        if (!w.tile) return;
-        var side = halfOf(w);
-        if (!side || others(w).length === 0) return;
-        pending = { win: w, left: side === "left", at: Date.now() };
-        callDBus("org.kde.kglobalaccel", "/component/kwin", "org.kde.kglobalaccel.Component", "invokeShortcut", "Expose");
+        var side = w.tile ? halfOf(w) : null;
+        if (side && others(w).length > 0) {
+            pending = { win: w, left: side === "left", at: Date.now() };
+            viewOpen(function (open) { if (!open) toggleView(); });   // already up after Super+Left, Super+Right
+        } else if (pending && pending.win === w) {                    // made a quarter or left its tile inside the view
+            pending = null;
+            viewOpen(function (open) { if (open) toggleView(); });
+        }
     });
 }
 
@@ -40,7 +53,9 @@ workspace.windowActivated.connect(function (w) {
     var p = pending;
     pending = null;   // one choice per snap
     if (!w || w === p.win || !w.normalWindow || Date.now() - p.at > 20000) return;
-    // The picked window is now active: tile it to the opposite half.
-    placed = w;
-    if (p.left) workspace.slotWindowQuickTileRight(); else workspace.slotWindowQuickTileLeft();
+    viewOpen(function (open) {
+        if (!open || workspace.activeWindow !== w) return;
+        placed = w;
+        if (p.left) workspace.slotWindowQuickTileRight(); else workspace.slotWindowQuickTileLeft();
+    });
 });

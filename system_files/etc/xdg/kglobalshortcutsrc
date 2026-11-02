@@ -5,6 +5,15 @@
 Toggle Screen Reader On and Off=Meta+Ctrl+Return	Meta+Alt+S,Meta+Alt+S,Toggle Screen Reader On and Off
 
 [kwin]
+# Ctrl+F1..F4, F7, F9, F10 reach the program (Ctrl+F4 closes its document). Alt+Space: the window's menu.
+Switch to Desktop 1=Meta+F1,Meta+F1	Ctrl+F1,Switch to Desktop 1
+Switch to Desktop 2=Meta+F2,Meta+F2	Ctrl+F2,Switch to Desktop 2
+Switch to Desktop 3=Meta+F3,Meta+F3	Ctrl+F3,Switch to Desktop 3
+Switch to Desktop 4=Meta+F4,Meta+F4	Ctrl+F4,Switch to Desktop 4
+Expose=Meta+F9,Meta+F9	Ctrl+F9,Toggle Present Windows (Current desktop)
+ExposeAll=Meta+F10	Launch (C),Meta+F10	Launch (C)	Ctrl+F10,Toggle Present Windows (All desktops)
+ExposeClass=Meta+F7,Meta+F7	Ctrl+F7,Toggle Present Windows (Window class)
+Window Operations Menu=Alt+Space,Alt+F3,Window Menu
 Overview=Meta+Tab	Meta+W,Meta+W,Toggle Overview
 # Alt+F4 goes to the fennekaltf4 script: closes the window, or opens Shut down on the desktop.
 Window Close=none,Alt+F4,Close Window
@@ -26,18 +35,21 @@ minimizeAllOthers=Meta+Home,Meta+Shift+O,Minimize all other windows
 Log Out=none,Ctrl+Alt+Del,Log Out
 
 [plasmashell]
+# Ctrl+Esc: Start, the classic way.
+activate application launcher=Meta	Alt+F1	Ctrl+Esc,Meta	Alt+F1,Activate Application Launcher
+show dashboard=none,Ctrl+F12,Show Desktop
 # Super+Tab belongs to the task view above, not to switching activities.
 next activity=none,Meta+Tab,Walk through activities
 
 [services][org.kde.krunner.desktop]
-# Search everything (apps, files, sums): Alt+Space / Alt+F2. Super+R belongs to the Run box below.
-_launch=Alt+Space	Alt+F2	Search
+# Search everything (apps, files, sums): Alt+F2. Super+R belongs to the Run box below.
+_launch=Alt+F2	Search
 
 # Super+R: the Run box (fennek-app run), a centred card like the classic Run dialog.
 [services][fennek-run.desktop]
 _launch=Meta+R
 
-# Super+I: Settings. Ctrl+Shift+Esc: Task Manager (Ctrl+Esc keeps working).
+# Super+I: Settings.
 [services][fennek-settings.desktop]
 _launch=Meta+I
 
@@ -58,7 +70,7 @@ _launch=Meta+S
 _launch=Meta+Pause
 
 [services][org.kde.plasma-systemmonitor.desktop]
-_launch=Ctrl+Shift+Esc	Ctrl+Esc
+_launch=Ctrl+Shift+Esc
 
 # Super+Space: the next input language (Alt+Shift and Super+Alt+K keep working).
 [KDE Keyboard Layout Switcher]

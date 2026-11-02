@@ -564,6 +564,11 @@ ln -sf /usr/libexec/fennek/systemsettings /usr/bin/kinfocenter
 install -m755 /usr/libexec/fennek-systemsettings /usr/bin/systemsettings
 rm /usr/libexec/fennek-systemsettings
 
+# Alt+Space is the window's menu, so "Defaults" in Settings can't hand it back to the search bar. Ctrl+F4 also closes tabs and
+# documents in KDE's programs.
+sed -i '/^X-KDE-Shortcuts=/s/Alt+Space,\?//' /usr/share/applications/org.kde.krunner.desktop
+kwriteconfig6 --file /etc/xdg/kdeglobals --group Shortcuts --key Close "Ctrl+W; Ctrl+F4"
+
 # Dolphin shows up as "Files" (English name; translations keep their own).
 sed -i -e 's/^Name=Dolphin$/Name=Files/' -e '/^Name\[en_[A-Za-z@]*\]=/d' /usr/share/applications/org.kde.dolphin.desktop
 # Start list without admin clutter: these still open from Settings and Start's right-click menu.
