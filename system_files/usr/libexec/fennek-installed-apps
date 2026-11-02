@@ -61,12 +61,19 @@ def run(cmd):
 
 
 def box_of(digest, boxes=BOXES):
-    """The sandboxed program's own folder: <name>-<first 8 of its fingerprint>, directly inside the boxes folder."""
+    """The sandboxed program's own folder, directly inside the boxes folder: <name>-<first 16 of its fingerprint>, or
+    <name>-<first 8> from before that. The short form only for the one program in exe-names with those 8, the same
+    rule as fennek-run-exe's: another program's files are never shown or removed as this one's."""
     if not DIGEST.match(digest) or not boxes.is_dir():
         return None
-    for d in boxes.iterdir():
-        if d.name.endswith("-" + digest[:8]) and not d.is_symlink() and d.is_dir():
-            return d
+    names = CFG / "exe-names"
+    rows = names.read_text(encoding="utf-8", errors="replace").split("\n") if names.is_file() else []
+    alone = {l.partition("\t")[0] for l in rows if l.startswith(digest[:8])} == {digest}
+    folders = [d for d in boxes.iterdir() if not d.is_symlink() and d.is_dir()]
+    for form in ([digest[:16], digest[:8]] if alone else [digest[:16]]):
+        for d in folders:
+            if d.name.endswith("-" + form):
+                return d
     return None
 
 
@@ -139,9 +146,12 @@ def selftest():
     assert parse_size("1.2 GB") == 1200000000 and parse_size("352.0 MB") == 352000000 and parse_size("") == 0 and parse_size("x") == 0
     apps = parse_flatpak("org.kde.okular\tOkular\t120.5 MB\tsystem\norg.kde.okular\tOkular\t120.5 MB\tuser\n../evil\tx\t1 MB\tuser\nshort\n")
     assert [a["id"] for a in apps] == ["org.kde.okular"] and apps[0]["size"] == 120500000 and apps[0]["where"] == "system"
+    global CFG
     with tempfile.TemporaryDirectory() as t:
-        boxes = Path(t)
-        d = "a" * 64
+        boxes = CFG = Path(t)
+        d, twin = "a" * 64, "a" * 8 + "c" * 56
+        names = boxes / "exe-names"
+        names.write_text(f"{d}\t/x/setup.exe\n{'b' * 64}\t/x/b.exe\n")
         (boxes / ("setup-" + d[:8])).mkdir()
         (boxes / "other-12345678").mkdir()
         assert box_of(d, boxes).name == "setup-" + d[:8]
@@ -149,6 +159,16 @@ def selftest():
         assert box_of("../../" + d, boxes) is None, "only real fingerprints"
         (boxes / "link-bbbbbbbb").symlink_to(boxes / "other-12345678")
         assert box_of("b" * 64, boxes) is None, "a link is never followed"
+        (boxes / ("link-" + "b" * 16)).symlink_to(boxes / "other-12345678")
+        assert box_of("b" * 64, boxes) is None, "nor in the long form"
+        assert box_of(twin, boxes) is None, "not recorded: the short form isn't this program's"
+        names.write_text(f"{d}\t/x/setup.exe\n{twin}\t/x/setup.exe\n")
+        assert box_of(d, boxes) is None and box_of(twin, boxes) is None, "two programs share those 8: nobody's"
+        (boxes / ("setup-" + twin[:16])).mkdir()
+        assert box_of(twin, boxes).name == "setup-" + twin[:16], "the long form always counts"
+        (boxes / ("setup-" + d[:16])).mkdir()
+        names.write_text(f"{d}\t/x/setup.exe\n")
+        assert box_of(d, boxes).name == "setup-" + d[:16], "longest first"
     assert uninstall(["store", "../evil"]) == 2 and uninstall(["extra", "nope"]) == 2 and uninstall(["classic", "abc"]) == 2
     print("selftest ok")
 

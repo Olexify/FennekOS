@@ -14,17 +14,23 @@ win() { echo "Z:$(echo "$1" | tr / '\\')"; }   # Linux path -> Wine path
 echo "top secret" > ~/secret.txt
 mkdir -p ~/Downloads && cp /fixtures/probe.exe ~/Downloads/probe.exe
 rm -rf ~/Sandbox ~/trusted-result.txt ~/.config/fennek/offline-exes
-id8=$(sha256sum ~/Downloads/probe.exe | cut -c1-8)   # each program gets ~/Sandbox/<name>-<id8>
+id=$(sha256sum ~/Downloads/probe.exe | cut -c1-16)   # each program gets ~/Sandbox/<name>-<id>
 
-# Sandboxed: its $HOME/Shared is the real ~/Sandbox/probe-<id8>; the real ~/secret.txt must be invisible.
+# A program recorded from before the long names keeps its files: ~/Sandbox/probe-<first 8> moves to the long name.
+old=~/Sandbox/probe-${id:0:8}
+mkdir -p "$old" ~/.config/fennek && echo mine > "$old/mine.txt"
+printf '%s\t%s\n' "$(sha256sum ~/Downloads/probe.exe | cut -d' ' -f1)" ~/Downloads/probe.exe > ~/.config/fennek/exe-names
+
+# Sandboxed: its $HOME/Shared is the real ~/Sandbox/probe-<id>; the real ~/secret.txt must be invisible.
 fennek-run-exe --sandbox ~/Downloads/probe.exe "$(win "$HOME/Shared/result.txt")" "$(win "$HOME/secret.txt")" >/tmp/sandboxed.log 2>&1 || true
 fennek-run-exe --trusted ~/Downloads/probe.exe "$(win "$HOME/trusted-result.txt")" "$(win "$HOME/secret.txt")" >/tmp/trusted.log 2>&1 || true
-box=~/Sandbox/probe-$id8
+box=~/Sandbox/probe-$id
 
 echo "== sandboxed =="; cat "$box/result.txt" 2>/dev/null || { echo "FAIL: sandboxed run wrote no result"; tail -20 /tmp/sandboxed.log; exit 1; }
 echo "== trusted ==";   cat ~/trusted-result.txt 2>/dev/null || { echo "FAIL: trusted run wrote no result"; tail -20 /tmp/trusted.log; exit 1; }
 grep -q "^BLOCKED " "$box/result.txt" || { echo "FAIL: sandboxed program could read the secret"; exit 1; }
 grep -q "^OK " ~/trusted-result.txt   || { echo "FAIL: trusted program couldn't read the secret"; exit 1; }
+[ -e "$box/mine.txt" ] && [ ! -e "$old" ] || { echo "FAIL: the old short-named folder didn't move to the long name"; exit 1; }
 
 # A program placed inside its own folder runs from there (portable apps that need their files).
 cp ~/Downloads/probe.exe "$box/probe.exe"; rm -f "$box/from-shared.txt"
@@ -42,7 +48,7 @@ rm ~/.config/fennek/offline-exes
 cp ~/Downloads/probe.exe ~/Downloads/...exe; rm -f ~/escaped.txt
 fennek-run-exe --sandbox ~/Downloads/...exe "$(win "$HOME/Shared/escaped.txt")" >/tmp/dots.log 2>&1 || true
 [ ! -e ~/escaped.txt ]                       || { echo "FAIL: '...exe' wrote into the real home"; exit 1; }
-[ -e ~/Sandbox/program-$id8/escaped.txt ]    || { echo "FAIL: '...exe' didn't run in ~/Sandbox/program-$id8"; tail -20 /tmp/dots.log; exit 1; }
+[ -e ~/Sandbox/program-$id/escaped.txt ]     || { echo "FAIL: '...exe' didn't run in ~/Sandbox/program-$id"; tail -20 /tmp/dots.log; exit 1; }
 # Network, with the launcher's exact pasta flags: internet + DNS work, host-loopback services don't.
 python3 -m http.server 8765 --bind 127.0.0.1 >/dev/null 2>&1 & srv=$!
 sleep 1

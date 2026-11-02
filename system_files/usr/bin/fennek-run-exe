@@ -126,8 +126,32 @@ def safe_name(exe):
 
 
 def folder_name(exe, digest):
-    """Per program, not per file name: a malicious setup.exe must not share a folder with a real setup.exe."""
-    return f"{safe_name(exe)}-{digest[:8]}"
+    """Per program, not per file name: a malicious setup.exe must not share a folder with a real setup.exe.
+    16 digits of its fingerprint: a crafted file can be made to match 8 in no time."""
+    return f"{safe_name(exe)}-{digest[:16]}"
+
+
+def move_old_folders(exe, digest):
+    """Folders from when the names had 8 digits move to the long name, so a program keeps its files. Returns where the
+    program is now: it may have been inside. Only for a program recorded on an earlier launch that shares those 8 with
+    no other recorded program: anything else could be a crafted file, so the old folder stays and the program starts
+    fresh, for good, because this launch gets recorded next and must not pass for that earlier one the next time."""
+    rows = NAMES.read_text(encoding="utf-8", errors="replace").split("\n") if NAMES.is_file() else []
+    ours = {l.partition("\t")[0] for l in rows if l.startswith(digest[:8])} == {digest}
+    for parent in (BOXES.resolve(), SHARED.resolve()):
+        old, new = parent / f"{safe_name(exe)}-{digest[:8]}", parent / folder_name(exe, digest)
+        if old.is_symlink() or not old.is_dir() or os.path.lexists(new):
+            continue
+        try:
+            if ours:
+                old.rename(new)
+                if exe.is_relative_to(old):
+                    exe = new / exe.relative_to(old)
+            else:
+                new.mkdir()
+        except OSError:   # it stays where it is (something mounted there?): nothing lost
+            pass
+    return exe
 
 
 def wine_cmd(target, args):
@@ -307,6 +331,7 @@ def main(argv):
     if not exe.is_file():
         return say(f"Not found: {exe}", "error")
     digest = sha256(exe)
+    exe = move_old_folders(exe, digest)   # first: this launch isn't recorded yet
     note_name(digest, exe)
     if mode == "--trusted" or (mode is None and not choose and is_trusted(digest)):
         return run_trusted(exe, argv[1:])
@@ -340,9 +365,9 @@ def selftest():
         assert safe_name(Path(bad)) == "program", f"{bad!r} must not become a path trick"
     assert safe_name(Path(".evil.exe")) == "evil" and safe_name(Path("My Game.exe")) == "My Game"
 
-    assert folder_name(Path("setup.exe"), "1a2b3c4d99") == "setup-1a2b3c4d", "same name, other program: other folder"
+    assert folder_name(Path("setup.exe"), "1a2b3c4d5e6f708199") == "setup-1a2b3c4d5e6f7081", "same name, other program: other folder"
     dl = HOME / "Downloads/setup.exe"
-    sh = HOME / "Sandbox/setup-1a2b3c4d"
+    sh = HOME / "Sandbox/setup-1a2b3c4d5e6f7081"
     for f in (dl, HOME / "Projects/tool.exe", HOME / ".config/x.exe"):
         assert placement(f, sh) == (f, HOME / "App" / f.name), f"{f}: only the file is mounted, never its folder"
     assert placement(sh / "bin/setup.exe", sh) == (None, HOME / "Shared/bin/setup.exe"), "inside its folder: run from Shared"
@@ -400,6 +425,61 @@ def selftest():
     assert umu_env()["PROTONPATH"].endswith("UMU-Proton-9")
     assert "UMU_RUNTIME_UPDATE" not in umu_env(now=time.time() + 2 * 86400), "next day: check again"
     subprocess.run(["rm", "-rf", str(DATA)])
+
+    global NAMES, BOXES, SHARED, run_trusted
+    t = Path(tempfile.mkdtemp())
+    CFG, NAMES, BOXES, SHARED = t, t / "exe-names", t / "boxes", t / "Sandbox"
+    exe = t / "setup.exe"
+    exe.write_text("program")
+    real = sha256(exe)
+    twin = real[:8] + "0" * 56
+    short, long = f"setup-{real[:8]}", f"setup-{real[:16]}"
+    ran = []
+    run_trusted = lambda e, args: ran.append(e)
+
+    def old_folders(*recorded):
+        for d in (BOXES, SHARED):
+            shutil.rmtree(d, ignore_errors=True)
+            (d / short).mkdir(parents=True)
+            (d / short / "mine").write_text("x")
+        NAMES.write_text("".join(f"{r}\t/x/setup.exe\n" for r in recorded))
+
+    def left_alone():
+        return all((d / short / "mine").exists() and not list((d / long).iterdir()) for d in (BOXES, SHARED))
+
+    old_folders()
+    main(["--trusted", str(exe)])
+    main(["--trusted", str(exe)])
+    assert left_alone() and real in NAMES.read_text(), "not recorded before: could be crafted, on its second launch too"
+    old_folders(twin)
+    main(["--trusted", str(exe)])
+    assert left_alone(), "another program claims these 8 digits, this one doesn't"
+    old_folders(real, twin)
+    main(["--trusted", str(exe)])
+    assert left_alone(), "two recorded programs share these 8 digits: whose it is can't be told"
+    old_folders(real)
+    main(["--trusted", str(exe)])
+    main(["--trusted", str(exe)])
+    assert all((d / long / "mine").exists() and not (d / short).exists() for d in (BOXES, SHARED)), "the one recorded program keeps its files"
+    assert ran[-1] == exe.resolve(), "a program elsewhere stays where it is"
+    old_folders(real)
+    inside = SHARED / short / "bin/setup.exe"
+    inside.parent.mkdir()
+    inside.write_text("program")
+    main(["--trusted", str(inside)])
+    assert ran[-1] == SHARED.resolve() / long / "bin/setup.exe" and ran[-1].is_file(), "it was inside its folder: it moved along"
+    assert str(ran[-1]) in NAMES.read_text(), "and is recorded at the new place"
+    old_folders(real)
+    (SHARED / long).mkdir()
+    main(["--trusted", str(exe)])
+    assert (SHARED / short / "mine").exists() and not list((SHARED / long).iterdir()), "a long folder is never replaced"
+    assert (BOXES / long / "mine").exists(), "each folder on its own: a move that stopped halfway finishes"
+    old_folders(real)
+    shutil.rmtree(SHARED / short)
+    (SHARED / short).symlink_to(t)
+    main(["--trusted", str(exe)])
+    assert (SHARED / short).is_symlink() and not (SHARED / long).exists(), "a link is never moved"
+    shutil.rmtree(t)
     print("selftest ok")
 
 
