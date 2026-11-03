@@ -562,9 +562,7 @@ python3 - <<'EOF'
 import pathlib
 p = pathlib.Path("/usr/share/plasma/packages/org.kde.plasmasetup.keyboard/contents/ui/main.qml")
 s = p.read_text()
-old = "            KeyboardUtil.layoutName = shortName;
-            KeyboardUtil.layoutVariant = variantName;
-"
+old = "            KeyboardUtil.layoutName = shortName;\n            KeyboardUtil.layoutVariant = variantName;\n"
 assert s.count(old) == 1, "the wizard's keyboard page changed upstream: revisit the Fennek patch"
 p.write_text(s.replace(old, '''            const noLatin = /^(am|ara|bd|bg|by|ge|gr|il|in|ir|kg|kz|la|lk|mk|mm|mn|np|pk|rs|ru|th|tj|ua|uz)$/.test(shortName); // Fennek OS
             KeyboardUtil.layoutName = noLatin ? "us," + shortName : shortName;
