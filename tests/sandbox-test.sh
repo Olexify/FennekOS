@@ -86,7 +86,7 @@ PY
 DNS=${cfg[0]}; PASTA=("${cfg[@]:1}")
 echo "nameserver $DNS" > /tmp/resolv.test
 outer=$(readlink /proc/self/ns/net)
-net=$("${PASTA[@]}" -- bwrap --dev-bind / / --ro-bind /tmp/resolv.test /etc/resolv.conf env OUTER="$outer" bash -c '
+net=$("${PASTA[@]}" -- bwrap --dev-bind / / --ro-bind /tmp/resolv.test "$(realpath /etc/resolv.conf)" env OUTER="$outer" bash -c '
     [ "$(readlink /proc/self/ns/net)" != "$OUTER" ] && echo OWN-NETNS
     gw=$(ip route | awk "/default/ {print \$3; exit}")
     curl -s -m 3 -o /dev/null "http://$gw:8765" && echo "LEAK-gateway"
