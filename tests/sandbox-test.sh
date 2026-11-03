@@ -23,6 +23,9 @@ old=~/Sandbox/probe-${id:0:8}
 mkdir -p "$old" ~/.config/fennek && echo mine > "$old/mine.txt"
 printf '%s\t%s\n' "$(sha256sum ~/Downloads/probe.exe | cut -d' ' -f1)" ~/Downloads/probe.exe > ~/.config/fennek/exe-names
 
+mkdir -p ~/Documents ~/.config
+echo 'XDG_DOCUMENTS_DIR="$HOME/Documents"' > ~/.config/user-dirs.dirs
+
 # Sandboxed: its $HOME/Shared is the real ~/Sandbox/probe-<id>; the real ~/secret.txt must be invisible.
 fennek-run-exe --sandbox ~/Downloads/probe.exe "$(win "$HOME/Shared/result.txt")" "$(win "$HOME/secret.txt")" >/tmp/sandboxed.log 2>&1 || true
 fennek-run-exe --trusted ~/Downloads/probe.exe "$(win "$HOME/trusted-result.txt")" "$(win "$HOME/secret.txt")" >/tmp/trusted.log 2>&1 || true
@@ -33,6 +36,16 @@ echo "== trusted ==";   cat ~/trusted-result.txt 2>/dev/null || { echo "FAIL: tr
 grep -q "^BLOCKED " "$box/result.txt" || { echo "FAIL: sandboxed program could read the secret"; exit 1; }
 grep -q "^OK " ~/trusted-result.txt   || { echo "FAIL: trusted program couldn't read the secret"; exit 1; }
 [ -e "$box/mine.txt" ] && [ -L "$old" ] || { echo "FAIL: the old short-named folder didn't move to the long name"; exit 1; }
+
+# What it saves to Documents: in its folder under Sandbox, or your own Documents if you trust it. No empty folders of Proton's.
+letter='C:\users\steamuser\Documents\letter.txt'
+fennek-run-exe --sandbox ~/Downloads/probe.exe "$letter" >/tmp/letter.log 2>&1 || true
+[ -e "$box/Documents/letter.txt" ] || { echo "FAIL: sandboxed Documents isn't under Sandbox"; tail -20 /tmp/letter.log; exit 1; }
+[ ! -e "$box/Documents/Music" ]    || { echo "FAIL: Proton's empty folders stayed in Documents"; exit 1; }
+fennek-run-exe --trusted ~/Downloads/probe.exe "$letter" >/tmp/letter2.log 2>&1 || true
+[ -e ~/Documents/letter.txt ]      || { echo "FAIL: trusted Documents isn't the real one"; tail -20 /tmp/letter2.log; exit 1; }
+[ ! -e ~/Documents/Music ]         || { echo "FAIL: Proton's empty folders landed in the real Documents"; exit 1; }
+echo "saved files land in the right place"
 
 # A program placed inside its own folder runs from there (portable apps that need their files).
 cp ~/Downloads/probe.exe "$box/probe.exe"; rm -f "$box/from-shared.txt"

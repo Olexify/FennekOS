@@ -6,7 +6,7 @@
   fennek-installed-apps uninstall store APP-ID [--data]   --data: its settings and saved data go too
   fennek-installed-apps uninstall extra NAME              (NV Broadcast)
   fennek-installed-apps uninstall classic SHA256          a sandboxed classic program: its box, what it remembered;
-                                                          ~/Sandbox/<program> stays: that's your own files
+                                                          ~/Sandbox/<program> stays, with what it saved: your own files
   fennek-installed-apps --selftest
 """
 import json, os, re, shutil, subprocess, sys
@@ -166,6 +166,8 @@ def uninstall(args):
             (DATA / "fennek/exe-icons" / (entry.stem.removeprefix("fennek-exe-") + ".png")).unlink(missing_ok=True)
         box = box_of(args[1])
         if box:
+            if subprocess.run(["fennek-run-exe", "--keep-saved", box.name]).returncode:
+                return 1
             shutil.rmtree(box)
         forget(args[1])
         return 0

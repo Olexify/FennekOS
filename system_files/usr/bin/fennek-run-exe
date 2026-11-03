@@ -541,6 +541,100 @@ def offer_copy(exe, digest):
     return dest / exe.name
 
 
+# ---- what classic programs save -----------------------------------------------------------------------------------
+# A Save dialog opens on Documents inside the program's Windows folders: hidden, and gone when the program is removed.
+SAVE_FOLDERS = {"Documents": "documents", "Downloads": "downloads", "Music": "music", "Pictures": "pictures", "Videos": "videos"}
+WIN_USER = "users/steamuser"
+
+
+def own_saved_folder(shared, win):
+    """shared/win, always a real folder: a link the program left there must not aim its next launch at something of yours."""
+    f = shared / win
+    if f.is_symlink():
+        f.unlink()
+    try:
+        f.mkdir(exist_ok=True)
+    except OSError:
+        return None
+    return f
+
+
+def move_saved(drive_c, win, target):
+    """What's in the Windows folder itself goes to target, replacing nothing. Runs outside the sandbox on folders the
+    program wrote, so only through real folders: a link there could carry your own files into its reach."""
+    src = plain_folder(drive_c, f"{WIN_USER}/{win}")
+    for e in list(src.iterdir()) if src else []:
+        try:
+            if e.is_dir() and not e.is_symlink() and not any(e.iterdir()):
+                e.rmdir()
+                continue
+            dest, n = target / e.name, 2
+            while os.path.lexists(dest):
+                dest, n = target / f"{e.stem} ({n}){e.suffix}", n + 1
+            shutil.move(str(e), str(dest))
+        except OSError:
+            pass
+
+
+def tidy_documents(folder):
+    """Proton makes these empty folders inside Documents on first use and on updates."""
+    for n in ("Downloads", "Music", "Pictures", "Templates", "Videos"):
+        try:
+            os.rmdir(folder / n)
+        except OSError:
+            pass
+
+
+def user_dir(kind):
+    try:
+        return subprocess.run(["xdg-user-dir", XDG_KIND[kind]], capture_output=True, text=True).stdout.strip()
+    except OSError:
+        return ""
+
+
+def saved_binds(drive_c, shared, granted):
+    """[(folder, place inside)], Documents first: its Save folders are mounted from ~/Sandbox/<name>, or your real folder if
+    it may see that. Mounts, not links: nothing in them can be replaced from inside, and Proton sees ordinary folders."""
+    allowed, out = {real for real, _ in granted}, []
+    for win, kind in SAVE_FOLDERS.items():
+        real = Path(user_dir(kind)) if allowed else None
+        target = real if real in allowed else own_saved_folder(shared, win)
+        if target:
+            move_saved(drive_c, win, target)
+            out.append((target, HOME / "prefix/drive_c" / WIN_USER / win))
+            if win == "Documents":
+                tidy_documents(target)
+    return out
+
+
+def link_trusted_folders():
+    """A trusted program's Save folders are links to your own folders: nothing to protect from it, and it has no mounts.
+    After the first start: Proton would fill links in a new prefix, or swap a dangling one for a folder."""
+    drive_c = trusted_drive()
+    if not (drive_c.parent / "creation_sync_guard").exists():
+        subprocess.run(["umu-run", "wineboot", "-u"], env={**os.environ, **umu_env()})
+    for win, kind in SAVE_FOLDERS.items():
+        p = user_dir(kind)
+        real, here = Path(p), drive_c / WIN_USER / win
+        if not p or not real.is_dir() or real.resolve() == HOME.resolve() or not here.parent.is_dir():   # unset: it answers home
+            continue
+        if here.is_symlink():
+            if os.readlink(here) != str(real):
+                here.unlink()
+                here.symlink_to(real)
+        elif here.is_dir():
+            move_saved(drive_c, win, real)
+            try:
+                here.rmdir()
+            except OSError:
+                continue
+            here.symlink_to(real)
+        else:
+            here.symlink_to(real)
+        if win == "Documents":
+            tidy_documents(real)
+
+
 def run_sandboxed(exe, digest, args, sound=False, box=None, inside=None):
     proton = ensure_proton()
     if not proton:
@@ -576,21 +670,27 @@ def run_sandboxed(exe, digest, args, sound=False, box=None, inside=None):
         say(f"{exe.name} runs in a sandbox and only sees ~/Sandbox/{name}{also}. "
             "If it needs other files, put them there."
             + old_folder_notice(exe, digest), "passivepopup")
+    drive_c = box_home / "prefix/drive_c"
+    binds = saved_binds(drive_c, shared, extra)
     cmd = bwrap_args(exe, args, box_home, shared, proton, os.environ.get("XDG_RUNTIME_DIR"), os.environ,
                      sound=sound, wayland=wayland, resolv=resolv, uid=os.getuid(), gid=os.getgid(),
-                     folders=extra, inside=inside, controllers=not reads_all_input())
+                     folders=[*extra, *binds], inside=inside, controllers=not reads_all_input())
     if not SECCOMP.is_file():   # never quietly weaker
         return say("The sandbox's system-call filter is missing; not running.", "error")
-    drive_c = box_home / "prefix/drive_c"
     # A program blocked in the firewall stays blocked in another .exe that sits in its folder.
     blocked = OFFLINE.read_text().split() if OFFLINE.is_file() else []
     if digest in blocked or any(d.startswith(box_id) for d in blocked):
-        return keep_start_in_sync(box_id, drive_c, lambda: subprocess.run(with_seccomp([cmd[0], "--unshare-net", *cmd[1:]])).returncode)   # firewall: no network
-    # Own network namespace with internet via pasta: host-only sockets and host loopback become unreachable.
-    return keep_start_in_sync(box_id, drive_c, lambda: subprocess.run([*PASTA, "--", *with_seccomp(cmd)]).returncode)
+        full = with_seccomp([cmd[0], "--unshare-net", *cmd[1:]])   # firewall: no network
+    else:   # Own network namespace with internet via pasta: host-only sockets and host loopback become unreachable.
+        full = [*PASTA, "--", *with_seccomp(cmd)]
+    code = keep_start_in_sync(box_id, drive_c, lambda: subprocess.run(full).returncode)
+    if binds:
+        tidy_documents(binds[0][0])   # a first start has just made them
+    return code
 
 
 def run_trusted(exe, args):
+    link_trusted_folders()
     return keep_start_in_sync("trusted", trusted_drive(), lambda: subprocess.run(["umu-run", *wine_cmd(exe, args)], env={**os.environ, **umu_env()}).returncode)
 
 
@@ -613,6 +713,14 @@ def main(argv):
         return selftest()
     if argv == ["--sync"]:
         return sync_all()
+    if len(argv) == 2 and argv[0] == "--keep-saved":   # before a sandbox is removed: one not started since this came keeps its files inside
+        if Path(argv[1]).name != argv[1] or argv[1] in (".", ".."):
+            return 2
+        (SHARED / argv[1]).mkdir(parents=True, exist_ok=True)
+        if (SHARED / argv[1]).resolve().parent != SHARED.resolve():
+            return 2
+        saved_binds(BOXES / argv[1] / "home/prefix/drive_c", SHARED / argv[1], [])
+        return 0
     if len(argv) == 3 and argv[0] == "--box" and re.fullmatch(r"[0-9a-f]{16}", argv[2]):
         return run_box(argv[1], argv[2])
     mode = argv.pop(0) if argv and argv[0] in ("--sandbox", "--sandbox-sound", "--trusted", "--choose") else None
@@ -832,6 +940,32 @@ def selftest():
     assert (BOXES / long / "mine").exists(), "each folder on its own: a move that stopped halfway finishes"
     old_folders(real)
     shutil.rmtree(SHARED / short)
+
+    # Saved files: out of the Windows folders, nothing replaced, nothing followed through a link.
+    c, to = t / "drive_c", t / "to"
+    (c / WIN_USER / "Documents/Music").mkdir(parents=True)
+    (c / WIN_USER / "Documents/letter.txt").write_text("new")
+    to.mkdir()
+    (to / "letter.txt").write_text("old")
+    move_saved(c, "Documents", to)
+    assert (to / "letter.txt").read_text() == "old" and (to / "letter (2).txt").read_text() == "new" and not (to / "Music").exists()
+    mine = t / "mine"
+    mine.mkdir()
+    (mine / "secret").write_text("x")
+    os.symlink(mine, c / WIN_USER / "Pictures")
+    move_saved(c, "Pictures", to)
+    assert (mine / "secret").exists() and not (to / "secret").exists(), "a link in its folders leads nowhere"
+    os.symlink(mine, to / "Pictures")
+    assert not own_saved_folder(to, "Pictures").is_symlink() and (mine / "secret").exists(), "a link it left is replaced, not followed"
+    (to / "Music").write_text("a file")
+    assert own_saved_folder(to, "Music") is None
+    (to / "Templates").mkdir()
+    (to / "Videos").mkdir()
+    (to / "Videos/film").write_text("x")
+    tidy_documents(to)
+    assert not (to / "Templates").exists() and (to / "Videos/film").exists(), "only empty ones go"
+    binds = saved_binds(t / "nothing", to, [])
+    assert binds[0] == (to / "Documents", HOME / "prefix/drive_c" / WIN_USER / "Documents")
     (SHARED / short).symlink_to(t)
     main(["--trusted", str(exe)])
     assert (SHARED / short).is_symlink() and not (SHARED / long).exists(), "a link is never moved"
