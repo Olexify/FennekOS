@@ -716,6 +716,13 @@ def main(argv):
     if len(argv) == 2 and argv[0] == "--keep-saved":   # before a sandbox is removed: one not started since this came keeps its files inside
         if Path(argv[1]).name != argv[1] or argv[1] in (".", ".."):
             return 2
+        # The same lock as a launch: nothing runs in there while its folders are looked at, so no link can be swapped in meanwhile.
+        try:
+            running = open(BOXES / argv[1] / ".running", "w")
+            fcntl.flock(running, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            say("That program is open. Close it, then remove it.", "error")
+            return 1
         (SHARED / argv[1]).mkdir(parents=True, exist_ok=True)
         if (SHARED / argv[1]).resolve().parent != SHARED.resolve():
             return 2
