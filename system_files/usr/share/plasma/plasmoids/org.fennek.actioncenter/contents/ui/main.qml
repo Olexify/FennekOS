@@ -266,7 +266,7 @@ PlasmoidItem {
                 id: clipCard
                 required property var model
                 readonly property var uuid: model.uuid !== undefined ? model.uuid : model.UuidRole
-                readonly property bool isImage: model.type === 1 || (!model.display && !!model.decoration)
+                readonly property bool isImage: model.type === 4   // the picture's file is in decoration
                 width: ListView.view.width
                 height: clipRow.implicitHeight + Kirigami.Units.largeSpacing * 2
                 radius: 8
@@ -280,10 +280,14 @@ PlasmoidItem {
                 RowLayout {
                     id: clipRow
                     anchors { fill: parent; margins: Kirigami.Units.largeSpacing }
-                    KQuickAddons.QImageItem {
+                    Image {
                         visible: clipCard.isImage
-                        image: clipCard.isImage ? clipCard.model.decoration : undefined
-                        fillMode: KQuickAddons.QImageItem.PreserveAspectFit
+                        source: clipCard.isImage ? clipCard.model.decoration : ""
+                        asynchronous: true
+                        cache: false
+                        sourceSize.height: Kirigami.Units.gridUnit * 12
+                        fillMode: Image.PreserveAspectFit
+                        horizontalAlignment: Image.AlignLeft
                         Layout.fillWidth: true
                         Layout.preferredHeight: visible ? Kirigami.Units.gridUnit * 6 : 0
                     }

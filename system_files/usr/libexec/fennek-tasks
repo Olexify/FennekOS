@@ -350,6 +350,11 @@ def snapshot():
             disk = max(0, io_bytes(cg) - first_io.get((d, u), 0)) / (dt / 1e6)   # bytes a second
             if key == "apps":
                 name, icon = apps.get(app_id(u), (app_id(u), ""))
+                # A classic program: by its own file, not "Run Windows program" for all of them.
+                w = next((p for p in procs if p["name"] == "fennek-run-exe"), None)
+                exe = exe_arg(read(f"/proc/{w['pid']}/cmdline")) if w else ""
+                if exe:
+                    name, icon = exe, "wine"
                 item = {"name": name, "icon": icon or "application-x-executable", "desc": ""}
             else:
                 text = desc.get(u, "") or re.sub(r"\.(service|scope)$", "", u)
@@ -454,7 +459,21 @@ def end(unit):
     sys.exit(subprocess.run(["systemctl", "--user", "stop", "--", unit]).returncode)
 
 
+def exe_arg(cmdline):
+    """From the command line of fennek-run-exe: the program it was started on."""
+    a = cmdline.split("\0")
+    i = next((i for i, x in enumerate(a) if os.path.basename(x) == "fennek-run-exe"), None)
+    if i is None:
+        return ""
+    a = [x for x in a[i + 1:] if x]
+    a = a[1:] if a and a[0].startswith("--") else a
+    return os.path.basename(a[0]) if a else ""
+
+
 def selftest():
+    assert exe_arg("python3\0/usr/bin/fennek-run-exe\0--choose\0/h/My Game.exe\0") == "My Game.exe"
+    assert exe_arg("/usr/bin/python3\0-I\0/usr/bin/fennek-run-exe\0/h/a.exe\0") == "a.exe"
+    assert exe_arg("/usr/bin/python3\0/usr/bin/fennek-run-exe\0--sync\0") == "" and exe_arg("") == ""
     assert app_id("app-org.kde.dolphin@3f2a9b.service") == "org.kde.dolphin"
     assert app_id("app-flatpak-org.mozilla.firefox-12345.scope") == "org.mozilla.firefox"
     assert app_id("app-firefox-4711.scope") == "firefox"

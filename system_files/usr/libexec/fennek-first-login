@@ -7,6 +7,16 @@ places="${XDG_DATA_HOME:-$HOME/.local/share}/user-places.xbel"
 [ -e "$places" ] || /usr/libexec/fennek-first-login-places "$places"
 /usr/libexec/fennek-first-login-keyboard   # taskbar language labels: ENG / УКР …
 
+# Startup apps: KDE's page lists only this account's own entries, so what the system starts gets a copy here. Its switch then
+# works, and turning one off stays off. Removing the entry only removes the copy: the system's own still starts.
+# ponytail: copies don't follow a later change in the system's entry; refresh the unswitched ones if one ever breaks.
+start=${XDG_CONFIG_HOME:-$HOME/.config}/autostart
+mkdir -p "$start"
+for f in /etc/xdg/autostart/*.desktop; do
+    case ${f##*/} in fennek-* | org.kde.plasma-fallback-session-restore.desktop | vboxclient.desktop | vmware-user.desktop) continue ;; esac
+    grep -q '^X-systemd-skip=true' "$f" || cp -n "$f" "$start/"
+done
+
 stamp="${XDG_CONFIG_HOME:-$HOME/.config}/fennek/first-login-done"
 [ -e "$stamp" ] && exit 0
 lnf=$(kreadconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage)

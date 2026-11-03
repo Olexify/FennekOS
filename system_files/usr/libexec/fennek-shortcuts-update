@@ -212,7 +212,7 @@ if [ "$(cat "$pl_seen" 2>/dev/null)" != 2026-10-20b ]; then   # Home is the star
     mkdir -p "${pl_seen%/*}" && echo 2026-10-20b >"$pl_seen"
 fi
 
-version=2026-11-02
+version=2026-11-03
 seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/shortcuts-version
 [ "$(cat "$seen" 2>/dev/null)" = "$version" ] && exit 0
 f=${XDG_CONFIG_HOME:-$HOME/.config}/kglobalshortcutsrc
@@ -265,6 +265,7 @@ if n != t:
 PYEOF
     kwriteconfig6 --file "$f" --group services --group fennek-run.desktop --key _launch Meta+R
     kw "KDE Keyboard Layout Switcher" "Switch to Next Keyboard Layout" $'Meta+Space\tMeta+Alt+K,Meta+Alt+K,Switch to Next Keyboard Layout'   # Super+Space: next language
+    kwriteconfig6 --file "$f" --group services --group org.kde.plasma.emojier.desktop --key _launch $'Meta+.\tMeta+;\tMeta+Ctrl+Alt+Shift+Space'
     # Ctrl+F1..F4, F7, F9, F10 reach the program (Ctrl+F4 closes its document), not KWin. Alt+Space: the window's menu.
     # Ctrl+Esc: Start. The keyboard's Launch (C) key stays on the overview of all windows.
     for n in 1 2 3 4; do kw kwin "Switch to Desktop $n" "Meta+F$n,Meta+F$n"$'\t'"Ctrl+F$n,Switch to Desktop $n"; done

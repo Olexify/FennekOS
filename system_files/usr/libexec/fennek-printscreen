@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 # Screenshots, the classic keys. A picture goes to the clipboard only (paste it anywhere); the notice offers Save
-# (to Pictures/Screenshots) and Annotate. Nothing piles up on the disk unless you ask.
+# (to Pictures/Screenshots) and Annotate. Nothing stays after you sign out unless you ask.
 #   copy    PrtSc: the whole screen        window  Alt+PrtSc: the active window
 #   region  Super+Shift+S: drag a box (a plain click or Escape: nothing happens)
 #   save    Super+PrtSc: the whole screen, saved straight away

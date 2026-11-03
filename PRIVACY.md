@@ -71,6 +71,7 @@ connections, not these.
 - **DNSSEC root-anchor refresh** (`unbound-anchor.timer`): off. Fennek's DNS doesn't use it.
 - **KDE file indexing (Baloo)**: off. Fennek's own search indexes file **names** only, stays on your computer,
   and never sends anything.
+- **Clipboard history**: stays on your computer and is gone when you sign out, with pictures you copied in between.
 - **Search history**: files you open from search are remembered **locally** to rank them first
   (`~/.local/share/fennek/search-history`). Delete that file to clear it.
 

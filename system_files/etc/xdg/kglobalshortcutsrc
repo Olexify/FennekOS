@@ -69,6 +69,10 @@ _launch=Meta+S
 [services][fennek-about.desktop]
 _launch=Meta+Pause
 
+# Emoji: Super+. and the classic Super+;
+[services][org.kde.plasma.emojier.desktop]
+_launch=Meta+.	Meta+;	Meta+Ctrl+Alt+Shift+Space
+
 [services][org.kde.plasma-systemmonitor.desktop]
 _launch=Ctrl+Shift+Esc
 

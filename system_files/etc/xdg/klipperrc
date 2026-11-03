@@ -1,0 +1,5 @@
+# Fennek OS: pictures reach the clipboard history; nothing you copied is kept once you sign out (passwords not copied
+# from a password manager included).
+[General]
+SaveImages=true
+KeepClipboardContents=false
