@@ -1,0 +1,6 @@
+# Fennek OS: out of the right-click menu. Fennek's Icon submenu does the folder icon; tags and activities aren't used here.
+# Fewer entries also keep Open Terminal at the top level: KDE folds them into "Actions" above four.
+[Show]
+setfoldericonitemaction=false
+tagsfileitemaction=false
+kactivitymanagerd_fileitem_linking_plugin=false

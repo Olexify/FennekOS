@@ -1,0 +1,27 @@
+#!/usr/bin/bash
+# Right-click > Send to: copies to the desktop, Documents or a USB drive, with the usual progress and "already there" questions.
+#   fennek-send-to desktop|documents|usb FILES...
+#   fennek-send-to --selftest
+# Mount points under /run/media (findmnt -rno TARGET,OPTIONS): the ones that can be written to.
+writable() { while read -r target options; do case ,$options, in *,rw,*) printf '%b\n' "$target" ;; esac; done; }
+if [ "${1:-}" = --selftest ]; then
+    [ "$(printf '/run/media/a/My\\x20Stick rw,nosuid\n/run/media/a/C ro,nosuid\n' | writable)" = "/run/media/a/My Stick" ] || exit 1
+    echo "selftest ok"; exit 0
+fi
+where=$1; shift
+case $where in
+    desktop) dest=$(xdg-user-dir DESKTOP) ;;
+    documents) dest=$(xdg-user-dir DOCUMENTS) ;;
+    usb)
+        mapfile -t drives < <(findmnt -rno TARGET,OPTIONS | grep "^/run/media/$USER/" | writable)
+        case ${#drives[@]} in
+            0) exec notify-send -a Files -i drive-removable-media-usb "No USB drive" "Plug one in, then try again." ;;
+            1) dest=${drives[0]} ;;
+            *) menu=(); for d in "${drives[@]}"; do menu+=("$d" "${d##*/}"); done
+               dest=$(kdialog --title "Send to" --menu "Which drive?" "${menu[@]}") || exit 0 ;;
+        esac ;;
+    *) exit 2 ;;
+esac
+[ "$dest" != "$HOME" ] && [ -n "$dest" ] || exit 1
+mkdir -p -- "$dest"
+exec kioclient copy "$@" "$dest/"

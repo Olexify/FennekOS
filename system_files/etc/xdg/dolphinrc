@@ -11,6 +11,11 @@ GlobalViewProps=false
 ShowToolTips=true
 # No "+" box popping up on every item under the pointer (select with Ctrl/Shift or a drag, like the classic one).
 ShowSelectionToggle=false
+# Copy To and Move To in the right-click menu, on the desktop too (it reads this group, Files the next one).
+ShowCopyMoveMenu=true
+
+[ContextMenu]
+ShowCopyMoveMenu=true
 
 [MainWindow]
 # Classic menu bar (File, Edit, View, Go...) shown from the first start; Ctrl+M hides it.

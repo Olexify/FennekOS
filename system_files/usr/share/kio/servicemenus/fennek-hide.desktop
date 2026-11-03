@@ -2,6 +2,7 @@
 Type=Service
 # The classic "Hidden" attribute: hide without renaming; Unhide brings it back.
 MimeType=all/all;
+X-KDE-Priority=TopLevel
 Actions=hide;unhide
 
 [Desktop Action hide]

@@ -93,6 +93,9 @@ click 1560 880; shot 15b-action-center-notes; click 1560 880; sleep 1
 call org.kde.plasmashell /org/kde/osdService org.kde.osdService.volumeChanged 60 100; shot 16-volume-osd 1
 # File Explorer from the sidebar's This PC, with the classic menu bar.
 dolphin >/dev/null 2>&1 & shot 17-file-explorer-home 6; close
+# Right-click in Files: on a folder, and on empty space.
+dolphin >/dev/null 2>&1 & sleep 6; xdo mousemove 633 295 click 3; shot 17c-files-menu-folder 2; xdo key Escape; sleep 1
+xdo mousemove 900 600 click 3; shot 17d-files-menu-empty 2; xdo key Escape; sleep 1; close
 # Opened again while another window is in front: Settings comes forward on the new page, and no second copy starts.
 fennek-app settings >/dev/null 2>&1 & first=$!; sleep 5; dolphin >/dev/null 2>&1 & other=$!; sleep 5
 fennek-app settings kcm_mouse >/dev/null 2>&1; shot 17b-settings-again 3; pgrep -c -x fennek-app; busctl --user list --no-pager | grep -i fennek; kill $first $other 2>/dev/null; sleep 1

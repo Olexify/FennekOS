@@ -1,0 +1,22 @@
+[Desktop Entry]
+Type=Service
+# The classic right-click Send to.
+MimeType=all/allfiles;inode/directory;
+Actions=desktop;documents;usb
+X-KDE-Submenu=Send to
+X-KDE-Priority=TopLevel
+
+[Desktop Action desktop]
+Name=Desktop
+Icon=user-desktop
+Exec=/usr/libexec/fennek-send-to desktop %F
+
+[Desktop Action documents]
+Name=Documents
+Icon=folder-documents
+Exec=/usr/libexec/fennek-send-to documents %F
+
+[Desktop Action usb]
+Name=USB drive
+Icon=drive-removable-media-usb
+Exec=/usr/libexec/fennek-send-to usb %F

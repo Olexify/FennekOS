@@ -1,0 +1,4 @@
+# Fennek OS: Share doesn't offer sending to a public or online service with one click: Imgur put a picture online at once,
+# with only its label as a warning.
+[plugins]
+disabled=imgurplugin,youtubeplugin,nextcloudplugin,purpose_gdrive
