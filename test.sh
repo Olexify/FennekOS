@@ -367,6 +367,7 @@ command -v opensnitchd >/dev/null                            || fail "opensnitch
 fennek-firewall --selftest >/dev/null                         || fail "firewall selftest"
 /usr/libexec/fennek-first-login-places --selftest >/dev/null || fail "classic Files sidebar"
 /usr/libexec/fennek-first-login-keyboard --selftest >/dev/null || fail "language switcher labels"
+/usr/libexec/fennek-taskbar --selftest >/dev/null && [ -s /usr/share/fennek/apps/taskbar/Page.qml ] && grep -q '"page": "taskbar"' /usr/share/fennek/apps/settings/catalog.js || fail "Settings: Taskbar page"
 /usr/libexec/fennek-send-to --selftest >/dev/null && command -v kioclient >/dev/null && grep -q 'imgurplugin' /etc/xdg/purposerc && grep -q '^tagsfileitemaction=false' /etc/xdg/kservicemenurc && [ "$(kreadconfig6 --file /etc/xdg/dolphinrc --group ContextMenu --key ShowCopyMoveMenu)" = true ] || fail "right-click menu: Send to, Copy To, no one-click public upload"
 [ -L /etc/systemd/user/graphical-session.target.wants/fennek-taskbars.service ] && grep -q 'fennek-taskbars.service' /usr/share/kwin-wayland/scripts/fennekarrows/contents/code/main.js && [ -s /usr/share/fennek/taskbars.js ] || fail "a taskbar on every display"
 grep -q 'noLatin' /usr/share/plasma/packages/org.kde.plasmasetup.keyboard/contents/ui/main.qml && grep -q 'capsLock.locked' /usr/share/sddm/themes/fennek/Main.qml && ! grep -q 'keyboard\.capsLock' /usr/share/sddm/themes/fennek/Main.qml || fail "keyboard: a Latin layout stays in the wizard; the sign-in shows Caps Lock and the language"

@@ -59,6 +59,7 @@ var categories = [
    {"name": "Lock screen", "kcm": "kcm_screenlocker", "keys": "screen saver screensaver", "icon": "fennek-set-lockscreen", "desc": "When and how the screen locks"},
    {"name": "Sign-in screen", "kcm": "kcm_sddm", "icon": "fennek-set-signin", "desc": "The screen where you sign in", "optional": true},
    {"name": "Pointers & launch feedback", "kcm": "kcm_cursortheme", "icon": "fennek-set-pointer", "desc": "Pointer style and size; busy pointer or bouncing icon while an app starts"},
+   {"name": "Taskbar", "page": "taskbar", "icon": "fennek-set-multitasking", "desc": "Hide it, small buttons, combine, peek, displays", "keys": "taskbar panel auto hide small buttons combine group peek displays monitor"},
    {"name": "Restore taskbar & Start", "cmd": "/usr/libexec/fennek-reset-layout", "icon": "fennek-set-restore", "desc": "Back to the default layout if something got moved or removed"}
   ]},
  {"name": "Apps", "icon": "fennek-settings-apps", "sub": "Installed apps, default apps, startup apps",

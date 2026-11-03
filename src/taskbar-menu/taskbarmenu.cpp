@@ -83,12 +83,7 @@ public:
             lock->setChecked(corona->immutability() != Plasma::Types::Mutable);
             lock->setEnabled(corona->immutability() != Plasma::Types::SystemImmutable);
 
-            QAction *edit = corona->action(QStringLiteral("edit mode"));
-            auto *settings = add("configure", QStringLiteral("Taskbar settings"), [edit] {
-                if (edit)
-                    edit->trigger();
-            });
-            settings->setEnabled(edit && corona->immutability() == Plasma::Types::Mutable);
+            add("configure", QStringLiteral("Taskbar settings"), [] { QProcess::startDetached(QStringLiteral("fennek-app"), {QStringLiteral("settings"), QStringLiteral("taskbar")}); });
 
             if (corona->numScreens() > 1) {   // fennek-taskbars
                 auto *all = add("view-fullscreen", QStringLiteral("Show taskbar on all displays"), [](bool on) {

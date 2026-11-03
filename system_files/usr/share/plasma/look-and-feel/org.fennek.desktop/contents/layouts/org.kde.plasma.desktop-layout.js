@@ -33,6 +33,9 @@ var tasks = panel.addWidget("org.kde.plasma.icontasks")
 tasks.currentConfigGroup = ["General"]   // pinned: Fennek Settings (not KDE's full settings window), Store, Files, browser
 tasks.writeConfig("launchers", ["applications:fennek-settings.desktop", "applications:org.kde.discover.desktop",
                                 "preferred://filemanager", "preferred://browser"])
+// A click on a stacked app shows its windows side by side, not the next one; pointing at a preview peeks at that window.
+tasks.writeConfig("groupedTaskVisualization", 1)
+tasks.writeConfig("highlightWindows", true)
 panel.addWidget("org.kde.plasma.marginsseparator")
 // Tray: network, sound and battery always visible; everything else behind the ^ arrow. The lists are the tray widget's
 // own settings. Notifications must stay loaded: that item shows the pop-ups (the action center only lists them).

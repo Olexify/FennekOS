@@ -1,0 +1,66 @@
+#!/usr/bin/python3 -I
+"""Settings > Taskbar: reads and changes the taskbar through the desktop's own script interface, also while it's locked.
+
+  fennek-taskbar get             JSON: autohide, small, combine, peek, displays, all_displays
+  fennek-taskbar set KEY VALUE   autohide|small|combine|peek|all_displays on|off, on every bar
+  fennek-taskbar --selftest
+"""
+import ast, json, os, subprocess, sys
+
+OFF = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), "fennek/one-taskbar")
+ON_BARS = 'panels().forEach(function (p) { %s })'
+ON_TASKS = ON_BARS % ('p.widgets().forEach(function (w) { if (w.type !== "org.kde.plasma.icontasks") return; '
+                      'w.currentConfigGroup = ["General"]; w.writeConfig("%s", %s) })')
+READ = """var p = panels().filter(function (p) { return p.widgets("org.kde.plasma.icontasks").length })[0]
+var t = p.widgets("org.kde.plasma.icontasks")[0]; t.currentConfigGroup = ["General"]
+print(JSON.stringify({autohide: p.hiding === "autohide", small: p.height < 40, combine: t.readConfig("groupingStrategy") != 0,
+                      peek: t.readConfig("highlightWindows") == true, displays: screenCount}))"""
+
+
+def change(key, on):
+    """The script for one switch, built only from known words."""
+    return {"autohide": ON_BARS % ('p.hiding = "%s"' % ("autohide" if on else "none")),
+            "small": ON_BARS % ("p.height = %d" % (32 if on else 40)),
+            "combine": ON_TASKS % ("groupingStrategy", 1 if on else 0),
+            "peek": ON_TASKS % ("highlightWindows", "true" if on else "false")}[key]
+
+
+def unwrap(out):
+    """gdbus prints a tuple: ('text',)"""
+    return ast.literal_eval(out.strip())[0]
+
+
+def shell(script):
+    return subprocess.run(["gdbus", "call", "--session", "--dest", "org.kde.plasmashell", "--object-path", "/PlasmaShell", "--method",
+                           "org.kde.PlasmaShell.evaluateScript", script], capture_output=True, text=True, check=True).stdout
+
+
+def selftest():
+    assert unwrap("""('{"small": true}\\n',)\n""").strip() == '{"small": true}'
+    assert 'p.hiding = "autohide"' in change("autohide", True) and 'p.hiding = "none"' in change("autohide", False)
+    assert "p.height = 32" in change("small", True) and '"groupingStrategy", 0' in change("combine", False)
+    try:
+        change("anything", True)
+    except KeyError:
+        return print("selftest ok")
+    raise AssertionError("only known switches")
+
+
+def main(a):
+    if a == ["--selftest"]:
+        return selftest()
+    if a == ["get"]:
+        state = json.loads(unwrap(shell(READ)))
+        state["all_displays"] = not os.path.exists(OFF)
+        return print(json.dumps(state))
+    if len(a) == 3 and a[0] == "set" and a[2] in ("on", "off"):
+        on = a[2] == "on"
+        if a[1] == "all_displays":
+            os.execv("/usr/libexec/fennek-taskbars", ["fennek-taskbars", "--all" if on else "--one"])
+        shell(change(a[1], on))
+        return 0
+    sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
