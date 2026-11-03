@@ -958,7 +958,7 @@ for d in /usr/share/icons/*/cursors; do
 done
 rm -rf /tmp/cur
 [ ${#missing[@]} -eq 0 ] || dnf -y remove "${missing[@]}"
-# Home page groups (Folders / Frequent folders / Storage drives) are MIME types.
+# Home page groups (Drives / Folders / Frequent folders) are MIME types.
 update-mime-database /usr/share/mime
 # Panels use it instead of Plasma's own panel menu (new file + rename, see replace_file).
 shell=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/defaults

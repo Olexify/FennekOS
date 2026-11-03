@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """Fennek OS changes to Files (Dolphin), applied to Fedora's source during the image build (build.sh):
 
-  1. No separator lines between groups (This PC: Folders / Frequent folders / Storage drives).
+  1. No separator lines between groups (This PC: Drives / Folders / Frequent folders).
   3. Home is the start page: when the folder shown is your home folder, the view lists the thispc:/ page instead
      (src/thispc: everything in your home as big tiles, the main folders with their own icons, then frequent
      folders and drives). The address stays your home folder; its entries are your real files and folders (rename,
@@ -163,7 +163,9 @@ def patch_view(old, new):
 patch_view("#include <QApplication>\n", """#include <QApplication>
 #include <KDirWatch>
 #include <QDir>
+#include <QSocketNotifier>
 #include <QTimer>
+#include <fcntl.h>
 
 namespace
 {
@@ -180,13 +182,19 @@ patch_view("""    if (reload) {
     } else {
         m_model->loadDirectory(url);
     }
-}""", """    if (fennekIsHome(url)) { // Fennek OS: the Home page; refreshed when the home folder changes
+}""", """    if (fennekIsHome(url)) { // Fennek OS: the Home page; refreshed when the home folder or the open drives change
         if (!property("fennekWatch").toBool()) {
             setProperty("fennekWatch", true);
             static KDirWatch *watch = nullptr;
+            static QSocketNotifier *mounts = nullptr;
             if (!watch) {
                 watch = new KDirWatch(qApp);
                 watch->addDir(QDir::homePath());
+                // The kernel flags this file when something is mounted or unmounted: no idle cost.
+                const int fd = ::open("/proc/self/mounts", O_RDONLY | O_CLOEXEC);
+                if (fd >= 0) {
+                    mounts = new QSocketNotifier(fd, QSocketNotifier::Exception, qApp);
+                }
             }
             auto *later = new QTimer(this);
             later->setSingleShot(true);
@@ -197,12 +205,17 @@ patch_view("""    if (reload) {
                 }
             });
             connect(watch, &KDirWatch::dirty, later, qOverload<>(&QTimer::start));
+            if (mounts) {
+                connect(mounts, &QSocketNotifier::activated, later, qOverload<>(&QTimer::start));
+            }
+            // Free space changes while the window is elsewhere.
+            connect(qApp, &QGuiApplication::applicationStateChanged, later, [later](Qt::ApplicationState state) {
+                if (state == Qt::ApplicationActive) {
+                    later->start();
+                }
+            });
         }
-        if (reload) {
-            m_model->refreshDirectory(fennekHomePage);
-        } else {
-            m_model->loadDirectory(fennekHomePage);
-        }
+        m_model->refreshDirectory(fennekHomePage); // also when just arriving: never the remembered drives and free space
         return;
     }
     if (reload) {
@@ -298,4 +311,33 @@ import re
 t, n = re.subn(r'(KAboutData aboutData\(\s*QStringLiteral\("dolphin"\),\s*)i18n\("Dolphin"\)', r'\1QStringLiteral("Files") /* Fennek OS */', t)
 assert n == 1, "main.cpp: the program's name moved"
 main.write_text(t, encoding="utf-8")
+# 7. A drive's tile on the Home page has what its row in the sidebar has: Safely Remove (Unmount for an internal one).
+menu = pathlib.Path(sys.argv[1]) / "src" / "dolphincontextmenu.cpp"
+t = menu.read_text(encoding="utf-8")
+old = "#include <KActionCollection>\n"
+assert t.count(old) == 1, "dolphincontextmenu.cpp: the includes moved"
+t = t.replace(old, "#include <KFilePlacesModel>\n" + old)
+old = """    // Insert 'Open With' entries
+    addOpenWithActions();
+"""
+assert t.count(old) == 1, "dolphincontextmenu.cpp: Open With moved"
+menu.write_text(t.replace(old, """    if (m_fileInfo.mimetype() == QLatin1String("inode/x-fennek-drive")) { // Fennek OS
+        KFilePlacesModel *places = DolphinPlacesModelSingleton::instance().placesModel();
+        const QModelIndex row = places->closestItem(m_fileInfo.targetUrl());
+        // The drive's own row: the system disk has none, and what's closest to it must not be offered instead.
+        if (places->isDevice(row) && places->url(row).matches(m_fileInfo.targetUrl(), QUrl::StripTrailingSlash)) {
+            if (QAction *remove = places->teardownActionForIndex(row)) {
+                remove->setParent(this);
+                addAction(remove);
+                const QPersistentModelIndex kept(row);
+                connect(remove, &QAction::triggered, places, [places, kept] {
+                    if (kept.isValid()) {
+                        places->requestTeardown(kept);
+                    }
+                });
+            }
+        }
+    }
+
+""" + old), encoding="utf-8")
 print("dolphin: Fennek changes applied")

@@ -3,7 +3,7 @@
 // and names in your language), folders you pinned to the sidebar, the folders you use most, then your drives with
 // free space. Home's own entries are your real files and folders (UDS_URL: rename, delete, drag and drop work as
 // anywhere); frequent folders and drives are links (opening one goes there; deleting one does nothing).
-// Grouping ("Folders" / "Frequent folders" / "Storage drives", files by type) comes from the MIME types in
+// Grouping ("Drives" / "Folders" / "Frequent folders", files by type) comes from the MIME types in
 // fennek-thispc.xml.
 #include <cmath>
 #include <KIO/WorkerBase>
@@ -167,7 +167,13 @@ QList<Item> items()
             || !(root.startsWith(QLatin1String("/run/media/")) || root.startsWith(QLatin1String("/media/")) || root.startsWith(QLatin1String("/mnt/"))))
             continue;
         const QString dir = QDir(root).dirName();
-        const QString label = s.name().isEmpty() || dir.startsWith(QLatin1String("Windows (")) ? dir : s.name();
+        // No label of its own: not the folder's name, which is then a hex code.
+        const bool usb = QFileInfo(QStringLiteral("/sys/class/block/") + QFileInfo(QString::fromLocal8Bit(s.device())).fileName())
+                             .canonicalFilePath().contains(QLatin1String("/usb"));
+        const QString label = dir.startsWith(QLatin1String("Windows (")) ? dir
+            : !s.name().isEmpty()                                        ? s.name()
+            : usb                                                        ? QStringLiteral("USB Drive")
+                                                                         : QStringLiteral("Local Disk");
         out.append({QStringLiteral("@drive-%1").arg(++n), describe(label, s), usageIcon(s),
                     QStringLiteral("inode/x-fennek-drive"), root});
     }
