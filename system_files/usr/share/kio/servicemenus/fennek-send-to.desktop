@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Service
 # The classic right-click Send to.
-MimeType=all/allfiles;inode/directory;
+MimeType=all/all;
 Actions=desktop;documents;usb
 X-KDE-Submenu=Send to
 X-KDE-Priority=TopLevel

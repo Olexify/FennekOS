@@ -1,5 +1,6 @@
 // fennek-taskbars: a bar for each display that has none: Start, search, the running apps, clock, show desktop, set up like
 // the main bar. No second tray or action center: those stay on the main display.
+var LISTS = ["launchers", "favoriteApps", "sidebarShortcuts"]
 var all = panels()
 var main = all.filter(function (p) { return p.screen === 0 && p.widgets("org.kde.plasma.icontasks").length })[0]
     || all.filter(function (p) { return p.widgets("org.kde.plasma.icontasks").length })[0]
@@ -23,7 +24,12 @@ if (main && missing.length) {
             var w = bar.addWidget(type), from = main.widgets(type)[0]
             if (!from) return
             from.currentConfigGroup = w.currentConfigGroup = ["General"]
-            from.configKeys.forEach(function (k) { w.writeConfig(k, from.readConfig(k)) })
+            from.configKeys.forEach(function (k) {
+                var v = from.readConfig(k)
+                // These lists read back as one comma-separated text, and would be written as a single entry.
+                if (LISTS.indexOf(k) >= 0 && typeof v === "string") v = v ? v.split(",") : []
+                w.writeConfig(k, v)
+            })
         })
     })
     if (was) lockCorona(true)

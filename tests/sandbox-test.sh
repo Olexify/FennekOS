@@ -7,7 +7,8 @@ set -euo pipefail
 id tester >/dev/null 2>&1 || useradd -m -d /var/home/tester tester 2>/dev/null || useradd -M -d /var/home/tester tester
 chown -R tester: /var/home/tester
 
-su tester -c 'bash -s' <<'EOF'
+# In a file, not on stdin: a program it starts could read the rest of the script, and it would end without a word.
+cat >/tmp/inner.sh <<'EOF'
 set -euo pipefail
 export XDG_RUNTIME_DIR=/tmp/xdg-tester; mkdir -p -m 700 "$XDG_RUNTIME_DIR"
 win() { echo "Z:$(echo "$1" | tr / '\\')"; }   # Linux path -> Wine path
@@ -87,3 +88,4 @@ grep -q DNS-OK <<<"$net"   || { echo "FAIL: no DNS in the sandbox"; exit 1; }
 grep -q NET-OK <<<"$net"   || { echo "FAIL: no internet in the sandbox"; exit 1; }
 echo "sandbox test passed"
 EOF
+su tester -c 'bash /tmp/inner.sh </dev/null'

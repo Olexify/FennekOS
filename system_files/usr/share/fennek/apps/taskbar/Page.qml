@@ -11,13 +11,13 @@ Item {
 
     readonly property string helper: "/usr/libexec/fennek-taskbar"
     readonly property string getCmd: helper + " get"
-    property var state: ({})
+    property var conf: ({})   // not "state": every Item has its own
     property bool loaded: false
 
     function set(key, on) {
-        const s = Object.assign({}, state)
+        const s = Object.assign({}, conf)
         s[key] = on
-        state = s
+        conf = s
         run.connectSource(helper + " set " + key + (on ? " on" : " off"))
     }
 
@@ -28,7 +28,7 @@ Item {
         onNewData: (source, data) => {
             disconnectSource(source)
             if (source === root.getCmd) {
-                try { root.state = JSON.parse(data.stdout); root.loaded = true } catch (e) {}
+                try { root.conf = JSON.parse(data.stdout); root.loaded = true } catch (e) {}
             }
         }
     }
@@ -55,13 +55,13 @@ Item {
                 }
                 QQC2.Switch {
                     enabled: root.loaded
-                    checked: !!root.state[modelData[0]]
+                    checked: !!root.conf[modelData[0]]
                     onToggled: root.set(modelData[0], checked)
                 }
             }
         }
         RowLayout {
-            visible: root.state.displays > 1
+            visible: root.conf.displays > 1
             Layout.fillWidth: true
             ColumnLayout {
                 Layout.fillWidth: true
@@ -70,7 +70,7 @@ Item {
                 QQC2.Label { text: "Off: only the main display has one"; opacity: 0.7; Layout.fillWidth: true; wrapMode: Text.Wrap }
             }
             QQC2.Switch {
-                checked: !!root.state.all_displays
+                checked: !!root.conf.all_displays
                 onToggled: root.set("all_displays", checked)
             }
         }
