@@ -1,0 +1,38 @@
+name: sandbox
+
+# A real program in the sandbox, in a published image: what it can reach and what it can't. Manual, and weekly because
+# Proton and its runtime change by themselves.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag"
+        default: latest
+  schedule:
+    - cron: "47 14 * * 0"
+
+permissions:
+  contents: read
+
+jobs:
+  sandbox:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
+          sudo mkdir -p /mnt/containers && sudo rm -rf /var/lib/containers && sudo ln -s /mnt/containers /var/lib/containers
+      - name: The test program
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq gcc-mingw-w64-x86-64
+          mkdir fixtures && x86_64-w64-mingw32-gcc -static -o fixtures/probe.exe tests/probe.c
+      - name: Run
+        env:
+          IMAGE: ghcr.io/olexify/fennekos:${{ inputs.tag || 'latest' }}
+        run: |
+          sudo podman pull -q "$IMAGE"
+          sudo podman volume create fennek-umu-test
+          sudo podman run --rm --privileged -v fennek-umu-test:/var/home -v "$PWD/fixtures:/fixtures:ro" \
+            -v "$PWD/tests/sandbox-test.sh:/t.sh:ro" "$IMAGE" bash /t.sh
