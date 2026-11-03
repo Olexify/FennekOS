@@ -227,6 +227,10 @@ def restore(mount):
     current = destination(mount) / "Current"
     if current.is_symlink() or not current.is_dir():
         return "No backup to restore on this drive."
+    try:
+        real_dir(mount, current)
+    except (ValueError, OSError):
+        return "This drive's backup folder looks wrong: nothing was restored."
     here = {Path(s).name: s for s in sources()}
     failed = []
     for folder in sorted(current.iterdir(), key=lambda p: p.name):
@@ -361,14 +365,21 @@ def main(argv):
             sys.exit(f"Can't use this drive: {e}")
         save({**load(), "uuid": d["uuid"], "label": d["label"], "token": token, "folder": dest.name})
         print(f"{first}Backing up to {d['label']}. " + run())
-    elif cmd == "open":
+    elif cmd in ("open", "restore"):
         mount, _ = mount_drive(load().get("uuid"))
         if not mount:
             sys.exit("The backup drive isn't connected.")
-        os.execvp("xdg-open", ["xdg-open", str(destination(mount))])
-    elif cmd == "restore":
-        mount, _ = mount_drive(load().get("uuid"))
-        print(restore(mount) if mount else "The backup drive isn't connected.")
+        # Yours, by the secret on it: a drive can copy another drive's ID.
+        try:
+            dest = real_dir(mount, destination(mount))
+        except (ValueError, OSError) as e:
+            sys.exit(f"This drive's backup folder looks wrong ({e}).")
+        if read_token(dest) != load().get("token"):
+            sys.exit("This isn't your backup drive any more (its backup doesn't match). Choose the drive again in Backup.")
+        if cmd == "restore":
+            print(restore(mount))
+        else:
+            os.execvp("dolphin", ["dolphin", "--", str(dest)])
     elif cmd == "off":
         cfg = load(); cfg.pop("uuid", None); save(cfg)
         print("Backup is off. The copy on the drive stays.")
