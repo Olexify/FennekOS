@@ -27,41 +27,39 @@ systemctl enable livesys.service livesys-late.service
 
 # 3. Installer: Anaconda (web UI). Interactive: language, disk (incl. next to Windows), your own user account.
 dnf install -y --allowerasing anaconda-live libblockdev-btrfs libblockdev-lvm libblockdev-dm
-mkdir -p /etc/anaconda/profile.d
-cat >/etc/anaconda/profile.d/fennek.conf <<'EOF'
-[Profile]
-profile_id = fennek
-
-[Profile Detection]
-os_id = fedora
-
-[Network]
-default_on_boot = FIRST_WIRED_WITH_LINK
-
-[Bootloader]
-efi_dir = fedora
-menu_auto_hide = True
-
-[Storage]
-# Btrfs with separate subvolumes: /var/home on its own subvolume is what Fennek's hourly snapshots need.
-default_scheme = BTRFS
-btrfs_compression = zstd:1
-default_partitioning =
-    /     (min 1 GiB, max 70 GiB)
-    /home (min 500 MiB, free 50 GiB)
-    /var  (btrfs)
-
-[User Interface]
-hidden_spokes =
-    NetworkSpoke
-    PasswordSpoke
-hidden_webui_pages =
-    root-password
-    network
-
-[Localization]
-use_geolocation = False
+# A drop-in, read after the profile Anaconda detects (fedora-kinoite): a profile of our own would lose to that one.
+mkdir -p /etc/anaconda/conf.d
+cat >/etc/anaconda/conf.d/90-fennek.conf <<'EOF'
+[Timezone]
+# Empty: no location lookup. The first-run wizard asks for the time zone.
+geolocation_provider =
 EOF
+python3 -c 'from pyanaconda.core.configuration.anaconda import conf; conf.set_from_detected_profile("fedora", "kinoite"); conf.set_from_files(); assert not conf.timezone.geolocation_provider'
+# What the screens ask you to free, and what Review checks: one number, 500 MB as it comes, while the system takes 8.5 GB and
+# the apps more. 24 GB shows as 30 GB on screen (it adds a fifth).
+# ponytail: tied to upstream's literal, the grep fails this build when it changes. A setting for it would need upstream.
+f=$(rpm -ql anaconda-core | grep '/payloads/source/rpm_ostree/rpm_ostree\.py$')
+grep -q 'Size("500 MB")' "$f"
+sed -i 's/Size("500 MB")/Size("24 GB")/' "$f"
+rm -f "${f%/*}"/__pycache__/rpm_ostree.*.pyc
+# Shrinking a drive that's hibernated (a normal Shut down with Fast Startup) damages it: every route into the installer ends here.
+resize=$(command -v ntfsresize)
+mv "$resize" "$resize.real"
+cat >"$resize" <<EOF
+#!/bin/sh
+case " \$* " in
+    *" -s "* | *" --size"*)
+        for dev; do :; done
+        case "\$(ntfscat -f "\$dev" hiberfil.sys 2>/dev/null | head -c 4 | tr A-Z a-z)" in
+            hibr)
+                echo "Your current system isn't fully shut down, so its drive can't be shrunk safely. Nothing was changed. Start it, hold Shift and click Shut down, then start from the stick again." >&2
+                exit 1 ;;
+        esac ;;
+esac
+exec "$resize.real" "\$@"
+EOF
+chmod 755 "$resize"
+"$resize" --version >/dev/null
 
 # Install exactly the bundled image; afterwards updates come from the registry WITH signature enforcement
 # (ostree-image-signed + /etc/containers/policy.json requiring Fennek's key).
