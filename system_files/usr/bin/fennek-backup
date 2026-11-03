@@ -62,17 +62,76 @@ def mountpoint(uuid):
     return next((d["path"] for d in drives() if d["uuid"] == uuid), None)
 
 
+def plugged_in(uuid):
+    return bool(re.fullmatch(r"[0-9A-Za-z-]+", uuid or "")) and os.path.exists(f"/dev/disk/by-uuid/{uuid}")
+
+
+def mount_drive(uuid):
+    """(where it's mounted, whether this just did it), (None, False) if it can't be. Never asks: a timer runs this too."""
+    mount = mountpoint(uuid)
+    if mount or not plugged_in(uuid):
+        return mount, False
+    subprocess.run(["udisksctl", "mount", "--no-user-interaction", "-b", f"/dev/disk/by-uuid/{uuid}"], capture_output=True)
+    mount = mountpoint(uuid)
+    return mount, bool(mount)
+
+
+def plugged_drives(mounted=()):
+    """Removable drives plugged in but not open yet, listed by what udev knows: nothing on them gets read until one is chosen."""
+    out = subprocess.run(["lsblk", "-J", "-l", "-b", "-o", "UUID,LABEL,FSTYPE,HOTPLUG,MOUNTPOINT,SIZE"], capture_output=True, text=True).stdout
+    return parse_plugged(out, mounted)
+
+
+def parse_plugged(out, mounted=()):
+    try:
+        rows = json.loads(out)["blockdevices"]
+    except (ValueError, KeyError):
+        return []
+    return [{"uuid": r["uuid"], "label": r.get("label") or "USB drive", "path": "", "free": 0, "size": r.get("size") or 0}
+            for r in rows if r.get("uuid") and r.get("hotplug") and not r.get("mountpoint") and r["uuid"] not in mounted
+            and r.get("fstype") in ("vfat", "exfat", "ntfs", "ext4", "btrfs", "xfs")]
+
+
+def notify(title, text):
+    subprocess.run(["notify-send", "-a", "Backup", "-i", "drive-removable-media", title, text], capture_output=True)
+
+
+def notice_due(seen, key, now, every):
+    return now - seen.get(key, 0) >= every
+
+
+def warn(cfg, result, now=None):
+    """From the hourly run: what went wrong, once a day; a backup getting old, after 14 days and then weekly. A drive that
+    simply isn't there isn't a failure: a laptop's drive stays at home."""
+    now = now or time.time()
+    seen = cfg.setdefault("noticed", {})
+    if result.startswith(("Backup incomplete", "Backup stopped", "This isn't your")) and notice_due(seen, "failed", now, 86400):
+        seen["failed"] = now
+        notify("Backup didn't finish", result)
+    elif cfg.get("last") and now - cfg["last"] > 14 * 86400 and notice_due(seen, "old", now, 7 * 86400):
+        seen["old"] = now
+        notify("Your last backup is old", f"It's from {datetime.fromtimestamp(cfg['last']):%d %B}. Connect {cfg.get('label', 'the backup drive')} to back up.")
+    else:
+        return
+    save(cfg)
+
+
 def sources():
     out = []
     for kind in FOLDERS:
         p = subprocess.run(["xdg-user-dir", kind], capture_output=True, text=True).stdout.strip()
         if p and p != str(Path.home()) and os.path.isdir(p):
             out.append(p)
+    sandbox = Path.home() / "Sandbox"   # what classic programs save
+    if sandbox.is_dir() and not sandbox.is_symlink():
+        out.append(str(sandbox))
     return out
 
 
-def destination(mount):
-    return Path(mount) / "Fennek Backup" / f"{os.environ.get('USER', 'user')}@{socket.gethostname()}"
+def destination(mount, fresh=False):
+    """The folder chosen when the drive was: renaming the computer later doesn't change it."""
+    name = None if fresh else load().get("folder")
+    return Path(mount) / "Fennek Backup" / (name if name and "/" not in name and name not in (".", "..") else f"{os.environ.get('USER', 'user')}@{socket.gethostname()}")
 
 
 TOKEN = ".fennek-backup-id"
@@ -145,11 +204,56 @@ def run(if_due=False):
     cfg = load()
     if not cfg.get("uuid"):
         return "Backup is off."
-    if if_due and time.time() - cfg.get("last", 0) < 3600:
+    if if_due and time.time() - max(cfg.get("last", 0), cfg.get("tried", 0)) < 3600:
         return "Backed up less than an hour ago."
-    mount = mountpoint(cfg["uuid"])
+    mount, opened = mount_drive(cfg["uuid"])
     if not mount:
-        return "The backup drive isn't connected."
+        result = "The backup drive isn't connected."
+    else:
+        if if_due:
+            cfg["tried"] = int(time.time())   # a full drive isn't copied to again every 15 minutes
+            save(cfg)
+        result = copy_all(mount)
+        if opened:   # safe to pull between the hourly runs; busy is fine, then it stays open
+            subprocess.run(["udisksctl", "unmount", "--no-user-interaction", "-b", f"/dev/disk/by-uuid/{cfg['uuid']}"], capture_output=True)
+    if if_due:
+        warn(load(), result)
+    return result
+
+
+def restore(mount):
+    """The drive's copies back into your folders. Never replaces a file that's here, and what comes from a drive arrives
+    plain, whatever it says about itself: nothing restored can be run by a double-click."""
+    current = destination(mount) / "Current"
+    if current.is_symlink() or not current.is_dir():
+        return "No backup to restore on this drive."
+    here = {Path(s).name: s for s in sources()}
+    failed = []
+    for folder in sorted(current.iterdir(), key=lambda p: p.name):
+        if folder.is_symlink() or not folder.is_dir():
+            continue
+        target = here.get(folder.name) or str(Path.home() / folder.name)
+        rc = subprocess.run(["rsync", "-rt", "--ignore-existing", "--chmod=D755,F644", "--", f"{folder}/", f"{target}/"]).returncode
+        if rc not in (0, 24):
+            failed.append(folder.name)
+    return "Restored, except " + ", ".join(failed) + "." if failed else "Your files are back. Nothing that was already here was replaced."
+
+
+def has_backup(dest):
+    current = dest / "Current"
+    return not current.is_symlink() and current.is_dir() and any(True for _ in current.iterdir())
+
+
+def choose_existing(dest):
+    """A drive that already holds this account's backup: restore | fresh | None."""
+    r = subprocess.run(["kdialog", "--title", "Backup", "--menu", "This drive already has a backup of your files.",
+                        "restore", "Restore my files, then keep backing up here",
+                        "fresh", "Start fresh (what's there now moves to Older versions for a year)"], capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def copy_all(mount):
+    cfg = load()
     dest = destination(mount)
     if not cfg.get("token") or read_token(dest) != cfg["token"]:
         return "This isn't your backup drive any more (its backup doesn't match). Choose the drive again in Backup."
@@ -181,7 +285,7 @@ def run(if_due=False):
 
 def status():
     cfg = load()
-    return {"on": bool(cfg.get("uuid")), "uuid": cfg.get("uuid", ""), "label": cfg.get("label", ""), "connected": bool(cfg.get("uuid") and mountpoint(cfg["uuid"])),
+    return {"on": bool(cfg.get("uuid")), "uuid": cfg.get("uuid", ""), "label": cfg.get("label", ""), "connected": plugged_in(cfg.get("uuid")) or bool(cfg.get("uuid") and mountpoint(cfg["uuid"])),
             "last": cfg.get("last", 0), "folder": str(destination(mountpoint(cfg["uuid"]))) if cfg.get("uuid") and mountpoint(cfg["uuid"]) else ""}
 
 
@@ -215,6 +319,13 @@ def selftest():
     f = parse_pairs(r'UUID="AB12-CD34" LABEL="My\x20Stick" TARGET="/run/media/u/My\x20Stick"')   # as findmnt writes it
     assert f == {"UUID": "AB12-CD34", "LABEL": "My Stick", "TARGET": "/run/media/u/My Stick"}, f
     assert parse_pairs('UUID="" LABEL="" TARGET="/"') == {"UUID": "", "LABEL": "", "TARGET": "/"}
+    rows = {"blockdevices": [{"uuid": "A", "label": None, "fstype": "exfat", "hotplug": True, "mountpoint": None, "size": 8},
+                             {"uuid": "B", "label": "C", "fstype": "ntfs", "hotplug": False, "mountpoint": None, "size": 9},
+                             {"uuid": "D", "label": "E", "fstype": "vfat", "hotplug": True, "mountpoint": "/run/media/u/E", "size": 9},
+                             {"uuid": "F", "label": "L", "fstype": "crypto_LUKS", "hotplug": True, "mountpoint": None, "size": 9}]}
+    assert [d["uuid"] for d in parse_plugged(json.dumps(rows))] == ["A"], "only removable drives not open yet"
+    assert parse_plugged("nonsense") == [] and not plugged_in("../../x") and not plugged_in("")
+    assert notice_due({}, "x", 100, 50) and not notice_due({"x": 90}, "x", 100, 50)
     print("selftest ok")
 
 
@@ -224,17 +335,37 @@ def main(argv):
     cmd = argv[0] if argv else "status"
     if cmd == "drives":
         ds = drives()
+        ds += plugged_drives({d["uuid"] for d in ds})
         print(json.dumps(ds) if argv[1:] == ["--json"] else "\n".join(f"{d['label']}  ({d['uuid']})" for d in ds) or "No drive connected.")
     elif cmd == "use" and len(argv) == 2:
+        mount_drive(argv[1])
         d = next((d for d in drives() if d["uuid"] == argv[1]), None)
         if not d:
             sys.exit("That drive isn't connected.")
+        dest = destination(d["path"], fresh=True)
+        first = ""
         try:
-            token = write_token(real_dir(d["path"], destination(d["path"])))
+            # Choosing a drive must not empty a backup that's already there, just when it's needed.
+            if not dest.is_symlink() and dest.is_dir() and has_backup(dest) and read_token(dest) != load().get("token"):
+                choice = choose_existing(dest)
+                if not choice:
+                    return print("Nothing changed.")
+                if choice == "restore":
+                    save({**load(), "folder": dest.name})
+                    first = restore(d["path"]) + " "
+            token = write_token(real_dir(d["path"], dest))
         except (ValueError, OSError) as e:
             sys.exit(f"Can't use this drive: {e}")
-        save({**load(), "uuid": d["uuid"], "label": d["label"], "token": token})
-        print(f"Backing up to {d['label']}. " + run())
+        save({**load(), "uuid": d["uuid"], "label": d["label"], "token": token, "folder": dest.name})
+        print(f"{first}Backing up to {d['label']}. " + run())
+    elif cmd == "open":
+        mount, _ = mount_drive(load().get("uuid"))
+        if not mount:
+            sys.exit("The backup drive isn't connected.")
+        os.execvp("xdg-open", ["xdg-open", str(destination(mount))])
+    elif cmd == "restore":
+        mount, _ = mount_drive(load().get("uuid"))
+        print(restore(mount) if mount else "The backup drive isn't connected.")
     elif cmd == "off":
         cfg = load(); cfg.pop("uuid", None); save(cfg)
         print("Backup is off. The copy on the drive stays.")

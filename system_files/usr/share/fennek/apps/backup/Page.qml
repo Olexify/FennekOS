@@ -88,8 +88,16 @@ Item {
                     QQC2.Button {
                         text: "Open backup"
                         icon.name: "document-open-folder"
-                        enabled: root.status.folder !== ""
-                        onClicked: run.connectSource("xdg-open " + root.q(root.status.folder))
+                        enabled: root.status.connected
+                        onClicked: run.connectSource("fennek-backup open")
+                    }
+                    QQC2.Button {
+                        text: "Restore files"
+                        icon.name: "edit-undo"
+                        enabled: !root.busy && root.status.connected
+                        QQC2.ToolTip.text: "Brings back what's missing here. Nothing you have now is replaced."
+                        QQC2.ToolTip.visible: hovered
+                        onClicked: root.act("fennek-backup restore")
                     }
                     Item { Layout.fillWidth: true }
                     QQC2.Button {
@@ -119,7 +127,7 @@ Item {
                             Layout.fillWidth: true
                             QQC2.Label { text: modelData.label; font.weight: Font.DemiBold }
                             QQC2.Label {
-                                text: Qt.locale().formattedDataSize(modelData.free, 1) + " free of " + Qt.locale().formattedDataSize(modelData.size, 1)
+                                text: modelData.path === "" ? Qt.locale().formattedDataSize(modelData.size, 1) : Qt.locale().formattedDataSize(modelData.free, 1) + " free of " + Qt.locale().formattedDataSize(modelData.size, 1)
                                 opacity: 0.7
                             }
                         }

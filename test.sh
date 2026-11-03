@@ -184,6 +184,15 @@ assert subprocess.run(fb.rsync_args(str(src), str(cur), str(old / "2026-10-17 10
 assert subprocess.run(fb.rsync_args(str(src), str(cur), str(old / "2026-10-17 11.00/Documents"))).returncode == 0
 assert (cur / "Documents/a.txt").read_text() == "v2"
 assert (old / "2026-10-17 11.00/Documents/a.txt").read_text() == "v1"
+# Restoring: what's missing comes back plain, nothing that's here is replaced, a link on the drive isn't followed.
+mine = t / "mine"; mine.mkdir(); (mine / "kept.txt").write_text("mine")
+back = t / "m/Current/mine"; back.mkdir(parents=True); (back / "kept.txt").write_text("old")
+(back / "run.desktop").write_text("x"); os.chmod(back / "run.desktop", 0o777)
+(t / "m/Current/evil").symlink_to("/etc")
+fb.destination = lambda m, fresh=False: t / "m"; fb.sources = lambda: [str(mine)]
+fb.restore(str(t / "m"))
+assert (mine / "kept.txt").read_text() == "mine" and (mine / "run.desktop").stat().st_mode & 0o777 == 0o644
+assert not (pathlib.Path.home() / "evil").exists()
 PY
 # "Update ready" note: once per downloaded update, enabled for every user.
 ur=$(mktemp -d) && echo one >"$ur/staged" && export FENNEK_STAGED="$ur/staged" XDG_STATE_HOME="$ur" FENNEK_DRY_RUN=1 \
