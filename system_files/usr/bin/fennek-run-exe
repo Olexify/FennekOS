@@ -547,6 +547,9 @@ def run_sandboxed(exe, digest, args, sound=False, box=None, inside=None):
     if not shutil.which("pasta"):
         return say("Sandbox networking (pasta) is missing; not running unsandboxed.", "error")
     home_box = None if box else own_box(exe)
+    # Only a sandbox that exists: a folder unpacked here under a made-up name must not claim that program's permissions.
+    if home_box and not (BOXES / home_box).is_dir():
+        home_box = None
     name = box.name if box else home_box or folder_name(exe, digest)
     box_id = name[-16:] if home_box else digest
     box_home = BOXES / name / "home"
