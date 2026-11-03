@@ -193,6 +193,12 @@ fb.destination = lambda m, fresh=False: t / "m"; fb.sources = lambda: [str(mine)
 fb.restore(str(t / "m"))
 assert (mine / "kept.txt").read_text() == "mine" and (mine / "run.desktop").stat().st_mode & 0o777 == 0o644
 assert not (pathlib.Path.home() / "evil").exists()
+home = t / "home"; home.mkdir(); os.environ["HOME"] = str(home)
+danger = t / "m/Current/.config/autostart"; danger.mkdir(parents=True); (danger / "x.desktop").write_text("x")
+other = t / "m/Current/Dokumente"; other.mkdir(); (other / "d.txt").write_text("d")
+fb.restore(str(t / "m"))
+assert not (home / ".config").exists(), "a drive's folder names never choose a place in home"
+assert (home / "Restored from backup/Dokumente/d.txt").is_file()
 PY
 # "Update ready" note: once per downloaded update, enabled for every user.
 ur=$(mktemp -d) && echo one >"$ur/staged" && export FENNEK_STAGED="$ur/staged" XDG_STATE_HOME="$ur" FENNEK_DRY_RUN=1 \

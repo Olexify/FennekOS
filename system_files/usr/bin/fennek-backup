@@ -230,9 +230,12 @@ def restore(mount):
     here = {Path(s).name: s for s in sources()}
     failed = []
     for folder in sorted(current.iterdir(), key=lambda p: p.name):
-        if folder.is_symlink() or not folder.is_dir():
+        # A drive is untrusted: its folder names never choose a place in home, or .config/autostart would run at sign-in.
+        # Names this computer doesn't have (another language's Documents) go into a plain folder of their own.
+        if folder.is_symlink() or not folder.is_dir() or folder.name.startswith("."):
             continue
-        target = here.get(folder.name) or str(Path.home() / folder.name)
+        target = here.get(folder.name) or str(Path.home() / "Restored from backup" / folder.name)
+        os.makedirs(target, exist_ok=True)
         rc = subprocess.run(["rsync", "-rt", "--ignore-existing", "--chmod=D755,F644", "--", f"{folder}/", f"{target}/"]).returncode
         if rc not in (0, 24):
             failed.append(folder.name)
