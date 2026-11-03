@@ -1,0 +1,10 @@
+[Unit]
+Description=A taskbar on every display
+After=plasma-plasmashell.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/fennek-taskbars
+
+[Install]
+WantedBy=graphical-session.target

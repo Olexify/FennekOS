@@ -9,8 +9,10 @@
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusPendingCall>
+#include <QFile>
 #include <QIcon>
 #include <QProcess>
+#include <QStandardPaths>
 
 namespace
 {
@@ -87,6 +89,14 @@ public:
                     edit->trigger();
             });
             settings->setEnabled(edit && corona->immutability() == Plasma::Types::Mutable);
+
+            if (corona->numScreens() > 1) {   // fennek-taskbars
+                auto *all = add("view-fullscreen", QStringLiteral("Show taskbar on all displays"), [](bool on) {
+                    QProcess::startDetached(QStringLiteral("/usr/libexec/fennek-taskbars"), {on ? QStringLiteral("--all") : QStringLiteral("--one")});
+                });
+                all->setCheckable(true);
+                all->setChecked(!QFile::exists(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + QStringLiteral("/fennek/one-taskbar")));
+            }
         }
         return m_actions;
     }

@@ -1,0 +1,28 @@
+#!/usr/bin/bash
+# A taskbar on every display: at sign-in and when a display comes (fennekarrows starts this). Only a display without a bar
+# gets one; Plasma keeps and brings back the bar of a display that left. Set from the taskbar's right-click menu.
+#   fennek-taskbars            make what's missing, unless switched off
+#   fennek-taskbars --all      switch on
+#   fennek-taskbars --one      switch off: only the main display keeps a bar
+off=${XDG_CONFIG_HOME:-$HOME/.config}/fennek/one-taskbar
+case ${1:-} in
+    --all) rm -f "$off" ;;
+    --one) mkdir -p "${off%/*}" && touch "$off" ;;
+    *) [ -e "$off" ] && exit 0 ;;
+esac
+shell() { gdbus call --session --dest org.kde.plasmashell --object-path /PlasmaShell --method org.kde.PlasmaShell.evaluateScript "$1" >/dev/null 2>&1; }
+if [ "${1:-}" = --one ]; then
+    script='var was = locked; if (was) lockCorona(false);
+panels().forEach(function (p) { if (p.screen > 0) p.remove() });
+if (was) lockCorona(true)'
+else
+    # ponytail: pins and tiles are copied when a bar is made, then each bar keeps its own. Live sync if people miss it.
+    script=$(</usr/share/fennek/taskbars.js)
+fi
+# Plasma may still be starting, or still taking in the new display.
+sleep 2
+for _ in {1..30}; do
+    shell "$script" && exit 0
+    sleep 2
+done
+exit 1

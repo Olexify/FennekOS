@@ -124,6 +124,23 @@ kill $(jobs -p) 2>/dev/null; exit 0
 EOF
 chmod 755 /tmp/session.sh
 timeout 900 runuser -u anna -- env XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" HOME=/home/anna dbus-run-session -- bash /tmp/session.sh
+# The same desktop started again with a second display: it gets its own taskbar.
+pkill -u anna 2>/dev/null; sleep 3
+{ sed -n '1,/^sleep 6$/p' /tmp/session.sh | sed 's/--width 1600 --height 900/--width 1600 --height 900 --output-count 2/'; cat <<'EOF'
+export QT_QPA_PLATFORM=wayland WAYLAND_DISPLAY=wayland-fennek
+export XDG_CURRENT_DESKTOP=KDE
+/usr/libexec/kactivitymanagerd >/dev/null 2>&1 &
+kded6 >/dev/null 2>&1 &
+sleep 2
+plasmashell >/out/plasma2.log 2>&1 &
+sleep 12
+/usr/libexec/fennek-taskbars; echo "taskbars: $?"
+sleep 5
+script "print('screens ' + screenCount); panels().forEach(p => print('bar on ' + p.screen + ': ' + p.widgets().map(w => w.type).join(' ')))" | tee /out/taskbars.txt
+shot 50-two-displays 3
+EOF
+} >/tmp/session2.sh
+timeout 180 runuser -u anna -- env XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" HOME=/home/anna dbus-run-session -- bash /tmp/session2.sh
 # Pointer sheet: every Fennek pointer at 48 px on light and on dark (screenshots don't show the pointer).
 s=/usr/share/fennek/cursor-src
 for bg in '#f3f3f3' '#2b2b2b'; do

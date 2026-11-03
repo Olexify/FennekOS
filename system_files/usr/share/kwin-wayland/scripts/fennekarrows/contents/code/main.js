@@ -57,6 +57,11 @@ registerShortcut("Fennek Bring Forward", "Bring forward the Fennek app that was 
     });
 });
 
+// A display came: it gets a taskbar.
+workspace.screensChanged.connect(function () {
+    callDBus("org.freedesktop.systemd1", "/org/freedesktop/systemd1", "org.freedesktop.systemd1.Manager", "StartUnit", "fennek-taskbars.service", "replace");
+});
+
 // Super+Ctrl+D: a new virtual desktop, switched to. Super+Ctrl+F4: close this one (its windows move to the
 // neighbour). Super+Ctrl+Left / Right switch between them (KWin's own).
 registerShortcut("Fennek New Desktop", "Add a virtual desktop and switch to it", "Meta+Ctrl+D", function () {
