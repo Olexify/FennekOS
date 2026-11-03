@@ -116,6 +116,8 @@ appears() { for ((i = 0; i < 30; i++)); do [ -e "$1" ] && return 0; sleep 1; don
 check "USB disk plugged in" appears /dev/disk/by-label/FennekUSB
 check "USB disk: what's written reaches it within seconds" sh -c 'sleep 3; [ "$(sysctl -n vm.dirty_expire_centisecs)" = 100 ] && [ "$(sysctl -n vm.dirty_writeback_centisecs)" = 100 ]'
 check "attached file's drive there" appears /dev/disk/by-label/FennekLoop
+# Fennek's own partition stays out of the drive lists, now that the sidebar shows drives.
+check "own partition hidden from the drive lists" sh -c 'udevadm info -q property "$(findmnt -nvo SOURCE /sysroot)" | grep -qx UDISKS_IGNORE=1'
 # Windows hibernates (Fast Startup). hiberfil.sys is only on its own drive, but it holds the other one just the same.
 closed() { for ((i = 0; i < 10; i++)); do udisksctl unmount --no-user-interaction -b "$1" && return 0; sleep 2; done; return 1; }
 hibernate_windows() {

@@ -1,0 +1,2 @@
+# Fennek's own partitions stay out of the Files sidebar and every other drive list. udisks' own rules cover EFI and recovery.
+ACTION=="add|change", SUBSYSTEM=="block", ENV{ID_FS_UUID}=="?*", IMPORT{program}="/usr/libexec/fennek-own-partition $env{ID_FS_UUID}"

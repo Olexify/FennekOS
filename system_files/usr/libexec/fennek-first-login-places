@@ -1,13 +1,13 @@
 #!/usr/bin/python3
 """Write a new user's Files sidebar (only when they have none yet): Home, pinned folders, Network, Recycle Bin.
-Removable drives (USB sticks) appear on their own; KDE's "Devices" group (internal and system partitions) stays
-hidden: drives are on the Home page.
+Drives appear on their own, in KDE's "Devices" group: that's where one that isn't open yet gets clicked. Fennek's own
+partitions stay out of it (fennek-own-partition).
 
 Written with KDE's current places format version (4), so KDE doesn't add its own defaults on top.
 
   fennek-first-login-places FILE
   fennek-first-login-places --ensure-home FILE     existing sidebar: Home on top (an older "This PC" entry goes),
-                                                   hide "Devices" and "Recent", the bin called Recycle Bin (English)
+                                                   hide "Recent", the bin called Recycle Bin (English)
   fennek-first-login-places --selftest
 """
 import os, re, subprocess, sys
@@ -33,7 +33,7 @@ def places(folders, home=None):
            '<xbel xmlns:bookmark="http://www.freedesktop.org/standards/desktop-bookmarks" '
            'xmlns:mime="http://www.freedesktop.org/standards/shared-mime-info" xmlns:kdepriv="http://www.kde.org/kdepriv">',
            ' <info>', '  <metadata owner="http://www.kde.org">', '   <kde_places_version>4</kde_places_version>',
-           '   ' + HIDE_DEVICES, '   ' + HIDE_RECENT, '   ' + KDE_DONE, '  </metadata>', ' </info>']
+           '   ' + HIDE_RECENT, '   ' + KDE_DONE, '  </metadata>', ' </info>']
     for n, (label, href, icon) in enumerate(items):
         out += [f" <bookmark href={quoteattr(href)}>", f"  <title>{escape(label)}</title>", "  <info>",
                 f'   <metadata owner="http://freedesktop.org"><bookmark:icon name={quoteattr(icon)}/></metadata>',
@@ -41,7 +41,6 @@ def places(folders, home=None):
     return "\n".join(out + ["</xbel>", ""])
 
 
-HIDE_DEVICES = "<GroupState-Devices-IsHidden>true</GroupState-Devices-IsHidden>"
 HIDE_RECENT = "<GroupState-RecentlySaved-IsHidden>true</GroupState-RecentlySaved-IsHidden>"
 # KDE adds its "Recent" places (and shows that group again) the first time unless these say it already did.
 KDE_DONE = "<withRecentlyUsed>true</withRecentlyUsed><withBaloo>true</withBaloo>"
@@ -71,7 +70,7 @@ def ensure_home(text, home):
 
 
 def hide_group(text, tag):
-    """Existing sidebar: hide one of KDE's groups (tag = HIDE_DEVICES / HIDE_RECENT), once."""
+    """Existing sidebar: hide one of KDE's groups (tag = HIDE_RECENT), once."""
     name = tag[1:tag.index(">")]
     if f"<{name}>false</{name}>" in text:   # KDE set it shown when it added its own entries
         return text.replace(f"<{name}>false</{name}>", tag, 1)
@@ -79,11 +78,6 @@ def hide_group(text, tag):
         return text
     i = text.index("</kde_places_version>") + len("</kde_places_version>")
     return text[:i] + "\n   " + tag + text[i:]
-
-
-def hide_devices(text):
-    """KDE's internal "Devices" group (boot/EFI/system partitions): drives are on This PC; USB sticks still show."""
-    return hide_group(text, HIDE_DEVICES)
 
 
 def ui_language():
@@ -144,11 +138,10 @@ def selftest():
     added = ensure_home('<xbel>\n <bookmark href="trash:/">\n  <title>Bin</title>\n </bookmark>\n</xbel>\n', "/home/u")
     assert added.index('href="file:///home/u"') < added.index('href="trash:/"')
     xml.dom.minidom.parseString(added.replace("<xbel>", '<xbel xmlns:bookmark="x">'))
-    assert HIDE_DEVICES in x
+    assert "GroupState-Devices" not in x, "that group is where a drive that isn't open gets clicked"
     v4 = '<info>\n  <metadata owner="http://www.kde.org">\n   <kde_places_version>4</kde_places_version>\n  </metadata>\n</info>'
-    assert hide_devices(v4).count(HIDE_DEVICES) == 1 and hide_devices(hide_devices(v4)) == hide_devices(v4)
-    both = hide_group(hide_devices(v4), HIDE_RECENT)
-    assert both.count(HIDE_RECENT) == 1 and both.count(HIDE_DEVICES) == 1
+    both = hide_group(v4, HIDE_RECENT)
+    assert both.count(HIDE_RECENT) == 1 and hide_group(both, HIDE_RECENT) == both
     shown = v4.replace("</kde_places_version>", "</kde_places_version><GroupState-RecentlySaved-IsHidden>false</GroupState-RecentlySaved-IsHidden>")
     assert hide_group(shown, HIDE_RECENT).count(HIDE_RECENT) == 1 and "IsHidden>false" not in hide_group(shown, HIDE_RECENT)
     assert "<withRecentlyUsed>true</withRecentlyUsed>" in x
@@ -166,7 +159,7 @@ if __name__ == "__main__":
     elif len(sys.argv) == 3 and sys.argv[1] in ("--ensure-home", "--ensure-thispc"):
         p = sys.argv[2]
         t = open(p, encoding="utf-8").read()
-        new = hide_group(hide_devices(ensure_home(t, os.path.expanduser("~"))), HIDE_RECENT)
+        new = hide_group(ensure_home(t, os.path.expanduser("~")), HIDE_RECENT)
         if ui_language().startswith("en"):
             new = recycle_bin(new)
         if new != t:

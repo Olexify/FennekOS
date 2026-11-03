@@ -1,0 +1,28 @@
+#!/bin/sh
+# For udev: a partition Fennek itself runs from stays out of the drive lists. By UUID, the one thing every kind of install
+# has: the kernel's command line names the root and its encryption, /etc/fstab the rest.
+#   fennek-own-partition UUID         prints UDISKS_IGNORE=1 for one of them
+#   fennek-own-partition --selftest
+own() {   # uuid cmdline fstab
+    for word in $2; do
+        case "$word" in
+            root=UUID="$1" | rd.luks.uuid="$1" | rd.luks.uuid=luks-"$1") return 0 ;;
+        esac
+    done
+    awk -v want="UUID=$1" '$1 == want && ($2 == "/" || $2 ~ /^\/(boot|sysroot|usr|var)(\/|$)/) { found = 1 } END { exit !found }' "$3" 2>/dev/null
+}
+
+if [ "${1:-}" = --selftest ]; then
+    t=$(mktemp) || exit 1
+    printf 'UUID=boot-1 /boot xfs defaults 0 0\nUUID=data-1 /data ext4 defaults 0 0\n' >"$t"
+    line='BOOT_IMAGE=/x root=UUID=root-1 rd.luks.uuid=luks-enc-1 rd.luks.uuid=enc-2 quiet'
+    for u in root-1 enc-1 enc-2 boot-1; do own "$u" "$line" "$t" || { echo "should be ours: $u"; exit 1; }; done
+    for u in data-1 root enc other; do own "$u" "$line" "$t" && { echo "should not be ours: $u"; exit 1; }; done
+    own '*' "$line" "$t" && { echo "a pattern matched"; exit 1; }
+    rm -f "$t"
+    echo "selftest ok"
+    exit 0
+fi
+
+[ -n "${1:-}" ] && own "$1" "$(cat /proc/cmdline)" /etc/fstab && echo UDISKS_IGNORE=1
+exit 0

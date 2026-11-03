@@ -1,8 +1,10 @@
-// People who administer this computer open its own NTFS drives (Windows and its data partitions) without a password,
-// like the C: drive on a classic desktop. Other accounts still can't: their files are only protected by Windows itself.
+// People who administer this computer open its own NTFS, exFAT and FAT drives without a password, like the C: drive on a
+// classic desktop; those have no file owners to protect. A BitLocker drive asks for its recovery key, and only that.
+// Other accounts still can't: their files are only protected by Windows itself. Linux file systems keep the admin prompt.
 polkit.addRule(function (action, subject) {
-    if (action.id == "org.freedesktop.udisks2.filesystem-mount-system"
-            && action.lookup("id.type") == "ntfs"
+    var type = action.lookup("id.type");
+    if ((action.id == "org.freedesktop.udisks2.filesystem-mount-system" && (type == "ntfs" || type == "exfat" || type == "vfat")
+            || action.id == "org.freedesktop.udisks2.encrypted-unlock-system" && type == "BitLocker")
             && subject.local && subject.active && subject.isInGroup("wheel")) {
         return polkit.Result.YES;
     }

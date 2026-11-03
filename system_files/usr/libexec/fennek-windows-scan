@@ -29,7 +29,7 @@ TOOL_WAIT = 15    # seconds one tool gets on one drive
 SCAN_WAIT = 25    # seconds after which no further drive is started: with three tools at TOOL_WAIT, under the service's 75
 # While Windows is hibernated, also what the list can't name: an old-style table, RAID, an unlocked BitLocker drive, a disk
 # that showed up late. Reads nothing, goes by what udev already knows. USB disks and attached files stay writable.
-HOLD_ALL = ('ACTION!="remove", SUBSYSTEM=="block", KERNEL!="loop*", ENV{ID_FS_TYPE}=="ntfs", ENV{ID_USB_VENDOR_ID}!="?*", '
+HOLD_ALL = ('ACTION!="remove", SUBSYSTEM=="block", KERNEL!="loop*", ENV{ID_FS_TYPE}=="ntfs|exfat|vfat", ENV{ID_USB_VENDOR_ID}!="?*", '
             'ENV{UDISKS_MOUNT_OPTIONS_DEFAULTS}="ro"\n')
 
 
@@ -220,7 +220,7 @@ def apply():
         os.remove(RULES)
     if rules or had_rules:
         udevadm("control", "--reload")
-        udevadm("trigger", "--action=change", "--subsystem-match=block", "--property-match=ID_FS_TYPE=ntfs")
+        udevadm("trigger", "--action=change", "--subsystem-match=block", "--property-match=ID_FS_TYPE=ntfs", "--property-match=ID_FS_TYPE=exfat", "--property-match=ID_FS_TYPE=vfat")
         udevadm("settle", "--timeout=30")
     write(LIST, listing)
     print(listing, end="")
@@ -317,7 +317,7 @@ def selftest():
         listing, rules = plan([("sda1", a), ("sdb1", b)], json.dumps(r))
         assert json.loads(listing) == r
         assert rules.splitlines() == [
-            'ACTION!="remove", SUBSYSTEM=="block", KERNEL!="loop*", ENV{ID_FS_TYPE}=="ntfs", ENV{ID_USB_VENDOR_ID}!="?*", '
+            'ACTION!="remove", SUBSYSTEM=="block", KERNEL!="loop*", ENV{ID_FS_TYPE}=="ntfs|exfat|vfat", ENV{ID_USB_VENDOR_ID}!="?*", '
             'ENV{UDISKS_MOUNT_OPTIONS_DEFAULTS}="ro"',
             f'ACTION!="remove", SUBSYSTEM=="block", KERNEL=="sda1", ENV{{ID_PART_ENTRY_UUID}}=="{a}", ENV{{FENNEK_NTFS}}="1", '
             'ENV{ID_FS_LABEL}="Windows (C:)", ENV{ID_FS_LABEL_ENC}="Windows\\x20(C:)", ENV{UDISKS_MOUNT_OPTIONS_DEFAULTS}="ro"',

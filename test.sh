@@ -171,6 +171,7 @@ lf=$(mktemp -d) && mkdir -p "$lf/bin" && cp "$cs/bin/plasma-apply-colorscheme" "
 rm -rf "$lf"
 rm -rf "$cs"
 # Backup to a USB drive: logic, hourly check for everyone, and a real two-pass copy that keeps the older version.
+/usr/libexec/fennek-own-partition --selftest >/dev/null && [ -s /usr/lib/udev/rules.d/85-fennek-own-partition.rules ] || fail "Fennek's own partitions stay out of the drive lists"
 fennek-backup --selftest >/dev/null && [ -L /etc/systemd/user/timers.target.wants/fennek-backup.timer ]   && python3 - <<'PY' || fail "backup to a USB drive"
 import importlib.machinery, importlib.util, pathlib, subprocess, tempfile
 spec = importlib.util.spec_from_loader("fb", importlib.machinery.SourceFileLoader("fb", "/usr/bin/fennek-backup"))

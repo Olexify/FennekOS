@@ -202,14 +202,15 @@ for f in "${XDG_CONFIG_HOME:-$HOME/.config}/plasma-org.kde.plasma.desktop-applet
     done
 done
 
-# Files sidebar, once: hide "Devices" (system partitions) and "Recent", the bin is Recycle Bin (English).
+# Files sidebar, once: hide "Recent", the bin is Recycle Bin (English), and "Devices" shows: it's where a closed drive gets clicked.
 pl_seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/places-version
-if [ "$(cat "$pl_seen" 2>/dev/null)" != 2026-10-20b ]; then   # Home is the start place again (shown as the Home page); This PC goes; Recent hidden
+if [ "$(cat "$pl_seen" 2>/dev/null)" != 2026-11-03 ]; then   # Home is the start place again (shown as the Home page); This PC goes; Recent hidden
     places=${XDG_DATA_HOME:-$HOME/.local/share}/user-places.xbel
     [ -f "$places" ] && /usr/libexec/fennek-first-login-places --ensure-home "$places"
+    [ -f "$places" ] && sed -i 's#<GroupState-Devices-IsHidden>true</GroupState-Devices-IsHidden>##' "$places"
     kwriteconfig6 --file dolphinrc --group General --key HomeUrl --delete   # Files opens on the home folder
     /usr/libexec/fennek-desktop-icons                                       # This PC icon -> Home
-    mkdir -p "${pl_seen%/*}" && echo 2026-10-20b >"$pl_seen"
+    mkdir -p "${pl_seen%/*}" && echo 2026-11-03 >"$pl_seen"
 fi
 
 version=2026-11-03
