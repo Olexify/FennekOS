@@ -42,6 +42,11 @@ rm -f "$box/from-shared.txt"
 fennek-run-exe --sandbox "$old/probe.exe" "$(win "$HOME/Shared/from-shared.txt")" >/tmp/oldname.log 2>&1 || true
 [ -e "$box/from-shared.txt" ] || { echo "FAIL: program didn't run through the old folder name"; tail -20 /tmp/oldname.log; exit 1; }
 
+# Another .exe in that folder runs in the same sandbox, and from there a file beside it opens by its plain name.
+echo beside > "$box/sibling.txt"; cp ~/Downloads/probe.exe "$box/other.exe"; printf x >> "$box/other.exe"; rm -f "$box/beside.txt"
+fennek-run-exe --sandbox "$box/other.exe" "$(win "$HOME/Shared/beside.txt")" sibling.txt >/tmp/beside.log 2>&1 || true
+grep -q "^OK " "$box/beside.txt" || { echo "FAIL: a file beside the program wasn't found"; tail -20 /tmp/beside.log; exit 1; }
+
 # Firewall-blocked sandboxed program: runs with no network at all (no pasta) and still works.
 mkdir -p ~/.config/fennek && sha256sum ~/Downloads/probe.exe | cut -d' ' -f1 > ~/.config/fennek/offline-exes
 rm -f "$box/offline.txt"
