@@ -1,4 +1,4 @@
-# Fennek OS
+# Fennek OS <a href="https://fennekos.org"><img align="right" width="140" src="https://fennekgifcounter.vercel.app/api/counter" alt="visitor counter" /></a>
 
 A Linux desktop for **people who want a familiar, classic desktop**. It feels familiar, has no telemetry, comes with strong
 built-in security, and aims for long battery life.
@@ -80,7 +80,3 @@ More from the same den: [Leonote](https://leonote.app) (popup notes that keep yo
 - What Fennek OS connects to, and how to turn it off: [PRIVACY.md](PRIVACY.md).
 - Fennek OS's own code is licensed under [GPL-3.0](LICENSE). Bundled components keep their own licenses.
 - The name "Fennek OS" and the fox logo are not covered by the GPL; forks must rename. See [TRADEMARKS.md](TRADEMARKS.md).
-
-<p align="center">
-  <img src="https://fennekgifcounter.vercel.app/api/counter" width="480" alt="Fennek OS visitor counter" />
-</p>
