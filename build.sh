@@ -556,6 +556,22 @@ for name in ("systemsettings.desktop",):
             replace_file(p, t)
 EOF
 
+# First-run wizard: click Ukrainian, Greek or the like and no Latin layout is left, and the next page's account name takes
+# only Latin letters. So those come with us first (Alt+Shift switches, see fennekarrows).
+python3 - <<'EOF'
+import pathlib
+p = pathlib.Path("/usr/share/plasma/packages/org.kde.plasmasetup.keyboard/contents/ui/main.qml")
+s = p.read_text()
+old = "            KeyboardUtil.layoutName = shortName;
+            KeyboardUtil.layoutVariant = variantName;
+"
+assert s.count(old) == 1, "the wizard's keyboard page changed upstream: revisit the Fennek patch"
+p.write_text(s.replace(old, '''            const noLatin = /^(am|ara|bd|bg|by|ge|gr|il|in|ir|kg|kz|la|lk|mk|mm|mn|np|pk|rs|ru|th|tj|ua|uz)$/.test(shortName); // Fennek OS
+            KeyboardUtil.layoutName = noLatin ? "us," + shortName : shortName;
+            KeyboardUtil.layoutVariant = noLatin ? "," + variantName : variantName;
+'''))
+EOF
+
 # One Settings: KDE's applets open a page with `systemsettings kcm_NAME`, which lands in Fennek's. With nothing else asked,
 # it's KDE's window ("All KDE settings"). kinfocenter is the same program under another name: it stays that.
 mkdir -p /usr/libexec/fennek

@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 """Language switcher labels on the taskbar: ENG / УКР / DEU … instead of us / ua / de.
 Once per user (first login): takes the keyboard layouts chosen at install (localectl) and writes them with
-short labels to the user's keyboard settings. Changing layouts later in Settings keeps working as usual.
+short labels to the user's keyboard settings. A list with only layouts like Ukrainian or Greek gets English first: web
+addresses, many passwords and account names need Latin letters. Changing layouts later in Settings keeps working as usual.
 
   fennek-first-login-keyboard            write ~/.config/kxkbrc if the user has none
   fennek-first-login-keyboard --selftest
@@ -17,6 +18,15 @@ LABELS = {
     "dk": "DAN", "fi": "FIN", "ee": "EST", "lv": "LAT", "lt": "LIT", "il": "עבר", "ara": "عرب", "jp": "日本",
     "kr": "한국", "cn": "中文", "ge": "ქარ", "am": "ՀԱՅ", "kz": "ҚАЗ",
 }
+
+
+NO_LATIN = set("am ara bd bg by ge gr il in ir kg kz la lk mk mm mn np pk rs ru th tj ua uz".split())
+
+
+def with_latin(layouts, variants):
+    if layouts and all(l in NO_LATIN for l in layouts):
+        return ["us"] + layouts, [""] + variants
+    return layouts, variants
 
 
 def label(code):
@@ -45,7 +55,7 @@ def main():
         out = subprocess.run(["localectl", "status"], capture_output=True, text=True).stdout
     except OSError:
         return
-    layouts, variants = parse_localectl(out)
+    layouts, variants = with_latin(*parse_localectl(out))
     if not layouts:
         return
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -61,6 +71,10 @@ def selftest():
     assert parse_localectl("X11 Layout: de\n") == (["de"], [""])
     assert parse_localectl("VC Keymap: us\n") == ([], [])
     assert label("xyz") == "XYZ"
+    assert with_latin(["ua"], ["enhanced"]) == (["us", "ua"], ["", "enhanced"])
+    assert with_latin(["us", "ua"], ["", ""]) == (["us", "ua"], ["", ""])
+    assert with_latin(["de"], [""]) == (["de"], [""])
+    assert with_latin([], []) == ([], [])
     print("selftest ok")
 
 

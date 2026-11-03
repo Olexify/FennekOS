@@ -83,7 +83,9 @@ var categories = [
  {"name": "Time & Language", "icon": "fennek-settings-time", "sub": "Date, region, language",
   "items": [
    {"name": "Date & time", "kcm": "kcm_clock", "icon": "fennek-set-clock", "desc": "Time zone, clock"},
-   {"name": "Region & language", "kcm": "kcm_regionandlang", "icon": "fennek-set-region", "desc": "Language, formats"}
+   {"name": "Region & language", "kcm": "kcm_regionandlang", "icon": "fennek-set-region", "desc": "Language, formats"},
+   {"name": "Keyboard languages", "kcm": "kcm_keyboard", "icon": "fennek-set-keyboard", "desc": "Add a language, switch with Alt+Shift", "keys": "input layout language add switch"},
+   {"name": "Chinese, Japanese, Korean typing", "kcm": "kcm_virtualkeyboard", "icon": "fennek-set-keyboard", "desc": "Pick IBus here (it replaces the on-screen keyboard)", "keys": "ibus input method cjk pinyin"}
   ]},
  {"name": "Accessibility", "icon": "fennek-settings-accessibility", "sub": "Assistive features, keyboard shortcuts",
   "items": [

@@ -5,12 +5,19 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
 import SddmComponents 2.0 as Sddm
+import org.kde.plasma.private.keyboardindicator as KeyboardIndicator
+import org.kde.plasma.workspace.keyboardlayout as KeyboardLayouts
 
 Rectangle {
     id: root
     width: 1920
     height: 1080
     color: "#16122b"
+
+    // SDDM's own keyboard object knows nothing under Wayland: these ask KWin, as the taskbar does.
+    KeyboardIndicator.KeyState { id: capsLock; key: Qt.Key_CapsLock }
+    KeyboardLayouts.KeyboardLayout { id: keyboardLayout }
+    readonly property var layouts: keyboardLayout.layoutsList || []
 
     property bool signIn: false
     property int userIndex: userModel.lastIndex >= 0 ? userModel.lastIndex : 0
@@ -205,10 +212,28 @@ Rectangle {
         }
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            visible: keyboard.capsLock
+            visible: capsLock.locked
             text: "Caps Lock is on"
             color: "#ffd18a"
             font.pixelSize: 14
+        }
+        // The password's language, with two or more: a click moves to the next one.
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            visible: root.layouts.length > 1
+            text: root.layouts[keyboardLayout.layout] ? root.layouts[keyboardLayout.layout].shortName.toUpperCase() : ""
+            color: "white"
+            font.family: root.font
+            font.pixelSize: 14
+            MouseArea {
+                anchors.fill: parent
+                anchors.margins: -8
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    keyboardLayout.layout = (keyboardLayout.layout + 1) % root.layouts.length
+                    password.forceActiveFocus()
+                }
+            }
         }
     }
 

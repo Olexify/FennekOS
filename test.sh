@@ -367,6 +367,7 @@ command -v opensnitchd >/dev/null                            || fail "opensnitch
 fennek-firewall --selftest >/dev/null                         || fail "firewall selftest"
 /usr/libexec/fennek-first-login-places --selftest >/dev/null || fail "classic Files sidebar"
 /usr/libexec/fennek-first-login-keyboard --selftest >/dev/null || fail "language switcher labels"
+grep -q 'noLatin' /usr/share/plasma/packages/org.kde.plasmasetup.keyboard/contents/ui/main.qml && grep -q 'capsLock.locked' /usr/share/sddm/themes/fennek/Main.qml && ! grep -q 'keyboard\.capsLock' /usr/share/sddm/themes/fennek/Main.qml || fail "keyboard: a Latin layout stays in the wizard; the sign-in shows Caps Lock and the language"
 /usr/libexec/fennek-pin-quick-access --selftest >/dev/null && /usr/libexec/fennek-pin-start --selftest >/dev/null && grep -q "^Exec=/usr/libexec/fennek-pin-start" /usr/share/kio/servicemenus/fennek-pin-quick-access.desktop && grep -q "^X-KDE-Submenu=Pin to" /usr/share/kio/servicemenus/fennek-pin-quick-access.desktop || fail "Pin to: Start and Quick access"
 h=$(mktemp -d); touch "$h/a b" "$h/c"
 /usr/libexec/fennek-hide "$h/a b" "$h/a b" "file://$h/c" && [ "$(cat "$h/.hidden")" = "$(printf 'a b\nc')" ] \
