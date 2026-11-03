@@ -79,7 +79,7 @@ net=$("${PASTA[@]}" -- bwrap --dev-bind / / --ro-bind /tmp/resolv.test /etc/reso
     curl -s -m 3 -o /dev/null "http://$gw:8765" && echo "LEAK-gateway"
     curl -s -m 3 -o /dev/null http://127.0.0.1:8765 && echo "LEAK-loopback"
     getent hosts example.com >/dev/null && echo DNS-OK
-    [ "$(curl -s -m 15 -o /dev/null -w "%{http_code}" https://example.com)" = 200 ] && echo NET-OK' 2>&1)
+    [ "$(curl -s -m 15 -o /dev/null -w "%{http_code}" https://example.com)" = 200 ] && echo NET-OK' 2>&1) || true   # its last check failing is reported below, not an exit without a word
 kill $srv
 echo "== network =="; echo "$net"
 grep -q OWN-NETNS <<<"$net" || { echo "FAIL: network check didn't run inside pasta"; exit 1; }

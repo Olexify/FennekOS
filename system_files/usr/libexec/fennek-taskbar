@@ -11,10 +11,11 @@ OFF = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.c
 ON_BARS = 'panels().forEach(function (p) { %s })'
 ON_TASKS = ON_BARS % ('p.widgets().forEach(function (w) { if (w.type !== "org.kde.plasma.icontasks") return; '
                       'w.currentConfigGroup = ["General"]; w.writeConfig("%s", %s) })')
+# Settings read back as text, "" when never changed: "true" == true and "" != 0 are both false in JS.
 READ = """var p = panels().filter(function (p) { return p.widgets("org.kde.plasma.icontasks").length })[0]
 var t = p.widgets("org.kde.plasma.icontasks")[0]; t.currentConfigGroup = ["General"]
-print(JSON.stringify({autohide: p.hiding === "autohide", small: p.height < 40, combine: t.readConfig("groupingStrategy") != 0,
-                      peek: t.readConfig("highlightWindows") == true, displays: screenCount}))"""
+print(JSON.stringify({autohide: p.hiding === "autohide", small: p.height < 40, combine: String(t.readConfig("groupingStrategy")) !== "0",
+                      peek: String(t.readConfig("highlightWindows")) === "true", displays: screenCount}))"""
 
 
 def change(key, on):
