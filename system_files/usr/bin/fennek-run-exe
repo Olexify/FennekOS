@@ -497,12 +497,12 @@ def own_box(exe, sandbox=None):
     return parts[0] if len(parts) > 1 and re.search(r"-[0-9a-f]{16}$", parts[0]) else None
 
 
-def own_folder(folder, shared_places, home=HOME):
+def own_folder(folder, shared_places):
     """Is this the program's own folder, to offer copying? Not home or anything holding it, not a folder like Documents
     or Downloads, not a whole drive, nothing hidden in home."""
-    if folder in shared_places or folder == home or folder in home.parents or os.path.ismount(folder):
+    if folder in shared_places or folder == HOME or folder in HOME.parents or os.path.ismount(folder):
         return False
-    return not (folder.is_relative_to(home) and any(p.startswith(".") for p in folder.relative_to(home).parts))
+    return not (folder.is_relative_to(HOME) and any(p.startswith(".") for p in folder.relative_to(HOME).parts))
 
 
 def user_folders():
