@@ -53,6 +53,10 @@ jobs:
       - name: Free disk space
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
+          sudo rm -rf /usr/local/.ghcup /usr/local/share/chromium /usr/local/share/powershell /usr/local/lib/node_modules /usr/share/swift /usr/lib/jvm /opt/az /opt/microsoft /opt/google
+          sudo docker system prune -af >/dev/null 2>&1 || true
+          # Image copies and installs go through /var/tmp: on the big disk too. A full / ends the job with no failed step.
+          sudo mkdir -p /mnt/vartmp && sudo chmod 1777 /mnt/vartmp && sudo rm -rf /var/tmp && sudo ln -s /mnt/vartmp /var/tmp
           # Build + regrouping need ~40 GB: container storage on the runner's big /mnt disk.
           sudo mkdir -p /mnt/containers && sudo rm -rf /var/lib/containers && sudo ln -s /mnt/containers /var/lib/containers
           df -h / /mnt
@@ -117,6 +121,7 @@ jobs:
         run: |
           sudo apt-get update -q && sudo apt-get install -y -q qemu-system-x86 ovmf ntfs-3g gdisk
           bash tests/vm-test.sh localhost/fennek:publish "$PWD/vm-out" "$FENNEK_EDITION"
+          df -h / /mnt
           sudo rm -rf /mnt/vmtest
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2

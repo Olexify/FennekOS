@@ -290,7 +290,8 @@ def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env, so
     if str(HOME).startswith("/var/home/"):
         a += ["--symlink", "var/home", "/home"]
     if resolv:   # host's resolv.conf points at 127.0.0.53, which is unreachable from the sandbox's network
-        a += ["--ro-bind", str(resolv), "/etc/resolv.conf"]
+        # It can be a link into /run, and nothing mounts onto a link: then the sandbox's own goes where the link leads.
+        a += ["--ro-bind", str(resolv), os.path.realpath("/etc/resolv.conf")]
     if runtime_dir:
         a += ["--dir", runtime_dir, "--chmod", "0700", runtime_dir]
         socks = [display_env.get("WAYLAND_DISPLAY", "wayland-0")]   # Wayland: apps can't spy on each other
@@ -706,7 +707,7 @@ def selftest():
     assert "/tmp/.X11-unix" not in w and "PROTON_ENABLE_WAYLAND" in w and "--unshare-ipc" in w, "Wayland: no X11"
     b = bwrap_args(HOME / "Games/Foo/foo.exe", [], Path("/b"), Path("/s"), Path("/p"), None, {}, resolv=Path("/r"))
     assert b[-1] == "/var/home/u/App/foo.exe" and str(HOME / "Games/Foo") not in b, "folder never mounted"
-    assert b.index("/etc/resolv.conf") > b.index("/etc"), "own resolv.conf mounted over the host /etc"
+    assert b.index(os.path.realpath("/etc/resolv.conf")) > b.index("/etc"), "own resolv.conf mounted over the host /etc"
     assert "--no-map-gw" in PASTA and all(PASTA[PASTA.index(f) + 1] == "none" for f in ("-t", "-u", "-T", "-U")), \
         "no route from the sandbox to host loopback services, no port forwarding"
 
