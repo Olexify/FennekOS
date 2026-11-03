@@ -15,7 +15,7 @@ read-only, Proton through a throwaway overlay. Own network namespace (pasta): in
 sockets (X11 abstract socket, D-Bus, local services) are unreachable. Wayland display when Proton supports it,
 so no X11 snooping. No sound/microphone unless asked for. Your real home and other programs are invisible.
 """
-import fcntl, hashlib, itertools, os, re, shutil, subprocess, sys, threading, time, unicodedata
+import fcntl, grp, hashlib, itertools, os, re, shutil, subprocess, sys, threading, time, unicodedata
 from pathlib import Path
 
 HOME = Path.home()
@@ -88,11 +88,12 @@ def odd_char(c):
 
 
 def granted_folders(digest):
-    """Your folders this sandboxed program may also see (App permissions): [(real folder, same place inside)].
+    """Your folders this sandboxed program may also see (App permissions): [(real folder, same place inside)]. By its whole
+    fingerprint, or the start of it that names its sandbox.
     Only real folders inside your home, never a link, never the home itself."""
     out = []
     rows = FOLDERS.read_text(encoding="utf-8", errors="replace").split("\n") if FOLDERS.is_file() else []
-    for kind in sorted({l.split(" ", 1)[1] for l in rows if l.startswith(digest + " ")} & set(XDG_KIND)):
+    for kind in sorted({l.split(" ", 1)[1] for l in rows if l.startswith(digest) and " " in l} & set(XDG_KIND)):
         try:
             p = subprocess.run(["xdg-user-dir", XDG_KIND[kind]], capture_output=True, text=True).stdout.strip()
         except OSError:
@@ -250,7 +251,7 @@ def placement(exe, shared):
 
 
 def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env, sound=False, wayland=False,
-               resolv=None, uid=1000, gid=1000, folders=(), inside=None):
+               resolv=None, uid=1000, gid=1000, folders=(), inside=None, controllers=True):
     src, target = (None, inside) if inside else placement(exe, shared)   # inside: already in its own folders
     a = ["bwrap",
          # pasta's namespace makes us "root" (mapped to the real user); map back to the user's own id,
@@ -260,10 +261,11 @@ def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env, so
          "--symlink", "usr/bin", "/bin", "--symlink", "usr/sbin", "/sbin",
          "--symlink", "usr/lib", "/lib", "--symlink", "usr/lib64", "/lib64",
          "--proc", "/proc", "--dev", "/dev", "--dev-bind-try", "/dev/dri", "/dev/dri",
-         # Game controllers: an account can only open the joystick devices in there, not keyboards or mice. Never /dev/uinput,
+         # Game controllers: an account outside group input can only open the joystick devices in there, not keyboards or mice
+         # (reads_all_input). Never /dev/uinput,
          # /dev/uhid or /dev/hidraw*: this system lets the signed-in person use them, and with those a program could type
          # into the desktop or read the keyboard.
-         "--dev-bind-try", "/dev/input", "/dev/input",
+         *(["--dev-bind-try", "/dev/input", "/dev/input"] if controllers else []),
          # Only the sysfs parts GPU drivers need (not all of /sys: less hardware fingerprinting).
          "--ro-bind-try", "/sys/dev/char", "/sys/dev/char", "--ro-bind-try", "/sys/devices", "/sys/devices",
          "--ro-bind-try", "/sys/class/drm", "/sys/class/drm", "--ro-bind-try", "/sys/bus/pci", "/sys/bus/pci",
@@ -477,6 +479,14 @@ def run_box(box_id, lid):
     return run_sandboxed(Path(rel), box_id, [], sound=remembered(box_id) == "sandbox-sound", box=box, inside=HOME / "prefix/drive_c" / rel)
 
 
+def reads_all_input(groups=None):
+    """In group input, this account can read every keyboard: no controllers in the sandbox then."""
+    try:
+        return grp.getgrnam("input").gr_gid in (os.getgroups() if groups is None else groups)
+    except KeyError:
+        return False
+
+
 def own_box(exe, sandbox=None):
     """~/Sandbox/<name>/...: the folder a program sits in says which sandbox it runs in, whichever program it is. What each
     may reach beyond that stays per program."""
@@ -554,7 +564,9 @@ def run_sandboxed(exe, digest, args, sound=False, box=None, inside=None):
     wayland = bool(os.environ.get("WAYLAND_DISPLAY")) and wine_wayland(proton)
     resolv = box_home.parent / "resolv.conf"
     resolv.write_text(f"nameserver {SANDBOX_DNS}\n")
-    extra = granted_folders(digest)
+    # The sandbox's own program decides, for another .exe in its folder as well. That one's own choices don't count here:
+    # what's already in this sandbox could use them.
+    extra = granted_folders(box_id)
     also = (" and " + ", ".join(f"~/{inside.name}" for _, inside in extra)) if extra else ""
     if not box:
         say(f"{exe.name} runs in a sandbox and only sees ~/Sandbox/{name}{also}. "
@@ -562,12 +574,13 @@ def run_sandboxed(exe, digest, args, sound=False, box=None, inside=None):
             + old_folder_notice(exe, digest), "passivepopup")
     cmd = bwrap_args(exe, args, box_home, shared, proton, os.environ.get("XDG_RUNTIME_DIR"), os.environ,
                      sound=sound, wayland=wayland, resolv=resolv, uid=os.getuid(), gid=os.getgid(),
-                     folders=extra, inside=inside)
+                     folders=extra, inside=inside, controllers=not reads_all_input())
     if not SECCOMP.is_file():   # never quietly weaker
         return say("The sandbox's system-call filter is missing; not running.", "error")
     drive_c = box_home / "prefix/drive_c"
     # A program blocked in the firewall stays blocked in another .exe that sits in its folder.
-    if OFFLINE.is_file() and any(d.startswith(box_id) for d in OFFLINE.read_text().split()):
+    blocked = OFFLINE.read_text().split() if OFFLINE.is_file() else []
+    if digest in blocked or any(d.startswith(box_id) for d in blocked):
         return keep_start_in_sync(box_id, drive_c, lambda: subprocess.run(with_seccomp([cmd[0], "--unshare-net", *cmd[1:]])).returncode)   # firewall: no network
     # Own network namespace with internet via pasta: host-only sockets and host loopback become unreachable.
     return keep_start_in_sync(box_id, drive_c, lambda: subprocess.run([*PASTA, "--", *with_seccomp(cmd)]).returncode)
@@ -671,6 +684,7 @@ def selftest():
     assert own_box(HOME / "Sandbox/x-0123456789abcdef/other.exe", HOME / "Sandbox") == "x-0123456789abcdef", "its folder says which sandbox"
     assert own_box(HOME / "Sandbox/x.exe", HOME / "Sandbox") is None and own_box(HOME / "Sandbox/plain/x.exe", HOME / "Sandbox") is None
     assert own_box(HOME / "Downloads/x.exe", HOME / "Sandbox") is None
+    assert "/dev/input" not in bwrap_args(dl, [], Path("/b"), Path("/s"), Path("/p"), None, {}, controllers=False), "not when it could read keyboards"
     places = {HOME / "Downloads", HOME / "Documents"}
     assert own_folder(HOME / "Downloads/MyGame", places), "a program's own folder"
     for no in (HOME, HOME / "Downloads", HOME.parent, Path("/"), HOME / ".config/x"):
