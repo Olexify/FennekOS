@@ -18,7 +18,7 @@ clearpart --all --initlabel --drives=vda
 autopart --type=btrfs --encrypted --passphrase=$pass --luks-version=luks2
 EOF
     # The logs as it goes: if it hangs, they show where.
-    (while sleep 20; do cp /tmp/*.log "$out/" 2>/dev/null; journalctl -b --no-pager >"$out/journal.log"; ps axf >"$out/ps.log"; done) &
+    (while sleep 20; do cp /tmp/*.log "$out/" 2>/dev/null; journalctl -b --no-pager >"$out/journal.log"; ps axf >"$out/ps.log"; loginctl list-sessions >"$out/sessions.log"; done) &
     keep=$!
     liveinst --cmdline --kickstart=/run/ks.cfg >"$out/liveinst.log" 2>&1 </dev/null
     echo "liveinst exit $?" >>"$out/started"

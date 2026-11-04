@@ -21,6 +21,8 @@ TimeoutStartSec=infinity
 ExecStart=/bin/sh -c 'modprobe 9pnet_virtio; mkdir -p /run/t && mount -t 9p -o trans=virtio,version=9p2000.L t /run/t && exec bash /run/t/encrypted-inside.sh'
 EOF
 cred=$(base64 -w0 "$work/test.service")
+# Nothing else starts it: the ISO's and the install's kernel lines stay as they ship.
+want=$(printf '[Unit]\nWants=fennek-enc-test.service\n' | base64 -w0)
 start() {   # extra qemu arguments
     qemu-system-x86_64 -name fennek-enc -machine q35,accel=kvm -cpu host -m 8192 -smp 4 -display none -serial "file:$work/serial.log" -nic none \
         -drive "if=pflash,format=raw,unit=0,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd" \
@@ -28,6 +30,7 @@ start() {   # extra qemu arguments
         -drive "if=virtio,format=raw,file=$work/disk.raw" -device virtio-vga \
         -virtfs "local,path=$share,mount_tag=t,security_model=none" \
         -smbios "type=11,value=io.systemd.credential.binary:systemd.extra-unit.fennek-enc-test.service=$cred" \
+        -smbios "type=11,value=io.systemd.credential.binary:systemd.unit-dropin.multi-user.target=$want" \
         -qmp "unix:$work/qmp.sock,server,nowait" "$@" &
     vm=$!
 }
