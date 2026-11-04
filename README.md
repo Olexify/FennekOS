@@ -1,4 +1,4 @@
-# Fennek OS <a href="https://fennekos.org"><img align="right" width="140" src="https://fennekgifcounter.vercel.app/api/counter" alt="visitor counter" /></a>
+# Fennek OS <a href="https://fennekos.org"><img width="140" src="https://fennekgifcounter.vercel.app/api/counter" alt="visitor counter" /></a>
 
 A Linux desktop for **people who want a familiar, classic desktop**. It feels familiar, has no telemetry, comes with strong
 built-in security, and aims for long battery life.
