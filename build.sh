@@ -638,6 +638,11 @@ if edit == "files-toolbar":
     acts = ("go_back", "go_forward", "go_up", "url_navigators", "toggle_search", "-",
             "view_mode", "sort", "show_hidden_files", "show_information_panel")
     s = s[:m.start(2)] + "".join("\n        <Separator />" if a == "-" else f'\n        <Action name="{a}" />' for a in acts) + s[m.end(2):]
+    # F3 searches, as it always has. Split view gives the key up, or the two would cancel each other out; it stays in the View menu.
+    # Into the block that's there: only the first one counts.
+    assert 'name="edit_find" shortcut' not in s and 'name="split_view_menu" shortcut' not in s, "Files shortcuts changed upstream"
+    s, n = re.subn(r'(<ActionProperties[^>]*>)', r'\1\n    <Action name="edit_find" shortcut="Ctrl+F; F3"/>\n    <Action name="split_view_menu" shortcut=""/>', s, count=1)
+    assert n == 1, "Files has no shortcut block any more"
 elif edit in ("hide-toolbars", "terminal-session"):
     s, n = re.subn(r'<ToolBar(?![^>]*hidden=)', '<ToolBar hidden="true"', s)
     assert n, f"no toolbar in {rcfile}"
