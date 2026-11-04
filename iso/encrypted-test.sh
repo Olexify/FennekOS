@@ -47,7 +47,7 @@ give_up() {
     tail -n 30 "$keep/liveinst.log" "$keep/anaconda.log" 2>/dev/null | cut -c1-200 || true
     exit 1
 }
-trap 'kill "${vm:-}" 2>/dev/null; true' EXIT
+trap 'kill "${vm:-}" 2>/dev/null || true' EXIT
 
 echo "== installing"
 start -device virtio-scsi-pci -drive "if=none,id=cd,media=cdrom,readonly=on,file=$iso" -device scsi-cd,drive=cd,bootindex=1
