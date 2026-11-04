@@ -117,7 +117,9 @@ check "USB disk plugged in" appears /dev/disk/by-label/FennekUSB
 check "USB disk: what's written reaches it within seconds" sh -c 'sleep 3; [ "$(sysctl -n vm.dirty_expire_centisecs)" = 100 ] && [ "$(sysctl -n vm.dirty_writeback_centisecs)" = 100 ]'
 check "attached file's drive there" appears /dev/disk/by-label/FennekLoop
 # Fennek's own partition stays out of the drive lists, now that the sidebar shows drives.
-# Sharing a folder, in the order the Share tab does it.
+# Sharing a folder, in the order the Share tab does it. The VM has no network card: a stand-in connection.
+nmcli connection add type dummy ifname fennekt0 con-name fennek-test ipv4.method manual ipv4.addresses 10.99.0.1/24 ipv6.method disabled >/dev/null
+nmcli connection up fennek-test >/dev/null
 net_zone() { nmcli -g connection.zone connection show "$(nmcli -t -f NAME,TYPE connection show --active | grep -v ':loopback$' | head -1 | sed 's/:[^:]*$//')"; }
 wait_zone() { for _ in $(seq 20); do [ "$(net_zone)" = "$1" ] && return 0; sleep 1; done; return 1; }
 systemctl enable --now smb.service
@@ -139,6 +141,7 @@ nmcli connection up "$marked" >/dev/null
 check "listed again back home" wait_listed active
 as_user net usershare delete fennektest
 check "the last share closes the network" wait_zone FennekOS
+nmcli connection delete fennek-test >/dev/null
 smbpasswd -x "$user" >/dev/null
 systemctl disable --now smb.service
 check "listing stops with sharing" wait_listed inactive
