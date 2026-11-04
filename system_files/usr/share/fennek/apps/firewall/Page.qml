@@ -139,7 +139,7 @@ Item {
                     onClicked: if (root.profile !== "home") { root.busy = true; run.connectSource(root.profileCmd + " home") }
                 }
                 QQC2.RadioButton {
-                    text: "Home, sharing folders: other computers here can also open folders you share, with your sharing password"
+                    text: "Home, sharing folders: other computers here can open folders you share"
                     checked: root.profile === "sharing"
                     enabled: !root.busy
                     onClicked: if (root.profile !== "sharing") { root.busy = true; run.connectSource(root.profileCmd + " sharing") }
