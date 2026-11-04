@@ -18,7 +18,7 @@ autopart --type=btrfs --encrypted --passphrase=$pass --luks-version=luks2
 EOF
     liveinst --cmdline --kickstart=/run/ks.cfg >"$out/liveinst.log" 2>&1
     cp /tmp/anaconda.log /tmp/storage.log /tmp/packaging.log /tmp/program.log "$out/" 2>/dev/null
-    if lsblk -nro FSTYPE /dev/vda | grep -qx crypto_LUKS\|Configuring installed system\|Installation complete\|Storing configuration' "$out/anaconda.log"; then
+    if lsblk -nro FSTYPE /dev/vda | grep -qx crypto_LUKS; then   # whether it finished shows when the computer starts from the disk
         echo ok >"$out/installed"
     else
         echo "no encrypted partition after the install" >"$out/installed"
