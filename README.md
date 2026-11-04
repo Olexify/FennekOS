@@ -26,7 +26,8 @@ What's in it so far:
 **What you need:** a USB stick (8 GB or more, it will be erased), about 30 minutes, and a backup of your files.
 
 1. **Back up your files** to an external drive or a cloud folder. Installing next to your current system keeps
-   it, but a backup is what makes any mistake harmless.
+   it, but a backup is what makes any mistake harmless. Turn on your browser's sync too: bookmarks and saved passwords
+   can't be read from the old drive later.
 2. **Your current system's drive encryption:** if it uses one, write down its recovery key now, and shrink the drive from
    inside that system (at least 30 GB free space for Fennek OS): the installer can't shrink a locked drive.
 3. **Download the installer** (`.iso`): open [the latest installer build](https://github.com/Olexify/FennekOS/actions/workflows/iso.yml),

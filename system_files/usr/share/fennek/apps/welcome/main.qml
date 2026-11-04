@@ -162,6 +162,12 @@ QQC2.ApplicationWindow {
                     spacing: Kirigami.Units.largeSpacing
                     Kirigami.Heading { text: root.t("Get your apps", "Ваші застосунки"); level: 2 }
                     QQC2.Label {
+                        text: root.t("Coming from another system? Sign in to your browser and your bookmarks and passwords come along. If you kept that system, its files are on the Home page in Files.",
+                                     "Переходите з іншої системи? Увійдіть у свій браузер, і закладки та паролі з'являться самі. Якщо ви залишили ту систему, її файли є на головній сторінці Файлів.")
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                    QQC2.Label {
                         text: root.t("Opens the app in the Store; click Install there. More apps: Store in Start.",
                                      "Відкриває застосунок у Крамниці; там натисніть Встановити. Більше: Крамниця в меню Пуск.")
                         opacity: 0.7
@@ -177,6 +183,7 @@ QQC2.ApplicationWindow {
                                 ["Discord", "discord", "com.discordapp.Discord"],
                                 ["Spotify", "spotify-client", "com.spotify.Client"],
                                 ["Google Chrome", "google-chrome", "com.google.Chrome"],
+                                ["Microsoft Edge", "microsoft-edge", "com.microsoft.Edge"],
                                 ["VLC", "vlc", "org.videolan.VLC"],
                                 ["OBS Studio", "com.obsproject.Studio", "com.obsproject.Studio"],
                                 ["Telegram", "telegram", "org.telegram.desktop"],
