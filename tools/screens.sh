@@ -74,6 +74,7 @@ fennek-app settings personalize >/dev/null 2>&1 & shot 35-personalize 8; close
 fennek-app settings permissions >/dev/null 2>&1 & shot 38-permissions 8; close
 fennek-app settings installedapps >/dev/null 2>&1 & shot 43-installed-apps 8; close
 fennek-app settings taskbar >/dev/null 2>&1 & shot 44-taskbar-settings 10; close
+fennek-app settings support >/dev/null 2>&1 & shot 45-support 5; close
 fennek-app taskmanager >/dev/null 2>&1 & shot 39-task-manager 8; close
 fennek-app taskmanager performance >/dev/null 2>&1 & shot 40-task-manager-performance 10; close
 fennek-app taskmanager details >/dev/null 2>&1 & shot 41-task-manager-details 8; close

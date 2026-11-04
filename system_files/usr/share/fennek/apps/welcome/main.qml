@@ -284,7 +284,7 @@ QQC2.ApplicationWindow {
                     RowLayout {
                         spacing: Kirigami.Units.smallSpacing
                         Repeater {
-                            model: [[root.t("Support it", "Підтримати"), "fennek-set-support", "https://ko-fi.com/olexify"],
+                            model: [[root.t("Support it", "Підтримати"), "fennek-set-support", ""],
                                     ["Discord", "im-user", "https://discord.gg/UpmNHxT7PF"],
                                     [root.t("Website", "Сайт"), "internet-web-browser", "https://fennekos.org"]]
                             delegate: QQC2.Button {
@@ -292,7 +292,7 @@ QQC2.ApplicationWindow {
                                 text: modelData[0]
                                 icon.name: modelData[1]
                                 flat: true
-                                onClicked: Qt.openUrlExternally(modelData[2])
+                                onClicked: modelData[2] ? Qt.openUrlExternally(modelData[2]) : run.connectSource("fennek-app settings support")
                             }
                         }
                     }

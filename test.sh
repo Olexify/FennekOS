@@ -260,7 +260,7 @@ grep -q 'function resizeGroup' /usr/share/plasma/plasmoids/com.github.zren.tiled
 [ -f /usr/share/icons/Fennek/scalable/apps/fennek-get-leonote.svg ] && { ! command -v desktop-file-validate >/dev/null || desktop-file-validate /usr/share/applications/fennek-get-leonote.desktop; } || fail "Start: Leonote (get it)"
 [ -x /usr/libexec/fennek-get-mpv ] && grep -q '^Exec=/usr/libexec/fennek-get-mpv' /usr/share/applications/fennek-get-mpv.desktop && grep -q 'fennek-get-mpv' /usr/share/fennek/apps/welcome/main.qml || fail "MPV Player (Oleks Edition): install on request"
 for e in fennek-get-libreoffice fennek-get-mpv fennek-get-leonote fennek-get-thunderbird fennek-get-gpu-screen-recorder; do grep -q "^Exec=/usr/libexec/fennek-get-app --hide $e" /usr/share/applications/$e.desktop || fail "$e: Don't recommend this"; done; grep -q 'fennek-get-app --sync' /usr/lib/systemd/user/fennek-new-apps.service || fail "get-it entries leave Start once the app is installed"
-grep -q 'Support Fennek OS' /usr/share/fennek/apps/settings/main.qml && grep -q 'ko-fi.com/olexify' /usr/share/fennek/apps/welcome/main.qml || fail "Support links in Settings and Welcome"
+grep -q 'Support Fennek OS' /usr/share/fennek/apps/settings/main.qml && grep -q 'fennek-app settings support' /usr/share/fennek/apps/welcome/main.qml || fail "Support links in Settings and Welcome"
 for v in Amber Sakura Royal Arcade Fennek-Classic Leonote-Night; do [ ! -e /usr/share/wallpapers/$v ] || fail "$v picture is in the system (it comes from FennekWallpapers)"; done
 /usr/libexec/fennek-permissions --selftest >/dev/null && [ -s /usr/share/fennek/apps/permissions/Page.qml ] && grep -q '"page": "permissions"' /usr/share/fennek/apps/settings/catalog.js && grep -q 'exe-names' /usr/bin/fennek-run-exe || fail "App permissions page (store apps + classic programs)"
 /usr/libexec/fennek-tasks --selftest >/dev/null && grep -q '^Exec=fennek-app taskmanager' /usr/share/applications/org.kde.plasma-systemmonitor.desktop && grep -q "\"Performance\", \"App history\", \"Startup\", \"Users\", \"Details\", \"Services\"" /usr/share/fennek/apps/taskmanager/main.qml && [ -f /usr/share/icons/Fennek/scalable/apps/fennek-taskmanager.svg ] && grep -q "^Exec=fennek-app taskmanager performance" /usr/share/applications/fennek-performance.desktop || fail "Task Manager: Fennek's, with the classic tabs; Performance opens on its tab"
@@ -516,7 +516,7 @@ rc=0; QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 8 fennek-kcm kcm_mouse
 [ $rc -eq 124 ] || { tail -5 /tmp/kcm.log; fail "Settings page in its own window without Apply (fennek-kcm, exit $rc)"; }
 rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 10 fennek-app settings kcm_mouse >/tmp/kcmview.log 2>&1 || rc=$?
 [ $rc -eq 124 ] && ! grep -q "can't be shown inside" /tmp/kcmview.log || { tail -5 /tmp/kcmview.log; fail "Settings shows its pages inside (KcmView, exit $rc)"; }
-for pg in updates firewall quarantine backup apphistory; do   # Fennek's own pages open inside Settings too
+for pg in updates firewall quarantine backup apphistory support; do   # Fennek's own pages open inside Settings too
     rc=0; QT_FORCE_STDERR_LOGGING=1 QT_QPA_PLATFORM=offscreen HOME=$(mktemp -d) timeout 10 fennek-app settings $pg >/tmp/setpage.log 2>&1 || rc=$?
     [ $rc -eq 124 ] && ! grep -q 'Page.qml.*\(Error\|error\|Cannot\|is not\)' /tmp/setpage.log || { tail -5 /tmp/setpage.log; fail "$pg opens inside Settings (exit $rc)"; }
 done
