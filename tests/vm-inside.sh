@@ -145,6 +145,20 @@ nmcli connection delete fennek-test >/dev/null
 smbpasswd -x "$user" >/dev/null
 systemctl disable --now smb.service
 check "listing stops with sharing" wait_listed inactive
+# A recovery key, on a small encrypted file: the test VM's own disk isn't encrypted.
+check "a plain disk is reported as plain" test -z "$(/usr/libexec/fennek-encryption --device)"
+truncate -s 64M /var/tmp/fennek-luks.img
+luks=$(losetup -f --show /var/tmp/fennek-luks.img)
+printf 'old-secret' | cryptsetup luksFormat -q --type luks2 --pbkdf pbkdf2 --pbkdf-force-iterations 1000 "$luks" -
+opens() { printf '%s' "$2" | cryptsetup open --test-passphrase "$1" -; }
+key1=$(printf 'old-secret\n' | /usr/libexec/fennek-encryption-helper "$luks")
+check "a recovery key is made" opens "$luks" "$key1"
+key2=$(printf 'old-secret\n' | /usr/libexec/fennek-encryption-helper "$luks")
+check "a new recovery key opens the drive" opens "$luks" "$key2"
+check "and replaces the last one" bash -c "! printf '%s' '$key1' | cryptsetup open --test-passphrase '$luks' -"
+check "the password still opens the drive" opens "$luks" old-secret
+check "a wrong password makes no key" bash -c "! printf 'wrong\n' | /usr/libexec/fennek-encryption-helper '$luks'"
+losetup -d "$luks"; rm -f /var/tmp/fennek-luks.img
 check "own partition hidden from the drive lists" sh -c 'udevadm info -q property "$(findmnt -nvo SOURCE /sysroot)" | grep -qx UDISKS_IGNORE=1'
 # Windows hibernates (Fast Startup). hiberfil.sys is only on its own drive, but it holds the other one just the same.
 closed() { for ((i = 0; i < 10; i++)); do udisksctl unmount --no-user-interaction -b "$1" && return 0; sleep 2; done; return 1; }

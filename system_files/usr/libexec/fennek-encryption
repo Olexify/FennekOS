@@ -1,0 +1,36 @@
+#!/usr/bin/bash
+# Settings > Privacy & Security > Device encryption: says whether this computer's files are encrypted, and makes a recovery key.
+#   fennek-encryption            the dialogs
+#   fennek-encryption --device   prints the encrypted partition under the system, nothing if there's none
+title="Device encryption"
+device() {
+    lsblk -nspo PATH,FSTYPE "$(findmnt -nvo SOURCE /sysroot || findmnt -nvo SOURCE /)" 2>/dev/null \
+        | awk '$2 == "crypto_LUKS" { print $1; exit }'
+}
+if [ "${1:-}" = --device ]; then
+    device
+    exit 0
+fi
+
+if [ -z "$(device)" ]; then
+    kdialog --title "$title" --sorry "Your files aren't encrypted. Your password protects them while Fennek OS runs, but someone who takes the drive out could read them.
+
+Encryption is chosen when installing: tick Encrypt my data. Turning it on later isn't possible yet."
+    exit 0
+fi
+kdialog --title "$title" --continue-label "Create a recovery key" --warningcontinuecancel "Your files are encrypted. Without your encryption password, nobody can read them, and that includes you.
+
+A recovery key opens them if you forget that password. You can make one now, and a new one replaces the last. Keep it away from this computer: on paper, or on a USB stick in a safe place." || exit 0
+pass=$(kdialog --title "$title" --password "Type the encryption password you use when the computer starts.") || exit 0
+key=$(printf '%s\n' "$pass" | pkexec /usr/libexec/fennek-encryption-helper)
+status=$?
+unset pass
+if [ "$status" -ne 0 ] || [ -z "$key" ]; then
+    kdialog --title "$title" --sorry "No recovery key was made, and nothing changed. If the password was right, try again."
+    exit 1
+fi
+# Through a file in memory, for this account only: on a command line every program could read it.
+file=$(mktemp -p "$XDG_RUNTIME_DIR") || exit 1
+trap 'rm -f "$file"' EXIT
+printf 'Your recovery key:\n\n%s\n\nWrite it down now: it is not shown again, and it is not saved anywhere.\nType it instead of your password when the computer starts.\n' "$key" >"$file"
+kdialog --title "$title" --geometry 640x220 --textbox "$file"

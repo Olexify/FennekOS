@@ -1,0 +1,10 @@
+#!/usr/bin/bash
+# Root (polkit action org.fennek.encryption, a fresh password every time). The current encryption password comes in on stdin,
+# the new recovery key goes out on stdout. The last recovery key is removed only once the new one is in place.
+#   fennek-encryption-helper [PARTITION]    the system's encrypted partition unless named (only an admin gets here)
+set -eu
+dev=${1:-$(/usr/libexec/fennek-encryption --device)}
+[ -n "$dev" ]
+IFS= read -r PASSWORD
+export PASSWORD
+exec systemd-cryptenroll --recovery-key --wipe-slot=recovery "$dev" 2>/dev/null
