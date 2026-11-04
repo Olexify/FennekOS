@@ -1,4 +1,4 @@
-// Support Fennek OS: one button that cycles through the ways to give, and a list of them all. Nothing here goes online until
+// Support Fennek OS: one button that cycles through the ways to donate, and a list of them all. Nothing here goes online until
 // you click a link. Addresses are copied, never paid from here.
 import QtQuick
 import QtQuick.Layouts
@@ -80,7 +80,7 @@ Item {
                 QQC2.Button {
                     icon.name: root.open ? "go-up" : "go-down"
                     display: QQC2.AbstractButton.IconOnly
-                    text: "All the ways to give"
+                    text: "More ways to donate"
                     QQC2.ToolTip.text: text
                     QQC2.ToolTip.visible: hovered
                     onClicked: root.open = !root.open
