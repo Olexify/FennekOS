@@ -47,7 +47,7 @@ dnf -y install \
     zsh zsh-autosuggestions zsh-syntax-highlighting \
     snapper \
     clamav clamav-freshclam inotify-tools \
-    rsync wl-clipboard dbus-tools util-linux-script \
+    rsync wl-clipboard dbus-tools util-linux-script wsdd \
     "${extra[@]}"
 # Thumbnails in Files like the classic Explorer: videos (a frame from the film), PDFs, photos from cameras (RAW),
 # besides pictures. Big files too (a film is GBs; only a few frames are read).
@@ -689,6 +689,20 @@ systemctl enable fennek-home-snapshots.service snapper-timeline.timer snapper-cl
 
 # Firewall: incoming blocked except what the desktop needs (Fedora's default zone opens ports 1025-65535).
 sed -i 's/^DefaultZone=.*/DefaultZone=FennekOS/' /etc/firewalld/firewalld.conf
+
+# Sharing a folder: nothing but what you share. Without [homes], a sharing password doesn't open the whole home folder.
+# After the include: every share asks for that password (a guest share would need none).
+cat >/etc/samba/smb.conf <<'EOF'
+[global]
+	workgroup = WORKGROUP
+	security = user
+	passdb backend = tdbsam
+	load printers = no
+	disable spoolss = yes
+	include = /etc/samba/usershares.conf
+	usershare allow guests = no
+EOF
+systemctl enable fennek-sharing-zone.path
 
 # Antivirus: daily definitions, every user's Downloads scanned on arrival.
 systemctl enable clamav-freshclam-once.timer

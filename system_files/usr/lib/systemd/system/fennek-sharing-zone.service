@@ -1,0 +1,6 @@
+[Unit]
+Description=Open or close this network for shared folders as they come and go
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/fennek-firewall --sync-sharing

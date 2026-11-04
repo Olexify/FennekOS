@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<zone>
+  <short>Fennek OS (home, sharing folders)</short>
+  <description>The home zone, and other computers on this network can see this one and open the folders you share (with your sharing password).</description>
+  <service name="dhcpv6-client"/>
+  <service name="mdns"/>
+  <service name="kdeconnect"/>
+  <service name="ws-discovery-host"/>
+  <port protocol="tcp" port="445"/>
+</zone>

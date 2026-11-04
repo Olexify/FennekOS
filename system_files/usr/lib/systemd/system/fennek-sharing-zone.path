@@ -1,0 +1,9 @@
+[Unit]
+Description=Open or close this network for shared folders as they come and go
+
+[Path]
+PathChanged=/var/lib/samba/usershares
+Unit=fennek-sharing-zone.service
+
+[Install]
+WantedBy=multi-user.target

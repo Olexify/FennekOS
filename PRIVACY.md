@@ -45,7 +45,7 @@ connections, not these.
 | **Push messages for apps** (only if you install an app that asks for them) | `unifiedpush.kde.org` (KDE) | The service sits idle and connects nowhere until such an app signs up; then it keeps a connection open for that app's messages. |
 | **KDE's usage statistics** (optional, in Files' settings and KDE's User Feedback page) | `telemetry.kde.org` | Nothing: they stay off unless you switch them on. |
 | **Share menu, Online accounts** | The service you pick | What you choose to share, and your sign-in there |
-| **Your local network**: Network in Files, adding a printer, scanning, Desktop Sharing, sharing a folder | Your local network | The first three look for what's on the network. Desktop Sharing and a shared folder announce this computer while they're on; the folder-sharing services (`smb`, `nmb`) stay off until then. |
+| **Your local network**: Network in Files, adding a printer, scanning, Desktop Sharing, sharing a folder | Your local network | The first three look for what's on the network. Desktop Sharing and a shared folder announce this computer while they're on; the folder-sharing services (`smb`, `nmb`, `wsdd`) stay off until then. |
 | **Check with VirusTotal** (right-click a file) | `virustotal.com` (Google) | Only the file's **SHA-256 fingerprint**, never the file, plus your own API key. Only when you click. |
 | **.exe programs** (Proton/umu): first use | `api.github.com`, `github.com`, `repo.steampowered.com` | Download of Proton and its runtime (a few hundred MB), once |
 | **.exe programs**: later | the same | An update check **at most once a day**, and only for programs you trusted. **Never** for sandboxed ones. |

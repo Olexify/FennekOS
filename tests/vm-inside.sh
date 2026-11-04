@@ -117,6 +117,23 @@ check "USB disk plugged in" appears /dev/disk/by-label/FennekUSB
 check "USB disk: what's written reaches it within seconds" sh -c 'sleep 3; [ "$(sysctl -n vm.dirty_expire_centisecs)" = 100 ] && [ "$(sysctl -n vm.dirty_writeback_centisecs)" = 100 ]'
 check "attached file's drive there" appears /dev/disk/by-label/FennekLoop
 # Fennek's own partition stays out of the drive lists, now that the sidebar shows drives.
+# Sharing a folder, in the order the Share tab does it.
+net_zone() { nmcli -g connection.zone connection show "$(nmcli -t -f NAME,TYPE connection show --active | grep -v ':loopback$' | head -1 | sed 's/:[^:]*$//')"; }
+wait_zone() { for _ in $(seq 20); do [ "$(net_zone)" = "$1" ] && return 0; sleep 1; done; return 1; }
+systemctl enable --now smb.service
+as_user mkdir -p "/var/home/$user/Public"
+check "an admin can share a folder" as_user net usershare add fennektest "/var/home/$user/Public" "" Everyone:F guest_ok=n
+check "a share opens this network" wait_zone FennekOS-Sharing
+check "guest shares are off" bash -c "! runuser -u $user -- net usershare add fennekguest /var/home/$user/Public '' Everyone:R guest_ok=y"
+printf 'fennektest\nfennektest\n' | smbpasswd -s -a "$user"
+check "a shared folder opens with the password" smbclient //127.0.0.1/fennektest -U "$user%fennektest" -c ls
+check "a shared folder stays shut without it" bash -c "! smbclient //127.0.0.1/fennektest -N -c ls"
+check "the computer gets listed while sharing" systemctl is-active -q wsdd.service
+as_user net usershare delete fennektest
+check "the last share closes the network" wait_zone FennekOS
+smbpasswd -x "$user" >/dev/null
+systemctl disable --now smb.service
+check "listing stops with sharing" bash -c "! systemctl is-active -q wsdd.service"
 check "own partition hidden from the drive lists" sh -c 'udevadm info -q property "$(findmnt -nvo SOURCE /sysroot)" | grep -qx UDISKS_IGNORE=1'
 # Windows hibernates (Fast Startup). hiberfil.sys is only on its own drive, but it holds the other one just the same.
 closed() { for ((i = 0; i < 10; i++)); do udisksctl unmount --no-user-interaction -b "$1" && return 0; sleep 2; done; return 1; }

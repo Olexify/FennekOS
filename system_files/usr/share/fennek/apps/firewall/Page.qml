@@ -19,7 +19,7 @@ Item {
     readonly property string listCmd: "fennek-firewall list --json"
     readonly property string activeCmd: "fennek-firewall active --json"
     readonly property string profileCmd: "fennek-firewall profile"
-    property string profile: ""            // "home" or "public" (current connection)
+    property string profile: ""            // "home", "sharing" or "public" (current connection)
 
     // Shell-quote one argument (the engine runs commands through sh).
     function q(s) { return "'" + String(s).replace(/'/g, "'\\''") + "'" }
@@ -99,7 +99,7 @@ Item {
                 Repeater {
                     model: [
                         { icon: root.profile === "public" ? "network-wireless-hotspot" : "go-home", title: "This network",
-                          text: root.profile === "public" ? "Public: nothing can connect" : root.profile === "home" ? "Home or work" : "…" },
+                          text: root.profile === "public" ? "Public: nothing can connect" : root.profile === "home" ? "Home or work" : root.profile === "sharing" ? "Home, sharing folders" : "…" },
                         { icon: "network-connect", title: "Online now",
                           text: root.online.length + (root.online.length === 1 ? " app" : " apps") },
                         { icon: "network-disconnect", title: "Blocked",
@@ -137,6 +137,12 @@ Item {
                     checked: root.profile === "home"
                     enabled: !root.busy
                     onClicked: if (root.profile !== "home") { root.busy = true; run.connectSource(root.profileCmd + " home") }
+                }
+                QQC2.RadioButton {
+                    text: "Home, sharing folders: other computers here can also open folders you share, with your sharing password"
+                    checked: root.profile === "sharing"
+                    enabled: !root.busy
+                    onClicked: if (root.profile !== "sharing") { root.busy = true; run.connectSource(root.profileCmd + " sharing") }
                 }
                 QQC2.RadioButton {
                     text: "Public (café, airport, hotel): nothing can connect to this PC"
