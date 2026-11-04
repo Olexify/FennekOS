@@ -26,6 +26,12 @@ ignoredisk --only-use=vda
 zerombr
 clearpart --all --initlabel --drives=vda
 autopart --type=btrfs --encrypted --passphrase=$pass --luks-version=luks2
+poweroff
+%post --nochroot
+cp /tmp/*.log $out/ 2>/dev/null
+lsblk -nro FSTYPE /dev/vda | grep -qx crypto_LUKS && echo ok >$out/installed || echo "no encrypted partition after the install" >$out/installed
+sync
+%end
 EOF
     # The logs as it goes: if it hangs, they show where.
     (while sleep 20; do cp /tmp/*.log "$out/" 2>/dev/null; journalctl -b --no-pager >"$out/journal.log"; ps axf >"$out/ps.log"; loginctl list-sessions >"$out/sessions.log"; done) &
@@ -33,13 +39,10 @@ EOF
     # Not liveinst: from there Anaconda reads only its own defaults, not a kickstart.
     dbus-run-session -- anaconda --cmdline --kickstart=/run/ks.cfg >"$out/liveinst.log" 2>&1 </dev/null
     echo "installer exit $?" >>"$out/started"
+    # Only when something went wrong: a finished install has powered off by now.
     kill "$keep"
     cp /tmp/*.log "$out/" 2>/dev/null
-    if lsblk -nro FSTYPE /dev/vda | grep -qx crypto_LUKS; then   # whether it finished shows when the computer starts from the disk
-        echo ok >"$out/installed"
-    else
-        echo "no encrypted partition after the install" >"$out/installed"
-    fi
+    [ -e "$out/installed" ] || echo "the installer stopped early" >"$out/installed"
     sync
     systemctl poweroff
     exit 0
