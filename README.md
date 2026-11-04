@@ -45,6 +45,9 @@ What's in it so far:
      **Reclaim space** and shrink your current system's partition, freeing at least 30 GB for Fennek OS. Fennek OS goes
      into the freed space. Fennek OS then starts by default; to use the other system, pick **Restart to Windows** in Start, or use your PC's boot menu key.
    - **Replace it:** choose **Use entire disk**, then **Erase data and install**. Everything on that drive is gone.
+
+   **Encrypt my data** starts ticked, so your files stay private if the computer is stolen. You type its password each
+   time the computer starts. If you forget it, nothing can open your files, so make a recovery key when Welcome offers it.
 8. Restart, take out the stick, and you are in Fennek OS. Updates arrive by themselves; the previous version
    always stays in the start menu in case one goes wrong.
 

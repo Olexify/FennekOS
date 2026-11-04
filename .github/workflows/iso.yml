@@ -77,6 +77,10 @@ jobs:
           sudo chmod 666 /dev/kvm 2>/dev/null || true
           bash iso/boot-test.sh "output/$NAME.iso" ${{ inputs.arch == 'aarch64' && 45 || 10 }}
 
+      - name: Encrypted install test
+        if: inputs.arch != 'aarch64' && inputs.edition != 'nvidia'
+        run: bash iso/encrypted-test.sh "output/$NAME.iso"
+
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: ${{ env.NAME }}-iso

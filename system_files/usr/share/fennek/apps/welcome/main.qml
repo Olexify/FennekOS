@@ -26,6 +26,12 @@ QQC2.ApplicationWindow {
 
     KCoreAddons.KUser { id: kuser }
     P5Support.DataSource { id: run; engine: "executable"; onNewData: source => disconnectSource(source) }
+    property bool encrypted: false
+    P5Support.DataSource {
+        engine: "executable"
+        connectedSources: ["/usr/libexec/fennek-encryption --device"]
+        onNewData: (source, data) => { root.encrypted = data.stdout.trim() !== ""; disconnectSource(source) }
+    }
 
     QQC2.Page {
         anchors.fill: parent
@@ -122,6 +128,28 @@ QQC2.ApplicationWindow {
                 ColumnLayout {
                     spacing: Kirigami.Units.largeSpacing
                     Kirigami.Heading { text: root.t("What keeps you safe", "Що вас захищає"); level: 2 }
+                    // Encrypted: nothing else opens the files if that password is forgotten, and the installer doesn't make a key.
+                    RowLayout {
+                        visible: root.encrypted
+                        spacing: Kirigami.Units.gridUnit
+                        Layout.fillWidth: true
+                        Kirigami.Icon { source: "fennek-settings-privacy"; Layout.preferredWidth: 40; Layout.preferredHeight: 40 }
+                        ColumnLayout {
+                            spacing: 0
+                            Layout.fillWidth: true
+                            QQC2.Label { text: root.t("Make your recovery key now", "Створіть ключ відновлення зараз"); font.weight: Font.DemiBold }
+                            QQC2.Label {
+                                text: root.t("Your files are encrypted. If you forget that password, only this key can open them.",
+                                             "Ваші файли зашифровано. Якщо ви забудете цей пароль, відкрити їх зможе лише цей ключ.")
+                                opacity: 0.75; wrapMode: Text.Wrap; Layout.fillWidth: true
+                            }
+                        }
+                        QQC2.Button {
+                            highlighted: true
+                            text: root.t("Make a key", "Створити ключ")
+                            onClicked: run.connectSource("/usr/libexec/fennek-encryption")
+                        }
+                    }
                     Repeater {
                         model: [
                             { icon: "fennek-settings-privacy", title: root.t("No telemetry", "Без телеметрії"),

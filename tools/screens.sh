@@ -63,7 +63,7 @@ fennek-app settings >/dev/null 2>&1 & shot 09-settings 6; close
 fennek-app firewall >/dev/null 2>&1 & shot 10-firewall 6; close
 konsole >/dev/null 2>&1 & shot 11-terminal 5; close
 plasma-systemmonitor >/dev/null 2>&1 & shot 12-task-manager 8; close
-fennek-app welcome >/dev/null 2>&1 & shot 13-welcome 6; for _ in 1 2 3; do click 1108 651; sleep 1; done; shot 13b-welcome-apps 2; close
+fennek-app welcome >/dev/null 2>&1 & shot 13-welcome 6; for _ in 1 2; do click 1108 651; sleep 1; done; shot 13a-welcome-safety 2; click 1108 651; shot 13b-welcome-apps 2; close
 fennek-app updates >/dev/null 2>&1 & shot 30-updates 8; close
 fennek-app winx >/dev/null 2>&1 & shot 32-quick-links 5; xdo key Escape; sleep 1
 # Super+R: the Run box, centred, with a suggestion list after typing "c".

@@ -61,6 +61,15 @@ EOF
 chmod 755 "$resize"
 "$resize" --version >/dev/null
 
+# Encrypt my data starts ticked: a stolen laptop shouldn't give up its files. Untick it to go without; Welcome offers a recovery key.
+# ponytail: tied to the web UI's built bundle, as there's no setting for it. The grep fails this build when the text changes.
+bundle=$(rpm -ql anaconda-webui | grep '/index\.js\.gz$')
+gunzip "$bundle"
+grep -q 'luks:{confirmPassphrase:"",encrypted:!1,passphrase:""}' "${bundle%.gz}"
+sed -i 's/luks:{confirmPassphrase:"",encrypted:!1,passphrase:""}/luks:{confirmPassphrase:"",encrypted:!0,passphrase:""}/' "${bundle%.gz}"
+grep -q 'luks:{confirmPassphrase:"",encrypted:!0,passphrase:""}' "${bundle%.gz}"
+gzip -9 "${bundle%.gz}"
+
 # Install exactly the bundled image; afterwards updates come from the registry WITH signature enforcement
 # (ostree-image-signed + /etc/containers/policy.json requiring Fennek's key).
 mkdir -p /usr/share/anaconda/post-scripts

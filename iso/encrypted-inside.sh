@@ -1,0 +1,42 @@
+#!/bin/bash
+# Runs inside the VM of iso/encrypted-test.sh, as root: from the installer it installs, from the disk it checks.
+out=/run/t/out
+pass=fennektest
+
+if grep -qw rd.live.image /proc/cmdline; then
+    cat >/run/ks.cfg <<EOF
+%include /usr/share/anaconda/interactive-defaults.ks
+lang en_US.UTF-8
+keyboard us
+timezone UTC --utc
+rootpw --lock
+user --name=anna --groups=wheel --password=$pass --plaintext
+ignoredisk --only-use=vda
+zerombr
+clearpart --all --initlabel --drives=vda
+autopart --type=btrfs --encrypted --passphrase=$pass --luks-version=luks2
+EOF
+    liveinst --cmdline --kickstart=/run/ks.cfg >"$out/liveinst.log" 2>&1
+    cp /tmp/anaconda.log /tmp/storage.log /tmp/packaging.log /tmp/program.log "$out/" 2>/dev/null
+    if lsblk -nro FSTYPE /dev/vda | grep -qx crypto_LUKS\|Configuring installed system\|Installation complete\|Storing configuration' "$out/anaconda.log"; then
+        echo ok >"$out/installed"
+    else
+        echo "no encrypted partition after the install" >"$out/installed"
+    fi
+    sync
+    systemctl poweroff
+    exit 0
+fi
+
+# Started from the disk: the password worked.
+no() { echo "$1" >"$out/result"; sync; systemctl poweroff; exit 0; }
+dev=$(/usr/libexec/fennek-encryption --device)
+[ -n "$dev" ] || no "the page doesn't find the encrypted partition"
+[ -b "$dev" ] || no "not a partition: $dev"
+key=$(printf '%s\n' "$pass" | /usr/libexec/fennek-encryption-helper) || no "no recovery key was made for the system drive"
+printf '%s' "$key" | cryptsetup open --test-passphrase "$dev" - || no "the recovery key doesn't open the system drive"
+printf '%s' "$pass" | cryptsetup open --test-passphrase "$dev" - || no "the password stopped working after the key was made"
+udevadm info -q property "$dev" | grep -qx UDISKS_IGNORE=1 || no "the encrypted partition shows in the drive lists"
+echo ok >"$out/result"
+sync
+systemctl poweroff
