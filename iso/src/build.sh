@@ -24,6 +24,15 @@ DRACUT_NO_XATTR=1 dracut -v --force --zstd --reproducible --no-hostonly \
     --add "dmsquash-live dmsquash-live-autooverlay" "/usr/lib/modules/${kernel}/initramfs.img" "${kernel}"
 sed -i 's/^livesys_session=.*/livesys_session=kde/' /etc/sysconfig/livesys
 systemctl enable livesys.service livesys-late.service
+# livesys signs the live user in through Plasma's login manager when that's installed, and ours is SDDM: without this the
+# USB stops at a sign-in screen nobody has an account for.
+mkdir -p /etc/sddm.conf.d
+cat >/etc/sddm.conf.d/90-fennek-live.conf <<'EOF'
+[Autologin]
+User=liveuser
+Session=plasma.desktop
+EOF
+test -s /usr/share/wayland-sessions/plasma.desktop
 
 # 3. Installer: Anaconda (web UI). Interactive: language, disk (incl. next to Windows), your own user account.
 dnf install -y --allowerasing anaconda-live libblockdev-btrfs libblockdev-lvm libblockdev-dm

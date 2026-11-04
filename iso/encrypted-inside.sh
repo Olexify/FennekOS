@@ -5,6 +5,16 @@ pass=fennektest
 echo "$(date) $(cat /proc/cmdline)" >>"$out/started"
 
 if grep -qw rd.live.image /proc/cmdline; then
+    # The USB has to reach the desktop by itself: that's where Install is.
+    for _ in $(seq 60); do loginctl list-sessions --no-legend | grep -q liveuser && break; sleep 5; done
+    loginctl list-sessions >"$out/live-sessions.log"
+    if ! grep -q liveuser "$out/live-sessions.log"; then
+        echo "the USB stayed at the sign-in screen" >"$out/installed"
+        journalctl -b --no-pager >"$out/journal.log"
+        sync
+        systemctl poweroff
+        exit 0
+    fi
     cat >/run/ks.cfg <<EOF
 %include /usr/share/anaconda/interactive-defaults.ks
 lang en_US.UTF-8
@@ -20,8 +30,9 @@ EOF
     # The logs as it goes: if it hangs, they show where.
     (while sleep 20; do cp /tmp/*.log "$out/" 2>/dev/null; journalctl -b --no-pager >"$out/journal.log"; ps axf >"$out/ps.log"; loginctl list-sessions >"$out/sessions.log"; done) &
     keep=$!
-    dbus-run-session -- liveinst --cmdline --kickstart=/run/ks.cfg >"$out/liveinst.log" 2>&1 </dev/null
-    echo "liveinst exit $?" >>"$out/started"
+    # Not liveinst: from there Anaconda reads only its own defaults, not a kickstart.
+    dbus-run-session -- anaconda --cmdline --kickstart=/run/ks.cfg >"$out/liveinst.log" 2>&1 </dev/null
+    echo "installer exit $?" >>"$out/started"
     kill "$keep"
     cp /tmp/*.log "$out/" 2>/dev/null
     if lsblk -nro FSTYPE /dev/vda | grep -qx crypto_LUKS; then   # whether it finished shows when the computer starts from the disk
