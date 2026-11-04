@@ -340,4 +340,28 @@ menu.write_text(t.replace(old, """    if (m_fileInfo.mimetype() == QLatin1String
     }
 
 """ + old), encoding="utf-8")
+# 8. Searching for a file's name takes plain words: any order, brackets are just brackets, *.pdf means what it always has.
+query = pathlib.Path(sys.argv[1]) / "src" / "search" / "dolphinquery.cpp"
+t = query.read_text(encoding="utf-8")
+for old, new in [
+    ("""    qUrlQuery.addQueryItem(QStringLiteral("search"), QUrl::toPercentEncoding(m_searchTerm));
+""", """    // Fennek OS: the box keeps what was typed (fennekTerm), the search gets the pattern.
+    const bool fennekName = m_searchThrough != SearchThrough::FileContents;
+    if (fennekName && (m_searchTerm.contains(QLatin1Char('*')) || m_searchTerm.contains(QLatin1Char('?')))) {
+        qUrlQuery.addQueryItem(QStringLiteral("search"), QUrl::toPercentEncoding(QRegularExpression::wildcardToRegularExpression(m_searchTerm)));
+        qUrlQuery.addQueryItem(QStringLiteral("fennekTerm"), QUrl::toPercentEncoding(m_searchTerm));
+    } else {
+        qUrlQuery.addQueryItem(QStringLiteral("search"), QUrl::toPercentEncoding(m_searchTerm));
+        if (fennekName) {
+            qUrlQuery.addQueryItem(QStringLiteral("syntax"), QStringLiteral("wordlist"));
+        }
+    }
+"""),
+    ("""        m_searchTerm = query.queryItemValue(QStringLiteral("search"), QUrl::FullyDecoded);
+""", """        m_searchTerm = query.queryItemValue(query.hasQueryItem(QStringLiteral("fennekTerm")) ? QStringLiteral("fennekTerm") : QStringLiteral("search"), QUrl::FullyDecoded);
+"""),
+]:
+    assert t.count(old) == 1, "dolphinquery.cpp: " + old[:60]
+    t = t.replace(old, new)
+query.write_text(t, encoding="utf-8")
 print("dolphin: Fennek changes applied")

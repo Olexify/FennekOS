@@ -482,6 +482,7 @@ grep -q 'set-local-rtc 1' /usr/libexec/fennek-detect-windows || fail "clock in s
 grep -q '^DndBehavior=MoveIfSameDevice' /etc/xdg/kdeglobals && grep -q 'Fennek Next Language' /usr/share/kwin*/scripts/fennekarrows/contents/code/main.js || fail "dragging files without a question, Alt+Shift"
 [ -x /usr/lib/NetworkManager/dispatcher.d/90-fennek-everyday-apps ] || fail "everyday apps start when the computer gets online"
 grep -q 'name="edit_find" shortcut="Ctrl+F; F3"' /usr/share/kxmlgui5/dolphin/dolphinui.rc || fail "F3 searches in Files"
+grep -qa wordlist /usr/bin/dolphin || fail "Files searches names by plain words"
 [ -x /usr/libexec/fennek-encryption ] && [ -x /usr/libexec/fennek-encryption-helper ] && [ -s /usr/share/polkit-1/actions/org.fennek.encryption.policy ] && grep -q '/usr/libexec/fennek-encryption' /usr/share/fennek/apps/settings/catalog.js || fail "Device encryption page"
 [ -x /usr/lib/NetworkManager/dispatcher.d/90-fennek-sharing ] || fail "the computer lists itself only on networks you share on"
 /usr/libexec/fennek-graphics-check --selftest >/dev/null && /usr/libexec/fennek-graphics-check --json | python3 -c 'import json,sys; d=json.load(sys.stdin); assert set(d) == {"edition", "nvidia", "secure_boot"}' \
