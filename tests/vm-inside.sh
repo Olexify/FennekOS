@@ -128,12 +128,20 @@ check "guest shares are off" bash -c "! runuser -u $user -- net usershare add fe
 printf 'fennektest\nfennektest\n' | smbpasswd -s -a "$user"
 check "a shared folder opens with the password" smbclient //127.0.0.1/fennektest -U "$user%fennektest" -c ls
 check "a shared folder stays shut without it" bash -c "! smbclient //127.0.0.1/fennektest -N -c ls"
-check "the computer gets listed while sharing" systemctl is-active -q wsdd.service
+wait_listed() { for _ in $(seq 20); do [ "$(systemctl is-active wsdd.service)" = "$1" ] && return 0; sleep 1; done; return 1; }
+check "the computer gets listed while sharing" wait_listed active
+marked=$(nmcli -t -f NAME,TYPE connection show --active | grep -v ':loopback$' | head -1 | sed 's/:[^:]*$//')
+nmcli connection modify "$marked" connection.zone FennekOS-Public
+nmcli connection up "$marked" >/dev/null
+check "not listed on a public network" wait_listed inactive
+nmcli connection modify "$marked" connection.zone FennekOS-Sharing
+nmcli connection up "$marked" >/dev/null
+check "listed again back home" wait_listed active
 as_user net usershare delete fennektest
 check "the last share closes the network" wait_zone FennekOS
 smbpasswd -x "$user" >/dev/null
 systemctl disable --now smb.service
-check "listing stops with sharing" bash -c "! systemctl is-active -q wsdd.service"
+check "listing stops with sharing" wait_listed inactive
 check "own partition hidden from the drive lists" sh -c 'udevadm info -q property "$(findmnt -nvo SOURCE /sysroot)" | grep -qx UDISKS_IGNORE=1'
 # Windows hibernates (Fast Startup). hiberfil.sys is only on its own drive, but it holds the other one just the same.
 closed() { for ((i = 0; i < 10; i++)); do udisksctl unmount --no-user-interaction -b "$1" && return 0; sleep 2; done; return 1; }

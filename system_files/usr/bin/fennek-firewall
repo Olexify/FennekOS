@@ -156,6 +156,7 @@ STATES = {"ESTAB": "connected", "SYN-SENT": "connecting", "CLOSE-WAIT": "closing
 
 PROFILES = {"home": "FennekOS", "sharing": "FennekOS-Sharing", "public": "FennekOS-Public"}
 USERSHARES = Path("/var/lib/samba/usershares")
+LISTING = Path("/run/fennek-wsdd.env")
 
 
 def connections(nmcli_out):
@@ -204,6 +205,29 @@ def sync_sharing():
             subprocess.run(["nmcli", "connection", "modify", c, "connection.zone", zone], check=True)
             for dev in nm("-g", "GENERAL.DEVICES", "connection", "show", c).split():   # applied without dropping the connection
                 subprocess.run(["nmcli", "device", "reapply", dev], capture_output=True)
+    sync_listing()
+
+
+def listing_options(devices):
+    """Network devices -> wsdd's settings, or None when it must not run: with no device named it would use them all."""
+    names = [d for d in devices if re.fullmatch(r"[\w.-]+", d)]
+    return 'OPTIONS="' + " ".join(f"-i {d}" for d in names) + '"\n' if names else None
+
+
+def sync_listing():
+    """Other computers can list this one on the networks you share on, and no others: a cafe's Wi-Fi doesn't get its name."""
+    nm = lambda *a: subprocess.run(["nmcli", *a], capture_output=True, text=True).stdout
+    devices = []
+    for c in connections(nm("-t", "-f", "NAME,TYPE", "connection", "show", "--active")):
+        if nm("-g", "connection.zone", "connection", "show", c).strip() == PROFILES["sharing"]:
+            devices += nm("-g", "GENERAL.DEVICES", "connection", "show", c).split()
+    wanted = listing_options(devices)
+    if not wanted:
+        subprocess.run(["systemctl", "--no-block", "stop", "wsdd.service"])
+        LISTING.unlink(missing_ok=True)
+    elif not LISTING.is_file() or LISTING.read_text() != wanted:
+        LISTING.write_text(wanted)
+        subprocess.run(["systemctl", "--no-block", "restart", "wsdd.service"])
 
 
 def main(argv):
@@ -224,6 +248,8 @@ def main(argv):
         return
     if argv == ["--sync-sharing"] and os.geteuid() == 0:
         return sync_sharing()
+    if argv == ["--sync-listing"] and os.geteuid() == 0:
+        return sync_listing()
     if argv[:1] == ["--root"] and os.geteuid() == 0:     # second half, after pkexec
         return root_part(argv[1], argv[2])
     if len(argv) != 2 or argv[0] not in ("block", "allow"):
@@ -249,6 +275,8 @@ def selftest():
     assert zone_change("FennekOS", True, False) is None, "nothing to open for"
     assert zone_change("FennekOS-Sharing", False, True) == "FennekOS"
     assert zone_change("FennekOS-Public", False, True) is None and zone_change("FennekOS-Sharing", True, True) is None
+    assert listing_options(["wlan0", "enp1s0.2"]) == 'OPTIONS="-i wlan0 -i enp1s0.2"\n'
+    assert listing_options([]) is None and listing_options(["a b"]) is None, "no device named would mean every network"
     r = rule("/usr/bin/curl", now="t")
     assert r["name"] == "fennek-block-curl" and r["action"] == "reject" and r["duration"] == "always"
     assert r["operator"]["operand"] == "process.path" and r["operator"]["data"] == "/usr/bin/curl"

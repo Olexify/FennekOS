@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+# Moved to another network: the computer lists itself only on the ones you share on.
+case "$2" in up|down|reapply) ;; *) exit 0 ;; esac
+systemctl is-enabled -q smb.service && systemctl --no-block start fennek-sharing-listing.service
+exit 0

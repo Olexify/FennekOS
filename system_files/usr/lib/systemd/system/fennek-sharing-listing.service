@@ -1,0 +1,6 @@
+[Unit]
+Description=List this computer only on the networks you share on
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/fennek-firewall --sync-listing

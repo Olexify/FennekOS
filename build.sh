@@ -676,7 +676,7 @@ chmod 0600 "/usr/lib/modules/$KVER/initramfs.img"
 (cd "$files" && find . -type f) | while read -r f; do [ -e "/${f#./}" ] || continue; chmod 644 "/${f#./}"; chown root:root "/${f#./}"; done
 # Belt and braces: everything we ship belongs to root (a build-context owner would be a local root hole).
 (cd "$files" && find . -mindepth 1 -type d) | while read -r d; do chown root:root "/${d#./}"; done
-chmod 755 /usr/bin/fennek-* /usr/libexec/fennek-* /usr/lib/NetworkManager/dispatcher.d/90-fennek-everyday-apps
+chmod 755 /usr/bin/fennek-* /usr/libexec/fennek-* /usr/lib/NetworkManager/dispatcher.d/90-fennek-everyday-apps /usr/lib/NetworkManager/dispatcher.d/90-fennek-sharing
 # KWin's data folder: newer releases load scripts from kwin/ again (kwin-wayland/ before). Ours follow KDE's own.
 if [ -d /usr/share/kwin/scripts/minimizeall ] && [ ! -d /usr/share/kwin-wayland/scripts/minimizeall ]; then
     for d in /usr/share/kwin-wayland/scripts/fennek*; do
