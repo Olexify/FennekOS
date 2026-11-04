@@ -150,7 +150,9 @@ check "own partition hidden from the drive lists" sh -c 'udevadm info -q propert
 closed() { for ((i = 0; i < 10; i++)); do udisksctl unmount --no-user-interaction -b "$1" && return 0; sleep 2; done; return 1; }
 hibernate_windows() {
     closed /dev/vdb1 && closed /dev/vdb2 && mkdir -p /var/mnt/fennek-vmtest && mount -t ntfs-3g /dev/vdb1 /var/mnt/fennek-vmtest || return 1
-    printf 'HIBR\0\0\0\0' > /var/mnt/fennek-vmtest/hiberfil.sys && umount /var/mnt/fennek-vmtest
+    printf 'HIBR\0\0\0\0' > /var/mnt/fennek-vmtest/hiberfil.sys || return 1
+    for ((i = 0; i < 10; i++)); do umount /var/mnt/fennek-vmtest && return 0; sleep 2; done   # something may still be looking at the new mount
+    return 1
 }
 check "a hibernation file on the Windows drive" hibernate_windows
 check "drives looked at again" systemctl restart fennek-windows-scan.service
