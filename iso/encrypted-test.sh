@@ -4,6 +4,7 @@
 # Usage: iso/encrypted-test.sh ISO
 set -euo pipefail
 iso=$(realpath "$1") here=$(cd "$(dirname "$0")" && pwd) work=$(mktemp -d)
+keep=${2:-$PWD/encrypted-test-out}; mkdir -p "$keep"   # what's left to read afterwards
 share=$work/share; mkdir -p "$share/out"
 cp "$here/encrypted-inside.sh" "$share/"
 truncate -s 64G "$work/disk.raw"
@@ -33,17 +34,22 @@ start() {   # extra qemu arguments
 qmp() { python3 "$here/../tests/vm-qmp.py" "$work/qmp.sock" "$@"; }
 give_up() {
     echo "FAIL: $1"
+    qmp "{\"execute\":\"screendump\",\"arguments\":{\"filename\":\"$keep/stuck.png\",\"format\":\"png\"}}" >/dev/null 2>&1 || true
+    sleep 2
     kill "$vm" 2>/dev/null || true
-    tail -c 3000 "$work/serial.log" | tr -cd '[:print:]\n' || true
-    tail -n 40 "$share"/out/*.log 2>/dev/null | tail -n 120 || true
+    cp -r "$share/out/." "$keep/" 2>/dev/null || true
+    cp "$work/serial.log" "$keep/" 2>/dev/null || true
+    ls -la "$keep"
+    cat "$keep/started" 2>/dev/null || echo "the test never started inside the VM"
+    tail -n 30 "$keep/liveinst.log" "$keep/anaconda.log" 2>/dev/null | cut -c1-200 || true
     exit 1
 }
 trap 'kill "${vm:-}" 2>/dev/null; true' EXIT
 
 echo "== installing"
 start -device virtio-scsi-pci -drive "if=none,id=cd,media=cdrom,readonly=on,file=$iso" -device scsi-cd,drive=cd,bootindex=1
-for ((s = 0; s < 3000; s += 10)); do kill -0 "$vm" 2>/dev/null || break; sleep 10; done
-kill -0 "$vm" 2>/dev/null && give_up "the install didn't finish in 50 minutes"
+for ((s = 0; s < 1800; s += 10)); do kill -0 "$vm" 2>/dev/null || break; sleep 10; done
+kill -0 "$vm" 2>/dev/null && give_up "the install didn't finish in 30 minutes"
 wait "$vm" || true
 [ "$(cat "$share/out/installed" 2>/dev/null)" = ok ] || give_up "the install didn't finish: $(cat "$share/out/installed" 2>/dev/null)"
 echo "installed after ~${s}s"
