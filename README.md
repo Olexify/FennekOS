@@ -72,7 +72,7 @@ Test VM (Hyper-V):
 Free, no ads, no telemetry, no paywalled features, built by one person and a fox. If Fennek OS made leaving your old
 system a little less scary, you can share some love:
 
-<p align="center"><a href="https://ko-fi.com/olexify"><img src="https://img.shields.io/badge/Ko--fi-Support-18181B?style=for-the-badge&logo=kofi&logoColor=white&labelColor=FF5E5B&color=18181B" height="44" alt="Ko-fi"></a>&nbsp;<a href="https://www.patreon.com/Olexifyyy"><img src="https://img.shields.io/badge/Patreon-Support-18181B?style=for-the-badge&logo=patreon&logoColor=white&labelColor=FF424D&color=18181B" height="44" alt="Patreon"></a>&nbsp;<a href="https://buymeacoffee.com/olexify"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-Support-18181B?style=for-the-badge&logo=buymeacoffee&logoColor=white&labelColor=FFDD00&color=18181B" height="44" alt="Buy Me a Coffee"></a></p>
+<p align="center"><a href="https://www.patreon.com/c/Olexifyyy"><img src="https://img.shields.io/badge/Patreon-Support-18181B?style=for-the-badge&logo=patreon&logoColor=white&labelColor=FF424D&color=18181B" height="44" alt="Patreon"></a>&nbsp;<a href="https://send.monobank.ua/jar/4jizk5cDBp"><img src="https://img.shields.io/badge/Monobank-Support-18181B?style=for-the-badge&labelColor=000000&color=18181B" height="44" alt="Monobank"></a></p>
 
 Bugs and ideas go in [Issues](../../issues). Questions and general fox business go to [Discord](https://discord.gg/UpmNHxT7PF).
 

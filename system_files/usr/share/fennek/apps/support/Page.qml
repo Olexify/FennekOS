@@ -69,7 +69,7 @@ Item {
                 QQC2.Button {
                     highlighted: true
                     text: "♥ Patreon"
-                    onClicked: Qt.openUrlExternally("https://www.patreon.com/Olexifyyy")
+                    onClicked: Qt.openUrlExternally("https://www.patreon.com/c/Olexifyyy")
                 }
                 QQC2.Button {
                     id: cycling
