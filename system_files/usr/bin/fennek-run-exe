@@ -15,7 +15,7 @@ read-only, Proton through a throwaway overlay. Own network namespace (pasta): in
 sockets (X11 abstract socket, D-Bus, local services) are unreachable. Wayland display when Proton supports it,
 so no X11 snooping. No sound/microphone unless asked for. Your real home and other programs are invisible.
 """
-import fcntl, grp, hashlib, itertools, os, re, shutil, subprocess, sys, threading, time, unicodedata
+import fcntl, grp, hashlib, itertools, json, os, re, shutil, subprocess, sys, threading, time, unicodedata
 from pathlib import Path
 
 HOME = Path.home()
