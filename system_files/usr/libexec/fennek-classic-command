@@ -21,7 +21,7 @@ case ${0##*/} in
     taskmgr) exec fennek-app taskmanager ;;
     snippingtool) exec spectacle ;;
     msinfo32 | winver) exec kinfocenter ;;
-    appwiz.cpl) exec plasma-discover --mode installed ;;
+    appwiz.cpl) settings installedapps ;;
     diskmgmt.msc) exec partitionmanager ;;
     wf.msc | firewall.cpl) exec fennek-app settings firewall ;;
     ncpa.cpl) settings kcm_networkmanagement ;;

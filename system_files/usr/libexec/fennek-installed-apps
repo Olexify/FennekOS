@@ -2,14 +2,15 @@
 """Settings > Apps > Installed apps: everything you installed yourself, how big it is, one button to remove it.
 
   fennek-installed-apps list                              JSON: [{"id", "name", "kind", "size", "data", "icon"}]
-                                                          kind: store | extra | classic
+                                                          kind: store | extra | classic | trusted
   fennek-installed-apps uninstall store APP-ID [--data]   --data: its settings and saved data go too
   fennek-installed-apps uninstall extra NAME              (NV Broadcast)
   fennek-installed-apps uninstall classic SHA256          a sandboxed classic program: its box, what it remembered;
                                                           ~/Sandbox/<program> stays, with what it saved: your own files
+  fennek-installed-apps uninstall trusted KEY             a program in the shared trusted space: its own uninstaller runs
   fennek-installed-apps --selftest
 """
-import json, os, re, shutil, subprocess, sys
+import json, os, re, shutil, stat, subprocess, sys, time
 from pathlib import Path
 
 HOME = Path.home()
@@ -104,6 +105,72 @@ def box_of(digest, boxes=BOXES):
     return None
 
 
+UNINSTALL = "Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Uninstall\\\\"
+VIEWS = (("system.reg", UNINSTALL), ("system.reg", UNINSTALL.replace("Software\\\\", "Software\\\\Wow6432Node\\\\", 1)), ("user.reg", UNINSTALL))
+REG_LIMIT = 64 * 1024 * 1024
+
+
+def reg_text(path):
+    """A registry file a program wrote, so anything at all: a link, a pipe that never ends, gigabytes. Only a plain file, not too big."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    except OSError:
+        return ""
+    with os.fdopen(fd, "rb") as f:
+        st = os.fstat(f.fileno())
+        if not stat.S_ISREG(st.st_mode) or st.st_size > REG_LIMIT:
+            return ""
+        return f.read(REG_LIMIT).decode("utf-8", "replace")
+
+
+def reg_unescape(s):
+    return re.sub(r'\\(x[0-9a-fA-F]{1,4}|.)', lambda m: chr(int(m[1][1:], 16)) if m[1][0] == "x" and len(m[1]) > 1 else
+                  {"n": "\n", "r": "\r", "t": "\t", "0": ""}.get(m[1], m[1]), s)
+
+
+def reg_programs(text, prefix):
+    """{key: (name, size in bytes)} of the programs listed under PREFIX in a registry file's text."""
+    found = {}
+    for block in re.split(r'^\[', text, flags=re.M)[1:]:
+        head, _, body = block.partition("\n")
+        path = head.rsplit("]", 1)[0]
+        if not path.startswith(prefix) or "\\\\" in path[len(prefix):]:
+            continue
+        name = re.search(r'^"DisplayName"=(?:str\(\d+\):)?"((?:[^"\\]|\\.)*)"', body, re.M)
+        if not name or re.search(r'^"SystemComponent"=dword:0*1\s*$', body, re.M):
+            continue
+        name = reg_unescape(name[1]).strip()
+        key = reg_unescape(path[len(prefix):])
+        if not name or name.startswith(("Wine Mono", "Wine Gecko")) or len(key) > 200 or any(odd_char(c) for c in name + key):
+            continue
+        size = re.search(r'^"EstimatedSize"=dword:([0-9a-fA-F]{1,8})', body, re.M)
+        found[key] = (name[:80], int(size[1], 16) * 1024 if size else 0)
+    return found
+
+
+def odd_char(c):
+    o = ord(c)
+    return o < 32 or 127 <= o <= 159 or o in (0x2028, 0x2029) or 0xD800 <= o <= 0xDFFF
+
+
+def prefix_programs(prefix):
+    """Everything installed in a Proton prefix, as Wine's own uninstaller sees it."""
+    if prefix.is_symlink() or prefix.parent.is_symlink():
+        return {}
+    found = {}
+    for name, view in VIEWS:
+        found.update(reg_programs(reg_text(prefix / name), view))
+    return found
+
+
+TRUSTED_PREFIX = HOME / "Games/umu/umu-default"
+
+
+def trusted_programs():
+    return [{"id": key, "name": name, "kind": "trusted", "size": size, "icon": "application-x-ms-dos-executable"}
+            for key, (name, size) in prefix_programs(TRUSTED_PREFIX).items()]
+
+
 def classic_programs():
     out = []
     names = CFG / "exe-names"
@@ -115,7 +182,8 @@ def classic_programs():
         if box and path.startswith("/"):
             entries = sorted((DATA / "applications").glob(f"fennek-exe-{digest[:16]}-*.desktop")) if (DATA / "applications").is_dir() else []
             title = re.search(r"^Name=(.*)$", entries[0].read_text(encoding="utf-8", errors="replace"), re.M) if entries else None
-            out.append({"id": digest, "name": title.group(1) if title else Path(path).name, "kind": "classic", "size": folder_size(box),
+            names_inside = sorted({n for n, _ in prefix_programs(box / "home/prefix").values()})
+            out.append({"id": digest, "name": title.group(1) if title else ", ".join(names_inside)[:80] or Path(path).name, "kind": "classic", "size": folder_size(box),
                         "icon": "application-x-ms-dos-executable"})
     return out
 
@@ -127,7 +195,7 @@ def listing():
     for key, (name, path, icon, _) in EXTRAS.items():
         if path.is_dir():
             apps.append({"id": key, "name": name, "kind": "extra", "size": folder_size(path), "icon": icon})
-    apps += classic_programs()
+    apps += classic_programs() + trusted_programs()
     return sorted(apps, key=lambda a: a["name"].lower())
 
 
@@ -169,13 +237,52 @@ def uninstall(args):
             if subprocess.run(["fennek-run-exe", "--keep-saved", box.name]).returncode:
                 return 1
             shutil.rmtree(box)
+            try:   # empty: nothing was saved from inside it
+                (HOME / "Sandbox" / box.name).rmdir()
+            except OSError:
+                pass
         forget(args[1])
         return 0
+    if len(args) == 2 and args[0] == "trusted" and args[1] in prefix_programs(TRUSTED_PREFIX):
+        code = subprocess.run(["fennek-run-exe", "--uninstall-trusted", args[1]]).returncode
+        time.sleep(4)   # the list on disk is only updated once the Windows side has closed
+        return code
     print(__doc__, file=sys.stderr)
     return 2
 
 
+def selftest_registry():
+    import tempfile
+    uk = "".join(f"\\x{ord(c):x}" for c in "Блокнот")
+    sub = "[Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Uninstall\\\\"
+    text = (sub + 'App1] 1\n#time=1\n"DisplayName"="Notepad \\"Plus\\""\n"EstimatedSize"=dword:00000400\n\n'
+            + sub + 'Uk] 1\n"DisplayName"=str(2):"' + uk + '"\n\n'
+            + sub + 'Hidden] 1\n"DisplayName"="Runtime"\n"SystemComponent"=dword:00000001\n\n'
+            + sub + 'NoName] 1\n"Publisher"="x"\n\n'
+            + sub + '{Mono}] 1\n"DisplayName"="Wine Mono Runtime"\n\n'
+            + sub + 'Bad] 1\n"DisplayName"="a\\nb"\n\n'
+            + sub + 'App1\\\\Sub] 1\n"DisplayName"="Nested"\n\n')
+    got = reg_programs(text, UNINSTALL)
+    assert got == {"App1": ('Notepad "Plus"', 1024 * 1024), "Uk": ("Блокнот", 0)}, got
+    assert UNINSTALL.replace("Software\\\\", "Software\\\\Wow6432Node\\\\", 1).startswith("Software\\\\Wow6432Node\\\\Microsoft")
+    with tempfile.TemporaryDirectory() as t:
+        d = Path(t) / "home/prefix"
+        d.mkdir(parents=True)
+        (d / "system.reg").write_text(text, encoding="utf-8")
+        assert set(prefix_programs(d)) == {"App1", "Uk"}
+        (d / "user.reg").symlink_to(d / "system.reg")
+        assert reg_text(d / "user.reg") == "", "a link is not read"
+        (d / "user.reg").unlink()
+        os.mkfifo(d / "user.reg")
+        assert reg_text(d / "user.reg") == "", "a pipe doesn't hang the page"
+        link = Path(t) / "other"
+        link.mkdir()
+        (link / "prefix").symlink_to(d)
+        assert prefix_programs(link / "prefix") == {}, "a linked prefix is not followed"
+
+
 def selftest():
+    selftest_registry()
     import tempfile
     assert parse_size("1.2 GB") == 1200000000 and parse_size("352.0 MB") == 352000000 and parse_size("") == 0 and parse_size("x") == 0
     apps = parse_flatpak("org.kde.okular\tOkular\t120.5 MB\tsystem\norg.kde.okular\tOkular\t120.5 MB\tuser\n../evil\tx\t1 MB\tuser\nshort\n")

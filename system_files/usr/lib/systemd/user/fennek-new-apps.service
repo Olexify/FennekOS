@@ -3,6 +3,8 @@ Description=Say what a newly installed app may reach (App permissions)
 
 [Service]
 Type=oneshot
+# First: a failure below would skip it, and a removed app's renamed launcher would stay in Start.
+ExecStart=/usr/libexec/fennek-app-names
 ExecStart=/usr/libexec/fennek-permissions new-apps
 # and the Start "get it" entries of apps that are installed now leave Start
 ExecStart=/usr/libexec/fennek-get-app --sync

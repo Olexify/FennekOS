@@ -60,6 +60,7 @@ Item {
         title: root.pending ? "Remove " + root.pending.name + "?" : ""
         subtitle: !root.pending ? ""
             : root.pending.kind === "classic" ? "Its own files and settings go. What you saved from inside it stays, in its folder under Sandbox."
+            : root.pending.kind === "trusted" ? "Its own uninstaller runs. Close any other classic programs first: it waits for them."
             : root.pending.kind === "store" && root.pending.data > 0 ? "It takes up " + root.size(root.pending.size) + ", and its saved data " + root.size(root.pending.data) + "."
             : "This takes it off the computer."
         standardButtons: Kirigami.Dialog.Cancel
@@ -139,7 +140,7 @@ Item {
                             Layout.fillWidth: true
                             QQC2.Label { text: row.modelData.name; font.weight: Font.DemiBold; elide: Text.ElideRight; Layout.fillWidth: true }
                             QQC2.Label {
-                                text: row.modelData.kind === "classic" ? "Classic program, in its sandbox" : row.modelData.kind === "extra" ? "Added by Fennek OS on request" : "From the Store"
+                                text: row.modelData.kind === "classic" ? "Classic program, in its sandbox" : row.modelData.kind === "trusted" ? "Classic program, trusted" : row.modelData.kind === "extra" ? "Added by Fennek OS on request" : "From the Store"
                                 opacity: 0.6
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true

@@ -738,6 +738,9 @@ def main(argv):
         return selftest()
     if argv == ["--sync"]:
         return sync_all()
+    if len(argv) == 2 and argv[0] == "--uninstall-trusted":   # the key comes from Installed apps' own fresh list
+        return keep_start_in_sync("trusted", trusted_drive(), lambda: subprocess.run(
+            ["umu-run", "uninstaller", "--remove", argv[1]], env={**os.environ, **umu_env()}).returncode)
     if len(argv) == 2 and argv[0] == "--keep-saved":   # before a sandbox is removed: one not started since this came keeps its files inside
         if Path(argv[1]).name != argv[1] or argv[1] in (".", ".."):
             return 2
