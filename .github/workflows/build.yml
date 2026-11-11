@@ -66,7 +66,10 @@ jobs:
       - name: Virtual camera module (NVIDIA edition)
         if: matrix.edition == 'nvidia'
         run: |
-          ak=$(bash verify-base.sh ghcr.io/ublue-os/akmods:main-44)
+          # The module for this base's own kernel: the plain tag can already be on a newer one.
+          kernel=$(skopeo inspect --format '{{ index .Labels "ostree.linux" }}' "docker://$BASE_IMAGE")
+          [ -n "$kernel" ]
+          ak=$(bash verify-base.sh "ghcr.io/ublue-os/akmods:main-44-$kernel")
           c=$(sudo podman create "$ak" /none)
           mkdir akmods
           sudo podman cp "$c:/rpms/kmods/." akmods/ && sudo podman cp "$c:/rpms/common/." akmods/
