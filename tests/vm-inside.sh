@@ -118,8 +118,7 @@ check "USB disk: what's written reaches it within seconds" sh -c 'sleep 3; [ "$(
 check "attached file's drive there" appears /dev/disk/by-label/FennekLoop
 # Fennek's own partition stays out of the drive lists, now that the sidebar shows drives.
 # A disc image, opened the way a double-click does it.
-truncate -s 32M /var/tmp/fennek-disc.img
-mkfs.ext4 -q -L FennekDisc /var/tmp/fennek-disc.img
+cp /run/t/disc.iso /var/tmp/fennek-disc.img
 chown "$user:" /var/tmp/fennek-disc.img
 in_session /usr/libexec/fennek-open-image /var/tmp/fennek-disc.img
 disc=$(losetup -nO NAME -j /var/tmp/fennek-disc.img | head -1)
@@ -130,6 +129,14 @@ pkill -u "$user" -x dolphin
 as_user udisksctl unmount --no-user-interaction -b "$disc"
 as_user udisksctl loop-delete --no-user-interaction -b "$disc"
 rm -f /var/tmp/fennek-disc.img
+# A file called .iso that holds a drive's filesystem isn't mounted.
+truncate -s 32M /var/tmp/fennek-notdisc.iso
+mkfs.ext4 -q /var/tmp/fennek-notdisc.iso
+chown "$user:" /var/tmp/fennek-notdisc.iso
+in_session timeout 20 /usr/libexec/fennek-open-image /var/tmp/fennek-notdisc.iso
+pkill -u "$user" -x ark
+check "a drive's filesystem in a .iso isn't opened" test -z "$(losetup -nO NAME -j /var/tmp/fennek-notdisc.iso)"
+rm -f /var/tmp/fennek-notdisc.iso
 
 # Sharing a folder, in the order the Share tab does it. The VM has no network card: a stand-in connection.
 nmcli connection add type dummy ifname fennekt0 con-name fennek-test ipv4.method manual ipv4.addresses 10.99.0.1/24 ipv6.method disabled >/dev/null

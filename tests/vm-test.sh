@@ -78,6 +78,8 @@ other_disk() {   # FILE LABEL [more for sgdisk]
 # The same kind of partition on what isn't this computer's own: a USB disk and a file the test account attaches as a disk.
 other_disk "$work/usb.raw" FennekUSB
 other_disk "$share/loop.raw" FennekLoop
+mkdir -p "$work/disc" && echo hello >"$work/disc/readme.txt"
+genisoimage -quiet -V FennekDisc -o "$share/disc.iso" "$work/disc"
 # A data disk with an old-style (MBR) table: inside the computer, so hibernation holds it, but it doesn't open at sign-in.
 other_disk "$work/old.raw" FennekOld --gpttombr=1
 end

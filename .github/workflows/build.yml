@@ -117,7 +117,7 @@ jobs:
         env:
           FENNEK_VM_ROLLBACK: ${{ inputs.rollback && '1' || '' }}
         run: |
-          sudo apt-get update -q && sudo apt-get install -y -q qemu-system-x86 ovmf ntfs-3g gdisk
+          sudo apt-get update -q && sudo apt-get install -y -q qemu-system-x86 ovmf ntfs-3g gdisk genisoimage
           bash tests/vm-test.sh localhost/fennek:publish "$PWD/vm-out" "$FENNEK_EDITION"
           df -h / /mnt
           sudo rm -rf /mnt/vmtest
