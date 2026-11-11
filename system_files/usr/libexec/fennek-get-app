@@ -14,6 +14,9 @@ hide() {   # a copy of the entry with NoDisplay=true in the account's own applic
 }
 if [ "${1:-}" = --hide ]; then hide "${2:-}"; exit 0; fi
 if [ "${1:-}" = --sync ]; then
+    flatpak info com.valvesoftware.Steam >/dev/null 2>&1 && hide fennek-get-steam
+    flatpak info com.heroicgameslauncher.hgl >/dev/null 2>&1 && hide fennek-get-heroic
+    flatpak info net.lutris.Lutris >/dev/null 2>&1 && hide fennek-get-lutris
     flatpak info org.libreoffice.LibreOffice >/dev/null 2>&1 || command -v libreoffice >/dev/null && hide fennek-get-libreoffice
     flatpak info io.mpv.Mpv >/dev/null 2>&1 || command -v mpv >/dev/null && hide fennek-get-mpv
     flatpak info org.mozilla.Thunderbird >/dev/null 2>&1 || command -v thunderbird >/dev/null && hide fennek-get-thunderbird
@@ -27,7 +30,7 @@ id=${1:?app id} name=${2:?name} entry=${3:?entry}; shift 3   # the rest goes to 
 note() { notify-send -a "$name" -i "$id" "$@" || true; }
 
 if ! flatpak info "$id" >/dev/null 2>&1; then
-    note "Installing $name" "This takes a minute or two. It opens when it's ready."
+    note "Installing $name" "This can take a few minutes. It opens when it's ready."
     flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
     flatpak install --user -y --noninteractive flathub "$id" || { note "$name wasn't installed" "Check the internet connection and try again."; exit 1; }
     note "$name is ready" "You'll find it in Start."

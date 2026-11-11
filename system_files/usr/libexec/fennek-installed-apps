@@ -21,7 +21,8 @@ APP_ID = re.compile(r"^[A-Za-z0-9_.-]{3,255}$")
 DIGEST = re.compile(r"^[0-9a-f]{64}$")
 UNITS = {"B": 1, "bytes": 1, "byte": 1, "kB": 1e3, "KB": 1e3, "MB": 1e6, "GB": 1e9, "TB": 1e12}
 # Removed: its "get it" entry comes back to Start, so it can be installed again.
-GET_ENTRY = {"org.libreoffice.LibreOffice": "fennek-get-libreoffice", "io.mpv.Mpv": "fennek-get-mpv",
+GET_ENTRY = {"com.valvesoftware.Steam": "fennek-get-steam", "com.heroicgameslauncher.hgl": "fennek-get-heroic", "net.lutris.Lutris": "fennek-get-lutris",
+             "org.libreoffice.LibreOffice": "fennek-get-libreoffice", "io.mpv.Mpv": "fennek-get-mpv",
              "org.mozilla.Thunderbird": "fennek-get-thunderbird", "com.dec05eba.gpu_screen_recorder": "fennek-get-gpu-screen-recorder"}
 EXTRAS = {"nvbroadcast": ("NV Broadcast", DATA / "fennek" / "nvbroadcast", "camera-web", ["/usr/libexec/fennek-get-nvbroadcast", "--uninstall"])}
 RECORDS = ("trusted-exes", "exe-choices", "offline-exes", "exe-folders", "exe-names")   # what's remembered per classic program

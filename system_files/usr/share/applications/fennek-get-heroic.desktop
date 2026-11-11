@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Heroic Games Launcher
+GenericName=Epic and GOG games (get it)
+Comment=Plays games from Epic and GOG. Not installed yet: one click installs it.
+Exec=/usr/libexec/fennek-get-app com.heroicgameslauncher.hgl "Heroic Games Launcher" fennek-get-heroic
+Icon=applications-games
+Categories=Game;
+Keywords=epic;gog;amazon;games;launcher;
+
+Actions=hide;
+
+[Desktop Action hide]
+Name=Don't recommend this
+Icon=list-remove
+Exec=/usr/libexec/fennek-get-app --hide fennek-get-heroic

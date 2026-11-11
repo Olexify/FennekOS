@@ -208,6 +208,8 @@ QQC2.ApplicationWindow {
                         Repeater {
                             model: [
                                 ["Steam", "steam", "com.valvesoftware.Steam"],
+                                ["Heroic", "applications-games", "com.heroicgameslauncher.hgl"],
+                                ["Lutris", "applications-games", "net.lutris.Lutris"],
                                 ["Discord", "discord", "com.discordapp.Discord"],
                                 ["Spotify", "spotify-client", "com.spotify.Client"],
                                 ["Google Chrome", "google-chrome", "com.google.Chrome"],

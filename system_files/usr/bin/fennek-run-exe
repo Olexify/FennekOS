@@ -719,17 +719,32 @@ def run_trusted(exe, args):
     return keep_start_in_sync("trusted", trusted_drive(), lambda: subprocess.run(["umu-run", *wine_cmd(exe, args)], env={**os.environ, **umu_env()}).returncode)
 
 
+def store_instead(name):
+    """Game launchers run better from the Store's own app: (its name, its Store id) for a launcher's installer, or None.
+    A file can call itself anything: all a false name gets is one more row that opens a Store page."""
+    for pattern, app, store_id in ((r"epic|gog_galaxy|setup_galaxy", "Heroic", "com.heroicgameslauncher.hgl"),
+                                   (r"battle\.net", "Lutris", "net.lutris.Lutris"), (r"steamsetup", "Steam", "com.valvesoftware.Steam")):
+        if re.match(pattern, name, re.I):
+            return app, store_id
+    return None
+
+
 def ask(exe, digest):
-    """Unknown program → sandbox | sandbox-sound | vt | trust | None (cancel)."""
+    """Unknown program → sandbox | sandbox-sound | vt | trust | None (cancel, or went to the Store instead)."""
     text = (f"{exe.name} isn't trusted yet.\n\nIn the sandbox it can't see your files, "
             f"only the folder ~/Sandbox/{folder_name(exe, digest)}.")
     if not GUI:
         return "sandbox"
-    r = subprocess.run(["kdialog", "--title", "Unknown Windows program", "--menu", text,
-                        "sandbox", "Run in sandbox, no sound (recommended)",
+    instead = store_instead(exe.name)
+    first = ["store", f"Get {instead[0]} from the Store instead (recommended)"] if instead else []
+    r = subprocess.run(["kdialog", "--title", "Unknown Windows program", "--menu", text, *first,
+                        "sandbox", "Run in sandbox, no sound" + ("" if instead else " (recommended)"),
                         "sandbox-sound", "Run in sandbox with sound (it can also use your microphone)",
                         "vt", "Check with VirusTotal first",
                         "trust", "I trust it: run normally"], capture_output=True, text=True)
+    if r.stdout.strip() == "store":
+        subprocess.Popen(["plasma-discover", "--application", f"appstream://{instead[1]}"])
+        return None
     return r.stdout.strip() if r.returncode == 0 else None
 
 
@@ -826,6 +841,9 @@ def selftest():
     assert a.index("/var/home/u/App/setup.exe") > a.index("/var/home/u"), "program mounted over the private home"
     assert a[a.index("--uid") + 1] == "1000", "never root inside the sandbox"
     assert ("--chdir", "/var/home/u/App") in {(a[i], a[i + 1]) for i in range(len(a) - 1)}, "starts in its own folder"
+    assert store_instead("EpicInstaller-17.msi")[0] == "Heroic" and store_instead("GOG_Galaxy_2.0.exe")[0] == "Heroic"
+    assert store_instead("Battle.net-Setup.exe")[0] == "Lutris" and store_instead("SteamSetup.exe")[0] == "Steam"
+    assert store_instead("mysetup.exe") is None and store_instead("notepad.exe") is None
     ro = lambda v: lambda _loop: v
     assert disc_of("/dev/loop3", "/run/media/u/DISC", "iso9660", "u", ro("1")) == Path("/run/media/u/DISC")
     assert disc_of("/dev/loop3", "/run/media/u/DISC", "udf", "u", ro("1")) == Path("/run/media/u/DISC")
