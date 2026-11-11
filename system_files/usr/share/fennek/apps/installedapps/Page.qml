@@ -57,7 +57,7 @@ Item {
     Kirigami.PromptDialog {
         id: confirm
         parent: QQC2.Overlay.overlay
-        title: root.pending ? "Remove " + root.pending.name + "?" : ""
+        title: root.pending ? "Remove " + root.pending.name.replace(/[<>]/g, "") + "?" : ""
         subtitle: !root.pending ? ""
             : root.pending.kind === "classic" ? "Its own files and settings go. What you saved from inside it stays, in its folder under Sandbox."
             : root.pending.kind === "trusted" ? "Its own uninstaller runs. Close any other classic programs first: it waits for them."
@@ -138,7 +138,7 @@ Item {
                         ColumnLayout {
                             spacing: 0
                             Layout.fillWidth: true
-                            QQC2.Label { text: row.modelData.name; font.weight: Font.DemiBold; elide: Text.ElideRight; Layout.fillWidth: true }
+                            QQC2.Label { textFormat: Text.PlainText; text: row.modelData.name; font.weight: Font.DemiBold; elide: Text.ElideRight; Layout.fillWidth: true }
                             QQC2.Label {
                                 text: row.modelData.kind === "classic" ? "Classic program, in its sandbox" : row.modelData.kind === "trusted" ? "Classic program, trusted" : row.modelData.kind === "extra" ? "Added by Fennek OS on request" : "From the Store"
                                 opacity: 0.6
