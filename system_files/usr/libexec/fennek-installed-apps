@@ -139,7 +139,8 @@ def reg_programs(text, prefix):
         name = re.search(r'^"DisplayName"=(?:str\(\d+\):)?"((?:[^"\\]|\\.)*)"', body, re.M)
         if not name or re.search(r'^"SystemComponent"=dword:0*1\s*$', body, re.M):
             continue
-        name = reg_unescape(name[1]).strip()
+        # No angle brackets: the page would take a name with tags for formatted text, and could fetch a picture a program names.
+        name = reg_unescape(name[1]).replace("<", "").replace(">", "").strip()
         key = reg_unescape(path[len(prefix):])
         if not name or name.startswith(("Wine Mono", "Wine Gecko")) or len(key) > 200 or any(odd_char(c) for c in name + key):
             continue
@@ -260,16 +261,17 @@ def selftest_registry():
             + sub + 'Hidden] 1\n"DisplayName"="Runtime"\n"SystemComponent"=dword:00000001\n\n'
             + sub + 'NoName] 1\n"Publisher"="x"\n\n'
             + sub + '{Mono}] 1\n"DisplayName"="Wine Mono Runtime"\n\n'
+            + sub + 'Tag] 1\n"DisplayName"="<img src=x>Tool"\n\n'
             + sub + 'Bad] 1\n"DisplayName"="a\\nb"\n\n'
             + sub + 'App1\\\\Sub] 1\n"DisplayName"="Nested"\n\n')
     got = reg_programs(text, UNINSTALL)
-    assert got == {"App1": ('Notepad "Plus"', 1024 * 1024), "Uk": ("Блокнот", 0)}, got
+    assert got == {"App1": ('Notepad "Plus"', 1024 * 1024), "Uk": ("Блокнот", 0), "Tag": ("img src=xTool", 0)}, got
     assert UNINSTALL.replace("Software\\\\", "Software\\\\Wow6432Node\\\\", 1).startswith("Software\\\\Wow6432Node\\\\Microsoft")
     with tempfile.TemporaryDirectory() as t:
         d = Path(t) / "home/prefix"
         d.mkdir(parents=True)
         (d / "system.reg").write_text(text, encoding="utf-8")
-        assert set(prefix_programs(d)) == {"App1", "Uk"}
+        assert set(prefix_programs(d)) == {"App1", "Uk", "Tag"}
         (d / "user.reg").symlink_to(d / "system.reg")
         assert reg_text(d / "user.reg") == "", "a link is not read"
         (d / "user.reg").unlink()
