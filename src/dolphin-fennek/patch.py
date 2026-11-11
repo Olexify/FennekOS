@@ -364,4 +364,42 @@ for old, new in [
     assert t.count(old) == 1, "dolphinquery.cpp: " + old[:60]
     t = t.replace(old, new)
 query.write_text(t, encoding="utf-8")
+# 9. Everywhere opens the instant index, not a walk through every folder from the root. And no choice of a search tool that isn't on.
+bar = pathlib.Path(sys.argv[1]) / "src" / "search" / "bar.cpp"
+t = bar.read_text(encoding="utf-8")
+for old, new in [
+    ("#include <QToolButton>\n", "#include <QProcess>\n#include <QToolButton>\n"),
+    ("""    connect(m_everywhereButton, &QToolButton::clicked, this, [this]() {
+        if (m_searchConfiguration->searchLocations() == SearchLocations::Everywhere) {
+""", """    connect(m_everywhereButton, &QToolButton::clicked, this, [this]() {
+        m_everywhereButton->setChecked(false); // Fennek OS: its own window, with the same words
+        QProcess::startDetached(QStringLiteral("fennek-app"), {QStringLiteral("search"), m_searchTermEditor->text()});
+        return;
+        if (m_searchConfiguration->searchLocations() == SearchLocations::Everywhere) {
+"""),
+]:
+    assert t.count(old) == 1, "bar.cpp: " + old[:60]
+    t = t.replace(old, new)
+bar.write_text(t, encoding="utf-8")
+popup = pathlib.Path(sys.argv[1]) / "src" / "search" / "popup.cpp"
+t = popup.read_text(encoding="utf-8")
+for old, new in [
+    ("#include <QToolButton>\n", "#include <Baloo/IndexerConfig>\n#include <QToolButton>\n"),
+    ("""    m_filenamesearchContextualHelpButton->setVisible(dolphinQuery->searchThrough() == SearchThrough::FileContents);
+""", """    m_filenamesearchContextualHelpButton->setVisible(dolphinQuery->searchThrough() == SearchThrough::FileContents && Baloo::IndexerConfig().fileIndexingEnabled());
+"""),
+    ("""    searchUsingButtonGroup->addButton(m_balooRadioButton);
+""", """    searchUsingButtonGroup->addButton(m_balooRadioButton);
+    if (!Baloo::IndexerConfig().fileIndexingEnabled()) { // Fennek OS: with the indexer off there's nothing to choose
+        for (QWidget *row : {static_cast<QWidget *>(searchUsingLabel), static_cast<QWidget *>(m_filenamesearchRadioButton),
+                             static_cast<QWidget *>(m_filenamesearchContextualHelpButton), static_cast<QWidget *>(m_balooRadioButton),
+                             static_cast<QWidget *>(m_balooContextualHelpButton), static_cast<QWidget *>(balooSettingsButton)}) {
+            row->hide();
+        }
+    }
+"""),
+]:
+    assert t.count(old) == 1, "popup.cpp: " + old[:60]
+    t = t.replace(old, new)
+popup.write_text(t, encoding="utf-8")
 print("dolphin: Fennek changes applied")
