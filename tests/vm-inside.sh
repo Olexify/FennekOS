@@ -191,6 +191,7 @@ hibernate_windows() {
 }
 check "a hibernation file on the Windows drive" hibernate_windows
 check "drives looked at again" systemctl restart fennek-windows-scan.service
+udevadm settle   # what it marked has to reach the devices before the next step reads it
 check "sign-in step run again" as_user systemctl --user restart fennek-windows-drives.service
 check "hibernated: Windows (C:) opens read-only" opened_as /dev/vdb1 "Windows (C:)" ro
 check "hibernated: the drive without the file opens read-only too" opened_as /dev/vdb2 Data ro
