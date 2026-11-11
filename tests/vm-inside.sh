@@ -117,6 +117,20 @@ check "USB disk plugged in" appears /dev/disk/by-label/FennekUSB
 check "USB disk: what's written reaches it within seconds" sh -c 'sleep 3; [ "$(sysctl -n vm.dirty_expire_centisecs)" = 100 ] && [ "$(sysctl -n vm.dirty_writeback_centisecs)" = 100 ]'
 check "attached file's drive there" appears /dev/disk/by-label/FennekLoop
 # Fennek's own partition stays out of the drive lists, now that the sidebar shows drives.
+# A disc image, opened the way a double-click does it.
+truncate -s 32M /var/tmp/fennek-disc.img
+mkfs.ext4 -q -L FennekDisc /var/tmp/fennek-disc.img
+chown "$user:" /var/tmp/fennek-disc.img
+in_session /usr/libexec/fennek-open-image /var/tmp/fennek-disc.img
+disc=$(losetup -nO NAME -j /var/tmp/fennek-disc.img | head -1)
+check "a disc image opens as a drive" test -n "$disc"
+check "and read-only" grep -qx 1 "/sys/class/block/${disc#/dev/}/ro"
+check "and is mounted" findmnt -S "$disc"
+pkill -u "$user" -x dolphin
+as_user udisksctl unmount --no-user-interaction -b "$disc"
+as_user udisksctl loop-delete --no-user-interaction -b "$disc"
+rm -f /var/tmp/fennek-disc.img
+
 # Sharing a folder, in the order the Share tab does it. The VM has no network card: a stand-in connection.
 nmcli connection add type dummy ifname fennekt0 con-name fennek-test ipv4.method manual ipv4.addresses 10.99.0.1/24 ipv6.method disabled >/dev/null
 nmcli connection up fennek-test >/dev/null

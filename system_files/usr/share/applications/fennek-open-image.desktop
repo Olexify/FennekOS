@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Open disc image
+Exec=/usr/libexec/fennek-open-image %f
+Icon=media-optical
+Terminal=false
+NoDisplay=true
+MimeType=application/vnd.efi.iso;application/x-cd-image;

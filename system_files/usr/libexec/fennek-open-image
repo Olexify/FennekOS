@@ -1,0 +1,21 @@
+#!/usr/bin/bash
+# Double-click on a disc image (.iso): opens it like a disc, read-only, in Files. It then shows with the other drives, and Safely
+# Remove closes it. What can't be opened that way goes to the archive tool.
+#   fennek-open-image FILE
+file=$1
+dev=$(losetup -nO NAME -j "$file" | head -1)
+if [ -z "$dev" ]; then
+    # The last match: a file can be called /dev/loop3.iso.
+    dev=$(udisksctl loop-setup -r --no-user-interaction -f "$file" 2>/dev/null | grep -o '/dev/loop[0-9]*' | tail -1)
+fi
+if [ -n "$dev" ]; then
+    # Its filesystem shows up just after the device does.
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+        target=$(findmnt -no TARGET -S "$dev" | head -1)
+        [ -n "$target" ] && exec xdg-open "$target"
+        udisksctl mount --no-user-interaction -b "$dev" >/dev/null 2>&1
+        sleep 0.5
+    done
+    udisksctl loop-delete --no-user-interaction -b "$dev" >/dev/null 2>&1
+fi
+exec ark "$file"

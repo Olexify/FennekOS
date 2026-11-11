@@ -250,9 +250,32 @@ def placement(exe, shared):
     return exe, HOME / "App" / exe.name
 
 
+def disc_volume(exe):
+    """The disc image a program is on, or None: a read-only loop device under /run/media. Its folder is mounted too, as a disc
+    holds only its own files. Never for a USB stick or any other drive, which can hold anything of yours."""
+    out = subprocess.run(["findmnt", "-J", "-o", "SOURCE,TARGET", "-T", str(exe)], capture_output=True, text=True).stdout
+    try:
+        m = json.loads(out)["filesystems"][0]
+    except (ValueError, KeyError, IndexError):
+        return None
+    return disc_of(m["source"], m["target"], os.environ.get("USER", ""), lambda loop: Path(f"/sys/class/block/{loop}/ro").read_text().strip())
+
+
+def disc_of(source, target, user, read_only):
+    loop = re.fullmatch(r"/dev/(loop[0-9]+)", source or "")
+    if not loop or not user or not (target or "").startswith(f"/run/media/{user}/"):
+        return None
+    try:
+        return Path(target) if read_only(loop.group(1)) == "1" else None
+    except OSError:
+        return None
+
+
 def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env, sound=False, wayland=False,
-               resolv=None, uid=1000, gid=1000, folders=(), inside=None, controllers=True):
+               resolv=None, uid=1000, gid=1000, folders=(), inside=None, controllers=True, disc=None):
     src, target = (None, inside) if inside else placement(exe, shared)   # inside: already in its own folders
+    if disc and not inside:
+        src, target = None, HOME / "App" / exe.relative_to(disc)
     a = ["bwrap",
          # pasta's namespace makes us "root" (mapped to the real user); map back to the user's own id,
          # umu refuses to run as root and nothing inside should look privileged.
@@ -284,6 +307,8 @@ def bwrap_args(exe, args, box_home, shared, proton, runtime_dir, display_env, so
         a += ["--dev-bind-try", f"/dev/{node}", f"/dev/{node}"]
     if src:
         a += ["--ro-bind", str(src), str(target)]
+    if disc and not inside:
+        a += ["--ro-bind", str(disc), str(HOME / "App")]
     a += ["--chdir", str(target.parent)]   # files beside the program: found by the plain names it asks for
     for real, inside in folders:   # folders you allowed in App permissions, at the same place as outside
         a += ["--bind", str(real), str(inside)]
@@ -674,7 +699,7 @@ def run_sandboxed(exe, digest, args, sound=False, box=None, inside=None):
     binds = saved_binds(drive_c, shared, extra)
     cmd = bwrap_args(exe, args, box_home, shared, proton, os.environ.get("XDG_RUNTIME_DIR"), os.environ,
                      sound=sound, wayland=wayland, resolv=resolv, uid=os.getuid(), gid=os.getgid(),
-                     folders=[*extra, *binds], inside=inside, controllers=not reads_all_input())
+                     folders=[*extra, *binds], inside=inside, controllers=not reads_all_input(), disc=disc_volume(exe))
     if not SECCOMP.is_file():   # never quietly weaker
         return say("The sandbox's system-call filter is missing; not running.", "error")
     # A program blocked in the firewall stays blocked in another .exe that sits in its folder.
@@ -798,6 +823,12 @@ def selftest():
     assert a.index("/var/home/u/App/setup.exe") > a.index("/var/home/u"), "program mounted over the private home"
     assert a[a.index("--uid") + 1] == "1000", "never root inside the sandbox"
     assert ("--chdir", "/var/home/u/App") in {(a[i], a[i + 1]) for i in range(len(a) - 1)}, "starts in its own folder"
+    ro = lambda v: lambda _loop: v
+    assert disc_of("/dev/loop3", "/run/media/u/DISC", "u", ro("1")) == Path("/run/media/u/DISC")
+    assert disc_of("/dev/loop3", "/run/media/u/DISC", "u", ro("0")) is None, "a writable image can hold anything"
+    assert disc_of("/dev/sdb1", "/run/media/u/STICK", "u", ro("1")) is None, "never a drive"
+    assert disc_of("/dev/loop3", "/var/mnt/x", "u", ro("1")) is None
+    assert disc_of("/dev/loop3", "/run/media/other/DISC", "u", ro("1")) is None
     assert "/dev/input" in a and "/dev/nvidiactl" in a and "/dev/nvidia0" in a, "controllers and NVIDIA graphics"
     assert not any(x.startswith(("/dev/uinput", "/dev/uhid", "/dev/hidraw")) for x in a), "nothing that could type into the desktop"
     assert own_box(HOME / "Sandbox/x-0123456789abcdef/other.exe", HOME / "Sandbox") == "x-0123456789abcdef", "its folder says which sandbox"

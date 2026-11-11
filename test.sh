@@ -14,6 +14,7 @@ if x86; then command -v umu-run >/dev/null || fail "umu-run"; else command -v FE
 grep -q '^Exec=fennek-run-exe %f' /usr/share/applications/fennek-run-exe.desktop || fail "exe launcher"
 fennek-run-exe --selftest >/dev/null && grep -q "^Exec=fennek-run-exe --choose %f" /usr/share/kio/servicemenus/fennek-run-exe-choose.desktop || fail "run-exe selftest (remembered choices) + Choose how to run"
 grep -q '^application/x-ms-dos-executable=fennek-run-exe.desktop' /etc/xdg/mimeapps.list || fail "exe default"
+[ -x /usr/libexec/fennek-open-image ] && grep -q '^application/vnd.efi.iso=fennek-open-image.desktop' /etc/xdg/mimeapps.list || fail "disc images open like a disc"
 /usr/libexec/fennek-package-help --selftest >/dev/null && grep -q '^application/x-rpm=fennek-package-help.desktop' /etc/xdg/mimeapps.list && grep -q '^application/vnd.appimage=fennek-package-help.desktop' /etc/xdg/mimeapps.list && ! grep -q '^application/vnd.appimage application/x-executable' /usr/share/mime/subclasses && [ -e /usr/lib64/libfuse.so.2 ] || fail "downloaded Linux programs: a clear answer, and AppImages can start"
 grep -q '^AutomaticUpdatePolicy=stage' /etc/rpm-ostreed.conf || fail "update policy"
 [ -L /etc/systemd/system/timers.target.wants/rpm-ostreed-automatic.timer ] || fail "update timer"
