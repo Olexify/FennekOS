@@ -47,7 +47,7 @@ dnf -y install \
     zsh zsh-autosuggestions zsh-syntax-highlighting \
     snapper \
     clamav clamav-freshclam inotify-tools \
-    rsync wl-clipboard dbus-tools util-linux-script wsdd \
+    rsync wl-clipboard dbus-tools util-linux-script wsdd fuse-libs \
     "${extra[@]}"
 # Thumbnails in Files like the classic Explorer: videos (a frame from the film), PDFs, photos from cameras (RAW),
 # besides pictures. Big files too (a film is GBs; only a few frames are read).
@@ -978,6 +978,10 @@ done
 rm -rf /tmp/cur
 [ ${#missing[@]} -eq 0 ] || dnf -y remove "${missing[@]}"
 # Home page groups (Drives / Folders / Frequent folders) are MIME types.
+# An AppImage counts as a program only by this line, and a program is started without asking anyone what opens it.
+for t in vnd.appimage x-iso9660-appimage; do
+    sed -i "/<mime-type type=\"application\/$t\">/,/<\/mime-type>/{/<sub-class-of type=\"application\/x-executable\"\/>/d}" /usr/share/mime/packages/freedesktop.org.xml
+done
 update-mime-database /usr/share/mime
 # Panels use it instead of Plasma's own panel menu (new file + rename, see replace_file).
 shell=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/defaults

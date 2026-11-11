@@ -3,6 +3,10 @@ application/x-ms-dos-executable=fennek-run-exe.desktop
 application/x-msdownload=fennek-run-exe.desktop
 application/vnd.microsoft.portable-executable=fennek-run-exe.desktop
 application/x-msi=fennek-run-exe.desktop
+application/x-rpm=fennek-package-help.desktop
+application/vnd.debian.binary-package=fennek-package-help.desktop
+application/vnd.appimage=fennek-package-help.desktop
+application/x-iso9660-appimage=fennek-package-help.desktop
 # Everyday apps (installed after the first start, see fennek-essential-apps): open files without asking.
 image/jpeg=org.kde.gwenview.desktop
 image/png=org.kde.gwenview.desktop

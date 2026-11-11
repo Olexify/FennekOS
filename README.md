@@ -11,7 +11,7 @@ Built as a [bootc](https://containers.github.io/bootc/) image on Fedora Kinoite 
 What's in it so far:
 
 - **`.exe` programs:** double-click any `.exe`, which runs it through Proton (umu-launcher).
-- **Auto-containment:** unknown programs run in a sandbox. They see only `~/Sandbox/<program>` and never your real home.
+- **Auto-containment:** unknown `.exe` programs run in a sandbox. They see only `~/Sandbox/<program>` and never your real home.
 - **VirusTotal check:** right-click any file. Only the file's hash is sent, never the file.
 - **Download guard:** ClamAV scans new files in Downloads, and threats go to quarantine. No always-on scanner daemon.
 - **Hourly home snapshots:** Btrfs and snapper, as an undo for ransomware.

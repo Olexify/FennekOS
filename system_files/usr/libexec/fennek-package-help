@@ -1,0 +1,35 @@
+#!/usr/bin/bash
+# Opened by a double-click on a Linux program downloaded from a website (.rpm, .deb, AppImage), which Fennek OS can't install.
+#   fennek-package-help FILE
+#   fennek-package-help --selftest
+# Only the leading letters and digits of the name go to the Store: a crafted file name can't become one of its options.
+word() { local base=${1##*/}; printf '%s' "${base%%[^[:alnum:]]*}"; }
+store() { if [ -n "$1" ]; then exec plasma-discover --search "$1"; else exec plasma-discover; fi; }
+
+if [ "${1:-}" = --selftest ]; then
+    [ "$(word /a/b/obsidian-1.5.rpm)" = obsidian ] || exit 1
+    [ "$(word '/a/--options.deb')" = "" ] || exit 1
+    [ "$(word '/a/foo bar.deb')" = foo ] || exit 1
+    echo "selftest ok"
+    exit 0
+fi
+
+file=$1
+title="Install a program"
+case "$(xdg-mime query filetype "$file")" in
+    application/vnd.appimage | application/x-iso9660-appimage)
+        kdialog --title "$title" --yes-label "Find it in the Store" --no-label "Run anyway" --yesnocancel "This program isn't sandboxed: it can read all your files. Run it only if you trust where it came from.
+
+The Store's version of an app is usually safer, and it updates by itself."
+        case $? in
+            0) store "$(word "$file")" ;;
+            1) chmod u+x -- "$file" && exec setsid -f "$file" ;;
+        esac
+        ;;
+    *)
+        kdialog --title "$title" --yes-label "Find it in the Store" --no-label "Close" --yesno "This file installs programs on another kind of Linux. Fennek OS updates its system as one tested piece, so it can't add programs this way, but the Store has most of them.
+
+Printer or scanner driver? Most work without one: Settings > Devices > Printers." && store "$(word "$file")"
+        ;;
+esac
+exit 0
