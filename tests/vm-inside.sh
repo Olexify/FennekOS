@@ -231,7 +231,8 @@ echo "$crashes" | grep -Eq 'kwin_wayland|plasmashell|plasmalogin|startplasma' &&
 
 # Security: on a fresh system nothing waits for connections from the network, except phone pairing (KDE Connect, 1716).
 outside() { ss -Htuln | awk '{print $5}' | grep -vE '^(127\.|\[::1\]|\[::ffff:127\.|::1:)' | grep -vE ':(1716|5353|68|546)$'; }
-outside >"$out/listening-outside.txt"   # reported first; becomes a check once the list is known
+outside >"$out/listening-outside.txt"
+check "nothing else listens on the network" test ! -s "$out/listening-outside.txt"
 ss -Htulnp >"$out/listening.txt" 2>&1
 
 # Battery: what keeps the computer busy while nobody touches it. Reported, not judged: a minute of an idle desktop.
