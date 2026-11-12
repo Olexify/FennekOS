@@ -207,9 +207,9 @@ QQC2.ApplicationWindow {
                         Layout.fillWidth: true
                         Repeater {
                             model: [
-                                ["Steam", "steam", "com.valvesoftware.Steam"],
-                                ["Heroic", "applications-games", "com.heroicgameslauncher.hgl"],
-                                ["Lutris", "applications-games", "net.lutris.Lutris"],
+                                ["Steam", "fennek-get-steam", "com.valvesoftware.Steam"],
+                                ["Heroic", "fennek-get-games", "com.heroicgameslauncher.hgl"],
+                                ["Lutris", "fennek-get-games", "net.lutris.Lutris"],
                                 ["Discord", "discord", "com.discordapp.Discord"],
                                 ["Spotify", "spotify-client", "com.spotify.Client"],
                                 ["Google Chrome", "google-chrome", "com.google.Chrome"],
@@ -221,9 +221,9 @@ QQC2.ApplicationWindow {
                                 ["GIMP", "gimp", "org.gimp.GIMP"],
                                 ["VS Code", "vscode", "com.visualstudio.code"],
                                 ["Leonote", "fennek-get-leonote", "", "xdg-open https://leonote.app"],
-                                ["MPV Player", "multimedia-video-player", "", "/usr/libexec/fennek-get-mpv"],
-                                ["LibreOffice", "x-office-document", "", "/usr/libexec/fennek-get-app org.libreoffice.LibreOffice LibreOffice fennek-get-libreoffice"],
-                                ["Thunderbird", "internet-mail", "", "/usr/libexec/fennek-get-app org.mozilla.Thunderbird Thunderbird fennek-get-thunderbird"]
+                                ["MPV Player", "fennek-get-mpv", "", "/usr/libexec/fennek-get-mpv"],
+                                ["LibreOffice", "fennek-get-office", "", "/usr/libexec/fennek-get-app org.libreoffice.LibreOffice LibreOffice fennek-get-libreoffice"],
+                                ["Thunderbird", "fennek-get-mail", "", "/usr/libexec/fennek-get-app org.mozilla.Thunderbird Thunderbird fennek-get-thunderbird"]
                             ]
                             delegate: QQC2.ItemDelegate {
                                 required property var modelData
@@ -235,7 +235,7 @@ QQC2.ApplicationWindow {
                                     spacing: Kirigami.Units.largeSpacing
                                     Kirigami.Icon {
                                         source: modelData[1]
-                                        fallback: "application-x-executable"
+                                        fallback: "plasmadiscover"
                                         Layout.preferredWidth: Kirigami.Units.iconSizes.medium
                                         Layout.preferredHeight: Layout.preferredWidth
                                     }

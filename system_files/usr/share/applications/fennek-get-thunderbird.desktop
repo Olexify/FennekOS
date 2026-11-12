@@ -4,7 +4,7 @@ Name=Thunderbird
 GenericName=Mail and calendar (get it)
 Comment=Email, calendar and contacts for any mail account. Not installed yet: one click installs it.
 Exec=/usr/libexec/fennek-get-app org.mozilla.Thunderbird Thunderbird fennek-get-thunderbird
-Icon=internet-mail
+Icon=fennek-get-mail
 Categories=Office;Network;Email;
 Keywords=mail;email;calendar;contacts;outlook;inbox;
 

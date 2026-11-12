@@ -4,7 +4,7 @@ Name=Lutris
 GenericName=Battle.net and other game launchers (get it)
 Comment=Installs Battle.net and other game launchers. Not installed yet: one click installs it.
 Exec=/usr/libexec/fennek-get-app net.lutris.Lutris "Lutris" fennek-get-lutris
-Icon=applications-games
+Icon=fennek-get-games
 Categories=Game;
 Keywords=battle.net;blizzard;games;launcher;
 

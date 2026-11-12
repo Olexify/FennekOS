@@ -4,7 +4,7 @@ Name=Steam
 GenericName=Games store and library (get it)
 Comment=Your games library. Not installed yet: one click installs it.
 Exec=/usr/libexec/fennek-get-app com.valvesoftware.Steam "Steam" fennek-get-steam
-Icon=steam
+Icon=fennek-get-steam
 Categories=Game;
 Keywords=steam;games;valve;
 
