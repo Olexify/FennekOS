@@ -229,6 +229,11 @@ pkill -u "$user" -f 'fennek-vm-test' ; pkill -u "$user" kdialog
 crashes=$(coredumpctl --no-pager --no-legend list 2>/dev/null)
 echo "$crashes" | grep -Eq 'kwin_wayland|plasmashell|plasmalogin|startplasma' && problems+=("the desktop crashed")
 
+# Security: on a fresh system nothing waits for connections from the network, except phone pairing (KDE Connect, 1716).
+outside() { ss -Htuln | awk '{print $5}' | grep -vE '^(127\.|\[::1\]|\[::ffff:127\.|::1:)' | grep -vE ':(1716|5353|68|546)$'; }
+outside >"$out/listening-outside.txt"   # reported first; becomes a check once the list is known
+ss -Htulnp >"$out/listening.txt" 2>&1
+
 # Battery: what keeps the computer busy while nobody touches it. Reported, not judged: a minute of an idle desktop.
 pkill -u "$user" -x dolphin; pkill -u "$user" -f 'fennek-app'; sleep 20
 as_user timeout 30 busctl --user monitor --json=short >/run/bus.json 2>/dev/null
@@ -276,6 +281,8 @@ PY
 
 {
     echo "== idle"; cat "$out/idle.txt"
+    echo "== listening (outside: $(tr "
+" " " <"$out/listening-outside.txt"))"; cat "$out/listening.txt"
     echo "== problems: ${#problems[@]}"; printf '%s\n' "${problems[@]}"
     echo "== boot time"; systemd-analyze 2>&1 | head -3
     echo "== version"; bootc status 2>&1 | head -20; uname -r; mokutil --sb-state 2>&1; getenforce
