@@ -231,6 +231,23 @@ for g in Button Complementary Header View Window Tooltip Selection; do
     kwriteconfig6 --file "$c" --group "Colors:$g" --key DecorationHover 138,99,210
 done
 kwriteconfig6 --file "$c" --group Colors:Selection --key BackgroundNormal 109,69,184
+# Pop-ups (Start, the tray's panels, tooltips) in the dark look: KDE's frame draws a 1-pixel edge over each side, which shows
+# as a grey line around them. Fennek Dark gets its own copy of the frame without that line; the shadow still sets them apart.
+python3 - "$dt/default/dialogs/background.svgz" "$dt/fennek-dark/dialogs/background.svgz" <<'EOF'
+import gzip, os, re, sys
+src = gzip.open(sys.argv[1]).read().decode()
+out, changed = src, 0
+for e in ("top", "bottom", "left", "right"):
+    g = re.search(r'<g\s[^>]*id="%s"[^>]*>.*?</g>' % e, out, re.S)
+    assert g, f"the pop-up frame has no {e} piece any more: revisit"
+    piece, n = re.subn(r'(<path\b[^>]*?style=")opacity:0\.5;', r"\1opacity:0;", g.group(0), count=1)
+    changed += n
+    out = out[:g.start()] + piece + out[g.end():]
+assert changed == 4, f"the pop-up frame's edge line moved ({changed} of 4 found): revisit"
+os.makedirs(os.path.dirname(sys.argv[2]), exist_ok=True)
+with gzip.open(sys.argv[2], "wb") as f:
+    f.write(out.encode())
+EOF
 # Panel theme "Fennek Light" for the light look (fully light: taskbar, Start, pop-ups): KDE's light Breeze panel
 # theme, the same Fennek taskbar buttons (they take their colours from the scheme) and the violet accent.
 lt=$dt/fennek-light
