@@ -281,7 +281,8 @@ Item {
 		y: (parent.height - height) / 2
 	}
 
-	// Fennek OS: a group's walls, always shown (clearer on hover), with handles on the right wall, the bottom wall and the corner to move them.
+	// Fennek OS: a group's walls, drawn only while you resize it (always-on outlines looked like white boxes), with
+	// handles on the right wall, the bottom wall and the corner; the pointer turns into a resize arrow over them.
 	Loader {
 		id: groupEffectLoader
 		active: appObj.isGroup && appObj.groupRect && appObj.groupRect.h > 0   // folded: around its row of small tiles
@@ -292,8 +293,8 @@ Item {
 			property int previewRows
 			readonly property bool hot: groupHover.hovered || tileMouseArea.containsMouse || dragging
 			color: "transparent"   // above the tiles (so the grip is reachable): an outline only
-			border.width: Math.max(1, Math.round(1 * Screen.devicePixelRatio))   // a hint of the walls; clearer on hover
-			border.color: Qt.rgba(config.menuTextColor.r, config.menuTextColor.g, config.menuTextColor.b, hot ? 0.16 : 0.04)
+			border.width: Math.max(1, Math.round(1 * Screen.devicePixelRatio))
+			border.color: Qt.rgba(config.menuTextColor.r, config.menuTextColor.g, config.menuTextColor.b, dragging ? 0.3 : 0)
 			radius: 12
 			x: 1
 			y: 1   // wraps the name too

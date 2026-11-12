@@ -31,9 +31,9 @@ MouseArea {
 		color: Kirigami.Theme.backgroundColor
 		opacity: parent.open ? 1 : 0
 	}
-	KSvg.FrameSvgItem {
+	KSvg.FrameSvgItem {   // Fennek OS: a frame only while the strip is open over the list, not a white box around it at rest
 		anchors.fill: parent
-		visible: plasmoid.configuration.sidebarFollowsTheme
+		visible: plasmoid.configuration.sidebarFollowsTheme && parent.open
 		imagePath: "widgets/frame"
 		prefix: "raised"
 	}
