@@ -307,20 +307,23 @@ Item {
                 actions: [ Kirigami.Action { text: "Resume"; onTriggered: root.set("resume") } ]
             }
 
-            Kirigami.FormLayout {
+            GridLayout {   // the page's other parts start at the left, and so do these
+                columns: 2
+                columnSpacing: Kirigami.Units.largeSpacing
+                rowSpacing: Kirigami.Units.smallSpacing
                 Layout.fillWidth: true
                 Layout.leftMargin: Kirigami.Units.gridUnit * 2
                 Layout.rightMargin: Kirigami.Units.gridUnit * 2
 
-                Kirigami.Separator { Kirigami.FormData.isSection: true; Kirigami.FormData.label: "Automatic updates" }
+                Kirigami.Heading { text: "Automatic updates"; level: 2; Layout.columnSpan: 2 }
+                QQC2.Label { text: "Fennek OS:"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
                 QQC2.Switch {
-                    Kirigami.FormData.label: "Fennek OS:"
                     text: "Download updates by themselves"
                     checked: root.settings.auto
                     onToggled: root.set("auto " + (checked ? "on" : "off"))
                 }
+                QQC2.Label { text: "When:"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
                 RowLayout {
-                    Kirigami.FormData.label: "When:"
                     enabled: root.settings.auto
                     QQC2.ComboBox { wheelEnabled: false   // the wheel scrolls the page, never changes a setting
                         id: when
@@ -346,14 +349,14 @@ Item {
                                             : root.set("schedule weekly " + root.weekdays[dayBox.currentIndex] + " " + model[index])
                     }
                 }
+                QQC2.Label { text: "Pause:"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
                 QQC2.ComboBox { wheelEnabled: false   // the wheel scrolls the page, never changes a setting
-                    Kirigami.FormData.label: "Pause:"
                     model: ["Don't pause", "For 1 week", "For 2 weeks", "For 4 weeks"]
                     currentIndex: 0
                     onActivated: index => index === 0 ? root.set("resume") : root.set("pause " + [0, 7, 14, 28][index])
                 }
+                QQC2.Label { text: "Metered connections:"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
                 QQC2.Switch {
-                    Kirigami.FormData.label: "Metered connections:"
                     text: "Download there too (phone hotspot, mobile data)"
                     checked: !!root.settings.on_metered
                     onToggled: root.set("metered " + (checked ? "on" : "off"))
@@ -362,8 +365,8 @@ Item {
                     QQC2.ToolTip.text: "Off: automatic updates wait for a normal connection. Checking and installing "
                                      + "by hand always works. Mark a Wi-Fi as metered in its network settings."
                 }
+                QQC2.Label { text: "Store apps:"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
                 QQC2.Switch {
-                    Kirigami.FormData.label: "Store apps:"
                     text: "Update by themselves"
                     checked: root.settings.apps_auto
                     onToggled: root.set("apps " + (checked ? "on" : "off"))
@@ -371,6 +374,7 @@ Item {
                     QQC2.ToolTip.delay: 600
                     QQC2.ToolTip.text: "In a terminal, update them now: flatpak update"
                 }
+                Item { implicitWidth: 1 }   // under the setting it explains
                 QQC2.Label {
                     Layout.fillWidth: true
                     Layout.maximumWidth: Kirigami.Units.gridUnit * 24
@@ -380,9 +384,9 @@ Item {
                     text: "Updates download quietly and are installed when you restart; nothing restarts on its own."
                 }
 
-                Kirigami.Separator { Kirigami.FormData.isSection: true; Kirigami.FormData.label: "Recovery" }
+                Kirigami.Heading { text: "Recovery"; level: 2; Layout.columnSpan: 2; Layout.topMargin: Kirigami.Units.largeSpacing }
+                QQC2.Label { text: "Something broke after an update:"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
                 QQC2.Button {
-                    Kirigami.FormData.label: "Something broke after an update:"
                     icon.name: "edit-undo"
                     text: "Go back to the previous version"
                     onClicked: run.connectSource("fennek-go-back")
@@ -390,12 +394,13 @@ Item {
                     QQC2.ToolTip.delay: 600
                     QQC2.ToolTip.text: "In a terminal: sudo bootc rollback"
                 }
+                QQC2.Label { text: "Your files:"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
                 QQC2.Button {
-                    Kirigami.FormData.label: "Your files:"
                     icon.name: "drive-removable-media"
                     text: "Backup and restore"
                     onClicked: run.connectSource("fennek-app settings backup")
                 }
+                Item { implicitWidth: 1 }   // under the setting it explains
                 QQC2.Label {
                     Layout.fillWidth: true
                     Layout.maximumWidth: Kirigami.Units.gridUnit * 24
