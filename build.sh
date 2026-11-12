@@ -940,6 +940,14 @@ for c in cats:
 open("/usr/share/fennek/settings-index.tsv", "w", encoding="utf-8").write("\n".join(rows) + "\n")
 print(len(rows), "settings searchable from Start")
 EOF
+# Start speaks the languages its translations cover (they come as .po, which Plasma can't read): compiled here.
+command -v msgfmt >/dev/null || { dnf -y install gettext; added_gettext=1; }
+for po in /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/translate/*.po; do
+    lang=$(basename "$po" .po)
+    mkdir -p "/usr/share/locale/$lang/LC_MESSAGES"
+    msgfmt -o "/usr/share/locale/$lang/LC_MESSAGES/plasma_applet_com.github.zren.tiledmenu.mo" "$po"
+done
+[ -n "${added_gettext:-}" ] && dnf -y remove gettext
 # Syntax check of every Fennek QML file while Qt's tools are here: a typo fails the build, not the desktop.
 qmlformat=$(command -v qmlformat || echo /usr/lib64/qt6/bin/qmlformat)
 for f in /usr/share/plasma/plasmoids/org.fennek.*/contents/ui/*.qml /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/*.qml /usr/share/fennek/apps/*/*.qml /usr/share/plasma/wallpapers/org.fennek.live/contents/ui/*.qml /usr/share/sddm/themes/fennek/*.qml \
