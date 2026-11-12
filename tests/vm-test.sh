@@ -166,7 +166,7 @@ touch "$share/out/go-report"
 end
 
 stage "Report"
-wait_for report-done 180 || die "no report from the VM"
+wait_for report-done 330 || die "no report from the VM"   # includes a minute and a half of idle measuring
 cp -a "$share/out/." "$out/"
 cat "$out/report.txt"
 end

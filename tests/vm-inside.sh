@@ -229,7 +229,53 @@ pkill -u "$user" -f 'fennek-vm-test' ; pkill -u "$user" kdialog
 crashes=$(coredumpctl --no-pager --no-legend list 2>/dev/null)
 echo "$crashes" | grep -Eq 'kwin_wayland|plasmashell|plasmalogin|startplasma' && problems+=("the desktop crashed")
 
+# Battery: what keeps the computer busy while nobody touches it. Reported, not judged: a minute of an idle desktop.
+pkill -u "$user" -x dolphin; pkill -u "$user" -f 'fennek-app'; sleep 20
+as_user timeout 30 busctl --user monitor --json=short >/run/bus.json 2>/dev/null
+python3 - >"$out/idle.txt" 2>&1 <<'PY'
+import collections, json, os, time
+tick = os.sysconf("SC_CLK_TCK")
+def procs():
+    out = {}
+    for p in os.listdir("/proc"):
+        if p.isdigit():
+            try:
+                s = open(f"/proc/{p}/stat").read()
+                rest = s.rsplit(")", 1)[1].split()
+                out[p] = (s[s.find("(") + 1:s.rfind(")")], int(rest[11]) + int(rest[12]))
+            except (OSError, IndexError, ValueError):
+                pass
+    return out
+def stat():
+    d = {l.split()[0]: l.split()[1:] for l in open("/proc/stat")}
+    cpu = list(map(int, d["cpu"]))
+    return sum(cpu), cpu[3] + cpu[4], int(d["ctxt"][0]), int(d["intr"][0])
+a, s1 = procs(), stat()
+time.sleep(60)
+b, s2 = procs(), stat()
+total, idle = s2[0] - s1[0], s2[1] - s1[1]
+print(f"busy {100 * (total - idle) / total:.2f}% of all processors; {(s2[2] - s1[2]) / 60:.0f} context switches/s; {(s2[3] - s1[3]) / 60:.0f} interrupts/s")
+rows = sorted(((t - a.get(p, (n, t))[1], n, p) for p, (n, t) in b.items() if p in a), reverse=True)
+for used, name, pid in rows[:15]:
+    if used > 0:
+        print(f"{used / tick:7.2f} s  {name} ({pid})")
+senders = collections.Counter()
+try:
+    for line in open("/run/bus.json"):
+        try:
+            m = json.loads(line)
+        except ValueError:
+            continue
+        senders[(m.get("sender", "?"), m.get("interface", "?"), m.get("member", "?"))] += 1
+except OSError:
+    pass
+print(f"session bus, 30 s: {sum(senders.values())} messages")
+for (s, i, mem), n in senders.most_common(12):
+    print(f"{n:6d}  {s} {i}.{mem}")
+PY
+
 {
+    echo "== idle"; cat "$out/idle.txt"
     echo "== problems: ${#problems[@]}"; printf '%s\n' "${problems[@]}"
     echo "== boot time"; systemd-analyze 2>&1 | head -3
     echo "== version"; bootc status 2>&1 | head -20; uname -r; mokutil --sb-state 2>&1; getenforce
