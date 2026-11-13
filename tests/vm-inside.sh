@@ -115,6 +115,7 @@ check "a file attached as a disk" in_session udisksctl loop-setup --no-user-inte
 appears() { for ((i = 0; i < 30; i++)); do [ -e "$1" ] && return 0; sleep 1; done; return 1; }
 check "USB disk plugged in" appears /dev/disk/by-label/FennekUSB
 check "USB disk: what's written reaches it within seconds" sh -c 'sleep 3; [ "$(sysctl -n vm.dirty_expire_centisecs)" = 100 ] && [ "$(sysctl -n vm.dirty_writeback_centisecs)" = 100 ]'
+check "USB disk: the system's settings loader may read that setting again" sh -c 'ls -Z /run/sysctl.d/90-fennek-usb.conf | grep -q system_conf_t'
 check "attached file's drive there" appears /dev/disk/by-label/FennekLoop
 # Fennek's own partition stays out of the drive lists, now that the sidebar shows drives.
 # A disc image, opened the way a double-click does it.
