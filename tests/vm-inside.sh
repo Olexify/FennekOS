@@ -285,7 +285,7 @@ PY
     echo "== listening (outside: $(tr "
 " " " <"$out/listening-outside.txt"))"; cat "$out/listening.txt"
     echo "== problems: ${#problems[@]}"; printf '%s\n' "${problems[@]}"
-    echo "== boot time"; systemd-analyze 2>&1 | head -3
+    echo "== boot time"; systemd-analyze 2>&1 | head -3; systemd-analyze blame --no-pager 2>&1 | head -15; systemd-analyze critical-chain --no-pager 2>&1 | head -25
     echo "== version"; bootc status 2>&1 | head -20; uname -r; mokutil --sb-state 2>&1; getenforce
     echo "== failed units"; systemctl --failed --no-pager --no-legend; as_user systemctl --user --failed --no-pager --no-legend
     echo "== crashes"; echo "$crashes"
