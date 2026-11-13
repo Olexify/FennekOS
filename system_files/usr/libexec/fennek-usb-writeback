@@ -18,7 +18,7 @@ if attached; then
 vm.dirty_writeback_centisecs = 100
 ' >"$conf"
     # The folder's own label, so the system's settings loader (and tuned after a profile switch) may read it again.
-    restorecon -R "${conf%/*}"
+    restorecon -Rv "${conf%/*}"
     sysctl -q -p "$conf"
 else
     rm -f "$conf"

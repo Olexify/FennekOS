@@ -116,6 +116,7 @@ appears() { for ((i = 0; i < 30; i++)); do [ -e "$1" ] && return 0; sleep 1; don
 check "USB disk plugged in" appears /dev/disk/by-label/FennekUSB
 check "USB disk: what's written reaches it within seconds" sh -c 'sleep 3; [ "$(sysctl -n vm.dirty_expire_centisecs)" = 100 ] && [ "$(sysctl -n vm.dirty_writeback_centisecs)" = 100 ]'
 check "USB disk: the system's settings loader may read that setting again" sh -c 'ls -Z /run/sysctl.d/90-fennek-usb.conf | grep -q system_conf_t'
+usb_labels=$(ls -Zd /run/sysctl.d /run/sysctl.d/* 2>&1; date +%T)
 check "attached file's drive there" appears /dev/disk/by-label/FennekLoop
 # Fennek's own partition stays out of the drive lists, now that the sidebar shows drives.
 # A disc image, opened the way a double-click does it.
@@ -300,6 +301,7 @@ PY
     echo "== failed units"; systemctl --failed --no-pager --no-legend; as_user systemctl --user --failed --no-pager --no-legend
     echo "== crashes"; echo "$crashes"
     echo "== SELinux denials"; journalctl -b --no-pager -g 'avc:  denied' 2>/dev/null | tail -30
+    echo "== USB setting's labels (just plugged in, then now)"; echo "$usb_labels"; ls -Zd /run/sysctl.d /run/sysctl.d/* 2>&1; journalctl -b --no-pager -u fennek-usb-writeback -o short-precise | grep -v systemd
     echo "== errors"; journalctl -b -p err --no-pager | tail -60
     echo "== graphics"; lsmod | grep -E 'nvidia|nouveau|virtio_gpu|v4l2loopback'; ls -l /dev/dri 2>&1; /usr/libexec/fennek-graphics-check --json
     echo "== Windows drives"; cat /run/fennek/windows-drives.json /run/udev/rules.d/90-fennek-windows-drives.rules; findmnt -S /dev/vdb1; findmnt -S /dev/vdb2
