@@ -262,6 +262,7 @@ grep -q 'function resizeGroup' /usr/share/plasma/plasmoids/com.github.zren.tiled
 [ -f /usr/share/icons/Fennek/scalable/apps/fennek-get-leonote.svg ] && { ! command -v desktop-file-validate >/dev/null || desktop-file-validate /usr/share/applications/fennek-get-leonote.desktop; } || fail "Start: Leonote (get it)"
 [ -x /usr/libexec/fennek-get-mpv ] && grep -q '^Exec=/usr/libexec/fennek-get-mpv' /usr/share/applications/fennek-get-mpv.desktop && grep -q 'fennek-get-mpv' /usr/share/fennek/apps/welcome/main.qml || fail "MPV Player (Oleks Edition): install on request"
 [ -s /usr/share/locale/de/LC_MESSAGES/plasma_applet_com.github.zren.tiledmenu.mo ] && [ -s /usr/share/locale/uk/LC_MESSAGES/plasma_applet_com.github.zren.tiledmenu.mo -o ! -e /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/translate/uk.po ] || fail "Start's translations are compiled"
+rpm -q mesa-va-drivers >/dev/null && { [ "$(uname -m)" != x86_64 ] || rpm -q libva-intel-driver >/dev/null; } || fail "video decoded by the graphics chip on AMD and older Intel too"
 [ -x /usr/libexec/fennek-before-install ] && grep -q 'fennek-before-install' /usr/share/fennek/apps/live/main.qml || fail "the installer says first what would make shrinking fail"
 grep -qx 'LLMNR=no' /usr/lib/systemd/resolved.conf.d/60-fennek.conf || fail "no LLMNR name lookups on the local network"
 grep -q '^DefaultDependencies=no' /usr/lib/systemd/system/fedora-atomic-desktop-mandb-update.service.d/fennek-background.conf || fail "the manual page index doesn't hold up the start"
