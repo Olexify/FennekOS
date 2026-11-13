@@ -229,6 +229,8 @@ pkill -u "$user" -f 'fennek-vm-test' ; pkill -u "$user" kdialog
 crashes=$(coredumpctl --no-pager --no-legend list 2>/dev/null)
 echo "$crashes" | grep -Eq 'kwin_wayland|plasmashell|plasmalogin|startplasma' && problems+=("the desktop crashed")
 
+check "the desktop doesn't wait for the manual page index" bash -c "! systemd-analyze critical-chain --no-pager graphical.target | grep -q mandb"
+
 # Security: on a fresh system nothing waits for connections from the network, except phone pairing (KDE Connect, 1716).
 outside() { ss -Htuln | awk '{print $5}' | grep -vE '^(127\.|\[::1\]|\[::ffff:127\.|::1:)' | grep -vE ':(1716|5353|68|546)$'; }
 outside >"$out/listening-outside.txt"
