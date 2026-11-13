@@ -15,12 +15,13 @@ static void global(void *d, struct wl_registry *r, uint32_t name, const char *if
 static void global_remove(void *d, struct wl_registry *r, uint32_t name) {}
 static const struct wl_registry_listener listener = {global, global_remove};
 
-int main(void) {
+int main(int argc, char **argv) {
     struct wl_display *dpy = wl_display_connect(NULL);
     if (!dpy) { fprintf(stderr, "no Wayland display\n"); return 1; }
     wl_registry_add_listener(wl_display_get_registry(dpy), &listener, NULL);
     wl_display_roundtrip(dpy);
     if (!fi) { fprintf(stderr, "no fake input protocol\n"); return 1; }
+    if (argc > 1 && !strcmp(argv[1], "--check")) return 0;   // allowed in, presses nothing (the VM test)
     org_kde_kwin_fake_input_authenticate(fi, "fennek-paste", "paste what you picked from the clipboard history");
     // ponytail: key codes, not letters: V's place on the classic layout. On a layout like Dvorak that key is another letter.
     const int ctrl = 29, v = 47;

@@ -122,6 +122,7 @@ check "attached file's drive there" appears /dev/disk/by-label/FennekLoop
 cp /run/t/disc.iso /var/tmp/fennek-disc.img
 chown "$user:" /var/tmp/fennek-disc.img
 in_session /usr/libexec/fennek-open-image /var/tmp/fennek-disc.img
+check "the Clipboard tab may paste into the window you were in" as_user /usr/libexec/fennek-paste --check
 disc=$(losetup -nO NAME -j /var/tmp/fennek-disc.img | head -1)
 check "a disc image opens as a drive" test -n "$disc"
 check "and read-only" grep -qx 1 "/sys/class/block/${disc#/dev/}/ro"

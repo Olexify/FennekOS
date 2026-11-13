@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Paste from the clipboard history
+Comment=Pastes what you picked in the Clipboard tab into the window you were in
+Exec=/usr/libexec/fennek-paste
+Icon=edit-paste
+NoDisplay=true
+# The compositor lets only programs named here press keys for you.
+X-KDE-Wayland-Interfaces=org_kde_kwin_fake_input
