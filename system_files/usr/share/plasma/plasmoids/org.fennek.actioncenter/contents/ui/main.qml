@@ -1,5 +1,5 @@
 // Fennek action center: a button at the end of the taskbar. Two tabs: your notifications (newest first, clear one
-// or all; snips with a preview) and your clipboard (copy again, remove, clear). Below, a grid of quick tiles: Wi-Fi, Bluetooth, Airplane mode, Do not disturb, Battery saver,
+// or all; snips with a preview) and your clipboard (pick one to paste it, remove, clear). Below, a grid of quick tiles: Wi-Fi, Bluetooth, Airplane mode, Do not disturb, Battery saver,
 // Night light, Dark mode, Screenshot, All settings. Notification history is Plasma's own (pop-ups work as before).
 import QtQuick
 import QtQuick.Layouts
@@ -15,6 +15,7 @@ import org.kde.plasma.networkmanagement as PlasmaNM
 import org.kde.bluezqt as BluezQt
 import org.kde.kcmutils as KCMUtils
 import org.kde.kirigami as Kirigami
+import org.kde.taskmanager as TaskManager
 
 PlasmoidItem {
     id: root
@@ -26,6 +27,14 @@ PlasmoidItem {
     NotificationManager.Settings { id: notifySettings }
     // Clipboard history (the clipboard service's own list: text, links, images and snips).
     Clip.HistoryModel { id: clipHistory }
+    // Picking an entry pastes it into the window that had the keyboard before this opened. Not when that was the
+    // desktop or nothing: there Ctrl+V would drop the text as a new file.
+    TaskManager.TasksModel { id: windows }
+    property bool appHadKeyboard: false
+    Connections {
+        target: windows
+        function onActiveTaskChanged() { if (!root.expanded) root.appHadKeyboard = windows.activeTask.valid }
+    }
     property string page: "notifications"   // or "clipboard"
     NotificationManager.Notifications {
         id: history
@@ -254,7 +263,7 @@ PlasmoidItem {
             }
         }
 
-        ListView {   // clipboard history: click to copy again
+        ListView {   // clipboard history: click to paste
             id: clips
             visible: root.page === "clipboard"
             Layout.fillWidth: true
@@ -275,7 +284,13 @@ PlasmoidItem {
                     id: clipMouse
                     anchors.fill: parent
                     hoverEnabled: true
-                    onClicked: { clipHistory.moveToTop(clipCard.uuid); root.expanded = false }
+                    onClicked: {
+                        clipHistory.moveToTop(clipCard.uuid)
+                        const paste = root.appHadKeyboard
+                        root.expanded = false
+                        // ponytail: a fixed moment for the keyboard to return to that window; wait on it if this misfires.
+                        if (paste) run.connectSource("sleep 0.3; /usr/libexec/fennek-paste")
+                    }
                 }
                 RowLayout {
                     id: clipRow

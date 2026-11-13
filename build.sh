@@ -854,7 +854,8 @@ systemctl enable flatpak-system-update.timer
 # Compiled here; the build tools are removed again.
 tools=(cmake extra-cmake-modules gcc-c++ libplasma-devel kf6-kcoreaddons-devel kf6-kconfig-devel kf6-kwindowsystem-devel kf6-kdbusaddons-devel
        kf6-kpackage-devel kf6-kservice-devel kf6-kirigami-devel kf6-kio-devel kf6-kcmutils-devel qt6-qtbase-devel qt6-qtdeclarative-devel
-       rust cargo 'rust-zbus+default-devel' 'rust-inotify+default-devel' librsvg2-tools xcursorgen cpio dnf5-plugins)
+       rust cargo 'rust-zbus+default-devel' 'rust-inotify+default-devel' librsvg2-tools xcursorgen cpio dnf5-plugins
+       wayland-devel plasma-wayland-protocols)
 missing=(); for p in "${tools[@]}"; do rpm -q "$p" >/dev/null 2>&1 || missing+=("$p"); done
 dnf -y install "${missing[@]}"
 for plugin in taskbar-menu desktop-menu ui-scale thispc fennek-app fennek-style fennek-kcm; do
@@ -887,6 +888,11 @@ rm -rf /tmp/cargo-home
 dnf -y install libseccomp-python
 python3 "$files/../src/sandbox-seccomp/make-filter.py" /usr/share/fennek/sandbox-seccomp.bpf
 dnf -y remove libseccomp-python
+# The Clipboard tab's paste (src/fennek-paste): Ctrl+V for the window that had the keyboard.
+wayland-scanner client-header /usr/share/plasma-wayland-protocols/fake-input.xml /tmp/fake-input.h
+wayland-scanner private-code /usr/share/plasma-wayland-protocols/fake-input.xml /tmp/fake-input.c
+gcc -O2 -Wall -I/tmp -o /usr/libexec/fennek-paste "$files/../src/fennek-paste/paste.c" /tmp/fake-input.c -lwayland-client
+rm -f /tmp/fake-input.h /tmp/fake-input.c
 # Fennek's changes to KDE programs, built from Fedora's own source package of the installed version (signature
 # checked); only the changed files are replaced. Their build tools go again right after.
 #   from_source PACKAGE PATCHER INSTALLED-FILE:CMAKE-TARGET...
