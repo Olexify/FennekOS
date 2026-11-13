@@ -96,6 +96,11 @@ PlasmoidItem {
     // Screen brightness (laptops, monitors with brightness control); -1 = none, slider hidden.
     property int brightness: -1
     Timer { id: setBrightness; interval: 120; onTriggered: run.connectSource("/usr/libexec/fennek-brightness set " + root.brightness) }
+    // Super+V (fennek-clipboard-open) asks for the Clipboard tab before it opens this.
+    Connections {
+        target: Plasmoid.configuration
+        function onClipboardRequestChanged() { root.page = "clipboard" }
+    }
     onExpandedChanged: if (!expanded) page = "notifications"; else {   // closed: back to Notifications next time
         run.connectSource(profileCmd); run.connectSource(nightCmd); run.connectSource(lookCmd); run.connectSource("/usr/libexec/fennek-brightness get")
     }

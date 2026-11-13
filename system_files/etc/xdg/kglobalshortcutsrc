@@ -40,12 +40,17 @@ activate application launcher=Meta	Alt+F1	Ctrl+Esc,Meta	Alt+F1,Activate Applicat
 show dashboard=none,Ctrl+F12,Show Desktop
 # Super+Tab belongs to the task view above, not to switching activities.
 next activity=none,Meta+Tab,Walk through activities
+# Super+V belongs to the Clipboard tab below (picking pastes), not the clipboard's own pop-up (picking only copies).
+show-on-mouse-pos=none,Meta+V,Show Clipboard Items at Mouse Position
 
 [services][org.kde.krunner.desktop]
 # Search everything (apps, files, sums): Alt+F2. Super+R belongs to the Run box below.
 _launch=Alt+F2	Search
 
 # Super+R: the Run box (fennek-app run), a centred card like the classic Run dialog.
+[services][fennek-clipboard.desktop]
+_launch=Meta+V
+
 [services][fennek-run.desktop]
 _launch=Meta+R
 

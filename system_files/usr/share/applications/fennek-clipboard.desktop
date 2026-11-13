@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Clipboard history
+Comment=Super+V: pick something you copied to paste it
+Exec=/usr/libexec/fennek-clipboard-open
+Icon=edit-paste
+NoDisplay=true
+X-KDE-Shortcuts=Meta+V

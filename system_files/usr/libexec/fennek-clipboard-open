@@ -1,0 +1,12 @@
+#!/usr/bin/bash
+# Super+V: the action center opens on its Clipboard tab, where picking an entry pastes it into the window you were in.
+# The tab is asked for through the widget's settings (it watches clipboardRequest), then the widget is opened.
+# ponytail: the first taskbar's action center; with a taskbar on every screen, pick the active screen's if that matters.
+set -u
+shell() { gdbus call --session --dest org.kde.plasmashell --object-path /PlasmaShell --method org.kde.PlasmaShell.evaluateScript "$1"; }
+id=$(shell 'var done = false; panels().forEach(function (p) { p.widgets("org.fennek.actioncenter").forEach(function (w) {
+    if (done) return; done = true
+    w.currentConfigGroup = ["General"]; w.writeConfig("clipboardRequest", String(new Date().getTime())); print(w.id) }) })' | grep -o '[0-9]\+' | head -1)
+[ -n "$id" ] || exit 1
+gdbus call --session --dest org.kde.kglobalaccel --object-path /component/plasmashell \
+    --method org.kde.kglobalaccel.Component.invokeShortcut "activate widget $id" >/dev/null

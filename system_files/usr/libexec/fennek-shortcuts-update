@@ -213,7 +213,7 @@ if [ "$(cat "$pl_seen" 2>/dev/null)" != 2026-11-03 ]; then   # Home is the start
     mkdir -p "${pl_seen%/*}" && echo 2026-11-03 >"$pl_seen"
 fi
 
-version=2026-11-03
+version=2026-11-13
 seen=${XDG_STATE_HOME:-$HOME/.local/state}/fennek/shortcuts-version
 [ "$(cat "$seen" 2>/dev/null)" = "$version" ] && exit 0
 f=${XDG_CONFIG_HOME:-$HOME/.config}/kglobalshortcutsrc
@@ -276,5 +276,7 @@ PYEOF
     kw kwin "Window Operations Menu" "Alt+Space,Alt+F3,Window Menu"
     kw plasmashell "activate application launcher" "Meta"$'\t'"Alt+F1"$'\t'"Ctrl+Esc,Meta"$'\t'"Alt+F1,Activate Application Launcher"
     kw plasmashell "show dashboard" "none,Ctrl+F12,Show Desktop"
+    kw plasmashell show-on-mouse-pos "none,Meta+V,Show Clipboard Items at Mouse Position"   # Super+V: the Clipboard tab
+    kwriteconfig6 --file "$f" --group services --group fennek-clipboard.desktop --key _launch Meta+V
 }
 mkdir -p "${seen%/*}" && echo "$version" >"$seen"
