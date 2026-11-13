@@ -1,0 +1,30 @@
+#!/usr/bin/bash
+# The installer USB's Install: what would make shrinking the current system's drive fail or damage it, said before the
+# installer starts, not as a raw error halfway. Then the installer. Erasing the disk or using free space stays possible.
+title="Install Fennek OS"
+
+# A drive opened in Files during "Try it first" can't be measured or shrunk: closed first.
+while read -r dev type mounted; do
+    case "$type" in ntfs | ntfs3) ;; *) continue ;; esac
+    [ -n "$mounted" ] || continue
+    if ! udisksctl unmount --no-user-interaction -b "$dev" >/dev/null 2>&1; then
+        kdialog --title "$title" --sorry "A drive of your current system is still open in a window. Close the windows showing its files, then click Install again."
+        exit 0
+    fi
+done < <(lsblk -nrpo PATH,FSTYPE,MOUNTPOINTS)
+
+warn=""
+if python3 -I -c 'import json,sys; sys.exit(0 if json.load(open("/run/fennek/windows-drives.json"))["read_only"] else 1)' 2>/dev/null; then
+    warn="Your current system isn't fully shut down, so its drive can't be shrunk safely now. Start it, hold Shift and click Shut down, then start from the stick again. Turning off Fast Startup there stops this for good."
+fi
+if lsblk -nro FSTYPE | grep -qx BitLocker; then
+    warn="${warn:+$warn
+
+}Your current system's drive is encrypted, so the installer can't shrink it. Shrink it from your current system first (its disk tool, at least 30 GB), then start from the stick again."
+fi
+if [ -n "$warn" ]; then
+    kdialog --title "$title" --continue-label "Continue anyway" --warningcontinuecancel "$warn
+
+To keep your current system, stop here. Erasing the whole disk, or using space that's already free, is fine either way." || exit 0
+fi
+exec liveinst "$@"

@@ -57,7 +57,7 @@ QQC2.ApplicationWindow {
                     highlighted: true
                     icon.name: "fennek"
                     text: root.t("Install Fennek OS", "Встановити Fennek OS")
-                    onClicked: { run.connectSource("setsid -f liveinst"); root.hide(); bye.start() }
+                    onClicked: { run.connectSource("setsid -f /usr/libexec/fennek-before-install"); root.hide(); bye.start() }
                 }
             }
             Item { Layout.fillHeight: true }
