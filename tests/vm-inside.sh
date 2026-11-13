@@ -137,6 +137,7 @@ chown "$user:" /var/tmp/fennek-notdisc.iso
 mkdir -p /var/tmp/fennek-stub
 printf '#!/bin/sh\necho "$@" >/var/tmp/fennek-stub/asked\n' >/var/tmp/fennek-stub/ark
 chmod 755 /var/tmp/fennek-stub/ark
+chown -R "$user:" /var/tmp/fennek-stub   # the stand-in writes its note as the person
 in_session env PATH=/var/tmp/fennek-stub:/usr/bin:/bin timeout 20 /usr/libexec/fennek-open-image /var/tmp/fennek-notdisc.iso
 check "a drive's filesystem in a .iso isn't opened" test -z "$(losetup -nO NAME -j /var/tmp/fennek-notdisc.iso)"
 check "it goes to the archive tool instead" grep -q fennek-notdisc.iso /var/tmp/fennek-stub/asked
