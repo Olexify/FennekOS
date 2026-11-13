@@ -226,6 +226,32 @@ def umu_env(now=None):
     return env
 
 
+PROTON_RELEASES = "https://api.github.com/repos/Open-Wine-Components/umu-proton/releases/latest"
+
+
+def proton_outdated(tag, current):
+    """Is the newest release (its tag) other than the Proton we have (its folder name)?"""
+    return bool(tag) and bool(current) and tag not in current
+
+
+def refresh_proton():
+    """Someone who only uses the sandbox would keep the first Proton forever, security fixes included: at most once a day,
+    and never while updates are paused or the connection is metered, a newer one is fetched in the background. The program
+    starting now keeps the one it has; the next start takes the new one."""
+    stamp, proton = DATA / "fennek" / "umu-last-update", proton_dir()
+    if not proton or (stamp.exists() and time.time() - stamp.stat().st_mtime < 86400):
+        return
+    if subprocess.run(["/usr/libexec/fennek-update-settings", "allowed"], capture_output=True).returncode != 0:
+        return
+    stamp.parent.mkdir(parents=True, exist_ok=True)
+    stamp.touch()
+    tmp = BOXES / ".refresh"
+    script = ('tag=$(curl -fsS --max-time 20 "$1" | python3 -c "import json,sys; print(json.load(sys.stdin)[\'tag_name\'])") || exit 0; '
+              'case "$2" in *"$tag"*) exit 0 ;; esac; umu-run wineboot -u; rm -rf "$3"')
+    subprocess.Popen(["sh", "-c", script, "refresh", PROTON_RELEASES, proton.name, str(tmp)], start_new_session=True,
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env={**os.environ, **UMU, "WINEPREFIX": str(tmp)})
+
+
 def ensure_proton():
     """First use: let umu (trusted) download its runtime + Proton outside any sandbox."""
     if proton_dir() and (DATA / "umu").is_dir():
@@ -662,6 +688,7 @@ def link_trusted_folders():
 
 def run_sandboxed(exe, digest, args, sound=False, box=None, inside=None):
     proton = ensure_proton()
+    refresh_proton()
     if not proton:
         return say("Couldn't set up Windows support (no internet?).", "error")
     if not shutil.which("pasta"):
@@ -841,6 +868,8 @@ def selftest():
     assert a.index("/var/home/u/App/setup.exe") > a.index("/var/home/u"), "program mounted over the private home"
     assert a[a.index("--uid") + 1] == "1000", "never root inside the sandbox"
     assert ("--chdir", "/var/home/u/App") in {(a[i], a[i + 1]) for i in range(len(a) - 1)}, "starts in its own folder"
+    assert proton_outdated("UMU-Proton-10.0-3", "UMU-Proton-9.0-4e") and not proton_outdated("UMU-Proton-9.0-4e", "UMU-Proton-9.0-4e")
+    assert not proton_outdated("", "UMU-Proton-9.0-4e"), "no answer: nothing fetched"
     assert store_instead("EpicInstaller-17.msi")[0] == "Heroic" and store_instead("GOG_Galaxy_2.0.exe")[0] == "Heroic"
     assert store_instead("Battle.net-Setup.exe")[0] == "Lutris" and store_instead("SteamSetup.exe")[0] == "Steam"
     assert store_instead("mysetup.exe") is None and store_instead("notepad.exe") is None
