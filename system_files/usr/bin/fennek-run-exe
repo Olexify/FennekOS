@@ -24,6 +24,7 @@ DATA = Path(os.environ.get("XDG_DATA_HOME") or HOME / ".local/share")
 TRUSTED = CFG / "trusted-exes"           # one sha256 per line
 CHOICES = CFG / "exe-choices"           # "sha256 sandbox|sandbox-sound" per line: remembered sandbox runs
 OFFLINE = CFG / "offline-exes"           # sha256s blocked by fennek-firewall: sandbox gets no network at all
+HUD = CFG / "hud-exes"                   # sha256s that show the frame rate (App permissions' Frame rate switch)
 FOLDERS = CFG / "exe-folders"            # "sha256 documents|downloads|pictures|music|videos" per line: also visible
 XDG_KIND = {"documents": "DOCUMENTS", "downloads": "DOWNLOAD", "pictures": "PICTURES", "music": "MUSIC", "videos": "VIDEOS"}
 NAMES = CFG / "exe-names"               # "sha256<TAB>path" per line: what App permissions shows for each program
@@ -811,6 +812,9 @@ def main(argv):
     digest = sha256(exe)
     exe = move_old_folders(exe, digest)   # first: this launch isn't recorded yet
     note_name(digest, exe)
+    # ponytail: only the 64-bit overlay is installed; a 32-bit game shows none. Add mangohud.i686 if people ask.
+    if HUD.is_file() and digest in HUD.read_text().split():
+        os.environ["MANGOHUD"] = "1"   # trusted runs inherit it, and the sandbox keeps the environment
     if mode == "--trusted" or (mode is None and not choose and is_trusted(digest)):
         return run_trusted(exe, argv[1:])
     if mode is None and not choose and remembered(digest):

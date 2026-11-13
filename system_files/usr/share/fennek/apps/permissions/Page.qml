@@ -229,6 +229,11 @@ Item {
                         checked: progRow.modelData.internet
                         onToggled: root.act("program " + progRow.modelData.sha256 + " internet " + (checked ? "on" : "off"))
                     }
+                    QQC2.Switch {   // the in-game overlay: frames per second, frame times, processor and graphics load
+                        text: "Frame rate"
+                        checked: progRow.modelData.hud
+                        onToggled: root.act("program " + progRow.modelData.sha256 + " hud " + (checked ? "on" : "off"))
+                    }
                   }
                     // Your folders it may also see, besides its own one in Sandbox (sandboxed programs only)
                     Flow {

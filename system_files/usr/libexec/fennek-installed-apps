@@ -25,7 +25,7 @@ GET_ENTRY = {"com.valvesoftware.Steam": "fennek-get-steam", "com.heroicgameslaun
              "org.libreoffice.LibreOffice": "fennek-get-libreoffice", "io.mpv.Mpv": "fennek-get-mpv",
              "org.mozilla.Thunderbird": "fennek-get-thunderbird", "com.dec05eba.gpu_screen_recorder": "fennek-get-gpu-screen-recorder"}
 EXTRAS = {"nvbroadcast": ("NV Broadcast", DATA / "fennek" / "nvbroadcast", "camera-web", ["/usr/libexec/fennek-get-nvbroadcast", "--uninstall"])}
-RECORDS = ("trusted-exes", "exe-choices", "offline-exes", "exe-folders", "exe-names")   # what's remembered per classic program
+RECORDS = ("trusted-exes", "exe-choices", "offline-exes", "exe-folders", "exe-names", "hud-exes")   # what's remembered per classic program
 
 
 def parse_size(text):

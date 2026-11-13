@@ -182,6 +182,7 @@ def programs():
     trusted = set(lines("trusted-exes"))
     choices = dict(l.split(" ", 1) for l in lines("exe-choices") if " " in l)
     offline = set(lines("offline-exes"))
+    hud = set(lines("hud-exes"))
     granted = {}
     for l in lines("exe-folders"):
         d, _, kind = l.partition(" ")
@@ -193,7 +194,7 @@ def programs():
             continue
         path = names.get(d, "")
         out.append({"sha256": d, "name": Path(path).name if path else "Program " + d[:8], "path": path,
-                    "run": "trusted" if d in trusted else choices.get(d, "ask"), "internet": d not in offline,
+                    "run": "trusted" if d in trusted else choices.get(d, "ask"), "internet": d not in offline, "hud": d in hud,
                     "folders": sorted(granted.get(d, []))})
     return out
 
@@ -210,6 +211,10 @@ def set_program(d, what, value):
             raise ValueError(value)
         rest = [l for l in lines("offline-exes") if l != d]
         write("offline-exes", rest + ([d] if value == "off" else []))
+    elif what == "hud":
+        if value not in ("on", "off"):
+            raise ValueError(value)
+        write("hud-exes", [l for l in lines("hud-exes") if l != d] + ([d] if value == "on" else []))
     elif what == "folder":
         kind, _, state = value.partition(":")
         if kind not in FOLDERS or state not in ("on", "off"):
@@ -298,6 +303,10 @@ def selftest():
     except ValueError:
         pass
     set_program(d, "internet", "on")
+    set_program(d, "hud", "on")
+    assert programs()[0]["hud"] is True and lines("hud-exes") == [d]
+    set_program(d, "hud", "off")
+    assert programs()[0]["hud"] is False and lines("hud-exes") == []
     assert programs()[0]["internet"] is True and lines("offline-exes") == []
     assert new_apps(["a", "b"], None) is None, "first run: no notices"
     assert new_apps(["a", "b", "c"], ["a", "b"]) == ["c"] and new_apps(["a"], ["a", "x"]) == []
