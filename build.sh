@@ -55,7 +55,7 @@ dnf -y install ffmpegthumbs kdegraphics-thumbnailers
 # Battery: videos decoded by the graphics chip, not the processor. The base has the driver for newer Intel chips only;
 # these add AMD and NVIDIA's open driver (mesa) and the older Intel chips (up to about 2016) that many classic laptops have.
 dnf -y install mesa-va-drivers
-[ "$(uname -m)" = x86_64 ] && dnf -y install libva-intel-driver
+[ "$(uname -m)" = x86_64 ] && dnf -y install intel-vaapi-driver
 kwriteconfig6 --file /etc/xdg/kdeglobals --group PreviewSettings --key MaximumSize 4294967296
 # On a network share each file is copied whole for its picture: phone and camera photos, not a folder of RAW files.
 kwriteconfig6 --file /etc/xdg/kdeglobals --group PreviewSettings --key MaximumRemoteSize 26214400
