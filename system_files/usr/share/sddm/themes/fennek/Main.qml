@@ -7,6 +7,7 @@ import QtQuick.Effects
 import SddmComponents 2.0 as Sddm
 import org.kde.plasma.private.keyboardindicator as KeyboardIndicator
 import org.kde.plasma.workspace.keyboardlayout as KeyboardLayouts
+import org.kde.ki18n
 
 Rectangle {
     id: root
@@ -26,6 +27,10 @@ Rectangle {
     property string userIcon: userModel.data(userModel.index(userIndex, 0), Qt.UserRole + 4) || ""
 
     readonly property bool uk: Qt.locale().name.startsWith("uk")
+    // The buttons, the password box and Caps Lock speak every language KDE's own sign-in screen does (its translations).
+    readonly property bool english: Qt.locale().name.startsWith("en") || Qt.locale().name === "C"
+    KI18nContext { id: kde; translationDomain: "plasma-desktop-sddm-theme" }
+    function tr(context, kdeText, ours) { return english ? ours : kde.i18nc(context, kdeText) }
     property int hour: new Date().getHours()
     readonly property string greeting: hour < 5 ? (uk ? "Доброї ночі" : "Good night")
                                      : hour < 12 ? (uk ? "Доброго ранку" : "Good morning")
@@ -180,7 +185,7 @@ Rectangle {
                 id: password
                 anchors.fill: parent
                 echoMode: TextInput.Password
-                placeholderText: root.uk ? "Пароль" : "Password"
+                placeholderText: root.tr("@info:placeholder in textfield", "Password", "Password")
                 leftPadding: 18
                 rightPadding: 48
                 color: "white"
@@ -213,7 +218,7 @@ Rectangle {
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
             visible: capsLock.locked
-            text: "Caps Lock is on"
+            text: root.tr("@info:status", "Caps Lock is on", "Caps Lock is on")
             color: "#ffd18a"
             font.pixelSize: 14
         }
@@ -265,9 +270,9 @@ Rectangle {
         spacing: 18
         Repeater {
             model: [
-                { label: "Sleep", glyph: "☾", enabled: sddm.canSuspend, act: function() { sddm.suspend() } },
-                { label: "Restart", glyph: "↻", enabled: sddm.canReboot, act: function() { sddm.reboot() } },
-                { label: "Shut down", glyph: "⏻", enabled: sddm.canPowerOff, act: function() { sddm.powerOff() } }
+                { label: root.tr("@action:button Suspend to RAM", "Sleep", "Sleep"), glyph: "☾", enabled: sddm.canSuspend, act: function() { sddm.suspend() } },
+                { label: root.tr("@action:button", "Restart", "Restart"), glyph: "↻", enabled: sddm.canReboot, act: function() { sddm.reboot() } },
+                { label: root.tr("@action:button", "Shut Down", "Shut down"), glyph: "⏻", enabled: sddm.canPowerOff, act: function() { sddm.powerOff() } }
             ]
             delegate: Text {
                 visible: modelData.enabled
