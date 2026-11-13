@@ -133,10 +133,15 @@ rm -f /var/tmp/fennek-disc.img
 truncate -s 32M /var/tmp/fennek-notdisc.iso
 mkfs.ext4 -q /var/tmp/fennek-notdisc.iso
 chown "$user:" /var/tmp/fennek-notdisc.iso
-in_session timeout 20 /usr/libexec/fennek-open-image /var/tmp/fennek-notdisc.iso
-pkill -u "$user" -x ark
+# The archive tool's own window isn't part of this: a stand-in records that it was asked.
+mkdir -p /var/tmp/fennek-stub
+printf '#!/bin/sh\necho "$@" >/var/tmp/fennek-stub/asked\n' >/var/tmp/fennek-stub/ark
+chmod 755 /var/tmp/fennek-stub/ark
+in_session env PATH=/var/tmp/fennek-stub:/usr/bin:/bin timeout 20 /usr/libexec/fennek-open-image /var/tmp/fennek-notdisc.iso
 check "a drive's filesystem in a .iso isn't opened" test -z "$(losetup -nO NAME -j /var/tmp/fennek-notdisc.iso)"
-rm -f /var/tmp/fennek-notdisc.iso
+check "it goes to the archive tool instead" grep -q fennek-notdisc.iso /var/tmp/fennek-stub/asked
+rm -rf /var/tmp/fennek-notdisc.iso /var/tmp/fennek-stub
+check "the desktop is still running after the disc images" pgrep -u "$user" -x plasmashell
 
 # Sharing a folder, in the order the Share tab does it. The VM has no network card: a stand-in connection.
 nmcli connection add type dummy ifname fennekt0 con-name fennek-test ipv4.method manual ipv4.addresses 10.99.0.1/24 ipv6.method disabled >/dev/null
