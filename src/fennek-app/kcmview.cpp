@@ -1,4 +1,5 @@
 #include "kcmview.h"
+#include <KJsonUtils>
 #include <KPluginMetaData>
 #include <QQmlEngine>
 #include <QRegularExpression>
@@ -93,7 +94,23 @@ bool KcmView::has(const QString &id) const
 QString KcmView::keywords(const QString &id) const
 {
     const KPluginMetaData md = findPage(id);
-    return md.isValid() ? md.description() + QLatin1Char(' ') + md.value(QStringLiteral("X-KDE-Keywords")) : QString();
+    if (!md.isValid())
+        return QString();
+    // In the person's language and in English: both find the page.
+    const QString words = KJsonUtils::readTranslatedString(md.rawData(), QStringLiteral("X-KDE-Keywords"));
+    return md.name() + QLatin1Char(' ') + md.description() + QLatin1Char(' ') + words + QLatin1Char(' ') + md.value(QStringLiteral("X-KDE-Keywords"));
+}
+
+QString KcmView::name(const QString &id) const
+{
+    const KPluginMetaData md = findPage(id);
+    return md.isValid() ? md.name() : QString();
+}
+
+QString KcmView::summary(const QString &id) const
+{
+    const KPluginMetaData md = findPage(id);
+    return md.isValid() ? md.description() : QString();
 }
 
 int KcmView::depth() const

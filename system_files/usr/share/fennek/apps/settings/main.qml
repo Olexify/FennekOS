@@ -73,6 +73,10 @@ QQC2.ApplicationWindow {
                 if (i.kcm === kcm) { category = c; page = i; return }
         if (pageView.has(kcm)) page = { name: "", kcm: kcm, icon: "" }
     }
+    // Outside English, KDE's own pages show KDE's translated name and line; Fennek's English stays where KDE has none.
+    readonly property bool english: Qt.locale().name.startsWith("en")
+    function itemName(i) { return !english && i.kcm ? (pageView.name(i.kcm) || i.name) : i.name }
+    function itemDesc(i) { return !english && i.kcm ? (pageView.summary(i.kcm) || i.desc) : i.desc }
     function openPage(name) {                    // a Fennek page by name (the Home status chips)
         for (const c of Catalog.categories)
             for (const i of c.items)
@@ -117,8 +121,8 @@ QQC2.ApplicationWindow {
             ColumnLayout {
                 spacing: 0
                 Layout.fillWidth: true
-                QQC2.Label { text: card.item.name; font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
-                QQC2.Label { text: card.item.desc; opacity: 0.7; Layout.fillWidth: true; elide: Text.ElideRight }
+                QQC2.Label { text: root.itemName(card.item); font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
+                QQC2.Label { text: root.itemDesc(card.item); opacity: 0.7; Layout.fillWidth: true; elide: Text.ElideRight }
             }
             Kirigami.Icon { source: "go-next-symbolic"; Layout.preferredWidth: 16; Layout.preferredHeight: 16; opacity: 0.5 }
         }
@@ -232,7 +236,7 @@ QQC2.ApplicationWindow {
                         Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
                         Layout.preferredHeight: Layout.preferredWidth
                     }
-                    Kirigami.Heading { text: root.page ? (root.page.name || pageView.title) : ""; level: 2; Layout.fillWidth: true; elide: Text.ElideRight }
+                    Kirigami.Heading { text: root.page ? (root.itemName(root.page) || pageView.title) : ""; level: 2; Layout.fillWidth: true; elide: Text.ElideRight }
                 }
                 Kirigami.Separator { Layout.fillWidth: true }
                 // Fennek's own pages (Updates...): the same page its own window shows.

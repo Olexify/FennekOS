@@ -32,6 +32,8 @@ public:
     Q_INVOKABLE void saveNow();
     Q_INVOKABLE bool has(const QString &id) const;   // is this settings page installed?
     Q_INVOKABLE QString keywords(const QString &id) const;   // the page's own search words, for Find a setting
+    Q_INVOKABLE QString name(const QString &id) const;       // the page's name and line in the person's language (KDE's
+    Q_INVOKABLE QString summary(const QString &id) const;    // own translations), empty when the page isn't there
 
 Q_SIGNALS:
     void kcmChanged();
