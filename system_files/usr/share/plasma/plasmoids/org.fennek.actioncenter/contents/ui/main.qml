@@ -21,8 +21,8 @@ PlasmoidItem {
     id: root
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
     readonly property int unread: history.unreadNotificationsCount || 0
-    toolTipMainText: "Action center"
-    toolTipSubText: unread > 0 ? unread + " new" : "No new notifications"
+    toolTipMainText: i18n("Action center")
+    toolTipSubText: unread > 0 ? i18np("%1 new", "%1 new", unread) : i18n("No new notifications")
 
     NotificationManager.Settings { id: notifySettings }
     // Clipboard history (the clipboard service's own list: text, links, images and snips).
@@ -139,7 +139,7 @@ PlasmoidItem {
             Layout.fillWidth: true
             Layout.margins: Kirigami.Units.smallSpacing
             Repeater {
-                model: [{ id: "notifications", name: "Notifications" }, { id: "clipboard", name: "Clipboard" }]
+                model: [{ id: "notifications", name: i18n("Notifications") }, { id: "clipboard", name: i18n("Clipboard") }]
                 PC3.ToolButton {
                     required property var modelData
                     readonly property bool current: root.page === modelData.id
@@ -159,7 +159,7 @@ PlasmoidItem {
             }
             Item { Layout.fillWidth: true }
             PC3.ToolButton {
-                text: "Clear all"
+                text: i18n("Clear all")
                 visible: root.page === "notifications" ? list.count > 0 : clips.count > 0
                 onClicked: root.page === "notifications" ? history.clear(NotificationManager.Notifications.ClearExpired) : clipHistory.clearHistory()
             }
@@ -264,7 +264,7 @@ PlasmoidItem {
                 width: parent.width - Kirigami.Units.gridUnit * 4
                 visible: list.count === 0
                 iconName: "notification-inactive"
-                text: "No new notifications"
+                text: i18n("No new notifications")
             }
         }
 
@@ -333,8 +333,8 @@ PlasmoidItem {
                 width: parent.width - Kirigami.Units.gridUnit * 4
                 visible: clips.count === 0
                 iconName: "edit-paste"
-                text: "Nothing copied yet"
-                explanation: "Text and pictures you copy, and your snips, show up here"
+                text: i18n("Nothing copied yet")
+                explanation: i18n("Text and pictures you copy, and your snips, show up here")
             }
         }
 
@@ -346,24 +346,24 @@ PlasmoidItem {
             columnSpacing: Kirigami.Units.smallSpacing
             Repeater {
                 model: [
-                    { label: "Wi-Fi", settings: "kcm_networkmanagement", icon: "network-wireless", show: nmDevices.wirelessDeviceAvailable, checkable: true,
+                    { label: i18n("Wi-Fi"), settings: "kcm_networkmanagement", icon: "network-wireless", show: nmDevices.wirelessDeviceAvailable, checkable: true,
                       on: () => nmEnabled.wirelessEnabled, act: () => nm.enableWireless(!nmEnabled.wirelessEnabled) },
-                    { label: "Bluetooth", settings: "kcm_bluetooth", icon: "network-bluetooth", show: BluezQt.Manager.adapters.length > 0, checkable: true,
+                    { label: i18n("Bluetooth"), settings: "kcm_bluetooth", icon: "network-bluetooth", show: BluezQt.Manager.adapters.length > 0, checkable: true,
                       on: () => !BluezQt.Manager.bluetoothBlocked, act: () => BluezQt.Manager.bluetoothBlocked = !BluezQt.Manager.bluetoothBlocked },
-                    { label: "Airplane mode", settings: "kcm_networkmanagement", icon: "network-flightmode-on", show: true, checkable: true,
+                    { label: i18n("Airplane mode"), settings: "kcm_networkmanagement", icon: "network-flightmode-on", show: true, checkable: true,
                       on: () => PlasmaNM.Configuration.airplaneModeEnabled,
                       act: () => { const v = !PlasmaNM.Configuration.airplaneModeEnabled; nm.enableAirplaneMode(v); PlasmaNM.Configuration.airplaneModeEnabled = v } },
-                    { label: "Do not disturb", settings: "kcm_notifications", icon: "notifications-disabled", show: true, checkable: true,
+                    { label: i18n("Do not disturb"), settings: "kcm_notifications", icon: "notifications-disabled", show: true, checkable: true,
                       on: () => root.dndOn, act: () => root.setDnd(!root.dndOn) },
-                    { label: "Battery saver", settings: "kcm_powerdevilprofilesconfig", icon: "battery-profile-powersave", show: true, checkable: true,
+                    { label: i18n("Battery saver"), settings: "kcm_powerdevilprofilesconfig", icon: "battery-profile-powersave", show: true, checkable: true,
                       on: () => root.batterySaver, act: () => root.setProfile(root.batterySaver ? "balanced" : "power-saver") },
-                    { label: "Night light", settings: "kcm_nightlight", icon: "redshift-status-on", show: true, checkable: true,
+                    { label: i18n("Night light"), settings: "kcm_nightlight", icon: "redshift-status-on", show: true, checkable: true,
                       on: () => root.nightLight, act: () => root.setNightLight(!root.nightLight) },
-                    { label: "Dark mode", settings: "personalize", icon: "fennek-dark-mode-symbolic", show: true, checkable: true,
+                    { label: i18n("Dark mode"), settings: "personalize", icon: "fennek-dark-mode-symbolic", show: true, checkable: true,
                       on: () => root.darkMode, act: () => root.setDarkMode(!root.darkMode) },
-                    { label: "Screenshot", icon: "camera-photo", show: true, checkable: false,
+                    { label: i18n("Screenshot"), icon: "camera-photo", show: true, checkable: false,
                       on: () => false, act: () => { root.expanded = false; run.connectSource("spectacle --region") } },
-                    { label: "All settings", icon: "configure", show: true, checkable: false,
+                    { label: i18n("All settings"), icon: "configure", show: true, checkable: false,
                       on: () => false, act: () => { root.expanded = false; run.connectSource("fennek-app settings") } }
                 ]
                 // Quick tile: filled accent when on, soft grey when off; icon over the label.

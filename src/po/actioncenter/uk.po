@@ -1,0 +1,59 @@
+# Fennek OS action center, Ukrainian.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Action center"
+msgstr "Центр дій"
+
+msgid "No new notifications"
+msgstr "Немає нових сповіщень"
+
+msgid "Notifications"
+msgstr "Сповіщення"
+
+msgid "Clipboard"
+msgstr "Буфер обміну"
+
+msgid "Clear all"
+msgstr "Очистити все"
+
+msgid "Nothing copied yet"
+msgstr "Ще нічого не скопійовано"
+
+msgid "Text and pictures you copy, and your snips, show up here"
+msgstr "Тут з’являються скопійовані тексти, зображення та ваші знімки"
+
+msgid "Wi-Fi"
+msgstr "Wi-Fi"
+
+msgid "Bluetooth"
+msgstr "Bluetooth"
+
+msgid "Airplane mode"
+msgstr "Режим польоту"
+
+msgid "Do not disturb"
+msgstr "Не турбувати"
+
+msgid "Battery saver"
+msgstr "Економія заряду"
+
+msgid "Night light"
+msgstr "Нічне світло"
+
+msgid "Dark mode"
+msgstr "Темний режим"
+
+msgid "Screenshot"
+msgstr "Знімок екрана"
+
+msgid "All settings"
+msgstr "Усі налаштування"
+
+msgid "%1 new"
+msgid_plural "%1 new"
+msgstr[0] "%1 нове"
+msgstr[1] "%1 нові"
+msgstr[2] "%1 нових"

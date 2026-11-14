@@ -974,6 +974,12 @@ for po in /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/translate/*.po; 
     mkdir -p "/usr/share/locale/$lang/LC_MESSAGES"
     msgfmt -o "/usr/share/locale/$lang/LC_MESSAGES/plasma_applet_com.github.zren.tiledmenu.mo" "$po"
 done
+# Fennek's own panel widgets (src/po/<widget>/<lang>.po): each widget's i18n() reads plasma_applet_<its id>.
+for po in "$files"/../src/po/actioncenter/*.po; do
+    lang=$(basename "$po" .po)
+    mkdir -p "/usr/share/locale/$lang/LC_MESSAGES"
+    msgfmt --check -o "/usr/share/locale/$lang/LC_MESSAGES/plasma_applet_org.fennek.actioncenter.mo" "$po"
+done
 [ -n "${added_gettext:-}" ] && dnf -y remove gettext
 # Syntax check of every Fennek QML file while Qt's tools are here: a typo fails the build, not the desktop.
 qmlformat=$(command -v qmlformat || echo /usr/lib64/qt6/bin/qmlformat)
