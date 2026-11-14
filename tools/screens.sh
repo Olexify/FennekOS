@@ -146,9 +146,15 @@ sleep 5
 script "print('screens ' + screenCount); panels().forEach(p => print('bar on ' + p.screen + ': ' + p.widgets().map(w => w.type).join(' ')))" | tee /out/taskbars.txt
 shot 50-two-displays 3
 /usr/libexec/fennek-taskbar get >>/out/taskbars.txt 2>&1
+# The same panels in Ukrainian: Fennek's own widgets follow the person's language.
+pkill -x plasmashell; sleep 2
+LANGUAGE=uk LANG=uk_UA.UTF-8 plasmashell >/out/plasma-uk.log 2>&1 &
+sleep 12
+printf 'Скопійовано щойно' | timeout 5 wl-copy; sleep 1
+/usr/libexec/fennek-clipboard-open; shot 51-action-center-uk
 EOF
 } >/tmp/session2.sh
-timeout 180 runuser -u anna -- env XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" HOME=/home/anna dbus-run-session -- bash /tmp/session2.sh
+timeout 240 runuser -u anna -- env XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" HOME=/home/anna dbus-run-session -- bash /tmp/session2.sh
 # Pointer sheet: every Fennek pointer at 48 px on light and on dark (screenshots don't show the pointer).
 s=/usr/share/fennek/cursor-src
 for bg in '#f3f3f3' '#2b2b2b'; do
