@@ -476,10 +476,21 @@ def trusted_drive():
     return HOME / "Games/umu/umu-default/drive_c"
 
 
-def own_update(exe):
-    """A trusted program's own update lands in its drive C:, which only trusted programs reach (no sandbox or folder
-    grant does, and its Save folders are links that resolve outside it): it stays trusted, no question."""
-    return Path(exe).resolve().is_relative_to(trusted_drive().resolve())
+def own_update(exe, digest):
+    """A trusted program's own update: a new file in that program's own install folder in drive C: (e.g. Program
+    Files/<App>), which only trusted programs reach, beside a file you trusted. Never under users/ (Temp, Downloads,
+    AppData: where a trusted program may drop someone else's installer), and never against a choice you made for it."""
+    drive, exe = trusted_drive().resolve(), Path(exe).resolve()
+    if not exe.is_relative_to(drive) or remembered(digest):
+        return False
+    parts = exe.relative_to(drive).parts
+    if len(parts) < 3 or parts[0].lower() == "users":
+        return False
+    folder = drive.joinpath(*parts[:2])
+    trusted = set(TRUSTED.read_text().split()) if TRUSTED.is_file() else set()
+    rows = NAMES.read_text(encoding="utf-8", errors="replace").split("\n") if NAMES.is_file() else []
+    return any(d in trusted and Path(p).resolve().is_relative_to(folder)
+               for d, _, p in (l.partition("\t") for l in rows) if p)
 
 
 def box_of(digest):
@@ -821,7 +832,7 @@ def main(argv):
     # ponytail: only the 64-bit overlay is installed; a 32-bit game shows none. Add mangohud.i686 if people ask.
     if HUD.is_file() and digest in HUD.read_text().split():
         os.environ["MANGOHUD"] = "1"   # trusted runs inherit it, and the sandbox keeps the environment
-    if mode == "--trusted" or (mode is None and not choose and (is_trusted(digest) or own_update(exe))):
+    if mode == "--trusted" or (mode is None and not choose and (is_trusted(digest) or own_update(exe, digest))):
         return run_trusted(exe, argv[1:])
     if mode is None and not choose and remembered(digest):
         mode = "--" + remembered(digest)
@@ -952,18 +963,30 @@ def selftest():
     ran = []
     run_trusted = lambda e, args: ran.append(e)
     drive = t / "drive_c"
-    (drive / "App").mkdir(parents=True)
-    (drive / "App" / "update.exe").write_text("its next version")
+    app, temp = drive / "Program Files/App", drive / "users/steamuser/Temp"
+    for d in (app / "bin", temp, drive / "Program Files/Other"):
+        d.mkdir(parents=True)
+    for f in (app / "app.exe", app / "bin/update.exe", temp / "setup.exe", drive / "Program Files/Other/x.exe"):
+        f.write_text(f.name)
     (t / "Documents").mkdir()
-    (t / "Documents" / "dropped.exe").write_text("put there by someone else")
-    (drive / "Documents").symlink_to(t / "Documents")
+    (t / "Documents/dropped.exe").write_text("put there by someone else")
+    (app / "Documents").symlink_to(t / "Documents")
     trusted_drive = lambda: drive
-    assert own_update(drive / "App" / "update.exe"), "a trusted program's own update runs trusted, no question"
-    assert not own_update(drive / "Documents" / "dropped.exe"), "a linked folder isn't drive C:: a file there isn't trusted"
-    assert not own_update(t / "setup.exe")
-    main([str(drive / "App" / "update.exe")])
-    assert ran == [(drive / "App" / "update.exe").resolve()], "and main runs it trusted"
+    TRUSTED.write_text(sha256(app / "app.exe") + "\n")
+    NAMES.write_text(f"{sha256(app / 'app.exe')}\t{app / 'app.exe'}\n")
+    own = lambda f: own_update(f, sha256(f))
+    assert own(app / "bin/update.exe"), "a trusted program's own update runs trusted, no question"
+    assert not own(temp / "setup.exe"), "not what a trusted program downloaded to Temp"
+    assert not own(drive / "Program Files/Other/x.exe"), "not another program's folder"
+    assert not own(app / "Documents/dropped.exe"), "a linked folder resolves outside drive C:"
+    CHOICES.write_text(f"{sha256(app / 'bin/update.exe')} sandbox\n")
+    assert not own(app / "bin/update.exe"), "a choice made for that file stays"
+    CHOICES.unlink()
+    main([str(app / "bin/update.exe")])
+    assert ran == [(app / "bin/update.exe").resolve()], "and main runs it trusted"
     ran.clear()
+    TRUSTED.unlink()
+    NAMES.unlink()
 
     def old_folders(*recorded):
         for d in (BOXES, SHARED):
