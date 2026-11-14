@@ -1,0 +1,10 @@
+# Fennek OS clock widget, Ukrainian.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "Date and time settings"
+msgstr "Налаштування дати й часу"
+
+msgid "Open calendar"
+msgstr "Відкрити календар"

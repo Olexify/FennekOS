@@ -138,13 +138,13 @@ PlasmoidItem {
             Layout.margins: Kirigami.Units.smallSpacing
             PC3.ToolButton {
                 icon.color: Kirigami.Theme.textColor   // symbolic icons follow the panel's text colour
-                text: "Date and time settings"
+                text: i18n("Date and time settings")
                 icon.name: "preferences-system-time"
                 onClicked: { run.connectSource("fennek-app settings kcm_clock"); root.expanded = false }
             }
             PC3.ToolButton {
                 icon.color: Kirigami.Theme.textColor
-                text: "Open calendar"
+                text: i18n("Open calendar")
                 icon.name: "view-calendar"
                 onClicked: { run.connectSource("/usr/libexec/fennek-get-app org.mozilla.Thunderbird Thunderbird fennek-get-thunderbird -calendar"); root.expanded = false }
             }

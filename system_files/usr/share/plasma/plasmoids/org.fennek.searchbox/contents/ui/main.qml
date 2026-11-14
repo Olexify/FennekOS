@@ -18,28 +18,28 @@ PlasmoidItem {
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
     preferredRepresentation: compactRepresentation
     // The taskbar's own tooltip (an in-place tooltip sat under the pointer and swallowed the click).
-    toolTipMainText: "Search"
-    toolTipSubText: "Apps, files and settings"
+    toolTipMainText: i18n("Search")
+    toolTipSubText: i18n("Apps, files and settings")
 
     // Filter tabs: runner ids ([] = all runners).
     readonly property var tabs: [
-        { name: "All", runners: [] },
-        { name: "Apps", runners: ["krunner_services"] },
-        { name: "Documents", runners: ["fennek-search", "krunner_recentdocuments"] },
-        { name: "Settings", runners: ["fennek-settings"] }
+        { name: i18n("All"), runners: [] },
+        { name: i18n("Apps"), runners: ["krunner_services"] },
+        { name: i18n("Documents"), runners: ["fennek-search", "krunner_recentdocuments"] },
+        { name: i18n("Settings"), runners: ["fennek-settings"] }
     ]
     readonly property var moreTabs: [
-        { name: "Folders", runners: ["fennek-search", "krunner_placesrunner"], prefix: "type:folder " },
-        { name: "Calculator", runners: ["calculator", "unitconverter"] },
-        { name: "Web", runners: ["krunner_webshortcuts", "krunner_bookmarksrunner"] },
-        { name: "Commands", runners: ["krunner_shell"] }
+        { name: i18n("Folders"), runners: ["fennek-search", "krunner_placesrunner"], prefix: "type:folder " },
+        { name: i18n("Calculator"), runners: ["calculator", "unitconverter"] },
+        { name: i18n("Web"), runners: ["krunner_webshortcuts", "krunner_bookmarksrunner"] },
+        { name: i18n("Commands"), runners: ["krunner_shell"] }
     ]
     property var tab: tabs[0]
     property string query: ""
     // File filters (Documents / Folders tabs): changed when, large files only. Understood by fennek-search.
     readonly property var whenChips: [
-        { name: "Any time", filter: "" }, { name: "Today", filter: "dm:today " },
-        { name: "This week", filter: "dm:week " }, { name: "This month", filter: "dm:month " }
+        { name: i18n("Any time"), filter: "" }, { name: i18n("Today"), filter: "dm:today " },
+        { name: i18n("This week"), filter: "dm:week " }, { name: i18n("This month"), filter: "dm:month " }
     ]
     property string when: ""
     property bool large: false
@@ -70,11 +70,11 @@ PlasmoidItem {
     // Until Fennek has learned your apps: the pinned basics as Top apps (never an empty panel).
     readonly property var starterApps: [
         { id: "org.mozilla.firefox", name: "Firefox", icon: "firefox" },
-        { id: "org.kde.dolphin", name: "Files", icon: "org.kde.dolphin" },
-        { id: "fennek-settings", name: "Settings", icon: "fennek-settings" },
-        { id: "org.kde.discover", name: "Store", icon: "plasmadiscover" },
-        { id: "org.kde.konsole", name: "Terminal", icon: "utilities-terminal" },
-        { id: "org.kde.kwrite", name: "Text Editor", icon: "accessories-text-editor" }
+        { id: "org.kde.dolphin", name: i18n("Files"), icon: "org.kde.dolphin" },
+        { id: "fennek-settings", name: i18n("Settings"), icon: "fennek-settings" },
+        { id: "org.kde.discover", name: i18n("Store"), icon: "plasmadiscover" },
+        { id: "org.kde.konsole", name: i18n("Terminal"), icon: "utilities-terminal" },
+        { id: "org.kde.kwrite", name: i18n("Text Editor"), icon: "accessories-text-editor" }
     ]
     P5Support.DataSource { id: exec; engine: "executable"; onNewData: source => disconnectSource(source) }
     function launchApp(id) {
@@ -146,7 +146,7 @@ PlasmoidItem {
             Layout.margins: Kirigami.Units.largeSpacing
             Layout.preferredHeight: Kirigami.Units.gridUnit * 2.2
             font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.15
-            placeholderText: "Type here to search"
+            placeholderText: i18n("Type here to search")
             text: root.query
             onTextChanged: { root.query = text; list.currentIndex = 0 }
             Keys.onDownPressed: list.incrementCurrentIndex()
@@ -173,7 +173,7 @@ PlasmoidItem {
             }
             PlasmaComponents.TabButton {
                 id: moreButton
-                text: root.moreTabs.indexOf(root.tab) >= 0 ? root.tab.name + " ▾" : "More ▾"
+                text: root.moreTabs.indexOf(root.tab) >= 0 ? root.tab.name + " ▾" : i18n("More") + " ▾"
                 checked: root.moreTabs.indexOf(root.tab) >= 0
                 onClicked: moreMenu.open()
                 PlasmaExtras.ModelContextMenu {
@@ -203,7 +203,7 @@ PlasmoidItem {
                 }
             }
             Kirigami.Chip {
-                text: "Large files"
+                text: i18n("Large files")
                 icon.name: "drive-harddisk"
                 closable: false
                 checkable: false   // "checked" follows the filter (a click must not break the binding)
@@ -215,7 +215,7 @@ PlasmoidItem {
         // Before typing: the apps you use most, as big tiles.
         PlasmaComponents.Label {
             visible: !root.searching
-            text: "Top apps"
+            text: i18n("Top apps")
             font.bold: true
             Layout.leftMargin: Kirigami.Units.largeSpacing
             Layout.topMargin: Kirigami.Units.largeSpacing
@@ -286,7 +286,7 @@ PlasmoidItem {
 
         PlasmaComponents.Label {
             visible: !root.searching
-            text: "Recent"
+            text: i18n("Recent")
             font.bold: true
             Layout.leftMargin: Kirigami.Units.largeSpacing
             Layout.topMargin: Kirigami.Units.largeSpacing
@@ -340,7 +340,7 @@ PlasmoidItem {
                         visible: file !== "" && (parent.parent.hovered || hovered)
                         icon.name: "folder-open"
                         icon.color: Kirigami.Theme.textColor
-                        text: "Show in folder"
+                        text: i18n("Show in folder")
                         display: PlasmaComponents.AbstractButton.IconOnly
                         onClicked: root.showInFolder(file)
                     }
@@ -350,7 +350,7 @@ PlasmoidItem {
                 anchors.centerIn: parent
                 width: parent.width - Kirigami.Units.gridUnit * 4
                 visible: list.count === 0
-                text: root.searching ? "No results for \"" + root.query + "\"" : "Nothing opened recently"
+                text: root.searching ? i18n("No results for “%1”", root.query) : i18n("Nothing opened recently")
             }
         }
     }

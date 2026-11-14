@@ -1,0 +1,82 @@
+# Fennek OS searchbox widget, Ukrainian.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "Search"
+msgstr "Пошук"
+
+msgid "Apps, files and settings"
+msgstr "Застосунки, файли й налаштування"
+
+msgid "All"
+msgstr "Усе"
+
+msgid "Apps"
+msgstr "Застосунки"
+
+msgid "Documents"
+msgstr "Документи"
+
+msgid "Settings"
+msgstr "Налаштування"
+
+msgid "Folders"
+msgstr "Теки"
+
+msgid "Calculator"
+msgstr "Калькулятор"
+
+msgid "Web"
+msgstr "Інтернет"
+
+msgid "Commands"
+msgstr "Команди"
+
+msgid "Any time"
+msgstr "Будь-коли"
+
+msgid "Today"
+msgstr "Сьогодні"
+
+msgid "This week"
+msgstr "Цього тижня"
+
+msgid "This month"
+msgstr "Цього місяця"
+
+msgid "Files"
+msgstr "Файли"
+
+msgid "Store"
+msgstr "Магазин"
+
+msgid "Terminal"
+msgstr "Термінал"
+
+msgid "Text Editor"
+msgstr "Текстовий редактор"
+
+msgid "Type here to search"
+msgstr "Введіть тут для пошуку"
+
+msgid "Large files"
+msgstr "Великі файли"
+
+msgid "Top apps"
+msgstr "Найчастіші застосунки"
+
+msgid "Recent"
+msgstr "Нещодавні"
+
+msgid "Show in folder"
+msgstr "Показати в теці"
+
+msgid "More"
+msgstr "Більше"
+
+msgid "No results for “%1”"
+msgstr "Нічого не знайдено за запитом «%1»"
+
+msgid "Nothing opened recently"
+msgstr "Нещодавно нічого не відкривали"

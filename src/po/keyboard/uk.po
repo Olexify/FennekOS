@@ -1,0 +1,13 @@
+# Fennek OS keyboard widget, Ukrainian.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "Click to choose a language"
+msgstr "Клацніть, щоб вибрати мову"
+
+msgid "Configure keyboard layouts…"
+msgstr "Налаштувати розкладки клавіатури…"
+
+msgid "Language preferences"
+msgstr "Мовні налаштування"

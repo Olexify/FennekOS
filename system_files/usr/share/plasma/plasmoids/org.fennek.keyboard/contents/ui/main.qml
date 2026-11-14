@@ -27,7 +27,7 @@ PlasmoidItem {
     // Only one language: nothing to switch, nothing to show.
     Plasmoid.status: layouts.length > 1 ? PlasmaCore.Types.ActiveStatus : PlasmaCore.Types.HiddenStatus
     toolTipMainText: layouts[kb.layout] ? layouts[kb.layout].longName : ""
-    toolTipSubText: "Click to choose a language"
+    toolTipSubText: i18n("Click to choose a language")
 
     // Right-click menu: one entry per language (flag, name; the current one in bold, no tick boxes), then the settings.
     property var layoutActions: []
@@ -45,7 +45,7 @@ PlasmoidItem {
     }
     property PlasmaCore.Action separator: PlasmaCore.Action { isSeparator: true }
     property PlasmaCore.Action configure: PlasmaCore.Action {
-        text: "Configure keyboard layouts…"
+        text: i18n("Configure keyboard layouts…")
         icon.name: "configure"
         onTriggered: root.settings()
     }
@@ -142,7 +142,7 @@ PlasmoidItem {
                         isMask: true
                         color: Kirigami.Theme.textColor
                     }
-                    PC3.Label { Layout.fillWidth: true; text: "Language preferences"; font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 1.1 }
+                    PC3.Label { Layout.fillWidth: true; text: i18n("Language preferences"); font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 1.1 }
                 }
             }
         }
