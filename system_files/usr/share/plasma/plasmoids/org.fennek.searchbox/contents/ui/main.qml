@@ -245,8 +245,10 @@ PlasmoidItem {
                             text: model.display
                             Layout.fillWidth: true
                             horizontalAlignment: Text.AlignHCenter
-                            wrapMode: Text.Wrap   // longer names in other languages take a second line, not "..."
+                            wrapMode: Text.WordWrap   // longer names in other languages take a second line, not "..."
                             maximumLineCount: 2
+                            fontSizeMode: Text.HorizontalFit   // one word wider than the tile: a little smaller, never split
+                            minimumPointSize: Kirigami.Theme.smallFont.pointSize
                             elide: Text.ElideRight
                         }
                     }
@@ -278,8 +280,10 @@ PlasmoidItem {
                             text: modelData.name
                             Layout.fillWidth: true
                             horizontalAlignment: Text.AlignHCenter
-                            wrapMode: Text.Wrap   // longer names in other languages take a second line, not "..."
+                            wrapMode: Text.WordWrap   // longer names in other languages take a second line, not "..."
                             maximumLineCount: 2
+                            fontSizeMode: Text.HorizontalFit   // one word wider than the tile: a little smaller, never split
+                            minimumPointSize: Kirigami.Theme.smallFont.pointSize
                             elide: Text.ElideRight
                         }
                     }
