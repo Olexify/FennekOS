@@ -152,6 +152,8 @@ LANGUAGE=uk LANG=uk_UA.UTF-8 plasmashell >/out/plasma-uk.log 2>&1 &
 sleep 12
 printf 'Скопійовано щойно' | timeout 5 wl-copy; sleep 1
 /usr/libexec/fennek-clipboard-open; shot 51-action-center-uk
+/usr/libexec/fennek-clipboard-open; sleep 1
+widget org.fennek.searchbox; shot 52-search-uk
 EOF
 } >/tmp/session2.sh
 timeout 240 runuser -u anna -- env XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" HOME=/home/anna dbus-run-session -- bash /tmp/session2.sh
