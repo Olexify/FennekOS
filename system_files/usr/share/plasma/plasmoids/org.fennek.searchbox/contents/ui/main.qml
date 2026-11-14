@@ -245,6 +245,8 @@ PlasmoidItem {
                             text: model.display
                             Layout.fillWidth: true
                             horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.Wrap   // longer names in other languages take a second line, not "..."
+                            maximumLineCount: 2
                             elide: Text.ElideRight
                         }
                     }
@@ -276,6 +278,8 @@ PlasmoidItem {
                             text: modelData.name
                             Layout.fillWidth: true
                             horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.Wrap   // longer names in other languages take a second line, not "..."
+                            maximumLineCount: 2
                             elide: Text.ElideRight
                         }
                     }
