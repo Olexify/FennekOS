@@ -402,6 +402,8 @@ PlasmoidItem {
                             text: modelData.label
                             Layout.fillWidth: true
                             horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.Wrap   // longer words in other languages take a second line, not "…"
+                            maximumLineCount: 2
                             elide: Text.ElideRight
                             font: Kirigami.Theme.smallFont
                             color: tile.on ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
