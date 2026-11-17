@@ -612,3 +612,6 @@ msgstr "Копіювати ваші теки на USB-накопичувач"
 
 msgid "Free and made by one person: how to help"
 msgstr "Безкоштовна й зроблена однією людиною: як допомогти"
+
+msgid "This network"
+msgstr "Ця мережа"
