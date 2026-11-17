@@ -50,7 +50,7 @@ click 1560 880; shot 04-action-center; click 1560 880; sleep 1
 printf 'Copied a moment ago' | timeout 5 wl-copy; sleep 1
 /usr/libexec/fennek-clipboard-open; shot 04b-super-v-clipboard; click 1560 880; sleep 1
 # Date & Time: the time zone map (Crimea is Ukraine on Fennek's own map tiles).
-kcmshell6 kcm_clock >/out/kcm-clock.log 2>&1 & shot 04c-timezone-map 10; close
+kcmshell6 kcm_clock >/out/kcm-clock.log 2>&1 & sleep 8; click 936 136; shot 04c-timezone-map 5; close
 click 1498 880; shot 05-calendar; click 1498 880; sleep 1
 # The tray in this session: sound, network, arrow (nothing here starts the power service, so no battery icon). A two-digit day moves them 10 px left.
 click 1390 880; shot 06-sound; click 1390 880; sleep 1
