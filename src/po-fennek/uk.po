@@ -813,3 +813,6 @@ msgid_plural "%1 processes"
 msgstr[0] "%1 процес"
 msgstr[1] "%1 процеси"
 msgstr[2] "%1 процесів"
+
+msgid "Programs"
+msgstr "Програми"
