@@ -253,13 +253,45 @@ def refresh_proton():
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env={**os.environ, **UMU, "WINEPREFIX": str(tmp)})
 
 
+# A known Proton, for when umu can't ask GitHub which one is newest: GitHub answers only about 60 such questions an hour
+# per internet address, and many people share one (mobile networks). The file itself comes from the release's download
+# link, which has no such limit, and must match this fingerprint. refresh_proton moves on to newer ones later.
+KNOWN_PROTON = ("UMU-Proton-10.0-4", "5e1e7c99e773b4d0757f90075c5ff7f5282bedd13a694fc0414486122e68c945"
+                "2d3fb971f32ab32704d4463c9622475a44e58fbd014069aa1e84e27b4a4ed7e5")
+
+
+def fetch_known_proton():
+    """Download and unpack KNOWN_PROTON into Steam/compatibilitytools.d, where umu looks. True when it's there."""
+    name, sha512 = KNOWN_PROTON
+    dest = DATA / "Steam/compatibilitytools.d"
+    url = f"https://github.com/Open-Wine-Components/umu-proton/releases/download/{name}/{name}.tar.gz"
+    dest.mkdir(parents=True, exist_ok=True)
+    part = dest / f".{name}.tar.gz.part"
+    try:
+        if subprocess.run(["curl", "-fsSL", "--retry", "3", "--max-time", "1800", "-o", str(part), url]).returncode != 0:
+            return False
+        h = hashlib.sha512()
+        with open(part, "rb") as f:
+            for block in iter(lambda: f.read(1 << 20), b""):
+                h.update(block)
+        if h.hexdigest() != sha512:
+            return False
+        return subprocess.run(["tar", "-xzf", str(part), "-C", str(dest), "--no-same-owner"]).returncode == 0 \
+            and (dest / name / "proton").is_file()
+    finally:
+        part.unlink(missing_ok=True)
+
+
 def ensure_proton():
     """First use: let umu (trusted) download its runtime + Proton outside any sandbox."""
     if proton_dir() and (DATA / "umu").is_dir():
         return proton_dir()
     say("Setting up Windows support (one-time download, a few hundred MB)…", "passivepopup")
     tmp = BOXES / ".bootstrap"
-    subprocess.run(["umu-run", "wineboot", "-u"], env={**os.environ, **UMU, "WINEPREFIX": str(tmp)})
+    env = {**os.environ, **UMU, "WINEPREFIX": str(tmp)}
+    subprocess.run(["umu-run", "wineboot", "-u"], env=env)
+    if not proton_dir() and fetch_known_proton():   # umu couldn't look up the newest: the known one, then umu's runtime
+        subprocess.run(["umu-run", "wineboot", "-u"], env={**env, "PROTONPATH": str(proton_dir())})
     subprocess.run(["rm", "-rf", str(tmp)])
     return proton_dir()
 
