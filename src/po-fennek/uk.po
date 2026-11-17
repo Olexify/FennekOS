@@ -1,0 +1,43 @@
+# Fennek OS: the words in Fennek's own windows, Ukrainian.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "Launch"
+msgstr "Запуск"
+
+msgid "That didn't open."
+msgstr "Не вдалося відкрити."
+
+msgid "Browse"
+msgstr "Огляд"
+
+msgid "On this PC"
+msgstr "На цьому ПК"
+
+msgid "A program, a file or folder on this PC, or a web address."
+msgstr "Програма, файл чи тека на цьому ПК або вебадреса."
+
+msgid "Close"
+msgstr "Закрити"
+
+msgid "As administrator"
+msgstr "Від імені адміністратора"
+
+msgid "Runs the command with administrator rights in a terminal (asks for your password)."
+msgstr "Виконує команду з правами адміністратора в терміналі (попросить ваш пароль)."
+
+msgid "In a terminal"
+msgstr "У терміналі"
+
+msgid "Shows the command's output in a terminal that stays open."
+msgstr "Показує результат команди в терміналі, який лишається відкритим."
+
+msgid "Browse…"
+msgstr "Огляд…"
+
+msgid "Cancel"
+msgstr "Скасувати"
+
+msgid "Open"
+msgstr "Відкрити"

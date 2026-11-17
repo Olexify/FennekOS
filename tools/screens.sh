@@ -156,6 +156,7 @@ printf 'Скопійовано щойно' | timeout 5 wl-copy; sleep 1
 /usr/libexec/fennek-clipboard-open; shot 51-action-center-uk
 /usr/libexec/fennek-clipboard-open; sleep 1
 click 66 880; shot 52-search-uk; click 66 880
+LANGUAGE=uk LANG=uk_UA.UTF-8 fennek-app run >/out/run-uk.log 2>&1 & shot 53-launch-uk 5; close
 EOF
 } >/tmp/session2.sh
 timeout 240 runuser -u anna -- env XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" HOME=/home/anna dbus-run-session -- bash /tmp/session2.sh

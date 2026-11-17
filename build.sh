@@ -980,6 +980,12 @@ for po in "$files"/../src/po/*/*.po; do
     mkdir -p "/usr/share/locale/$lang/LC_MESSAGES"
     msgfmt --check -o "/usr/share/locale/$lang/LC_MESSAGES/plasma_applet_org.fennek.$widget.mo" "$po"
 done
+# Fennek's own windows (src/po-fennek/<lang>.po): one catalog, "fennek", read through KI18nContext in each window.
+for po in "$files"/../src/po-fennek/*.po; do
+    lang=$(basename "$po" .po)
+    mkdir -p "/usr/share/locale/$lang/LC_MESSAGES"
+    msgfmt --check -o "/usr/share/locale/$lang/LC_MESSAGES/fennek.mo" "$po"
+done
 [ -n "${added_gettext:-}" ] && dnf -y remove gettext
 # The time zone map (setup wizard, Date & Time): its background drawn from Natural Earth's Ukraine-view country borders
 # (public domain), so Crimea is Ukraine. KDE's own built-in tiles draw it otherwise. src/timezone-map/render.py.

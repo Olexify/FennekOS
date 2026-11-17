@@ -10,11 +10,13 @@ import QtQuick.Dialogs
 import QtCore
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
+import org.kde.ki18n
 
 QQC2.ApplicationWindow {
     id: root
     visible: true
-    title: "Launch"
+    title: tr.i18n("Launch")
+    KI18nContext { id: tr; translationDomain: "fennek" }   // Fennek's own words in the person's language
     flags: Qt.FramelessWindowHint | Qt.Dialog
     color: "transparent"
     width: Kirigami.Units.gridUnit * 34
@@ -97,7 +99,7 @@ QQC2.ApplicationWindow {
             } else if (data["exit code"] === 0) {
                 Qt.quit()
             } else {
-                root.error = data.stdout.trim() || "That didn't open."
+                root.error = data.stdout.trim() || tr.i18n("That didn't open.")
             }
         }
         Component.onCompleted: { connectSource(root.helper + " --history"); connectSource(root.helper + " --apps") }
@@ -105,7 +107,7 @@ QQC2.ApplicationWindow {
 
     FileDialog {
         id: browse
-        title: "Browse"
+        title: tr.i18n("Browse")
         onAccepted: field.text = selectedFile.toString().replace(/^file:\/\//, "")
     }
 
@@ -137,11 +139,11 @@ QQC2.ApplicationWindow {
                 }
                 ColumnLayout {
                     spacing: 0
-                    Kirigami.Heading { text: "Launch"; level: 2 }
-                    QQC2.Label { text: "A program, a file or folder on this PC, or a web address."; opacity: 0.7 }
+                    Kirigami.Heading { text: tr.i18n("Launch"); level: 2 }
+                    QQC2.Label { text: tr.i18n("A program, a file or folder on this PC, or a web address."); opacity: 0.7 }
                 }
                 Item { Layout.fillWidth: true }
-                QQC2.ToolButton { icon.name: "window-close"; onClicked: Qt.quit(); QQC2.ToolTip.visible: hovered; QQC2.ToolTip.text: "Close" }
+                QQC2.ToolButton { icon.name: "window-close"; onClicked: Qt.quit(); QQC2.ToolTip.visible: hovered; QQC2.ToolTip.text: tr.i18n("Close") }
             }
 
             QQC2.TextField {
@@ -183,7 +185,7 @@ QQC2.ApplicationWindow {
                     Kirigami.Separator { Layout.fillWidth: true; visible: section !== "Run"; Layout.topMargin: Kirigami.Units.smallSpacing }
                     QQC2.Label {
                         visible: section !== "Run"
-                        text: section
+                        text: section === "On this PC" ? tr.i18n("On this PC") : section
                         opacity: 0.6
                         font.pointSize: Kirigami.Theme.smallFont.pointSize
                         Layout.topMargin: Kirigami.Units.smallSpacing
@@ -221,26 +223,26 @@ QQC2.ApplicationWindow {
                 spacing: Kirigami.Units.gridUnit
                 QQC2.CheckBox {
                     id: admin
-                    text: "As administrator"
+                    text: tr.i18n("As administrator")
                     QQC2.ToolTip.visible: hovered
                     QQC2.ToolTip.delay: 600
-                    QQC2.ToolTip.text: "Runs the command with administrator rights in a terminal (asks for your password)."
+                    QQC2.ToolTip.text: tr.i18n("Runs the command with administrator rights in a terminal (asks for your password).")
                 }
                 QQC2.CheckBox {
                     id: terminal
-                    text: "In a terminal"
+                    text: tr.i18n("In a terminal")
                     QQC2.ToolTip.visible: hovered
                     QQC2.ToolTip.delay: 600
-                    QQC2.ToolTip.text: "Shows the command's output in a terminal that stays open."
+                    QQC2.ToolTip.text: tr.i18n("Shows the command's output in a terminal that stays open.")
                 }
             }
 
             RowLayout {
                 Layout.topMargin: Kirigami.Units.smallSpacing
-                QQC2.Button { text: "Browse…"; icon.name: "document-open"; onClicked: browse.open() }
+                QQC2.Button { text: tr.i18n("Browse…"); icon.name: "document-open"; onClicked: browse.open() }
                 Item { Layout.fillWidth: true }
-                QQC2.Button { text: "Cancel"; onClicked: Qt.quit() }
-                QQC2.Button { text: "Open"; icon.name: "media-playback-start"; highlighted: true; enabled: field.text.trim() !== ""; onClicked: root.go() }
+                QQC2.Button { text: tr.i18n("Cancel"); onClicked: Qt.quit() }
+                QQC2.Button { text: tr.i18n("Open"); icon.name: "media-playback-start"; highlighted: true; enabled: field.text.trim() !== ""; onClicked: root.go() }
             }
         }
     }
