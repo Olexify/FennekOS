@@ -615,3 +615,201 @@ msgstr "Безкоштовна й зроблена однією людиною: 
 
 msgid "This network"
 msgstr "Ця мережа"
+
+msgid "Task Manager"
+msgstr "Диспетчер завдань"
+
+msgid "Processor"
+msgstr "Процесор"
+
+msgid "Memory"
+msgstr "Пам’ять"
+
+msgid "Disk"
+msgstr "Диск"
+
+msgid "Network"
+msgstr "Мережа"
+
+msgid "Background services"
+msgstr "Фонові служби"
+
+msgid "Desktop"
+msgstr "Стільниця"
+
+msgid "System services"
+msgstr "Системні служби"
+
+msgid "paused"
+msgstr "призупинено"
+
+msgid "limited"
+msgstr "обмежено"
+
+msgid "%1 of %2"
+msgstr "%1 з %2"
+
+msgid "%1 in all"
+msgstr "%1 загалом"
+
+msgid "you"
+msgstr "ви"
+
+msgid "Started by %1 (PID %2)"
+msgstr "Запущено процесом %1 (PID %2)"
+
+msgid "That didn't work."
+msgstr "Не вдалося."
+
+msgid "Performance"
+msgstr "Продуктивність"
+
+msgid "App history"
+msgstr "Журнал застосунків"
+
+msgid "Startup"
+msgstr "Автозапуск"
+
+msgid "Users"
+msgstr "Користувачі"
+
+msgid "Details"
+msgstr "Подробиці"
+
+msgid "Services"
+msgstr "Служби"
+
+msgid "Find a service"
+msgstr "Знайти службу"
+
+msgid "Find an app or process"
+msgstr "Знайти застосунок або процес"
+
+msgid "Click a row to see what's inside it."
+msgstr "Клацніть рядок, щоб побачити, що всередині."
+
+msgid "The computer's services ask for an administrator's password to start or stop."
+msgstr "Щоб запустити або зупинити службу комп’ютера, потрібен пароль адміністратора."
+
+msgid "Run new task"
+msgstr "Нове завдання"
+
+msgid "End task"
+msgstr "Зняти завдання"
+
+msgid "End process"
+msgstr "Завершити процес"
+
+msgid "Start"
+msgstr "Запустити"
+
+msgid "Stop"
+msgstr "Зупинити"
+
+msgid "Pause"
+msgstr "Призупинити"
+
+msgid "Remove the processor limit"
+msgstr "Зняти обмеження процесора"
+
+msgid "Limit to half the processor"
+msgstr "Обмежити половиною процесора"
+
+msgid "Check with VirusTotal"
+msgstr "Перевірити у VirusTotal"
+
+msgid "Open file location"
+msgstr "Відкрити розташування файлу"
+
+msgid "Name"
+msgstr "Назва"
+
+msgid "End"
+msgstr "Завершити"
+
+msgid "End just this process"
+msgstr "Завершити лише цей процес"
+
+msgid "More detail…"
+msgstr "Докладніше…"
+
+msgid "KDE's System Monitor: per-core graphs, sensors, history"
+msgstr "Системний монітор KDE: графіки за ядрами, датчики, журнал"
+
+msgid "% used, the last 60 seconds"
+msgstr "% використано, останні 60 секунд"
+
+msgid "% in use, the last 60 seconds"
+msgstr "% зайнято, останні 60 секунд"
+
+msgid "Read and write speed, the last 60 seconds"
+msgstr "Швидкість читання й запису, останні 60 секунд"
+
+msgid "Send and receive speed, the last 60 seconds"
+msgstr "Швидкість надсилання й отримання, останні 60 секунд"
+
+msgid "Utilisation"
+msgstr "Навантаження"
+
+msgid "Cores"
+msgstr "Ядра"
+
+msgid "Threads"
+msgstr "Потоки"
+
+msgid "Up time"
+msgstr "Час роботи"
+
+msgid "In use"
+msgstr "Використовується"
+
+msgid "Available"
+msgstr "Доступно"
+
+msgid "Cached"
+msgstr "У кеші"
+
+msgid "Swap in use"
+msgstr "Використано свопу"
+
+msgid "Read"
+msgstr "Читання"
+
+msgid "Write"
+msgstr "Запис"
+
+msgid "Receive"
+msgstr "Отримання"
+
+msgid "Send"
+msgstr "Надсилання"
+
+msgid "Signed in"
+msgstr "Увійшли"
+
+msgid "Started by the system"
+msgstr "Запущено системою"
+
+msgid "Service"
+msgstr "Служба"
+
+msgid "For"
+msgstr "Для"
+
+msgid "Status"
+msgstr "Стан"
+
+msgid "No service matches"
+msgstr "Жодна служба не підходить"
+
+msgid "No services to show"
+msgstr "Немає служб для показу"
+
+msgid "The list of services couldn't be read on this system."
+msgstr "Не вдалося прочитати список служб у цій системі."
+
+msgid "%1 process"
+msgid_plural "%1 processes"
+msgstr[0] "%1 процес"
+msgstr[1] "%1 процеси"
+msgstr[2] "%1 процесів"

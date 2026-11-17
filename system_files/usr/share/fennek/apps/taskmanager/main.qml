@@ -15,12 +15,14 @@ import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
+import org.kde.ki18n
 import Fennek
 
 QQC2.ApplicationWindow {
     id: root
     visible: true
-    title: "Task Manager"
+    title: tr.i18n("Task Manager")
+    KI18nContext { id: tr; translationDomain: "fennek" }   // Fennek's own words in the person's language
     width: Kirigami.Units.gridUnit * 52
     height: Kirigami.Units.gridUnit * 36
     minimumWidth: Kirigami.Units.gridUnit * 36
@@ -115,7 +117,7 @@ QQC2.ApplicationWindow {
             else if (what === "services") { if (d) root.units = d }
             else if (what === "perf") { if (d) root.takePerf(d) }
             else {   // an action: say what went wrong, show what is now
-                root.message = data["exit code"] === 0 ? "" : ((data.stderr || "").trim().split("\n").pop() || "That didn't work.")
+                root.message = data["exit code"] === 0 ? "" : ((data.stderr || "").trim().split("\n").pop() || tr.i18n("That didn't work."))
                 root.refresh()
             }
         }
@@ -159,14 +161,14 @@ QQC2.ApplicationWindow {
                 id: tabs
                 Layout.fillWidth: true
                 Repeater {
-                    model: ["Processes", "Performance", "App history", "Startup", "Users", "Details", "Services"]
+                    model: [tr.i18n("Processes"), tr.i18n("Performance"), tr.i18n("App history"), tr.i18n("Startup"), tr.i18n("Users"), tr.i18n("Details"), tr.i18n("Services")]
                     QQC2.TabButton { required property string modelData; text: modelData; width: implicitWidth }
                 }
             }
             Kirigami.SearchField {
                 visible: root.tab === 0 || root.tab === 5 || root.tab === 6
                 Layout.preferredWidth: Kirigami.Units.gridUnit * 11
-                placeholderText: root.tab === 6 ? "Find a service" : "Find an app or process"
+                placeholderText: root.tab === 6 ? tr.i18n("Find a service") : tr.i18n("Find an app or process")
                 onTextChanged: root.filter = text
             }
         }
@@ -181,35 +183,35 @@ QQC2.ApplicationWindow {
                 elide: Text.ElideRight
                 textFormat: Text.PlainText
                 text: root.message !== "" ? root.message
-                    : root.tab === 0 ? "Click a row to see what's inside it."
-                    : root.tab === 5 ? root.procs.length + " processes"
-                    : "The computer's services ask for an administrator's password to start or stop."
+                    : root.tab === 0 ? tr.i18n("Click a row to see what's inside it.")
+                    : root.tab === 5 ? tr.i18np("%1 process", "%1 processes", root.procs.length)
+                    : tr.i18n("The computer's services ask for an administrator's password to start or stop.")
                 opacity: root.message !== "" ? 1 : 0.6
                 color: root.message !== "" ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.textColor
             }
             QQC2.Button {
                 visible: root.tab === 0
-                text: "Run new task"
+                text: tr.i18n("Run new task")
                 icon.name: "fennek-run"
                 onClicked: run.connectSource("setsid -f fennek-app run")
             }
             QQC2.Button {
                 visible: root.tab === 0
-                text: "End task"
+                text: tr.i18n("End task")
                 icon.name: "process-stop"
                 enabled: root.selected !== ""
                 onClicked: { root.act("end " + root.q(root.selected)); root.selected = "" }
             }
             QQC2.Button {
                 visible: root.tab === 5
-                text: "End process"
+                text: tr.i18n("End process")
                 icon.name: "process-stop"
                 enabled: root.selectedPid > 0 && !!root.procs.find(p => p.pid === root.selectedPid && p.own)
                 onClicked: { root.act("kill " + root.selectedPid); root.selectedPid = 0 }
             }
             Repeater {
-                model: root.tab === 6 ? [["start", "Start", "media-playback-start"], ["stop", "Stop", "media-playback-stop"],
-                                         ["restart", "Restart", "view-refresh"]] : []
+                model: root.tab === 6 ? [["start", tr.i18n("Start"), "media-playback-start"], ["stop", tr.i18n("Stop"), "media-playback-stop"],
+                                         ["restart", tr.i18n("Restart"), "view-refresh"]] : []
                 QQC2.Button {
                     required property var modelData
                     text: modelData[1]
@@ -233,41 +235,41 @@ QQC2.ApplicationWindow {
         property bool limited: false
         function openFor(u, c, p, o, f, l) { unit = u; canEnd = c; pid = p; own = o; frozen = !!f; limited = !!l; popup() }
         QQC2.MenuItem {
-            text: "End task"; icon.name: "process-stop"
+            text: tr.i18n("End task"); icon.name: "process-stop"
             visible: rowMenu.unit !== ""; height: visible ? implicitHeight : 0
             enabled: rowMenu.canEnd
             onTriggered: root.act("end " + root.q(rowMenu.unit))
         }
         QQC2.MenuItem {
-            text: "End process"; icon.name: "process-stop"
+            text: tr.i18n("End process"); icon.name: "process-stop"
             visible: rowMenu.unit === ""; height: visible ? implicitHeight : 0
             enabled: rowMenu.own
             onTriggered: root.act("kill " + rowMenu.pid)
         }
         QQC2.MenuItem {   // paused: every process stops where it is, nothing is lost; Resume goes on
-            text: rowMenu.frozen ? "Resume" : "Pause"
+            text: rowMenu.frozen ? tr.i18n("Resume") : tr.i18n("Pause")
             icon.name: rowMenu.frozen ? "media-playback-start" : "media-playback-pause"
             visible: rowMenu.unit !== "" && rowMenu.canEnd; height: visible ? implicitHeight : 0
             onTriggered: root.act((rowMenu.frozen ? "thaw " : "freeze ") + root.q(rowMenu.unit))
         }
         QQC2.MenuItem {   // CPU quota for this run: a busy app can't take the whole computer (or the battery)
-            text: rowMenu.limited ? "Remove the processor limit" : "Limit to half the processor"
+            text: rowMenu.limited ? tr.i18n("Remove the processor limit") : tr.i18n("Limit to half the processor")
             icon.name: "speedometer"
             visible: rowMenu.unit !== "" && rowMenu.canEnd; height: visible ? implicitHeight : 0
             onTriggered: root.act((rowMenu.limited ? "unlimit " : "limit ") + root.q(rowMenu.unit))
         }
         QQC2.MenuItem {
-            text: "Block internet"; icon.name: "network-disconnect"
+            text: tr.i18n("Block internet"); icon.name: "network-disconnect"
             enabled: rowMenu.pid > 0
             onTriggered: root.act("block " + rowMenu.pid)
         }
         QQC2.MenuItem {   // only the file's fingerprint goes to VirusTotal, and only on this click
-            text: "Check with VirusTotal"; icon.name: "security-medium"
+            text: tr.i18n("Check with VirusTotal"); icon.name: "security-medium"
             enabled: rowMenu.pid > 0
             onTriggered: root.act("vt " + rowMenu.pid)
         }
         QQC2.MenuItem {
-            text: "Open file location"; icon.name: "folder-open"
+            text: tr.i18n("Open file location"); icon.name: "folder-open"
             enabled: rowMenu.pid > 0
             onTriggered: root.act("show " + rowMenu.pid)
         }
@@ -330,11 +332,11 @@ QQC2.ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.margins: Kirigami.Units.largeSpacing
                     Layout.bottomMargin: Kirigami.Units.smallSpacing
-                    QQC2.Label { text: "Name"; opacity: 0.6; Layout.fillWidth: true }
+                    QQC2.Label { text: tr.i18n("Name"); opacity: 0.6; Layout.fillWidth: true }
                     // like the classic columns: the computer's total above its name
-                    QQC2.Label { text: Math.round(root.cpuPct) + "%\nProcessor"; opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
-                    QQC2.Label { text: Math.round(root.perfNow.mem_total ? 100 * root.perfNow.mem_used / root.perfNow.mem_total : 0) + "%\nMemory"; opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
-                    QQC2.Label { text: root.rate(root.diskRate) + "\nDisk"; opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
+                    QQC2.Label { text: Math.round(root.cpuPct) + "%\n" + tr.i18n(tr.i18n("Processor")); opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
+                    QQC2.Label { text: Math.round(root.perfNow.mem_total ? 100 * root.perfNow.mem_used / root.perfNow.mem_total : 0) + "%\n" + tr.i18n(tr.i18n("Memory")); opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
+                    QQC2.Label { text: root.rate(root.diskRate) + "\n" + tr.i18n(tr.i18n("Disk")); opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
                 }
                 Repeater {
                     model: root.data.groups
@@ -346,7 +348,7 @@ QQC2.ApplicationWindow {
                         spacing: 0
                         visible: items.length > 0
                         QQC2.Label {
-                            text: group.modelData.name + " (" + group.items.length + ")"
+                            text: tr.i18n(group.modelData.name) + " (" + group.items.length + ")"
                             font.weight: Font.DemiBold
                             Layout.leftMargin: Kirigami.Units.largeSpacing
                             Layout.topMargin: Kirigami.Units.largeSpacing
@@ -389,11 +391,11 @@ QQC2.ApplicationWindow {
                                         ColumnLayout {
                                             spacing: 0
                                             Layout.fillWidth: true
-                                            QQC2.Label { textFormat: Text.PlainText; text: row.modelData.name + (row.modelData.frozen ? "  (paused)" : "") + (row.modelData.limited ? "  (limited)" : ""); elide: Text.ElideRight; Layout.fillWidth: true }
+                                            QQC2.Label { textFormat: Text.PlainText; text: row.modelData.name + (row.modelData.frozen ? "  (" + tr.i18n("paused") + ")" : "") + (row.modelData.limited ? "  (" + tr.i18n("limited") + ")" : ""); elide: Text.ElideRight; Layout.fillWidth: true }
                                             QQC2.Label {
                                                 textFormat: Text.PlainText
                                                 visible: row.modelData.desc !== "" && row.modelData.desc !== row.modelData.name
-                                                text: row.modelData.desc + " · " + row.modelData.procs.length + (row.modelData.procs.length === 1 ? " process" : " processes")
+                                                text: row.modelData.desc + " · " + tr.i18np("%1 process", "%1 processes", row.modelData.procs.length)
                                                 opacity: 0.55
                                                 font: Kirigami.Theme.smallFont
                                                 elide: Text.ElideRight
@@ -431,12 +433,12 @@ QQC2.ApplicationWindow {
                                         QQC2.Label { text: "PID " + modelData.pid; opacity: 0.45; font: Kirigami.Theme.smallFont }
                                         QQC2.ToolButton {
                                             visible: !!modelData.own
-                                            text: "End"
+                                            text: tr.i18n("End")
                                             icon.name: "process-stop"
                                             display: QQC2.AbstractButton.TextBesideIcon
                                             onClicked: root.act("kill " + modelData.pid)
                                             QQC2.ToolTip.visible: hovered
-                                            QQC2.ToolTip.text: "End just this process"
+                                            QQC2.ToolTip.text: tr.i18n("End just this process")
                                         }
                                         QQC2.Label {
                                             text: root.size(modelData.mem)
@@ -463,10 +465,10 @@ QQC2.ApplicationWindow {
                 Layout.margins: Kirigami.Units.smallSpacing
                 spacing: Kirigami.Units.smallSpacing
                 Repeater {
-                    model: [["Processor", root.cpuHist, 100, Math.round(root.cpuPct) + "%"],
-                            ["Memory", root.memHist, 100, root.size(root.perfNow.mem_used) + " of " + root.size(root.perfNow.mem_total)],
-                            ["Disk", root.diskHist, 0, root.rate(root.diskRate)],
-                            ["Network", root.netHist, 0, root.rate(root.netRate)]]
+                    model: [[tr.i18n("Processor"), root.cpuHist, 100, Math.round(root.cpuPct) + "%"],
+                            [tr.i18n("Memory"), root.memHist, 100, tr.i18n("%1 of %2", root.size(root.perfNow.mem_used), root.size(root.perfNow.mem_total))],
+                            [tr.i18n("Disk"), root.diskHist, 0, root.rate(root.diskRate)],
+                            [tr.i18n("Network"), root.netHist, 0, root.rate(root.netRate)]]
                     QQC2.ItemDelegate {
                         required property var modelData
                         required property int index
@@ -495,12 +497,12 @@ QQC2.ApplicationWindow {
                 }
                 Item { Layout.fillHeight: true }
                 QQC2.Button {
-                    text: "More detail…"
+                    text: tr.i18n("More detail…")
                     icon.name: "utilities-system-monitor"
                     flat: true
                     onClicked: run.connectSource("setsid -f plasma-systemmonitor --page-name overview")
                     QQC2.ToolTip.visible: hovered
-                    QQC2.ToolTip.text: "KDE's System Monitor: per-core graphs, sensors, history"
+                    QQC2.ToolTip.text: tr.i18n("KDE's System Monitor: per-core graphs, sensors, history")
                 }
             }
             Kirigami.Separator { Layout.fillHeight: true }
@@ -511,21 +513,21 @@ QQC2.ApplicationWindow {
                 Layout.margins: Kirigami.Units.largeSpacing * 2
                 spacing: Kirigami.Units.largeSpacing
                 RowLayout {
-                    Kirigami.Heading { level: 1; text: ["Processor", "Memory", "Disk", "Network"][root.perfView] }
+                    Kirigami.Heading { level: 1; text: [tr.i18n("Processor"), tr.i18n("Memory"), tr.i18n("Disk"), tr.i18n("Network")][root.perfView] }
                     Item { Layout.fillWidth: true }
                     QQC2.Label {
                         opacity: 0.7
                         elide: Text.ElideRight
                         Layout.maximumWidth: Kirigami.Units.gridUnit * 20
                         text: root.perfView === 0 ? root.perfNow.cpu_name
-                            : root.perfView === 1 ? root.size(root.perfNow.mem_total) + " in all" : ""
+                            : root.perfView === 1 ? tr.i18n("%1 in all", root.size(root.perfNow.mem_total)) : ""
                     }
                 }
                 QQC2.Label {
                     opacity: 0.6
                     font: Kirigami.Theme.smallFont
-                    text: ["% used, the last 60 seconds", "% in use, the last 60 seconds", "Read and write speed, the last 60 seconds",
-                           "Send and receive speed, the last 60 seconds"][root.perfView]
+                    text: [tr.i18n("% used, the last 60 seconds"), tr.i18n("% in use, the last 60 seconds"), tr.i18n("Read and write speed, the last 60 seconds"),
+                           tr.i18n("Send and receive speed, the last 60 seconds")][root.perfView]
                 }
                 Rectangle {
                     Layout.fillWidth: true
@@ -544,15 +546,15 @@ QQC2.ApplicationWindow {
                     columnSpacing: Kirigami.Units.gridUnit * 2
                     rowSpacing: Kirigami.Units.smallSpacing
                     Repeater {
-                        model: root.perfView === 0 ? [["Utilisation", Math.round(root.cpuPct) + "%"], ["Cores", root.perfNow.cores],
-                                                      ["Processes", root.perfNow.procs], ["Threads", root.perfNow.threads],
-                                                      ["Up time", root.upTime(root.perfNow.uptime)]]
-                             : root.perfView === 1 ? [["In use", root.size(root.perfNow.mem_used)],
-                                                      ["Available", root.size(root.perfNow.mem_total - root.perfNow.mem_used)],
-                                                      ["Cached", root.size(root.perfNow.mem_cached)],
-                                                      ["Swap in use", root.size(root.perfNow.swap_used) + " of " + root.size(root.perfNow.swap_total)]]
-                             : root.perfView === 2 ? [["Read", root.rate(root.diskRead)], ["Write", root.rate(root.diskWrite)]]
-                             : [["Receive", root.rate(root.netIn)], ["Send", root.rate(root.netOut)]]
+                        model: root.perfView === 0 ? [[tr.i18n("Utilisation"), Math.round(root.cpuPct) + "%"], [tr.i18n("Cores"), root.perfNow.cores],
+                                                      [tr.i18n("Processes"), root.perfNow.procs], [tr.i18n("Threads"), root.perfNow.threads],
+                                                      [tr.i18n("Up time"), root.upTime(root.perfNow.uptime)]]
+                             : root.perfView === 1 ? [[tr.i18n("In use"), root.size(root.perfNow.mem_used)],
+                                                      [tr.i18n("Available"), root.size(root.perfNow.mem_total - root.perfNow.mem_used)],
+                                                      [tr.i18n("Cached"), root.size(root.perfNow.mem_cached)],
+                                                      [tr.i18n("Swap in use"), tr.i18n("%1 of %2", root.size(root.perfNow.swap_used), root.size(root.perfNow.swap_total))]]
+                             : root.perfView === 2 ? [[tr.i18n("Read"), root.rate(root.diskRead)], [tr.i18n("Write"), root.rate(root.diskWrite)]]
+                             : [[tr.i18n("Receive"), root.rate(root.netIn)], [tr.i18n("Send"), root.rate(root.netOut)]]
                         ColumnLayout {
                             required property var modelData
                             spacing: 0
@@ -582,10 +584,10 @@ QQC2.ApplicationWindow {
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.margins: Kirigami.Units.largeSpacing
-                    QQC2.Label { text: "Signed in"; opacity: 0.6; Layout.fillWidth: true }
-                    QQC2.Label { text: "Processes"; opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
-                    QQC2.Label { text: "Processor"; opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
-                    QQC2.Label { text: "Memory"; opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
+                    QQC2.Label { text: tr.i18n("Signed in"); opacity: 0.6; Layout.fillWidth: true }
+                    QQC2.Label { text: tr.i18n("Processes"); opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
+                    QQC2.Label { text: tr.i18n("Processor"); opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
+                    QQC2.Label { text: tr.i18n("Memory"); opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
                 }
                 Repeater {
                     model: root.people
@@ -595,7 +597,7 @@ QQC2.ApplicationWindow {
                         contentItem: RowLayout {
                             spacing: Kirigami.Units.largeSpacing
                             Kirigami.Icon { source: "user-identity"; Layout.preferredWidth: Kirigami.Units.iconSizes.medium; Layout.preferredHeight: Kirigami.Units.iconSizes.medium }
-                            QQC2.Label { textFormat: Text.PlainText; text: modelData.name + (modelData.you ? " (you)" : ""); Layout.fillWidth: true; elide: Text.ElideRight }
+                            QQC2.Label { textFormat: Text.PlainText; text: modelData.name + (modelData.you ? " (" + tr.i18n("you") + ")" : ""); Layout.fillWidth: true; elide: Text.ElideRight }
                             QQC2.Label { text: modelData.procs; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
                             QQC2.Label { text: modelData.cpu.toFixed(1) + "%"; Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
                             QQC2.Label { text: root.size(modelData.mem); Layout.preferredWidth: Kirigami.Units.gridUnit * 5; horizontalAlignment: Text.AlignRight }
@@ -612,12 +614,12 @@ QQC2.ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.rightMargin: Kirigami.Units.largeSpacing * 2
                 spacing: 0
-                SortTitle { key: "name"; label: "Name"; Layout.preferredWidth: Kirigami.Units.gridUnit * 10 }
+                SortTitle { key: "name"; label: tr.i18n("Name"); Layout.preferredWidth: Kirigami.Units.gridUnit * 10 }
                 SortTitle { key: "pid"; label: "PID"; Layout.preferredWidth: Kirigami.Units.gridUnit * 4 }
-                SortTitle { key: "status"; label: "Status"; Layout.preferredWidth: Kirigami.Units.gridUnit * 5 }
+                SortTitle { key: "status"; label: tr.i18n("Status"); Layout.preferredWidth: Kirigami.Units.gridUnit * 5 }
                 SortTitle { key: "user"; label: "User"; Layout.preferredWidth: Kirigami.Units.gridUnit * 6 }
-                SortTitle { key: "cpu"; label: "Processor"; Layout.preferredWidth: Kirigami.Units.gridUnit * 6 }
-                SortTitle { key: "mem"; label: "Memory"; Layout.preferredWidth: Kirigami.Units.gridUnit * 5 }
+                SortTitle { key: "cpu"; label: tr.i18n("Processor"); Layout.preferredWidth: Kirigami.Units.gridUnit * 6 }
+                SortTitle { key: "mem"; label: tr.i18n("Memory"); Layout.preferredWidth: Kirigami.Units.gridUnit * 5 }
                 SortTitle { key: "cmd"; label: "Command"; Layout.fillWidth: true }
             }
             Kirigami.Separator { Layout.fillWidth: true }
@@ -637,8 +639,8 @@ QQC2.ApplicationWindow {
                     // who started it: the program that launched this one (PID 1 / none: started by the system)
                     QQC2.ToolTip.visible: hovered
                     QQC2.ToolTip.delay: 700
-                    QQC2.ToolTip.text: modelData.parent ? "Started by " + String(modelData.parent).replace(/[<>&]/g, "") + " (PID " + modelData.ppid + ")"
-                                                        : "Started by the system"
+                    QQC2.ToolTip.text: modelData.parent ? tr.i18n("Started by %1 (PID %2)", String(modelData.parent).replace(/[<>&]/g, ""), modelData.ppid)
+                                                        : tr.i18n("Started by the system")
                     TapHandler {
                         acceptedButtons: Qt.RightButton
                         onTapped: { root.selectedPid = modelData.pid; rowMenu.openFor("", false, modelData.pid, modelData.own) }
@@ -664,9 +666,9 @@ QQC2.ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.margins: Kirigami.Units.largeSpacing
                 Layout.bottomMargin: Kirigami.Units.smallSpacing
-                QQC2.Label { text: "Service"; opacity: 0.6; Layout.fillWidth: true }
-                QQC2.Label { text: "For"; opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 7 }
-                QQC2.Label { text: "Status"; opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5 }
+                QQC2.Label { text: tr.i18n("Service"); opacity: 0.6; Layout.fillWidth: true }
+                QQC2.Label { text: tr.i18n("For"); opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 7 }
+                QQC2.Label { text: tr.i18n("Status"); opacity: 0.6; Layout.preferredWidth: Kirigami.Units.gridUnit * 5 }
             }
             Kirigami.Separator { Layout.fillWidth: true }
             ListView {
@@ -680,8 +682,8 @@ QQC2.ApplicationWindow {
                     anchors.centerIn: parent
                     width: parent.width - Kirigami.Units.gridUnit * 4
                     visible: parent.count === 0
-                    text: root.filter !== "" ? "No service matches" : "No services to show"
-                    explanation: root.filter !== "" ? "" : "The list of services couldn't be read on this system."
+                    text: root.filter !== "" ? tr.i18n("No service matches") : tr.i18n("No services to show")
+                    explanation: root.filter !== "" ? "" : tr.i18n("The list of services couldn't be read on this system.")
                 }
                 delegate: QQC2.ItemDelegate {
                     required property var modelData
