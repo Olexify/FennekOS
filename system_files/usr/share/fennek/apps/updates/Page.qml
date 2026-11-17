@@ -263,10 +263,10 @@ Item {
                     QQC2.Button {
                         visible: !(root.state === "checking" || root.state === "installing")
                         highlighted: true
-                        text: root.staged ? "Restart now" : root.state === "available" ? "Install now" : "Check for updates"
+                        text: root.staged ? tr.i18n("Restart now") : root.state === "available" ? tr.i18n("Install now") : tr.i18n("Check for updates")
                         QQC2.ToolTip.visible: hovered
                         QQC2.ToolTip.delay: 600
-                        QQC2.ToolTip.text: "In a terminal: " + (root.staged ? "systemctl reboot"
+                        QQC2.ToolTip.text: tr.i18n("In a terminal:") + " " + (root.staged ? "systemctl reboot"
                                            : root.state === "available" ? "sudo bootc upgrade" : "sudo bootc upgrade --check")
                         onClicked: {
                             if (root.staged) run.connectSource("systemctl reboot")
@@ -371,7 +371,7 @@ Item {
                     onToggled: root.set("apps " + (checked ? "on" : "off"))
                     QQC2.ToolTip.visible: hovered
                     QQC2.ToolTip.delay: 600
-                    QQC2.ToolTip.text: "In a terminal, update them now: flatpak update"
+                    QQC2.ToolTip.text: tr.i18n("In a terminal, update them now:") + " flatpak update"
                 }
                 Item { implicitWidth: 1 }   // under the setting it explains
                 QQC2.Label {
@@ -391,7 +391,7 @@ Item {
                     onClicked: run.connectSource("fennek-go-back")
                     QQC2.ToolTip.visible: hovered
                     QQC2.ToolTip.delay: 600
-                    QQC2.ToolTip.text: "In a terminal: sudo bootc rollback"
+                    QQC2.ToolTip.text: tr.i18n("In a terminal:") + " sudo bootc rollback"
                 }
                 QQC2.Label { text: tr.i18n("Your files:"); Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
                 QQC2.Button {

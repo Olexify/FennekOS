@@ -224,7 +224,7 @@ msgid "Metered connections:"
 msgstr "Лімітні з’єднання:"
 
 msgid "Download there too (phone hotspot, mobile data)"
-msgstr "Завантажувати й через них (точка доступу телефона, мобільні дані)"
+msgstr "Також через них (точка доступу, мобільні дані)"
 
 msgid "Store apps:"
 msgstr "Застосунки з Магазину:"
@@ -390,3 +390,18 @@ msgid_plural "%1 connections"
 msgstr[0] "%1 з’єднання"
 msgstr[1] "%1 з’єднання"
 msgstr[2] "%1 з’єднань"
+
+msgid "Restart now"
+msgstr "Перезапустити зараз"
+
+msgid "Install now"
+msgstr "Встановити зараз"
+
+msgid "Check for updates"
+msgstr "Перевірити оновлення"
+
+msgid "In a terminal:"
+msgstr "У терміналі:"
+
+msgid "In a terminal, update them now:"
+msgstr "У терміналі, оновити їх зараз:"
