@@ -10,7 +10,7 @@ chown -R tester: /var/home/tester
 # In a file, not on stdin: a program it starts could read the rest of the script, and it would end without a word.
 cat >/tmp/inner.sh <<'EOF'
 set -euo pipefail
-export XDG_RUNTIME_DIR=/tmp/xdg-tester; mkdir -p -m 700 "$XDG_RUNTIME_DIR"
+export XDG_RUNTIME_DIR=/tmp/xdg-tester UMU_LOG=debug; mkdir -p -m 700 "$XDG_RUNTIME_DIR"   # umu says what it does when a setup fails
 win() { echo "Z:$(echo "$1" | tr / '\\')"; }   # Linux path -> Wine path
 echo "top secret" > ~/secret.txt
 mkdir -p ~/Downloads && cp /fixtures/probe.exe ~/Downloads/probe.exe
@@ -31,7 +31,7 @@ fennek-run-exe --sandbox ~/Downloads/probe.exe "$(win "$HOME/Shared/result.txt")
 fennek-run-exe --trusted ~/Downloads/probe.exe "$(win "$HOME/trusted-result.txt")" "$(win "$HOME/secret.txt")" >/tmp/trusted.log 2>&1 || true
 box=~/Sandbox/probe-$id
 
-echo "== sandboxed =="; cat "$box/result.txt" 2>/dev/null || { echo "FAIL: sandboxed run wrote no result"; tail -20 /tmp/sandboxed.log; exit 1; }
+echo "== sandboxed =="; cat "$box/result.txt" 2>/dev/null || { echo "FAIL: sandboxed run wrote no result"; grep -v "__main__:78" /tmp/sandboxed.log | tail -40; exit 1; }
 echo "== trusted ==";   cat ~/trusted-result.txt 2>/dev/null || { echo "FAIL: trusted run wrote no result"; tail -20 /tmp/trusted.log; exit 1; }
 grep -q "^BLOCKED " "$box/result.txt" || { echo "FAIL: sandboxed program could read the secret"; exit 1; }
 grep -q "^OK " ~/trusted-result.txt   || { echo "FAIL: trusted program couldn't read the secret"; exit 1; }
