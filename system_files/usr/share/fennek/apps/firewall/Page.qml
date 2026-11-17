@@ -8,9 +8,11 @@ import QtQuick.Dialogs
 import QtQuick.Controls as QQC2
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
+import org.kde.ki18n
 
 Item {
     id: root
+    KI18nContext { id: tr; translationDomain: "fennek" }   // Fennek's own words in the person's language
 
     property var blocked: []
     property var online: []                // apps with connections right now (refreshed while the window is open)
@@ -61,7 +63,7 @@ Item {
 
     FileDialog {
         id: picker
-        title: "Choose an app"
+        title: tr.i18n("Choose an app")
         onAccepted: program.text = decodeURIComponent(selectedFile.toString().replace(/^file:\/\//, ""))
     }
 
@@ -81,12 +83,12 @@ Item {
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 2
-                    Kirigami.Heading { text: "Firewall"; level: 1 }
+                    Kirigami.Heading { text: tr.i18n("Firewall"); level: 1 }
                     QQC2.Label {
                         Layout.fillWidth: true
                         wrapMode: Text.Wrap
                         opacity: 0.75
-                        text: "Nothing on the network can reach this PC unless the desktop needs it. You choose which apps may use the internet."
+                        text: tr.i18n("Nothing on the network can reach this PC unless the desktop needs it. You choose which apps may use the internet.")
                     }
                 }
             }
@@ -99,11 +101,11 @@ Item {
                 Repeater {
                     model: [
                         { icon: root.profile === "public" ? "network-wireless-hotspot" : "go-home", title: "This network",
-                          text: root.profile === "public" ? "Public: nothing can connect" : root.profile === "home" ? "Home or work" : root.profile === "sharing" ? "Home, sharing folders" : "…" },
-                        { icon: "network-connect", title: "Online now",
-                          text: root.online.length + (root.online.length === 1 ? " app" : " apps") },
-                        { icon: "network-disconnect", title: "Blocked",
-                          text: root.blocked.length === 0 ? "No app" : root.blocked.length + (root.blocked.length === 1 ? " app" : " apps") }
+                          text: root.profile === "public" ? tr.i18n("Public: nothing can connect") : root.profile === "home" ? tr.i18n("Home or work") : root.profile === "sharing" ? tr.i18n("Home, sharing folders") : "…" },
+                        { icon: "network-connect", title: tr.i18n("Online now"),
+                          text: tr.i18np("%1 app", "%1 apps", root.online.length) },
+                        { icon: "network-disconnect", title: tr.i18n("Blocked"),
+                          text: root.blocked.length === 0 ? tr.i18n("No app") : tr.i18np("%1 app", "%1 apps", root.blocked.length) }
                     ]
                     Rectangle {
                         required property var modelData
@@ -133,19 +135,19 @@ Item {
                 spacing: Kirigami.Units.smallSpacing
                 Kirigami.Heading { text: "This network"; level: 2 }
                 QQC2.RadioButton {
-                    text: "Home or work: other devices can find printers and pair your phone"
+                    text: tr.i18n("Home or work: other devices can find printers and pair your phone")
                     checked: root.profile === "home"
                     enabled: !root.busy
                     onClicked: if (root.profile !== "home") { root.busy = true; run.connectSource(root.profileCmd + " home") }
                 }
                 QQC2.RadioButton {
-                    text: "Home, sharing folders: other computers here can open folders you share"
+                    text: tr.i18n("Home, sharing folders: other computers here can open folders you share")
                     checked: root.profile === "sharing"
                     enabled: !root.busy
                     onClicked: if (root.profile !== "sharing") { root.busy = true; run.connectSource(root.profileCmd + " sharing") }
                 }
                 QQC2.RadioButton {
-                    text: "Public (café, airport, hotel): nothing can connect to this PC"
+                    text: tr.i18n("Public (café, airport, hotel): nothing can connect to this PC")
                     checked: root.profile === "public"
                     enabled: !root.busy
                     onClicked: if (root.profile !== "public") { root.busy = true; run.connectSource(root.profileCmd + " public") }
@@ -158,13 +160,13 @@ Item {
                 Layout.leftMargin: Kirigami.Units.gridUnit * 2
                 Layout.rightMargin: Kirigami.Units.gridUnit * 2
                 spacing: Kirigami.Units.smallSpacing
-                Kirigami.Heading { text: "Using the internet now"; level: 2 }
-                QQC2.Label { text: "Click an app to see where it lives, its processes and each connection."; opacity: 0.7; font: Kirigami.Theme.smallFont }
+                Kirigami.Heading { text: tr.i18n("Using the internet now"); level: 2 }
+                QQC2.Label { text: tr.i18n("Click an app to see where it lives, its processes and each connection."); opacity: 0.7; font: Kirigami.Theme.smallFont }
                 Kirigami.PlaceholderMessage {
                     Layout.fillWidth: true
                     visible: root.online.length === 0
                     icon.name: "network-connect"
-                    text: "No app is online right now"
+                    text: tr.i18n("No app is online right now")
                 }
                 Repeater {
                     model: root.online
@@ -193,10 +195,10 @@ Item {
                                         Kirigami.Icon { source: app.expanded ? "go-down" : "go-next"; Layout.preferredWidth: 16; Layout.preferredHeight: 16 }
                                         Kirigami.Icon { source: root.iconFor(app.modelData.name); fallback: "application-x-executable"; Layout.preferredWidth: 28; Layout.preferredHeight: 28 }
                                         QQC2.Label { text: app.modelData.name; font.weight: Font.DemiBold; elide: Text.ElideMiddle; Layout.fillWidth: true; textFormat: Text.PlainText }
-                                        QQC2.Label { text: app.modelData.connections === 1 ? "1 connection" : app.modelData.connections + " connections"; opacity: 0.7 }
+                                        QQC2.Label { text: tr.i18np("%1 connection", "%1 connections", app.modelData.connections); opacity: 0.7 }
                                     }
                                 }
-                                QQC2.Button { text: "Block"; icon.name: "network-disconnect"; enabled: !root.busy; onClicked: root.change("block", app.modelData.program) }
+                                QQC2.Button { text: tr.i18n("Block"); icon.name: "network-disconnect"; enabled: !root.busy; onClicked: root.change("block", app.modelData.program) }
                             }
                             // Details.
                             GridLayout {
@@ -205,9 +207,9 @@ Item {
                                 Layout.leftMargin: Kirigami.Units.gridUnit * 2.5
                                 columns: 2
                                 columnSpacing: Kirigami.Units.largeSpacing
-                                QQC2.Label { text: "Program"; opacity: 0.7 }
+                                QQC2.Label { text: tr.i18n("Program"); opacity: 0.7 }
                                 QQC2.Label { text: app.modelData.program; Layout.fillWidth: true; wrapMode: Text.WrapAnywhere; textFormat: Text.PlainText }
-                                QQC2.Label { text: (app.modelData.pids || []).length === 1 ? "Process" : "Processes"; opacity: 0.7 }
+                                QQC2.Label { text: (app.modelData.pids || []).length === 1 ? tr.i18n("Process") : tr.i18n("Processes"); opacity: 0.7 }
                                 QQC2.Label { text: (app.modelData.pids || []).join(", "); Layout.fillWidth: true; wrapMode: Text.Wrap }
                             }
                             Repeater {
@@ -224,7 +226,7 @@ Item {
                             QQC2.Label {
                                 visible: app.expanded && app.modelData.connections > (app.modelData.details || []).length
                                 Layout.leftMargin: Kirigami.Units.gridUnit * 2.5
-                                text: "… and " + (app.modelData.connections - (app.modelData.details || []).length) + " more"
+                                text: tr.i18n("… and %1 more", app.modelData.connections - (app.modelData.details || []).length)
                                 opacity: 0.6
                                 font: Kirigami.Theme.smallFont
                             }
@@ -239,13 +241,13 @@ Item {
                 Layout.leftMargin: Kirigami.Units.gridUnit * 2
                 Layout.rightMargin: Kirigami.Units.gridUnit * 2
                 spacing: Kirigami.Units.smallSpacing
-                Kirigami.Heading { text: "Apps without internet"; level: 2 }
+                Kirigami.Heading { text: tr.i18n("Apps without internet"); level: 2 }
                 Kirigami.PlaceholderMessage {
                     Layout.fillWidth: true
                     visible: root.blocked.length === 0
                     icon.name: "security-high"
-                    text: "No app is blocked"
-                    explanation: "Every app can use the internet. Block one above, or by name below."
+                    text: tr.i18n("No app is blocked")
+                    explanation: tr.i18n("Every app can use the internet. Block one above, or by name below.")
                 }
                 Repeater {
                     model: root.blocked
@@ -265,7 +267,7 @@ Item {
                                 QQC2.Label { text: modelData.name; font.weight: Font.DemiBold; elide: Text.ElideMiddle; Layout.fillWidth: true; textFormat: Text.PlainText }
                                 QQC2.Label { text: modelData.program; opacity: 0.6; font: Kirigami.Theme.smallFont; elide: Text.ElideMiddle; Layout.fillWidth: true; textFormat: Text.PlainText }
                             }
-                            QQC2.Button { text: "Allow internet"; icon.name: "network-connect"; enabled: !root.busy; onClicked: root.change("allow", modelData.program) }
+                            QQC2.Button { text: tr.i18n("Allow internet"); icon.name: "network-connect"; enabled: !root.busy; onClicked: root.change("allow", modelData.program) }
                         }
                     }
                 }
@@ -275,18 +277,18 @@ Item {
                     QQC2.TextField {
                         id: program
                         Layout.fillWidth: true
-                        placeholderText: "App name (for example firefox) or a .exe file"
+                        placeholderText: tr.i18n("App name (for example firefox) or a .exe file")
                         onAccepted: root.change("block", text)
                     }
-                    QQC2.Button { text: "Browse…"; icon.name: "document-open"; onClicked: picker.open() }
+                    QQC2.Button { text: tr.i18n("Browse…"); icon.name: "document-open"; onClicked: picker.open() }
                     QQC2.Button {
-                        text: "Block internet"
+                        text: tr.i18n("Block internet")
                         icon.name: "network-disconnect"
                         enabled: !root.busy && program.text.trim() !== ""
                         onClicked: root.change("block", program.text)
                         QQC2.ToolTip.visible: hovered
                         QQC2.ToolTip.delay: 600
-                        QQC2.ToolTip.text: "In a terminal: fennek-firewall block NAME"
+                        QQC2.ToolTip.text: tr.i18n("In a terminal: fennek-firewall block NAME")
                     }
                 }
             }

@@ -297,3 +297,96 @@ msgid_plural "This PC hasn't been updated for %1 days. Updates bring security fi
 msgstr[0] "Цей ПК не оновлювався %1 день. Оновлення приносять виправлення безпеки: перевірте наявність оновлень."
 msgstr[1] "Цей ПК не оновлювався %1 дні. Оновлення приносять виправлення безпеки: перевірте наявність оновлень."
 msgstr[2] "Цей ПК не оновлювався %1 днів. Оновлення приносять виправлення безпеки: перевірте наявність оновлень."
+
+msgid "Choose an app"
+msgstr "Виберіть застосунок"
+
+msgid "Firewall"
+msgstr "Брандмауер"
+
+msgid "Nothing on the network can reach this PC unless the desktop needs it. You choose which apps may use the internet."
+msgstr "Ніщо з мережі не може дістатися цього ПК, якщо це не потрібно стільниці. Ви вирішуєте, яким застосункам можна користуватися інтернетом."
+
+msgid "Public: nothing can connect"
+msgstr "Публічна: ніщо не може під’єднатися"
+
+msgid "Home or work"
+msgstr "Дім або робота"
+
+msgid "Home, sharing folders"
+msgstr "Дім, спільні теки"
+
+msgid "Online now"
+msgstr "Зараз в мережі"
+
+msgid "Blocked"
+msgstr "Заблоковано"
+
+msgid "Home or work: other devices can find printers and pair your phone"
+msgstr "Дім або робота: інші пристрої можуть знаходити принтери й поєднуватися з вашим телефоном"
+
+msgid "Home, sharing folders: other computers here can open folders you share"
+msgstr "Дім, спільні теки: інші комп’ютери тут можуть відкривати теки, якими ви ділитеся"
+
+msgid "Public (café, airport, hotel): nothing can connect to this PC"
+msgstr "Публічна (кав’ярня, аеропорт, готель): ніщо не може під’єднатися до цього ПК"
+
+msgid "Using the internet now"
+msgstr "Зараз користуються інтернетом"
+
+msgid "Click an app to see where it lives, its processes and each connection."
+msgstr "Клацніть застосунок, щоб побачити, де він міститься, його процеси й кожне з’єднання."
+
+msgid "No app is online right now"
+msgstr "Зараз жоден застосунок не в мережі"
+
+msgid "Block"
+msgstr "Заблокувати"
+
+msgid "Program"
+msgstr "Програма"
+
+msgid "Apps without internet"
+msgstr "Застосунки без інтернету"
+
+msgid "No app is blocked"
+msgstr "Жоден застосунок не заблоковано"
+
+msgid "Every app can use the internet. Block one above, or by name below."
+msgstr "Кожен застосунок може користуватися інтернетом. Заблокуйте його вище або за назвою нижче."
+
+msgid "Allow internet"
+msgstr "Дозволити інтернет"
+
+msgid "App name (for example firefox) or a .exe file"
+msgstr "Назва застосунку (наприклад, firefox) або файл .exe"
+
+msgid "Block internet"
+msgstr "Заблокувати інтернет"
+
+msgid "In a terminal: fennek-firewall block NAME"
+msgstr "У терміналі: fennek-firewall block НАЗВА"
+
+msgid "No app"
+msgstr "Жодного"
+
+msgid "Process"
+msgstr "Процес"
+
+msgid "Processes"
+msgstr "Процеси"
+
+msgid "… and %1 more"
+msgstr "… і ще %1"
+
+msgid "%1 app"
+msgid_plural "%1 apps"
+msgstr[0] "%1 застосунок"
+msgstr[1] "%1 застосунки"
+msgstr[2] "%1 застосунків"
+
+msgid "%1 connection"
+msgid_plural "%1 connections"
+msgstr[0] "%1 з’єднання"
+msgstr[1] "%1 з’єднання"
+msgstr[2] "%1 з’єднань"
