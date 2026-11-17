@@ -981,6 +981,29 @@ for po in "$files"/../src/po/*/*.po; do
     msgfmt --check -o "/usr/share/locale/$lang/LC_MESSAGES/plasma_applet_org.fennek.$widget.mo" "$po"
 done
 [ -n "${added_gettext:-}" ] && dnf -y remove gettext
+# The time zone map (setup wizard, Date & Time): its background drawn from Natural Earth's Ukraine-view country borders
+# (public domain), so Crimea is Ukraine. KDE's own built-in tiles draw it otherwise. src/timezone-map/render.py.
+ne=https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_admin_0_countries_ukr.geojson
+curl -fsSL --retry 3 --max-time 300 -o /tmp/countries.geojson "$ne"
+echo "28a1a17d7327cad576083d5122b867843f957468b1bb11168ded23fd5aea342e  /tmp/countries.geojson" | sha256sum -c -
+python3 -c 'import PIL' 2>/dev/null || { dnf -y install python3-pillow; added_pillow=1; }
+python3 "$files/../src/timezone-map/render.py" /tmp/countries.geojson /usr/share/fennek/timezone-tiles
+[ -n "${added_pillow:-}" ] && dnf -y remove python3-pillow
+rm -f /tmp/countries.geojson
+python3 - <<'EOF'
+import glob, os, pathlib
+d = pathlib.Path(glob.glob("/usr/lib*/qt6/qml/org/kde/plasma/workspace/timezoneselector")[0])
+p = d / "TimezoneSelector.qml"
+s = p.read_text()
+old = 'value: ":/plasma-workspace/timezone/offline_tiles"'
+assert s.count(old) == 1, "TimezoneSelector.qml changed upstream: revisit the Fennek map tiles"
+def put(p, text):
+    tmp = p.with_name(p.name + ".fennek-new"); tmp.write_text(text); os.chmod(tmp, p.stat().st_mode & 0o7777); os.replace(tmp, p)
+put(p, s.replace(old, 'value: "/usr/share/fennek/timezone-tiles"  // Fennek OS: drawn from Ukraine-view borders'))
+# The module also carries a compiled copy and its qmldir prefers it: without "prefer", Qt loads the file above.
+q = d / "qmldir"
+put(q, "".join(l for l in q.read_text().splitlines(True) if not l.startswith("prefer ")))
+EOF
 # Syntax check of every Fennek QML file while Qt's tools are here: a typo fails the build, not the desktop.
 qmlformat=$(command -v qmlformat || echo /usr/lib64/qt6/bin/qmlformat)
 for f in /usr/share/plasma/plasmoids/org.fennek.*/contents/ui/*.qml /usr/share/plasma/plasmoids/com.github.zren.tiledmenu/contents/ui/*.qml /usr/share/fennek/apps/*/*.qml /usr/share/plasma/wallpapers/org.fennek.live/contents/ui/*.qml /usr/share/sddm/themes/fennek/*.qml \
