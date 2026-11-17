@@ -708,7 +708,7 @@ def run_sandboxed(exe, digest, args, sound=False, box=None, inside=None):
     proton = ensure_proton()
     refresh_proton()
     if not proton:
-        return say("Couldn't set up Windows support (no internet?).", "error")
+        return say("Couldn't download Windows support. Check the internet connection, or try again in a few minutes: the download site sometimes turns requests away for a while.", "error")
     if not shutil.which("pasta"):
         return say("Sandbox networking (pasta) is missing; not running unsandboxed.", "error")
     home_box = None if box else own_box(exe)
