@@ -100,7 +100,7 @@ Item {
                 spacing: Kirigami.Units.largeSpacing
                 Repeater {
                     model: [
-                        { icon: root.profile === "public" ? "network-wireless-hotspot" : "go-home", title: "This network",
+                        { icon: root.profile === "public" ? "network-wireless-hotspot" : "go-home", title: tr.i18n("This network"),
                           text: root.profile === "public" ? tr.i18n("Public: nothing can connect") : root.profile === "home" ? tr.i18n("Home or work") : root.profile === "sharing" ? tr.i18n("Home, sharing folders") : "…" },
                         { icon: "network-connect", title: tr.i18n("Online now"),
                           text: tr.i18np("%1 app", "%1 apps", root.online.length) },
@@ -133,7 +133,7 @@ Item {
                 Layout.leftMargin: Kirigami.Units.gridUnit * 2
                 Layout.rightMargin: Kirigami.Units.gridUnit * 2
                 spacing: Kirigami.Units.smallSpacing
-                Kirigami.Heading { text: "This network"; level: 2 }
+                Kirigami.Heading { text: tr.i18n("This network"); level: 2 }
                 QQC2.RadioButton {
                     text: tr.i18n("Home or work: other devices can find printers and pair your phone")
                     checked: root.profile === "home"
