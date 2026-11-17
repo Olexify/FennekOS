@@ -2,6 +2,7 @@
 msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 msgid "Launch"
 msgstr "Запуск"
@@ -41,3 +42,258 @@ msgstr "Скасувати"
 
 msgid "Open"
 msgstr "Відкрити"
+
+msgid "Return to the latest version?"
+msgstr "Повернутися до найновішої версії?"
+
+msgid "Install the build from %1?"
+msgstr "Встановити збірку від %1?"
+
+msgid "Fennek OS goes back to the newest version and gets updates again. It takes effect after a restart."
+msgstr "Fennek OS повернеться до найновішої версії й знову отримуватиме оновлення. Зміни набудуть чинності після перезапуску."
+
+msgid "This earlier build misses newer security fixes and gets no updates until you return to the latest. Your files and apps are kept. It takes effect after a restart."
+msgstr "У цій давнішій збірці немає новіших виправлень безпеки, і вона не отримує оновлень, доки ви не повернетеся до найновішої. Ваші файли й застосунки збережуться. Зміни набудуть чинності після перезапуску."
+
+msgid "Install the NVIDIA edition?"
+msgstr "Встановити випуск для NVIDIA?"
+
+msgid "Install the standard edition?"
+msgstr "Встановити стандартний випуск?"
+
+msgid "It downloads now (a few GB) and takes effect after a restart. Your files, apps and settings are kept, and updates keep coming for the new edition."
+msgstr "Завантаження почнеться зараз (кілька ГБ), а зміни набудуть чинності після перезапуску. Ваші файли, застосунки й налаштування збережуться, а оновлення надходитимуть уже для нового випуску."
+
+msgid "Version %1"
+msgstr "Версія %1"
+
+msgid "build %1"
+msgstr "збірка %1"
+
+msgid "installed %1"
+msgstr "встановлено %1"
+
+msgid "Part %1 of %2"
+msgstr "Частина %1 з %2"
+
+msgid "%1 in total"
+msgstr "%1 загалом"
+
+msgid "You're on an earlier build (%1). It gets no updates and misses newer security fixes."
+msgstr "У вас давніша збірка (%1). Вона не отримує оновлень і не має новіших виправлень безпеки."
+
+msgid "Automatic updates are paused until %1."
+msgstr "Автоматичні оновлення призупинено до %1."
+
+msgid "Off: automatic updates wait for a normal connection. Checking and installing by hand always works. Mark a Wi-Fi as metered in its network settings."
+msgstr "Вимкнено: автоматичні оновлення чекатимуть на звичайне з’єднання. Перевіряти й встановлювати вручну можна завжди. Позначити Wi-Fi як лімітне можна в налаштуваннях мережі."
+
+msgid "YOU ARE HERE"
+msgstr "ВИ ТУТ"
+
+msgid "For when a recent change gets in your way. Earlier builds miss newer security fixes and get no updates until you return to the latest version. Your files and apps are kept; usually Go back to the previous version (above) is all you need."
+msgstr "Для випадків, коли нещодавня зміна заважає. У давніших збірках немає новіших виправлень безпеки, і вони не отримують оновлень, доки ви не повернетеся до найновішої версії. Ваші файли й застосунки збережуться; зазвичай досить кнопки «Повернутися до попередньої версії» вище."
+
+msgid "Monday"
+msgstr "понеділок"
+
+msgid "Tuesday"
+msgstr "вівторок"
+
+msgid "Wednesday"
+msgstr "середа"
+
+msgid "Thursday"
+msgstr "четвер"
+
+msgid "Friday"
+msgstr "п’ятниця"
+
+msgid "Saturday"
+msgstr "субота"
+
+msgid "Sunday"
+msgstr "неділя"
+
+msgid "An update is ready"
+msgstr "Оновлення готове"
+
+msgid "Checking for updates…"
+msgstr "Пошук оновлень…"
+
+msgid "Updating in the background…"
+msgstr "Оновлення у фоні…"
+
+msgid "Getting ready…"
+msgstr "Підготовка…"
+
+msgid "Downloading the update…"
+msgstr "Завантаження оновлення…"
+
+msgid "Installing…"
+msgstr "Встановлення…"
+
+msgid "Finishing…"
+msgstr "Завершення…"
+
+msgid "An update is available"
+msgstr "Доступне оновлення"
+
+msgid "That didn't work"
+msgstr "Не вдалося"
+
+msgid "You're up to date"
+msgstr "У вас найновіша версія"
+
+msgid "Restart to finish. Your files and apps stay as they are."
+msgstr "Перезапустіть, щоб завершити. Ваші файли й застосунки лишаться як є."
+
+msgid "It downloads in the background; you finish it with a restart."
+msgstr "Воно завантажиться у фоні, а завершиться після перезапуску."
+
+msgid "Check your internet connection and try again."
+msgstr "Перевірте з’єднання з інтернетом і спробуйте ще раз."
+
+msgid "You can keep working; this window can stay open or be closed."
+msgstr "Можна працювати далі; це вікно можна лишити відкритим або закрити."
+
+msgid "Checked just now."
+msgstr "Щойно перевірено."
+
+msgid "You're on a metered connection: automatic updates wait. You can still update now."
+msgstr "У вас лімітне з’єднання: автоматичні оновлення чекають. Оновитися зараз усе одно можна."
+
+msgid "Updates arrive by themselves; you can also check now."
+msgstr "Оновлення надходять самі; можна також перевірити зараз."
+
+msgid "Check"
+msgstr "Перевірити"
+
+msgid "Download"
+msgstr "Завантажити"
+
+msgid "Install"
+msgstr "Встановити"
+
+msgid "Restart"
+msgstr "Перезапустити"
+
+msgid "Return to the latest version"
+msgstr "Повернутися до найновішої версії"
+
+msgid "Resume"
+msgstr "Відновити"
+
+msgid "Automatic updates"
+msgstr "Автоматичні оновлення"
+
+msgid "Fennek OS:"
+msgstr "Fennek OS:"
+
+msgid "Download updates by themselves"
+msgstr "Завантажувати оновлення самостійно"
+
+msgid "When:"
+msgstr "Коли:"
+
+msgid "About once a day"
+msgstr "Приблизно раз на день"
+
+msgid "Every day at"
+msgstr "Щодня о"
+
+msgid "Every week on"
+msgstr "Щотижня в"
+
+msgid "Pause:"
+msgstr "Пауза:"
+
+msgid "Don't pause"
+msgstr "Не призупиняти"
+
+msgid "For 1 week"
+msgstr "На 1 тиждень"
+
+msgid "For 2 weeks"
+msgstr "На 2 тижні"
+
+msgid "For 4 weeks"
+msgstr "На 4 тижні"
+
+msgid "Metered connections:"
+msgstr "Лімітні з’єднання:"
+
+msgid "Download there too (phone hotspot, mobile data)"
+msgstr "Завантажувати й через них (точка доступу телефона, мобільні дані)"
+
+msgid "Store apps:"
+msgstr "Застосунки з Магазину:"
+
+msgid "Update by themselves"
+msgstr "Оновлювати самостійно"
+
+msgid "Updates download quietly and are installed when you restart; nothing restarts on its own."
+msgstr "Оновлення тихо завантажуються й встановлюються під час перезапуску; нічого не перезапускається само."
+
+msgid "Recovery"
+msgstr "Відновлення"
+
+msgid "Something broke after an update:"
+msgstr "Щось зламалося після оновлення:"
+
+msgid "Go back to the previous version"
+msgstr "Повернутися до попередньої версії"
+
+msgid "Your files:"
+msgstr "Ваші файли:"
+
+msgid "Backup and restore"
+msgstr "Резервні копії та відновлення"
+
+msgid "An earlier version of one file: right-click it in Files, then Previous versions."
+msgstr "Давніша версія одного файлу: клацніть його правою кнопкою у Файлах, потім «Попередні версії»."
+
+msgid "Your Fennek trail"
+msgstr "Ваш шлях з Fennek"
+
+msgid "The milestones of Fennek OS, and what each one brought."
+msgstr "Віхи Fennek OS і те, що принесла кожна."
+
+msgid "Graphics"
+msgstr "Графіка"
+
+msgid "Secure Boot is on, so this computer first has to trust the NVIDIA driver's signature. It takes a minute and one restart."
+msgstr "Безпечне завантаження ввімкнено, тож спершу комп’ютер має довіритися підпису драйвера NVIDIA. Це займе хвилину й один перезапуск."
+
+msgid "This computer has an NVIDIA graphics card. The NVIDIA edition of Fennek OS brings NVIDIA's own driver: full speed for games and video apps, NVIDIA Settings and NV Broadcast."
+msgstr "У цьому комп’ютері є відеокарта NVIDIA. Випуск Fennek OS для NVIDIA має власний драйвер NVIDIA: повна швидкість в іграх і відеозастосунках, NVIDIA Settings і NV Broadcast."
+
+msgid "This computer has no NVIDIA graphics card, so the standard edition of Fennek OS suits it better."
+msgstr "У цьому комп’ютері немає відеокарти NVIDIA, тож йому краще підходить стандартний випуск Fennek OS."
+
+msgid "Set it up"
+msgstr "Налаштувати"
+
+msgid "Install the NVIDIA edition"
+msgstr "Встановити випуск для NVIDIA"
+
+msgid "Install the standard edition"
+msgstr "Встановити стандартний випуск"
+
+msgid "Downloading. This can take a while; you can keep working."
+msgstr "Завантаження. Це може тривати довго; можна працювати далі."
+
+msgid "Advanced: install an earlier version"
+msgstr "Додатково: встановити давнішу версію"
+
+msgid "Refresh the list"
+msgstr "Оновити список"
+
+msgid "Show earlier versions"
+msgstr "Показати давніші версії"
+
+msgid "This PC hasn't been updated for %1 day. Updates bring security fixes: check for updates."
+msgid_plural "This PC hasn't been updated for %1 days. Updates bring security fixes: check for updates."
+msgstr[0] "Цей ПК не оновлювався %1 день. Оновлення приносять виправлення безпеки: перевірте наявність оновлень."
+msgstr[1] "Цей ПК не оновлювався %1 дні. Оновлення приносять виправлення безпеки: перевірте наявність оновлень."
+msgstr[2] "Цей ПК не оновлювався %1 днів. Оновлення приносять виправлення безпеки: перевірте наявність оновлень."

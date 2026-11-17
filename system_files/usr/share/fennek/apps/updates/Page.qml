@@ -7,9 +7,11 @@ import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
+import org.kde.ki18n
 
 Item {
     id: root
+    KI18nContext { id: tr; translationDomain: "fennek" }   // Fennek's own words in the person's language
 
     readonly property string helper: "/usr/libexec/fennek-update-settings"
     readonly property string settingsCmd: helper + " get"
@@ -53,7 +55,7 @@ Item {
     }
     readonly property int daysOld: booted && booted.timestamp ? Math.floor((Date.now() / 1000 - booted.timestamp) / 86400) : 0
     readonly property var weekdays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-    readonly property var weekdayNames: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    readonly property var weekdayNames: [tr.i18n("Monday"), tr.i18n("Tuesday"), tr.i18n("Wednesday"), tr.i18n("Thursday"), tr.i18n("Friday"), tr.i18n("Saturday"), tr.i18n("Sunday")]
 
     function day(ts) { return new Date(ts * 1000).toLocaleDateString(Qt.locale(), Locale.LongFormat) }
     function set(args) { run.connectSource("pkexec " + helper + " set " + args) }
@@ -67,20 +69,18 @@ Item {
     Kirigami.PromptDialog {
         parent: QQC2.Overlay.overlay   // over the whole window, also inside Settings
         id: confirmSwitch
-        title: root.pendingTag === "latest" ? "Return to the latest version?" : "Install the build from " + root.tagDate(root.pendingTag) + "?"
+        title: root.pendingTag === "latest" ? tr.i18n("Return to the latest version?") : tr.i18n("Install the build from %1?", root.tagDate(root.pendingTag))
         subtitle: root.pendingTag === "latest"
-            ? "Fennek OS goes back to the newest version and gets updates again. It takes effect after a restart."
-            : "This earlier build misses newer security fixes and gets no updates until you return to the latest. "
-              + "Your files and apps are kept. It takes effect after a restart."
+            ? tr.i18n("Fennek OS goes back to the newest version and gets updates again. It takes effect after a restart.")
+            : tr.i18n("This earlier build misses newer security fixes and gets no updates until you return to the latest. Your files and apps are kept. It takes effect after a restart.")
         standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
         onAccepted: { root.switching = true; run.connectSource(root.switchHelper + root.pendingTag) }
     }
     Kirigami.PromptDialog {
         parent: QQC2.Overlay.overlay
         id: confirmEdition
-        title: root.pendingEdition === "nvidia" ? "Install the NVIDIA edition?" : "Install the standard edition?"
-        subtitle: "It downloads now (a few GB) and takes effect after a restart. Your files, apps and settings are kept, "
-                  + "and updates keep coming for the new edition."
+        title: root.pendingEdition === "nvidia" ? tr.i18n("Install the NVIDIA edition?") : tr.i18n("Install the standard edition?")
+        subtitle: tr.i18n("It downloads now (a few GB) and takes effect after a restart. Your files, apps and settings are kept, and updates keep coming for the new edition.")
         standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
         onAccepted: { root.switching = true; run.connectSource(root.switchHelper + "--edition " + root.pendingEdition) }
     }
@@ -155,9 +155,9 @@ Item {
                     Kirigami.Heading { text: root.release.PRETTY_NAME || "Fennek OS"; level: 1 }
                     QQC2.Label {
                         opacity: 0.75
-                        text: (root.release.IMAGE_VERSION ? "Version " + root.release.IMAGE_VERSION : "")
-                              + (root.release.BUILD_ID ? " · build " + root.release.BUILD_ID : "")
-                              + (root.booted ? " · installed " + root.day(root.booted.timestamp) : "")
+                        text: (root.release.IMAGE_VERSION ? tr.i18n("Version %1", root.release.IMAGE_VERSION) : "")
+                              + (root.release.BUILD_ID ? " · " + tr.i18n("build %1", root.release.BUILD_ID) : "")
+                              + (root.booted ? " · " + tr.i18n("installed %1", root.day(root.booted.timestamp)) : "")
                     }
                 }
             }
@@ -185,29 +185,29 @@ Item {
                         spacing: 2
                         Kirigami.Heading {
                             level: 3
-                            text: root.staged ? "An update is ready"
-                                : root.state === "checking" ? "Checking for updates…"
-                                : root.state === "installing" ? (root.autoRun ? "Updating in the background…"
-                                    : ["Getting ready…", "Downloading the update…", "Installing…", "Finishing…"][root.step])
-                                : root.state === "available" ? "An update is available"
-                                : root.state === "failed" ? "That didn't work"
-                                : "You're up to date"
+                            text: root.staged ? tr.i18n("An update is ready")
+                                : root.state === "checking" ? tr.i18n("Checking for updates…")
+                                : root.state === "installing" ? (root.autoRun ? tr.i18n("Updating in the background…")
+                                    : [tr.i18n("Getting ready…"), tr.i18n("Downloading the update…"), tr.i18n("Installing…"), tr.i18n("Finishing…")][root.step])
+                                : root.state === "available" ? tr.i18n("An update is available")
+                                : root.state === "failed" ? tr.i18n("That didn't work")
+                                : tr.i18n("You're up to date")
                         }
                         QQC2.Label {
                             Layout.fillWidth: true
                             wrapMode: Text.Wrap
                             opacity: 0.8
-                            text: root.staged ? "Restart to finish. Your files and apps stay as they are."
-                                : root.state === "available" ? "It downloads in the background; you finish it with a restart."
-                                : root.state === "failed" ? (root.detail || "Check your internet connection and try again.")
+                            text: root.staged ? tr.i18n("Restart to finish. Your files and apps stay as they are.")
+                                : root.state === "available" ? tr.i18n("It downloads in the background; you finish it with a restart.")
+                                : root.state === "failed" ? (root.detail || tr.i18n("Check your internet connection and try again."))
                                 : root.state === "installing" ? (root.prog.stage === "downloading" && root.prog.total
-                                    ? "Part " + Math.min(root.prog.done + 1, root.prog.total) + " of " + root.prog.total
-                                      + (root.prog.size ? " · " + root.size(root.prog.size) + " in total" : "")
-                                    : "You can keep working; this window can stay open or be closed.")
-                                : root.state === "uptodate" ? "Checked just now."
+                                    ? tr.i18n("Part %1 of %2", Math.min(root.prog.done + 1, root.prog.total), root.prog.total)
+                                      + (root.prog.size ? " · " + tr.i18n("%1 in total", root.size(root.prog.size)) : "")
+                                    : tr.i18n("You can keep working; this window can stay open or be closed."))
+                                : root.state === "uptodate" ? tr.i18n("Checked just now.")
                                 : root.state === "idle" ? (root.settings.metered_now && !root.settings.on_metered
-                                        ? "You're on a metered connection: automatic updates wait. You can still update now."
-                                        : "Updates arrive by themselves; you can also check now.") : ""
+                                        ? tr.i18n("You're on a metered connection: automatic updates wait. You can still update now.")
+                                        : tr.i18n("Updates arrive by themselves; you can also check now.")) : ""
                         }
                         QQC2.ProgressBar {
                             Layout.fillWidth: true
@@ -224,7 +224,7 @@ Item {
                             visible: root.state === "installing" || !!root.staged
                             spacing: Kirigami.Units.smallSpacing
                             Repeater {
-                                model: ["Check", "Download", "Install", "Restart"]
+                                model: [tr.i18n("Check"), tr.i18n("Download"), tr.i18n("Install"), tr.i18n("Restart")]
                                 RowLayout {
                                     required property string modelData
                                     required property int index
@@ -286,8 +286,8 @@ Item {
                 Layout.rightMargin: Kirigami.Units.gridUnit * 2
                 visible: root.onEarlier
                 type: Kirigami.MessageType.Warning
-                text: "You're on an earlier build (" + root.tagDate(root.runningTag) + "). It gets no updates and misses newer security fixes."
-                actions: [ Kirigami.Action { text: "Return to the latest version"; onTriggered: root.switchTo("latest") } ]
+                text: tr.i18n("You're on an earlier build (%1). It gets no updates and misses newer security fixes.", root.tagDate(root.runningTag))
+                actions: [ Kirigami.Action { text: tr.i18n("Return to the latest version"); onTriggered: root.switchTo("latest") } ]
             }
             Kirigami.InlineMessage {
                 Layout.fillWidth: true
@@ -295,7 +295,7 @@ Item {
                 Layout.rightMargin: Kirigami.Units.gridUnit * 2
                 visible: !root.staged && root.daysOld > 14
                 type: Kirigami.MessageType.Warning
-                text: "This PC hasn't been updated for " + root.daysOld + " days. Updates bring security fixes: check for updates."
+                text: tr.i18np("This PC hasn't been updated for %1 day. Updates bring security fixes: check for updates.", "This PC hasn't been updated for %1 days. Updates bring security fixes: check for updates.", root.daysOld)
             }
             Kirigami.InlineMessage {
                 Layout.fillWidth: true
@@ -303,8 +303,8 @@ Item {
                 Layout.rightMargin: Kirigami.Units.gridUnit * 2
                 visible: root.settings.paused_until !== ""
                 type: Kirigami.MessageType.Information
-                text: "Automatic updates are paused until " + root.settings.paused_until + "."
-                actions: [ Kirigami.Action { text: "Resume"; onTriggered: root.set("resume") } ]
+                text: tr.i18n("Automatic updates are paused until %1.", root.settings.paused_until)
+                actions: [ Kirigami.Action { text: tr.i18n("Resume"); onTriggered: root.set("resume") } ]
             }
 
             GridLayout {   // the page's other parts start at the left, and so do these
@@ -315,19 +315,19 @@ Item {
                 Layout.leftMargin: Kirigami.Units.gridUnit * 2
                 Layout.rightMargin: Kirigami.Units.gridUnit * 2
 
-                Kirigami.Heading { text: "Automatic updates"; level: 2; Layout.columnSpan: 2 }
-                QQC2.Label { text: "Fennek OS:"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
+                Kirigami.Heading { text: tr.i18n("Automatic updates"); level: 2; Layout.columnSpan: 2 }
+                QQC2.Label { text: tr.i18n("Fennek OS:"); Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
                 QQC2.Switch {
-                    text: "Download updates by themselves"
+                    text: tr.i18n("Download updates by themselves")
                     checked: root.settings.auto
                     onToggled: root.set("auto " + (checked ? "on" : "off"))
                 }
-                QQC2.Label { text: "When:"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
+                QQC2.Label { text: tr.i18n("When:"); Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
                 RowLayout {
                     enabled: root.settings.auto
                     QQC2.ComboBox { wheelEnabled: false   // the wheel scrolls the page, never changes a setting
                         id: when
-                        model: ["About once a day", "Every day at", "Every week on"]
+                        model: [tr.i18n("About once a day"), tr.i18n("Every day at"), tr.i18n("Every week on")]
                         currentIndex: root.settings.schedule.kind === "daily" ? 1 : root.settings.schedule.kind === "weekly" ? 2 : 0
                         onActivated: index => index === 0 ? root.set("schedule default")
                                    : index === 1 ? root.set("schedule daily " + hour.currentText)
@@ -349,25 +349,24 @@ Item {
                                             : root.set("schedule weekly " + root.weekdays[dayBox.currentIndex] + " " + model[index])
                     }
                 }
-                QQC2.Label { text: "Pause:"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
+                QQC2.Label { text: tr.i18n("Pause:"); Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
                 QQC2.ComboBox { wheelEnabled: false   // the wheel scrolls the page, never changes a setting
-                    model: ["Don't pause", "For 1 week", "For 2 weeks", "For 4 weeks"]
+                    model: [tr.i18n("Don't pause"), tr.i18n("For 1 week"), tr.i18n("For 2 weeks"), tr.i18n("For 4 weeks")]
                     currentIndex: 0
                     onActivated: index => index === 0 ? root.set("resume") : root.set("pause " + [0, 7, 14, 28][index])
                 }
-                QQC2.Label { text: "Metered connections:"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
+                QQC2.Label { text: tr.i18n("Metered connections:"); Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
                 QQC2.Switch {
-                    text: "Download there too (phone hotspot, mobile data)"
+                    text: tr.i18n("Download there too (phone hotspot, mobile data)")
                     checked: !!root.settings.on_metered
                     onToggled: root.set("metered " + (checked ? "on" : "off"))
                     QQC2.ToolTip.visible: hovered
                     QQC2.ToolTip.delay: 600
-                    QQC2.ToolTip.text: "Off: automatic updates wait for a normal connection. Checking and installing "
-                                     + "by hand always works. Mark a Wi-Fi as metered in its network settings."
+                    QQC2.ToolTip.text: tr.i18n("Off: automatic updates wait for a normal connection. Checking and installing by hand always works. Mark a Wi-Fi as metered in its network settings.")
                 }
-                QQC2.Label { text: "Store apps:"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
+                QQC2.Label { text: tr.i18n("Store apps:"); Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
                 QQC2.Switch {
-                    text: "Update by themselves"
+                    text: tr.i18n("Update by themselves")
                     checked: root.settings.apps_auto
                     onToggled: root.set("apps " + (checked ? "on" : "off"))
                     QQC2.ToolTip.visible: hovered
@@ -381,23 +380,23 @@ Item {
                     wrapMode: Text.Wrap
                     opacity: 0.7
                     font: Kirigami.Theme.smallFont
-                    text: "Updates download quietly and are installed when you restart; nothing restarts on its own."
+                    text: tr.i18n("Updates download quietly and are installed when you restart; nothing restarts on its own.")
                 }
 
-                Kirigami.Heading { text: "Recovery"; level: 2; Layout.columnSpan: 2; Layout.topMargin: Kirigami.Units.largeSpacing }
-                QQC2.Label { text: "Something broke after an update:"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
+                Kirigami.Heading { text: tr.i18n("Recovery"); level: 2; Layout.columnSpan: 2; Layout.topMargin: Kirigami.Units.largeSpacing }
+                QQC2.Label { text: tr.i18n("Something broke after an update:"); Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
                 QQC2.Button {
                     icon.name: "edit-undo"
-                    text: "Go back to the previous version"
+                    text: tr.i18n("Go back to the previous version")
                     onClicked: run.connectSource("fennek-go-back")
                     QQC2.ToolTip.visible: hovered
                     QQC2.ToolTip.delay: 600
                     QQC2.ToolTip.text: "In a terminal: sudo bootc rollback"
                 }
-                QQC2.Label { text: "Your files:"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
+                QQC2.Label { text: tr.i18n("Your files:"); Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter }
                 QQC2.Button {
                     icon.name: "drive-removable-media"
-                    text: "Backup and restore"
+                    text: tr.i18n("Backup and restore")
                     onClicked: run.connectSource("fennek-app settings backup")
                 }
                 Item { implicitWidth: 1 }   // under the setting it explains
@@ -407,7 +406,7 @@ Item {
                     wrapMode: Text.Wrap
                     opacity: 0.7
                     font: Kirigami.Theme.smallFont
-                    text: "An earlier version of one file: right-click it in Files, then Previous versions."
+                    text: tr.i18n("An earlier version of one file: right-click it in Files, then Previous versions.")
                 }
             }
             // Trails: the milestones of Fennek OS, yours highlighted.
@@ -416,8 +415,8 @@ Item {
                 Layout.leftMargin: Kirigami.Units.gridUnit * 2
                 Layout.rightMargin: Kirigami.Units.gridUnit * 2
                 spacing: Kirigami.Units.largeSpacing
-                Kirigami.Heading { text: "Your Fennek trail"; level: 2 }
-                QQC2.Label { text: "The milestones of Fennek OS, and what each one brought."; opacity: 0.7 }
+                Kirigami.Heading { text: tr.i18n("Your Fennek trail"); level: 2 }
+                QQC2.Label { text: tr.i18n("The milestones of Fennek OS, and what each one brought."); opacity: 0.7 }
                 Repeater {
                     model: root.milestones
                     delegate: Rectangle {
@@ -437,7 +436,7 @@ Item {
                             anchors { left: parent.left; right: parent.right; top: parent.top; margins: Kirigami.Units.gridUnit * 0.75 }
                             spacing: 4
                             QQC2.Label {
-                                text: (stone.modelData.chapter || "").toUpperCase() + (stone.current ? "  ·  YOU ARE HERE" : "")
+                                text: (stone.modelData.chapter || "").toUpperCase() + (stone.current ? "  ·  " + tr.i18n("YOU ARE HERE") : "")
                                 font: Kirigami.Theme.smallFont
                                 opacity: 0.6
                             }
@@ -473,21 +472,21 @@ Item {
                 Layout.leftMargin: Kirigami.Units.gridUnit * 2
                 Layout.rightMargin: Kirigami.Units.gridUnit * 2
                 spacing: Kirigami.Units.largeSpacing
-                Kirigami.Heading { text: "Graphics"; level: 2 }
+                Kirigami.Heading { text: tr.i18n("Graphics"); level: 2 }
                 QQC2.Label {
                     Layout.fillWidth: true
                     wrapMode: Text.Wrap
                     opacity: 0.8
                     text: graphicsBox.needsKey
-                          ? "Secure Boot is on, so this computer first has to trust the NVIDIA driver's signature. It takes a minute and one restart."
+                          ? tr.i18n("Secure Boot is on, so this computer first has to trust the NVIDIA driver's signature. It takes a minute and one restart.")
                           : root.graphics.nvidia
-                            ? "This computer has an NVIDIA graphics card. The NVIDIA edition of Fennek OS brings NVIDIA's own driver: full speed for games and video apps, NVIDIA Settings and NV Broadcast."
-                            : "This computer has no NVIDIA graphics card, so the standard edition of Fennek OS suits it better."
+                            ? tr.i18n("This computer has an NVIDIA graphics card. The NVIDIA edition of Fennek OS brings NVIDIA's own driver: full speed for games and video apps, NVIDIA Settings and NV Broadcast.")
+                            : tr.i18n("This computer has no NVIDIA graphics card, so the standard edition of Fennek OS suits it better.")
                 }
                 RowLayout {
                     QQC2.Button {
                         enabled: !root.switching
-                        text: graphicsBox.needsKey ? "Set it up" : root.graphics.nvidia ? "Install the NVIDIA edition" : "Install the standard edition"
+                        text: graphicsBox.needsKey ? tr.i18n("Set it up") : root.graphics.nvidia ? tr.i18n("Install the NVIDIA edition") : tr.i18n("Install the standard edition")
                         onClicked: {
                             if (graphicsBox.needsKey) { run.connectSource("/usr/libexec/fennek-secure-boot-setup"); return }
                             root.pendingEdition = root.graphics.nvidia ? "nvidia" : "standard"
@@ -495,7 +494,7 @@ Item {
                         }
                     }
                     QQC2.BusyIndicator { visible: root.switching; running: visible }
-                    QQC2.Label { visible: root.switching; opacity: 0.8; text: "Downloading. This can take a while; you can keep working." }
+                    QQC2.Label { visible: root.switching; opacity: 0.8; text: tr.i18n("Downloading. This can take a while; you can keep working.") }
                 }
             }
 
@@ -505,18 +504,16 @@ Item {
                 Layout.leftMargin: Kirigami.Units.gridUnit * 2
                 Layout.rightMargin: Kirigami.Units.gridUnit * 2
                 spacing: Kirigami.Units.largeSpacing
-                Kirigami.Heading { text: "Advanced: install an earlier version"; level: 2 }
+                Kirigami.Heading { text: tr.i18n("Advanced: install an earlier version"); level: 2 }
                 QQC2.Label {
                     Layout.fillWidth: true
                     wrapMode: Text.Wrap
                     opacity: 0.8
-                    text: "For when a recent change gets in your way. Earlier builds miss newer security fixes and get no "
-                        + "updates until you return to the latest version. Your files and apps are kept; usually "
-                        + "Go back to the previous version (above) is all you need."
+                    text: tr.i18n("For when a recent change gets in your way. Earlier builds miss newer security fixes and get no updates until you return to the latest version. Your files and apps are kept; usually Go back to the previous version (above) is all you need.")
                 }
                 RowLayout {
                     QQC2.Button {
-                        text: root.earlier.length ? "Refresh the list" : "Show earlier versions"
+                        text: root.earlier.length ? tr.i18n("Refresh the list") : tr.i18n("Show earlier versions")
                         enabled: !root.loadingEarlier
                         onClicked: { root.loadingEarlier = true; run.connectSource(root.tagsCmd) }
                     }
