@@ -405,3 +405,210 @@ msgstr "У терміналі:"
 
 msgid "In a terminal, update them now:"
 msgstr "У терміналі, оновити їх зараз:"
+
+msgid "Settings"
+msgstr "Налаштування"
+
+msgid "Find a setting"
+msgstr "Знайти параметр"
+
+msgid "Home"
+msgstr "Головна"
+
+msgid "Support Fennek OS"
+msgstr "Підтримати Fennek OS"
+
+msgid "All KDE settings"
+msgstr "Усі налаштування KDE"
+
+msgid "Back"
+msgstr "Назад"
+
+msgid "Results"
+msgstr "Результати"
+
+msgid "Local account · Fennek OS"
+msgstr "Локальний обліковий запис · Fennek OS"
+
+msgid "Restart to finish the update"
+msgstr "Перезапустіть, щоб завершити оновлення"
+
+msgid "Updates are automatic"
+msgstr "Оновлення автоматичні"
+
+msgid "Firewall: public network"
+msgstr "Брандмауер: публічна мережа"
+
+msgid "Firewall: home network"
+msgstr "Брандмауер: домашня мережа"
+
+msgid "No settings match “%1”"
+msgstr "Немає параметрів за запитом «%1»"
+
+msgid "System"
+msgstr "Система"
+
+msgid "Display, sound, notifications, power"
+msgstr "Екран, звук, сповіщення, живлення"
+
+msgid "Battery & app usage"
+msgstr "Батарея й використання застосунками"
+
+msgid "Which apps used the battery"
+msgstr "Які застосунки витрачали заряд"
+
+msgid "Free up space"
+msgstr "Звільнити місце"
+
+msgid "Recycle Bin, temporary files, unused app parts; what uses space"
+msgstr "Кошик, тимчасові файли, невикористані частини застосунків; що займає місце"
+
+msgid "Devices"
+msgstr "Пристрої"
+
+msgid "Bluetooth, printers, mouse, keyboard"
+msgstr "Bluetooth, принтери, миша, клавіатура"
+
+msgid "Network & Internet"
+msgstr "Мережа й інтернет"
+
+msgid "Wi-Fi, VPN, firewall"
+msgstr "Wi-Fi, VPN, брандмауер"
+
+msgid "Appearance"
+msgstr "Вигляд"
+
+msgid "Background, colors, themes, fonts"
+msgstr "Тло, кольори, теми, шрифти"
+
+msgid "Personalize"
+msgstr "Персоналізація"
+
+msgid "Theme, text size and typeface"
+msgstr "Тема, розмір тексту й шрифт"
+
+msgid "Taskbar"
+msgstr "Панель завдань"
+
+msgid "Hide it, small buttons, combine, peek, displays"
+msgstr "Приховування, малі кнопки, групування, перегляд, екрани"
+
+msgid "Restore taskbar & Start"
+msgstr "Відновити панель завдань і «Пуск»"
+
+msgid "Back to the default layout if something got moved or removed"
+msgstr "Повернути типовий вигляд, якщо щось перемістилося або зникло"
+
+msgid "Apps"
+msgstr "Застосунки"
+
+msgid "Installed apps, default apps, startup apps"
+msgstr "Встановлені, типові й автозапуск"
+
+msgid "Installed apps"
+msgstr "Встановлені застосунки"
+
+msgid "See what you added, how big it is, remove it"
+msgstr "Що ви додали, скільки воно займає, як вилучити"
+
+msgid "Get more apps"
+msgstr "Більше застосунків"
+
+msgid "Store"
+msgstr "Магазин"
+
+msgid "Accounts"
+msgstr "Облікові записи"
+
+msgid "Your account, other people"
+msgstr "Ваш обліковий запис, інші люди"
+
+msgid "Time & Language"
+msgstr "Час і мова"
+
+msgid "Date, region, language"
+msgstr "Дата, регіон, мова"
+
+msgid "Accessibility"
+msgstr "Спеціальні можливості"
+
+msgid "Assistive features, keyboard shortcuts"
+msgstr "Допоміжні функції, клавіатурні скорочення"
+
+msgid "Make text bigger"
+msgstr "Збільшити текст"
+
+msgid "Text size for everything on the screen"
+msgstr "Розмір тексту для всього на екрані"
+
+msgid "Privacy & Security"
+msgstr "Приватність і безпека"
+
+msgid "Firewall, quarantine, permissions"
+msgstr "Брандмауер, карантин, дозволи"
+
+msgid "Choose which apps may use the internet"
+msgstr "Виберіть, яким застосункам можна користуватися інтернетом"
+
+msgid "Quarantine"
+msgstr "Карантин"
+
+msgid "Downloads the antivirus blocked"
+msgstr "Завантаження, які заблокував антивірус"
+
+msgid "App permissions"
+msgstr "Дозволи застосунків"
+
+msgid "What each app may do outside its box"
+msgstr "Що кожен застосунок може робити поза своїм простором"
+
+msgid "Device encryption"
+msgstr "Шифрування пристрою"
+
+msgid "Whether your files are encrypted; make a recovery key"
+msgstr "Чи зашифровано ваші файли; створити ключ відновлення"
+
+msgid "Privacy policy"
+msgstr "Політика приватності"
+
+msgid "Every connection Fennek OS makes"
+msgstr "Кожне з’єднання, яке робить Fennek OS"
+
+msgid "Update & Recovery"
+msgstr "Оновлення й відновлення"
+
+msgid "Updates, backup, previous versions"
+msgstr "Оновлення, резервні копії, попередні версії"
+
+msgid "Updates"
+msgstr "Оновлення"
+
+msgid "Status, automatic updates, schedule, pause"
+msgstr "Стан, автоматичні оновлення, розклад, пауза"
+
+msgid "Store app updates"
+msgstr "Оновлення застосунків з Магазину"
+
+msgid "Update Store apps now"
+msgstr "Оновити застосунки з Магазину зараз"
+
+msgid "Go back"
+msgstr "Повернутися"
+
+msgid "Undo the last update, keep your files"
+msgstr "Скасувати останнє оновлення, зберігши ваші файли"
+
+msgid "Reset desktop settings"
+msgstr "Скинути налаштування стільниці"
+
+msgid "Back to how Fennek OS starts, keep your files and apps"
+msgstr "Як у щойно встановленій Fennek OS, зберігши файли й застосунки"
+
+msgid "Backup"
+msgstr "Резервні копії"
+
+msgid "Copy your folders to a USB drive"
+msgstr "Копіювати ваші теки на USB-накопичувач"
+
+msgid "Free and made by one person: how to help"
+msgstr "Безкоштовна й зроблена однією людиною: як допомогти"

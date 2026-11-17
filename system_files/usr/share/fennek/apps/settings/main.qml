@@ -1,4 +1,4 @@
-// Fennek Settings: a sidebar ("Find a setting" + categories with their icons) and, on the right, the chosen
+// Fennek Settings: a sidebar (tr.i18n("Find a setting") + categories with their icons) and, on the right, the chosen
 // category's settings as rounded cards. Home shows the categories as large cards. A setting opens its KDE settings
 // page right here, on the right (saved by itself, no Apply; back arrow to return), or runs a tool.
 // Runs as a normal window: fennek-app settings (see fennek-settings.desktop).
@@ -7,13 +7,15 @@ import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
+import org.kde.ki18n
 import org.kde.coreaddons as KCoreAddons
 import Fennek
 import "catalog.js" as Catalog
 
 QQC2.ApplicationWindow {
     visible: true
-    title: "Settings"
+    title: tr.i18n("Settings")
+    KI18nContext { id: tr; translationDomain: "fennek" }   // Fennek's own words in the person's language
     width: Kirigami.Units.gridUnit * 60
     height: Kirigami.Units.gridUnit * 38
     minimumWidth: Kirigami.Units.gridUnit * 28
@@ -75,8 +77,8 @@ QQC2.ApplicationWindow {
     }
     // Outside English, KDE's own pages show KDE's translated name and line; Fennek's English stays where KDE has none.
     readonly property bool english: Qt.locale().name.startsWith("en")
-    function itemName(i) { return !english && i.kcm ? (pageView.name(i.kcm) || i.name) : i.name }
-    function itemDesc(i) { return !english && i.kcm ? (pageView.summary(i.kcm) || i.desc) : i.desc }
+    function itemName(i) { return !english && i.kcm ? (pageView.name(i.kcm) || (i.name ? tr.i18n(i.name) : "")) : (i.name ? tr.i18n(i.name) : "") }
+    function itemDesc(i) { return !english && i.kcm ? (pageView.summary(i.kcm) || (i.desc ? tr.i18n(i.desc) : "")) : (i.desc ? tr.i18n(i.desc) : "") }
     function openPage(name) {                    // a Fennek page by name (the Home status chips)
         for (const c of Catalog.categories)
             for (const i of c.items)
@@ -96,7 +98,7 @@ QQC2.ApplicationWindow {
         const out = []
         for (const c of Catalog.categories)
             for (const i of shown(c.items))
-                if ((i.name + " " + i.desc + " " + c.name + " " + words(i)).toLowerCase().includes(q)) out.push(i)
+                if ((i.name + " " + i.desc + " " + c.name + " " + itemName(i) + " " + itemDesc(i) + " " + tr.i18n(c.name) + " " + words(i)).toLowerCase().includes(q)) out.push(i)
         return out
     }
     readonly property color cardColor: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.05)
@@ -150,7 +152,7 @@ QQC2.ApplicationWindow {
                         id: search
                         Layout.fillWidth: true
                         Layout.bottomMargin: Kirigami.Units.largeSpacing
-                        placeholderText: "Find a setting"
+                        placeholderText: tr.i18n("Find a setting")
                         onTextChanged: root.query = text
                     }
                     QQC2.ItemDelegate {
@@ -170,7 +172,7 @@ QQC2.ApplicationWindow {
                         contentItem: RowLayout {
                             spacing: Kirigami.Units.largeSpacing
                             Kirigami.Icon { source: "fennek-settings-home"; Layout.preferredWidth: 24; Layout.preferredHeight: 24 }   // a house in the Fennek violet, like the category icons
-                            QQC2.Label { text: "Home"; Layout.fillWidth: true }
+                            QQC2.Label { text: tr.i18n("Home"); Layout.fillWidth: true }
                         }
                     }
                     Repeater {
@@ -193,21 +195,21 @@ QQC2.ApplicationWindow {
                             contentItem: RowLayout {
                                 spacing: Kirigami.Units.largeSpacing
                                 Kirigami.Icon { source: modelData.icon; Layout.preferredWidth: 24; Layout.preferredHeight: 24 }
-                                QQC2.Label { text: modelData.name; Layout.fillWidth: true; elide: Text.ElideRight }
+                                QQC2.Label { text: tr.i18n(modelData.name); Layout.fillWidth: true; elide: Text.ElideRight }
                             }
                         }
                     }
                     Item { Layout.fillHeight: true }
                     QQC2.ItemDelegate {   // free, made by one person: where to help
                         Layout.fillWidth: true
-                        text: "Support Fennek OS"
+                        text: tr.i18n("Support Fennek OS")
                         icon.name: "fennek-set-support"
                         onClicked: root.openPage("support")
                         background: Rectangle { radius: 8; color: parent.hovered ? root.cardColor : "transparent" }
                     }
                     QQC2.ItemDelegate {
                         Layout.fillWidth: true
-                        text: "All KDE settings"   // everything else, in KDE's own window
+                        text: tr.i18n("All KDE settings")   // everything else, in KDE's own window
                         icon.name: "preferences-system"
                         onClicked: run.connectSource("systemsettings")
                         background: Rectangle { radius: 8; color: parent.hovered ? root.cardColor : "transparent" }
@@ -228,7 +230,7 @@ QQC2.ApplicationWindow {
                     QQC2.ToolButton {
                         icon.name: "go-previous"
                         QQC2.ToolTip.visible: hovered
-                        QQC2.ToolTip.text: "Back"
+                        QQC2.ToolTip.text: tr.i18n("Back")
                         onClicked: root.page && root.page.kcm && pageView.depth > 1 ? pageView.back() : (root.page = null)
                     }
                     Kirigami.Icon {
@@ -273,7 +275,7 @@ QQC2.ApplicationWindow {
                     Kirigami.Heading {
                         Layout.topMargin: Kirigami.Units.gridUnit * 1.5
                         Layout.leftMargin: Kirigami.Units.gridUnit * 2
-                        text: root.query !== "" ? "Results" : root.category ? root.category.name : "Home"
+                        text: root.query !== "" ? tr.i18n("Results") : root.category ? tr.i18n(root.category.name) : tr.i18n(tr.i18n("Home"))
                         level: 1
                     }
 
@@ -300,16 +302,16 @@ QQC2.ApplicationWindow {
                                 spacing: 2
                                 Layout.fillWidth: true
                                 Kirigami.Heading { text: kuser.fullName || kuser.loginName; level: 2; Layout.fillWidth: true; elide: Text.ElideRight }
-                                QQC2.Label { text: "Local account · Fennek OS"; opacity: 0.7 }
+                                QQC2.Label { text: tr.i18n("Local account · Fennek OS"); opacity: 0.7 }
                             }
                             // Status chips: click to open the matching place.
                             Repeater {
                                 model: [
                                     { icon: root.updateWaiting ? "system-reboot" : "update-none",
-                                      text: root.updateWaiting ? "Restart to finish the update" : "Updates are automatic",
+                                      text: root.updateWaiting ? tr.i18n("Restart to finish the update") : tr.i18n("Updates are automatic"),
                                       page: "updates" },
                                     { icon: "security-high",
-                                      text: root.netProfile === "public" ? "Firewall: public network" : "Firewall: home network",
+                                      text: root.netProfile === "public" ? tr.i18n("Firewall: public network") : tr.i18n("Firewall: home network"),
                                       page: "firewall" }
                                 ]
                                 delegate: QQC2.ItemDelegate {
@@ -354,8 +356,8 @@ QQC2.ApplicationWindow {
                                     ColumnLayout {
                                         spacing: 2
                                         Layout.fillWidth: true
-                                        QQC2.Label { text: modelData.name; font.weight: Font.DemiBold; Layout.fillWidth: true }
-                                        QQC2.Label { text: modelData.sub; opacity: 0.7; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                                        QQC2.Label { text: tr.i18n(modelData.name); font.weight: Font.DemiBold; Layout.fillWidth: true }
+                                        QQC2.Label { text: (modelData.sub ? tr.i18n(modelData.sub) : ""); opacity: 0.7; wrapMode: Text.Wrap; Layout.fillWidth: true }
                                     }
                                 }
                             }
@@ -375,7 +377,7 @@ QQC2.ApplicationWindow {
                         }
                         QQC2.Label {
                             visible: root.query !== "" && root.matches().length === 0
-                            text: "No settings match \"" + root.query + "\""
+                            text: tr.i18n("No settings match “%1”", root.query)
                             opacity: 0.7
                         }
                     }
