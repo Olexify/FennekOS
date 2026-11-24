@@ -160,6 +160,7 @@ LANGUAGE=uk LANG=uk_UA.UTF-8 fennek-app run >/out/run-uk.log 2>&1 & shot 53-laun
 LANGUAGE=uk LANG=uk_UA.UTF-8 fennek-app updates >/out/updates-uk.log 2>&1 & shot 54-updates-uk 10; close
 LANGUAGE=uk LANG=uk_UA.UTF-8 fennek-app firewall >/out/firewall-uk.log 2>&1 & shot 55-firewall-uk 10; close
 LANGUAGE=uk LANG=uk_UA.UTF-8 fennek-app taskmanager >/out/taskmanager-uk.log 2>&1 & shot 56-taskmanager-uk 10; close
+LANGUAGE=uk LANG=uk_UA.UTF-8 fennek-app quarantine >/out/quarantine-uk.log 2>&1 & shot 57-quarantine-uk 10; close
 EOF
 } >/tmp/session2.sh
 timeout 240 runuser -u anna -- env XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" HOME=/home/anna dbus-run-session -- bash /tmp/session2.sh

@@ -816,3 +816,90 @@ msgstr[2] "%1 процесів"
 
 msgid "Programs"
 msgstr "Програми"
+
+msgid "Harmful files found:"
+msgstr "Знайдено шкідливі файли:"
+
+msgid "Restored to: %1"
+msgstr "Відновлено до: %1"
+
+msgid "Updated %1"
+msgstr "Оновлено %1"
+
+msgid "from %1"
+msgstr "з %1"
+
+msgid "These were flagged as harmful. Restore only if you're sure it's a false alarm: opening real malware can damage your files."
+msgstr "Їх позначено як шкідливі. Відновлюйте, лише якщо певні, що це хибна тривога: відкриття справжнього шкідника може пошкодити ваші файли."
+
+msgid "Nothing harmful found."
+msgstr "Нічого шкідливого не знайдено."
+
+msgid "The scan didn't finish."
+msgstr "Перевірку не завершено."
+
+msgid "Downloads that were blocked as harmful, kept where they can't do anything."
+msgstr "Завантаження, заблоковані як шкідливі, тримаються там, де нічого не можуть зробити."
+
+msgid "Download guard"
+msgstr "Захист завантажень"
+
+msgid "On: new downloads are checked"
+msgstr "Увімкнено: нові завантаження перевіряються"
+
+msgid "Off"
+msgstr "Вимкнено"
+
+msgid "Virus definitions"
+msgstr "Антивірусні бази"
+
+msgid "Not downloaded yet"
+msgstr "Ще не завантажено"
+
+msgid "In quarantine"
+msgstr "У карантині"
+
+msgid "Nothing"
+msgstr "Нічого"
+
+msgid "Blocked files"
+msgstr "Заблоковані файли"
+
+msgid "Nothing in quarantine"
+msgstr "У карантині нічого немає"
+
+msgid "No downloads were blocked. If one is, it lands here, harmless, until you decide."
+msgstr "Жодне завантаження не заблоковано. Якщо таке трапиться, воно опиниться тут, нешкідливе, доки ви не вирішите."
+
+msgid "Delete permanently"
+msgstr "Видалити назавжди"
+
+msgid "Restore…"
+msgstr "Відновити…"
+
+msgid "Check something now"
+msgstr "Перевірити зараз"
+
+msgid "Scan a folder…"
+msgstr "Перевірити теку…"
+
+msgid "With the built-in scanner. In a terminal: clamscan -r FOLDER"
+msgstr "Вбудованим сканером. У терміналі: clamscan -r ТЕКА"
+
+msgid "Check a file with VirusTotal…"
+msgstr "Перевірити файл у VirusTotal…"
+
+msgid "Looks up the file's fingerprint at VirusTotal (70+ scanners). The file itself is never uploaded."
+msgstr "Шукає відбиток файлу у VirusTotal (понад 70 сканерів). Сам файл ніколи не вивантажується."
+
+msgid "Restore %1 file?"
+msgid_plural "Restore %1 files?"
+msgstr[0] "Відновити %1 файл?"
+msgstr[1] "Відновити %1 файли?"
+msgstr[2] "Відновити %1 файлів?"
+
+msgid "%1 file"
+msgid_plural "%1 files"
+msgstr[0] "%1 файл"
+msgstr[1] "%1 файли"
+msgstr[2] "%1 файлів"

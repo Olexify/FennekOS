@@ -7,9 +7,11 @@ import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
+import org.kde.ki18n
 
 Item {
     id: root
+    KI18nContext { id: tr; translationDomain: "fennek" }   // Fennek's own words in the person's language
 
     readonly property string listCmd: "fennek-quarantine --json"
     readonly property string guardCmd: "systemctl --user is-active fennek-download-guard"
@@ -47,9 +49,9 @@ Item {
                 const out = data.stdout.trim()
                 const code = (out.match(/exit=(\d+)$/) || [, "x"])[1]
                 const found = out.replace(/\n?exit=\d+$/, "").trim()
-                root.scanResult = code === "0" ? "Nothing harmful found."
-                                : code === "1" ? "Harmful files found:\n" + found
-                                : code === "x" ? "" : "The scan didn't finish."
+                root.scanResult = code === "0" ? tr.i18n("Nothing harmful found.")
+                                : code === "1" ? tr.i18n("Harmful files found:") + "\n" + found
+                                : code === "x" ? "" : tr.i18n("The scan didn't finish.")
             } else if (source.indexOf("--restore") >= 0) {
                 try { root.restoredTo = JSON.parse(data.stdout).join("\n") } catch (e) {}
                 connectSource(root.listCmd)
@@ -64,9 +66,8 @@ Item {
     Kirigami.PromptDialog {
         parent: QQC2.Overlay.overlay   // over the whole window, also inside Settings
         id: confirmRestore
-        title: "Restore " + root.selectedCount + (root.selectedCount === 1 ? " file?" : " files?")
-        subtitle: "These were flagged as harmful. Restore only if you're sure it's a false alarm: opening real malware "
-                + "can damage your files."
+        title: tr.i18np("Restore %1 file?", "Restore %1 files?", root.selectedCount)
+        subtitle: tr.i18n("These were flagged as harmful. Restore only if you're sure it's a false alarm: opening real malware can damage your files.")
         standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
         onAccepted: run.connectSource("fennek-quarantine --restore " + root.chosen())
     }
@@ -85,8 +86,8 @@ Item {
                 Kirigami.Icon { source: "fennek-quarantine"; Layout.preferredWidth: 48; Layout.preferredHeight: 48 }
                 ColumnLayout {
                     spacing: 2
-                    Kirigami.Heading { text: "Quarantine"; level: 1 }
-                    QQC2.Label { text: "Downloads that were blocked as harmful, kept where they can't do anything."; opacity: 0.75 }
+                    Kirigami.Heading { text: tr.i18n("Quarantine"); level: 1 }
+                    QQC2.Label { text: tr.i18n("Downloads that were blocked as harmful, kept where they can't do anything."); opacity: 0.75 }
                 }
             }
 
@@ -97,12 +98,12 @@ Item {
                 spacing: Kirigami.Units.largeSpacing
                 Repeater {
                     model: [
-                        { icon: root.guardOn ? "security-high" : "security-low", title: "Download guard",
-                          text: root.guardOn ? "On: new downloads are checked" : "Off" },
-                        { icon: "view-calendar-day", title: "Virus definitions",
-                          text: root.defsTime ? "Updated " + new Date(root.defsTime * 1000).toLocaleDateString(Qt.locale(), Locale.ShortFormat) : "Not downloaded yet" },
-                        { icon: "fennek-quarantine", title: "In quarantine",
-                          text: root.items.length === 0 ? "Nothing" : root.items.length + (root.items.length === 1 ? " file" : " files") }
+                        { icon: root.guardOn ? "security-high" : "security-low", title: tr.i18n("Download guard"),
+                          text: root.guardOn ? tr.i18n("On: new downloads are checked") : tr.i18n("Off") },
+                        { icon: "view-calendar-day", title: tr.i18n("Virus definitions"),
+                          text: root.defsTime ? tr.i18n("Updated %1", new Date(root.defsTime * 1000).toLocaleDateString(Qt.locale(), Locale.ShortFormat)) : tr.i18n("Not downloaded yet") },
+                        { icon: "fennek-quarantine", title: tr.i18n("In quarantine"),
+                          text: root.items.length === 0 ? tr.i18n("Nothing") : tr.i18np("%1 file", "%1 files", root.items.length) }
                     ]
                     Rectangle {
                         required property var modelData
@@ -130,13 +131,13 @@ Item {
                 Layout.leftMargin: Kirigami.Units.gridUnit * 2
                 Layout.rightMargin: Kirigami.Units.gridUnit * 2
                 spacing: Kirigami.Units.smallSpacing
-                Kirigami.Heading { text: "Blocked files"; level: 2 }
+                Kirigami.Heading { text: tr.i18n("Blocked files"); level: 2 }
                 Kirigami.PlaceholderMessage {
                     Layout.fillWidth: true
                     visible: root.items.length === 0
                     icon.name: "security-high"
-                    text: "Nothing in quarantine"
-                    explanation: "No downloads were blocked. If one is, it lands here, harmless, until you decide."
+                    text: tr.i18n("Nothing in quarantine")
+                    explanation: tr.i18n("No downloads were blocked. If one is, it lands here, harmless, until you decide.")
                 }
                 Repeater {
                     model: root.items
@@ -155,7 +156,7 @@ Item {
                                 font: Kirigami.Theme.smallFont
                                 textFormat: Text.PlainText   // names come from downloads: never markup
                                 text: modelData.threat + " · " + new Date(modelData.when * 1000).toLocaleString(Qt.locale(), Locale.ShortFormat)
-                                      + (modelData.origin ? " · from " + modelData.origin : "")
+                                      + (modelData.origin ? " · " + tr.i18n("from %1", modelData.origin) : "")
                             }
                         }
                     }
@@ -164,13 +165,13 @@ Item {
                     visible: root.items.length > 0
                     QQC2.Button {
                         icon.name: "edit-delete"
-                        text: "Delete permanently"
+                        text: tr.i18n("Delete permanently")
                         enabled: root.selectedCount > 0
                         onClicked: run.connectSource("fennek-quarantine --delete " + root.chosen())
                     }
                     QQC2.Button {
                         icon.name: "edit-undo"
-                        text: "Restore…"
+                        text: tr.i18n("Restore…")
                         enabled: root.selectedCount > 0
                         onClicked: confirmRestore.open()
                     }
@@ -179,7 +180,7 @@ Item {
                     Layout.fillWidth: true
                     visible: root.restoredTo !== ""
                     type: Kirigami.MessageType.Information
-                    text: "Restored to: " + root.restoredTo
+                    text: tr.i18n("Restored to: %1", root.restoredTo)
                     // (InlineMessage shows plain text for its text)
                 }
             }
@@ -190,24 +191,24 @@ Item {
                 Layout.leftMargin: Kirigami.Units.gridUnit * 2
                 Layout.rightMargin: Kirigami.Units.gridUnit * 2
                 spacing: Kirigami.Units.smallSpacing
-                Kirigami.Heading { text: "Check something now"; level: 2 }
+                Kirigami.Heading { text: tr.i18n("Check something now"); level: 2 }
                 RowLayout {
                     QQC2.Button {
                         icon.name: "folder-open"
-                        text: "Scan a folder…"
+                        text: tr.i18n("Scan a folder…")
                         enabled: !root.scanning
                         onClicked: { root.scanning = true; root.scanResult = ""; run.connectSource(root.scanCmd) }
                         QQC2.ToolTip.visible: hovered
                         QQC2.ToolTip.delay: 600
-                        QQC2.ToolTip.text: "With the built-in scanner. In a terminal: clamscan -r FOLDER"
+                        QQC2.ToolTip.text: tr.i18n("With the built-in scanner. In a terminal: clamscan -r FOLDER")
                     }
                     QQC2.Button {
                         icon.name: "virustotal"
-                        text: "Check a file with VirusTotal…"
+                        text: tr.i18n("Check a file with VirusTotal…")
                         onClicked: run.connectSource(root.vtCmd)
                         QQC2.ToolTip.visible: hovered
                         QQC2.ToolTip.delay: 600
-                        QQC2.ToolTip.text: "Looks up the file's fingerprint at VirusTotal (70+ scanners). The file itself is never uploaded."
+                        QQC2.ToolTip.text: tr.i18n("Looks up the file's fingerprint at VirusTotal (70+ scanners). The file itself is never uploaded.")
                     }
                     QQC2.BusyIndicator { visible: root.scanning; running: visible }
                 }
