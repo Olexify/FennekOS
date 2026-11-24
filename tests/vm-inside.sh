@@ -18,6 +18,9 @@ if [ "${1:-}" = setup ]; then
         exit 0
     fi
     useradd -m -c "Anna" -G wheel "$user" && echo "$user:fennektest" | chpasswd   # the host types this at the sign-in screen
+    # When signing in fails, this tells whether the password was saved at all (P = set, L = locked) and what blocked it.
+    { passwd -S "$user"; getent shadow "$user" | cut -d: -f2 | cut -c1-4; rpm -q selinux-policy kwin shadow-utils pam
+      journalctl -b --no-pager -g 'avc:  denied|chpasswd|useradd' | tail -15; } >"$out/account.txt" 2>&1
     touch /etc/plasma-setup-done   # the account exists: no first-run account wizard
     touch "$out/setup-done"
     systemd-run --unit=fennek-vmtest-watch --no-block bash /run/t/vm-inside.sh watch
