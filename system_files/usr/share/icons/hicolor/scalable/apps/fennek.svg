@@ -1,30 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#4a2a7a"/><stop offset="1" stop-color="#1c1236"/>
+      <stop offset="0" stop-color="#55308c"/><stop offset="1" stop-color="#1b1033"/>
     </linearGradient>
+    <radialGradient id="glow" cx="32" cy="32" r="26" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9468d4" stop-opacity="0.5"/><stop offset="1" stop-color="#9468d4" stop-opacity="0"/>
+    </radialGradient>
     <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#f6c77d"/><stop offset="1" stop-color="#e09a45"/>
+      <stop offset="0" stop-color="#f8cf8a"/><stop offset="1" stop-color="#e2973f"/>
     </linearGradient>
     <linearGradient id="ear" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff1d6"/><stop offset="1" stop-color="#f3c48a"/>
+      <stop offset="0" stop-color="#fff6e6"/><stop offset="1" stop-color="#f3c792"/>
     </linearGradient>
   </defs>
-  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bg)"/>
-  <g transform="translate(32 33) scale(0.88) translate(-32 -31)">
-  <!-- ears: wide, the fennec mark -->
-  <path d="M12.28 31.51C7.35 23.80 4.65 13.95 6 4.5C16 7.5 25.5 15 30 25.5Z" fill="url(#fur)"/>
-  <path d="M51.72 31.51C56.65 23.80 59.35 13.95 58 4.5C48 7.5 38.5 15 34 25.5Z" fill="url(#fur)"/>
-  <path d="M16.5 29.5C12 23.5 9.5 16 10 9.5C17 12 23.5 17.5 27 24.5Z" fill="url(#ear)"/>
-  <path d="M47.5 29.5C52 23.5 54.5 16 54 9.5C47 12 40.5 17.5 37 24.5Z" fill="url(#ear)"/>
-  <!-- head -->
-  <path d="M12.15 31.66C19 25 25.5 23.5 32 23.5S45 25 51.85 31.66L49.4 34.3L49 34L50.5 36C46 43 40 48.5 34.2 52.6C32.9 53.5 31.1 53.5 29.8 52.6C24 48.5 18 43 13.5 36L15 34L14.6 34.3Z" fill="url(#fur)"/>
-  <!-- cream mask -->
-  <path d="M19.5 32.5C23 31 27 32.5 32 36C37 32.5 41 31 44.5 32.5C42 39.5 37.5 45.5 33.6 50C32.7 50.9 31.3 50.9 30.4 50C26.5 45.5 22 39.5 19.5 32.5Z" fill="#fff4e2"/>
-  <!-- almond eyes -->
-  <path d="M21.5 34.5C23.5 33.6 26.5 34.1 28 36.2C25.6 37.3 23 36.8 21.5 34.5Z" fill="#2a1a33"/>
-  <path d="M42.5 34.5C40.5 33.6 37.5 34.1 36 36.2C38.4 37.3 41 36.8 42.5 34.5Z" fill="#2a1a33"/>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#bg)"/>
+  <circle cx="32" cy="32" r="26" fill="url(#glow)"/>
+  <!-- ears: huge and wide at the base, growing from the sides of the head -->
+  <path d="M15.5 36C8.5 29 4.8 17.5 6.2 5.5C16 8.5 24.5 15.5 29.5 26.5Z" fill="url(#fur)"/>
+  <path d="M48.5 36C55.5 29 59.2 17.5 57.8 5.5C48 8.5 39.5 15.5 34.5 26.5Z" fill="url(#fur)"/>
+  <path d="M18.3 32.2C13 26.5 10.2 18.5 10.4 10.8C17 13.5 22.8 18.6 26.4 25.4Z" fill="url(#ear)"/>
+  <path d="M45.7 32.2C51 26.5 53.8 18.5 53.6 10.8C47 13.5 41.2 18.6 37.6 25.4Z" fill="url(#ear)"/>
+  <!-- head: a soft wedge -->
+  <path d="M14.8 34.5C19.5 28 25.5 25.4 32 25.4S44.5 28 49.2 34.5C46 42.5 40 48.8 33.5 53C32.6 53.6 31.4 53.6 30.5 53C24 48.8 18 42.5 14.8 34.5Z" fill="url(#fur)"/>
+  <!-- cream cheeks and muzzle, the golden bridge between the eyes -->
+  <path d="M18.6 35.8C22.5 34 26 34.8 29 37.6C30.3 38.9 31.2 40.2 32 41.8C32.8 40.2 33.7 38.9 35 37.6C38 34.8 41.5 34 45.4 35.8C43 42.6 38.3 47.8 33.6 51.2C32.6 51.9 31.4 51.9 30.4 51.2C25.7 47.8 21 42.6 18.6 35.8Z" fill="#fff4e2"/>
+  <!-- eyes: big, gentle almonds with a spark of light -->
+  <path d="M21 35.6C23.6 34 27.4 34.5 29.3 37.6C26.8 39.7 22.9 39.2 21 35.6Z" fill="#26172f"/>
+  <path d="M43 35.6C40.4 34 36.6 34.5 34.7 37.6C37.2 39.7 41.1 39.2 43 35.6Z" fill="#26172f"/>
+  <circle cx="26.1" cy="36.4" r="0.75" fill="#fff4e2"/>
+  <circle cx="37.9" cy="36.4" r="0.75" fill="#fff4e2"/>
   <!-- nose -->
-  <path d="M29.6 47.2C30.8 46.6 33.2 46.6 34.4 47.2C33.9 48.6 32.9 49.4 32 49.4S30.1 48.6 29.6 47.2Z" fill="#2a1a33"/>
-  </g>
+  <path d="M29.7 47C31 46.3 33 46.3 34.3 47C33.8 48.5 32.9 49.3 32 49.3S30.2 48.5 29.7 47Z" fill="#26172f"/>
 </svg>
