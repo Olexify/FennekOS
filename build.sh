@@ -8,6 +8,9 @@ arch=$(uname -m)   # x86_64 (PCs) or aarch64 (ARM laptops, Macs via a VM; native
 cp /etc/dnf/dnf.conf /tmp/dnf.conf.orig
 printf '\n# Fennek image build (temporary)\nfastestmirror=True\nmax_parallel_downloads=10\nminrate=100k\ntimeout=60\n' \
     >> /etc/dnf/dnf.conf
+# The base's SELinux policy stays: 44.12 (2026-11-24) labels a new account's folder under /var/home default_t, so creating
+# an account is refused. ponytail: lift this when a newer policy passes the home-folder check in test.sh.
+echo 'excludepkgs=selinux-policy*' >> /etc/dnf/dnf.conf
 # Every build starts from Fedora's latest packages, even when the base image is a day or two behind: security fixes
 # arrive the night they're out, and the source packages patched below match what's installed. (The tools installed
 # later would drag these upgrades in anyway, over edits already made.) The kernel and its modules stay the base's, they
